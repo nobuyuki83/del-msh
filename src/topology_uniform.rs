@@ -99,7 +99,7 @@ pub fn psup(
 /// * `elsup_ind` - jagged array index of element surrounding point
 /// * `elsup` - jagged array value of  element surrounding point
 ///
-///  triangle: face_node_idx = [0,2,4,6]; face_node = [1,2,2,0,0,1];
+///  triangle: face_node_idx = \[0,2,4,6]; face_node = \[1,2,2,0,0,1];
 pub fn elsuel(
     elem_vtx: &[usize],
     num_node: usize,
@@ -176,7 +176,7 @@ pub fn elsuel(
 /// * `num_node` - number of nodes par element
 /// * `num_vtx` - number of vertices
 ///
-///  triangle: face_node_idx = [0,2,4,6]; face_node = [1,2,2,0,0,1];
+///  triangle: face_node_idx = \[0,2,4,6]; face_node = \[1,2,2,0,0,1];
 pub fn elsuel2(
     elem_vtx: &[usize],
     num_node: usize,
