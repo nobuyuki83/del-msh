@@ -20,18 +20,20 @@ fn test_parse_vertex() {
 
 pub struct WavefrontObj<T> {
     pub vtx_xyz: Vec<T>,
+    pub vtx_uv: Vec<T>,
     pub elem_vtx_index: Vec<usize>,
     pub elem_vtx_xyz: Vec<i32>,
-    pub elem_vtx_tex: Vec<i32>,
+    pub elem_vtx_uv: Vec<i32>,
     pub elem_vtx_nrm: Vec<i32>,
 }
 
-impl<T: std::str::FromStr> WavefrontObj<T> {
+impl<T: std::str::FromStr+ std::fmt::Display> WavefrontObj<T> {
     pub fn new() -> Self {
         WavefrontObj::<T> {
             vtx_xyz: Vec::new(),
+            vtx_uv: Vec::new(),
             elem_vtx_xyz: Vec::new(),
-            elem_vtx_tex: Vec::new(),
+            elem_vtx_uv: Vec::new(),
             elem_vtx_nrm: Vec::new(),
             elem_vtx_index: Vec::new(),
         }
@@ -49,9 +51,6 @@ impl<T: std::str::FromStr> WavefrontObj<T> {
             let char1 = line.chars().nth(1);
             if char1.is_none(){ continue; }
             let char1 = char1.unwrap();
-            if char0 == 'v' && char1 == 't' {
-//            println!("{}",line);
-            }
             if char0 == 'v' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 let x = v[1].parse::<T>().ok().unwrap();
@@ -61,12 +60,19 @@ impl<T: std::str::FromStr> WavefrontObj<T> {
                 self.vtx_xyz.push(y);
                 self.vtx_xyz.push(z);
             }
+            if char0 == 'v' && char1 == 't' {
+                let v: Vec<&str> = line.split_whitespace().collect();
+                let u = v[1].parse::<T>().ok().unwrap();
+                let v = v[2].parse::<T>().ok().unwrap();
+                self.vtx_uv.push(u);
+                self.vtx_uv.push(v);
+            }
             if char0 == 'f' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 for i in 1..v.len() { // skip first 'f'
                     let (ipnt, itex, inrm) = parse_vertex(v[i]);
                     self.elem_vtx_xyz.push(ipnt);
-                    self.elem_vtx_tex.push(itex);
+                    self.elem_vtx_uv.push(itex);
                     self.elem_vtx_nrm.push(inrm);
                 }
                 self.elem_vtx_index.push(self.elem_vtx_xyz.len());

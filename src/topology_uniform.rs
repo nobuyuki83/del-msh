@@ -1,14 +1,18 @@
+//! utility library to find topology information of uniform mesh
+//! uniform mesh is a mesh that has single type of element (quad, tri, tet)
+
+/// element surrounding points
 pub fn elsup(
     elem_vtx: &[usize],
-    num_vtx_par_elem: usize,
+    num_node: usize,
     num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
-    let num_elem = elem_vtx.len() / num_vtx_par_elem;
-    assert_eq!(elem_vtx.len(), num_elem*num_vtx_par_elem);
+    let num_elem = elem_vtx.len() / num_node;
+    assert_eq!(elem_vtx.len(), num_elem* num_node);
     let mut elsup_ind = Vec::<usize>::new();
     elsup_ind.resize(num_vtx + 1, 0);
     for ielem in 0..num_elem {
-        for inoel in 0..num_vtx_par_elem {
-            let ino1 = elem_vtx[ielem * num_vtx_par_elem + inoel];
+        for inoel in 0..num_node {
+            let ino1 = elem_vtx[ielem * num_node + inoel];
             let ino1 = ino1 as usize;
             elsup_ind[ino1 + 1] += 1;
         }
@@ -20,8 +24,8 @@ pub fn elsup(
     let mut elsup = Vec::<usize>::new();
     elsup.resize(nelsup, 0);
     for ielem in 0..num_elem {
-        for inode in 0..num_vtx_par_elem {
-            let ivtx1 = elem_vtx[ielem * num_vtx_par_elem + inode];
+        for inode in 0..num_node {
+            let ivtx1 = elem_vtx[ielem * num_node + inode];
             let ivtx1 = ivtx1 as usize;
             let ielem0 = elsup_ind[ivtx1];
             elsup[ielem0] = ielem;
@@ -35,6 +39,7 @@ pub fn elsup(
     (elsup_ind, elsup)
 }
 
+/// point surrounding point
 pub fn psup(
     elem_vtx: &[usize],
     elsup_ind: &Vec<usize>,
@@ -87,6 +92,109 @@ pub fn psup(
     (psup_ind, psup)
 }
 
+
+/// element surrounding element
+/// * `elem_vtx` - vertex index of elements
+/// * `num_node` - number of nodes par element
+/// * `elsup_ind` - jagged array index of element surrounding point
+/// * `elsup` - jagged array value of  element surrounding point
+///
+///  triangle: face_node_idx = [0,2,4,6]; face_node = [1,2,2,0,0,1];
+pub fn elsuel(
+    elem_vtx: &[usize],
+    num_node: usize,
+    elsup_ind: &[usize],
+    elsup: &[usize],
+    face_node_idx: &[usize],
+    face_node: &[usize]) -> Vec<usize> {
+    assert!(!elsup_ind.is_empty());
+    let num_vtx = elsup_ind.len() - 1;
+    let num_face_par_elem = face_node_idx.len() - 1;
+    let num_max_node_on_face = {
+        let mut n0 = 0_usize;
+        for i_face in 0..num_face_par_elem {
+            let nno = face_node_idx[i_face + 1] - face_node_idx[i_face];
+            n0 = if nno > n0 { nno } else { n0 }
+        }
+        n0
+    };
+
+    let num_elem = elem_vtx.len() / num_node;
+    let mut elsuel = vec!(usize::MAX; num_elem * num_face_par_elem);
+
+    let mut vtx_flag = vec!(0; num_vtx); // vertex index -> flag
+    let mut fano_vtx = vec!(0; num_max_node_on_face);  // face node index -> vertex index
+    for i_elem in 0..num_elem {
+        for i_face in 0..num_face_par_elem {
+            for ifano in 0..face_node_idx[i_face + 1]-face_node_idx[i_face] {
+                let i_node0 = face_node[ifano+face_node_idx[i_face]];
+                assert!(i_node0 < num_node);
+                let i_vtx = elem_vtx[i_elem * num_node + i_node0];
+                assert!(i_vtx < num_vtx);
+                fano_vtx[ifano] = i_vtx;
+                vtx_flag[i_vtx] = 1;
+            }
+            let i_vtx0 = fano_vtx[0];
+            let mut flag0 = false;
+            for ielsup in elsup_ind[i_vtx0]..elsup_ind[i_vtx0 + 1] {
+                let j_elem0 = elsup[ielsup];
+                if j_elem0 == i_elem {
+                    continue;
+                }
+                for j_face in 0..num_face_par_elem {
+                    flag0 = true;
+                    for j_fano in face_node_idx[j_face]..face_node_idx[j_face + 1] {
+                        let j_node0 = face_node[j_fano];
+                        let j_vtx0 = elem_vtx[j_elem0 * num_node + j_node0];
+                        if vtx_flag[j_vtx0] == 0 {
+                            flag0 = false;
+                            break;
+                        }
+                    }
+                    if flag0 {
+                        elsuel[i_elem * num_face_par_elem + i_face] = j_elem0;
+                        break;
+                    }
+                }
+                if flag0 {
+                    break;
+                }
+            }
+            if !flag0 {
+                elsuel[i_elem * num_face_par_elem + i_face] = usize::MAX;
+            }
+            for ifano in 0..face_node_idx[i_face + 1] - face_node_idx[i_face] {
+                vtx_flag[fano_vtx[ifano]] = 0;
+            }
+        }
+    }
+    elsuel
+}
+
+/// element surrounding element
+/// * `elem_vtx` - vertex index of elements
+/// * `num_node` - number of nodes par element
+/// * `num_vtx` - number of vertices
+///
+///  triangle: face_node_idx = [0,2,4,6]; face_node = [1,2,2,0,0,1];
+pub fn elsuel2(
+    elem_vtx: &[usize],
+    num_node: usize,
+    face_node_idx: &[usize],
+    face_node: &[usize],
+    num_vtx: usize) -> Vec<usize>{
+    let (elsup_ind, elsup) = elsup(
+        &elem_vtx, num_node,
+        num_vtx);
+    elsuel(
+        &elem_vtx, num_node,
+        &elsup_ind, &elsup,
+        face_node_idx,face_node)
+}
+
+
+// ------------------------------
+
 pub fn psup_elem_edge(
     elem_vtx: &[usize],
     num_node_par_elem: usize,
@@ -95,7 +203,7 @@ pub fn psup_elem_edge(
     elsup: &Vec<usize>,
     is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
     let num_edge_par_elem = edges_par_elem.len() / 2;
-    assert!(edges_par_elem.len() == num_edge_par_elem * 2);
+    assert_eq!(edges_par_elem.len(), num_edge_par_elem * 2);
     let mut psup_ind = Vec::<usize>::new();
     let mut psup = Vec::<usize>::new();
 
@@ -134,7 +242,7 @@ pub fn psup_elem_edge(
 /// making vertex indexes list of edges from psup (point surrounding point)
 pub fn mshline_psup(
     psup_ind: &Vec<usize>,
-    psup: &Vec<usize>) -> Vec::<usize> {
+    psup: &Vec<usize>) -> Vec<usize> {
     let mut line_vtx = Vec::<usize>::with_capacity(psup.len() * 2);
     let np = psup_ind.len() - 1;
     for ip in 0..np {
@@ -151,7 +259,7 @@ pub fn mshline(
     elem_vtx: &[usize],
     num_vtx_par_elem: usize,
     edges_par_elem: &[usize],
-    num_vtx: usize) -> Vec::<usize>
+    num_vtx: usize) -> Vec<usize>
 {
     let elsup = elsup(
         elem_vtx, num_vtx_par_elem, num_vtx);

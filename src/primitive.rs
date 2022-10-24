@@ -1,5 +1,10 @@
+//! generate mesh for primitive shapes
+
 use num_traits::AsPrimitive;
 
+/// generate 3D mesh of closed cylinder
+/// * `r` - radius
+/// * 'l' - length
 pub fn cylinder_closed_end_tri3<T>(
     r: T,
     l: T,
