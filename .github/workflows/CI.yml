@@ -25,4 +25,3 @@ jobs:
         cargo build
         cargo test
         cargo doc
-        cargo build --examples
