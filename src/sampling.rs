@@ -1,20 +1,25 @@
 //! stochastic sampling on mesh
 
-pub fn cumulative_area_sum(
-    vtx_xyz: &[f32],
-    tri_vtx: &[usize]) -> Vec<f32> {
-    let mut cumulative_area_sum= vec!();
-    let num_tri = tri_vtx.len() / 3;
+pub fn cumulative_area_sum_condition<F: Fn(usize) -> bool>(
+    vtx2xyz: &[f32],
+    tri2vtx: &[usize],
+    tri2isvalid: F) -> Vec<f32> {
+    let mut cumulative_area_sum = vec!();
+    let num_tri = tri2vtx.len() / 3;
     cumulative_area_sum.reserve(num_tri + 1);
     cumulative_area_sum.push(0.);
     for idx_tri in 0..num_tri {
-        let i0 = tri_vtx[idx_tri * 3 + 0];
-        let i1 = tri_vtx[idx_tri * 3 + 1];
-        let i2 = tri_vtx[idx_tri * 3 + 2];
-        let a0 = area3(
-            &vtx_xyz[i0 * 3 + 0..i0 * 3 + 3],
-            &vtx_xyz[i1 * 3 + 0..i1 * 3 + 3],
-            &vtx_xyz[i2 * 3 + 0..i2 * 3 + 3]);
+        let a0 = if !tri2isvalid(idx_tri) {
+            0.0
+        } else {
+            let i0 = tri2vtx[idx_tri * 3 + 0];
+            let i1 = tri2vtx[idx_tri * 3 + 1];
+            let i2 = tri2vtx[idx_tri * 3 + 2];
+            area3(
+                &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
+                &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
+                &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3])
+        };
         let t0 = cumulative_area_sum[cumulative_area_sum.len() - 1];
         cumulative_area_sum.push(a0 + t0);
     }
@@ -22,14 +27,21 @@ pub fn cumulative_area_sum(
 }
 
 
-pub fn sample(cumulative_area_sum: &Vec<f32>, val01: f32, r1: f32) -> (usize, f32, f32) {
+pub fn cumulative_area_sum(
+    vtx2xyz: &[f32],
+    tri2vtx: &[usize]) -> Vec<f32> {
+    cumulative_area_sum_condition(
+        vtx2xyz, tri2vtx, |_itri| {true})
+}
+
+pub fn sample_uniform(cumulative_area_sum: &Vec<f32>, val01: f32, r1: f32) -> (usize, f32, f32) {
     let ntri = cumulative_area_sum.len() -1;
     let a0 = val01 * cumulative_area_sum[ntri];
     let mut itri_l = 0;
     let mut itri_u = ntri;
-    loop {
+    loop {  // bisection method
         assert!(cumulative_area_sum[itri_l] < a0);
-        assert!(a0 < cumulative_area_sum[itri_u]);
+        assert!(a0 <= cumulative_area_sum[itri_u]);
         let itri_h = (itri_u + itri_l) / 2;
         if itri_u - itri_l == 1 { break; }
         if cumulative_area_sum[itri_h] < a0 {
@@ -39,7 +51,7 @@ pub fn sample(cumulative_area_sum: &Vec<f32>, val01: f32, r1: f32) -> (usize, f3
         }
     }
     assert!(cumulative_area_sum[itri_l] < a0);
-    assert!(a0 < cumulative_area_sum[itri_l + 1]);
+    assert!(a0 <= cumulative_area_sum[itri_l + 1]);
     let r0 = (a0 - cumulative_area_sum[itri_l]) / (cumulative_area_sum[itri_l + 1] - cumulative_area_sum[itri_l]);
     if r0 + r1 > 1_f32 {
         let r0a = r0;
@@ -53,22 +65,21 @@ pub fn position_on_mesh_tri3(
     itri: usize,
     r0: f32,
     r1: f32,
-    vtx_xyz: &[f32],
-    tri_vtx: &[usize]) -> [f32;3] {
-    assert!(itri < tri_vtx.len() / 3);
-    let i0 = tri_vtx[itri * 3 + 0];
-    let i1 = tri_vtx[itri * 3 + 1];
-    let i2 = tri_vtx[itri * 3 + 2];
-    let p0 = &vtx_xyz[i0 * 3 + 0..i0 * 3 + 3];
-    let p1 = &vtx_xyz[i1 * 3 + 0..i1 * 3 + 3];
-    let p2 = &vtx_xyz[i2 * 3 + 0..i2 * 3 + 3];
+    vtx2xyz: &[f32],
+    tri2vtx: &[usize]) -> [f32;3] {
+    assert!(itri < tri2vtx.len() / 3);
+    let i0 = tri2vtx[itri * 3 + 0];
+    let i1 = tri2vtx[itri * 3 + 1];
+    let i2 = tri2vtx[itri * 3 + 2];
+    let p0 = &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3];
+    let p1 = &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3];
+    let p2 = &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3];
     let r2 = 1_f32 - r0 - r1;
     [
         r0 * p0[0] + r1 * p1[0] +  r2 * p2[0],
         r0 * p0[1] + r1 * p1[1] +  r2 * p2[1],
         r0 * p0[2] + r1 * p1[2] +  r2 * p2[2] ]
 }
-
 
 fn area3<T>(p0: &[T], p1: &[T], p2: &[T]) -> T
     where T: num_traits::real::Real + 'static,
