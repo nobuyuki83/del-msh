@@ -28,7 +28,7 @@ pub struct WavefrontObj<T> {
     pub elem2vtx_nrm: Vec<usize>,
 }
 
-impl<T: std::str::FromStr+ std::fmt::Display> WavefrontObj<T> {
+impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
     pub fn new() -> Self {
         WavefrontObj::<T> {
             vtx2xyz: Vec::new(),
@@ -51,10 +51,10 @@ impl<T: std::str::FromStr+ std::fmt::Display> WavefrontObj<T> {
             let line = line.unwrap();
             if line.is_empty() { continue; }
             let char0 = line.chars().nth(0);
-            if char0.is_none(){ continue; }
+            if char0.is_none() { continue; }
             let char0 = char0.unwrap();
             let char1 = line.chars().nth(1);
-            if char1.is_none(){ continue; }
+            if char1.is_none() { continue; }
             let char1 = char1.unwrap();
             if char0 == 'v' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
@@ -108,4 +108,17 @@ impl<T: std::str::FromStr+ std::fmt::Display> WavefrontObj<T> {
                 |i| if *i >= 0 { *i as usize } else { (nvtx_nrm as i32 + *i) as usize }).collect();
         }
     }
+}
+
+pub fn load_tri_mesh(
+    filepath: &str,
+    scale: Option<f32>) -> (Vec<usize>, Vec<f32>) {
+    let mut obj = WavefrontObj::<f32>::new();
+    obj.load(&filepath);
+    let tri2vtx = obj.elem2vtx_xyz;
+    let mut vtx2xyz = obj.vtx2xyz;
+    if scale.is_some() {
+        crate::transform::normalize_coords3(&mut vtx2xyz, scale.unwrap());
+    }
+    (tri2vtx, vtx2xyz)
 }

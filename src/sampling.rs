@@ -81,6 +81,9 @@ pub fn position_on_mesh_tri3(
         r0 * p0[2] + r1 * p1[2] +  r2 * p2[2] ]
 }
 
+// ---------------------------
+// below: private functions
+
 fn area3<T>(p0: &[T], p1: &[T], p2: &[T]) -> T
     where T: num_traits::real::Real + 'static,
           f32: num_traits::AsPrimitive<T>
