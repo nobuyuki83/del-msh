@@ -22,10 +22,10 @@ pub struct WavefrontObj<T> {
     pub vtx2xyz: Vec<T>,
     pub vtx2uv: Vec<T>,
     pub vtx2nrm: Vec<T>,
-    pub elem2vtx_idx: Vec<usize>,
-    pub elem2vtx_xyz: Vec<usize>,
-    pub elem2vtx_uv: Vec<usize>,
-    pub elem2vtx_nrm: Vec<usize>,
+    pub elem2idx: Vec<usize>,
+    pub idx2vtx_xyz: Vec<usize>,
+    pub idx2vtx_uv: Vec<usize>,
+    pub idx2vtx_nrm: Vec<usize>,
 }
 
 impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
@@ -34,10 +34,10 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             vtx2xyz: Vec::new(),
             vtx2uv: Vec::new(),
             vtx2nrm: Vec::new(),
-            elem2vtx_xyz: Vec::new(),
-            elem2vtx_uv: Vec::new(),
-            elem2vtx_nrm: Vec::new(),
-            elem2vtx_idx: Vec::new(),
+            elem2idx: Vec::new(),
+            idx2vtx_uv: Vec::new(),
+            idx2vtx_nrm: Vec::new(),
+            idx2vtx_xyz: Vec::new(),
         }
     }
     pub fn load(&mut self, filename: &str) {
@@ -45,7 +45,7 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
         let mut elem2vtx_uv0: Vec<i32> = vec!();
         let mut elem2vtx_nrm0: Vec<i32> = vec!();
         let f = File::open(filename).expect("file not found");
-        self.elem2vtx_idx.push(0);
+        self.elem2idx.push(0);
         let reader = BufReader::new(f);
         for line in reader.lines() {
             let line = line.unwrap();
@@ -89,22 +89,22 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                     elem2vtx_uv0.push(itex);
                     elem2vtx_nrm0.push(inrm);
                 }
-                self.elem2vtx_idx.push(elem2vtx_xyz0.len());
+                self.elem2idx.push(elem2vtx_xyz0.len());
             }
         } // end loop over text
         {  // fix veretx_xyz index
             let nvtx_xyz = self.vtx2xyz.len() / 3;
-            self.elem2vtx_xyz = elem2vtx_xyz0.iter().map(
+            self.idx2vtx_xyz = elem2vtx_xyz0.iter().map(
                 |i| if *i >= 0 { *i as usize } else { (nvtx_xyz as i32 + *i) as usize }).collect();
         }
         {  // fix veretx_uv index
             let nvtx_uv = self.vtx2uv.len() / 3;
-            self.elem2vtx_uv = elem2vtx_uv0.iter().map(
+            self.idx2vtx_uv = elem2vtx_uv0.iter().map(
                 |i| if *i >= 0 { *i as usize } else { (nvtx_uv as i32 + *i) as usize }).collect();
         }
         {  // fix veretx_nrm index
             let nvtx_nrm = self.vtx2nrm.len() / 3;
-            self.elem2vtx_nrm = elem2vtx_nrm0.iter().map(
+            self.idx2vtx_nrm = elem2vtx_nrm0.iter().map(
                 |i| if *i >= 0 { *i as usize } else { (nvtx_nrm as i32 + *i) as usize }).collect();
         }
     }
@@ -115,7 +115,7 @@ pub fn load_tri_mesh(
     scale: Option<f32>) -> (Vec<usize>, Vec<f32>) {
     let mut obj = WavefrontObj::<f32>::new();
     obj.load(&filepath);
-    let tri2vtx = obj.elem2vtx_xyz;
+    let tri2vtx = obj.idx2vtx_xyz;
     let mut vtx2xyz = obj.vtx2xyz;
     if scale.is_some() {
         crate::transform::normalize_coords3(&mut vtx2xyz, scale.unwrap());

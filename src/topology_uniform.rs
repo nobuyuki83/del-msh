@@ -17,32 +17,32 @@ pub fn elsup(
     num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
     let num_elem = elem2vtx.len() / num_node;
     assert_eq!(elem2vtx.len(), num_elem * num_node);
-    let mut vtx2elem_idx = vec!(0_usize; num_vtx + 1);
+    let mut vtx2idx = vec!(0_usize; num_vtx + 1);
     for i_elem in 0..num_elem {
         for i_node in 0..num_node {
             let i_vtx = elem2vtx[i_elem * num_node + i_node];
             assert!(i_vtx < num_vtx);
-            vtx2elem_idx[i_vtx + 1] += 1;
+            vtx2idx[i_vtx + 1] += 1;
         }
     }
     for i_vtx in 0..num_vtx {
-        vtx2elem_idx[i_vtx + 1] += vtx2elem_idx[i_vtx];
+        vtx2idx[i_vtx + 1] += vtx2idx[i_vtx];
     }
-    let num_vtx2elem = vtx2elem_idx[num_vtx];
-    let mut vtx2elem = vec!(0; num_vtx2elem);
+    let num_vtx2elem = vtx2idx[num_vtx];
+    let mut idx2elem = vec!(0; num_vtx2elem);
     for i_elem in 0..num_elem {
         for i_node in 0..num_node {
             let i_vtx0 = elem2vtx[i_elem * num_node + i_node];
-            let iv2e = vtx2elem_idx[i_vtx0];
-            vtx2elem[iv2e] = i_elem;
-            vtx2elem_idx[i_vtx0] += 1;
+            let iv2e = vtx2idx[i_vtx0];
+            idx2elem[iv2e] = i_elem;
+            vtx2idx[i_vtx0] += 1;
         }
     }
     for i_vtx in (1..num_vtx).rev() {
-        vtx2elem_idx[i_vtx] = vtx2elem_idx[i_vtx - 1];
+        vtx2idx[i_vtx] = vtx2idx[i_vtx - 1];
     }
-    vtx2elem_idx[0] = 0;
-    (vtx2elem_idx, vtx2elem)
+    vtx2idx[0] = 0;
+    (vtx2idx, idx2elem)
 }
 
 /// point surrounding point for mesh
@@ -55,51 +55,51 @@ pub fn psup(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize,
-    vtx2elem_idx: &[usize],
-    vtx2elem: &[usize]) -> (Vec<usize>, Vec<usize>) {
-    assert_eq!(vtx2elem_idx.len(), num_vtx + 1);
+    vtx2idx: &[usize],
+    idx2elem: &[usize]) -> (Vec<usize>, Vec<usize>) {
+    assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);
     let mut vtx2flg = vec!(usize::MAX; num_vtx);
-    let mut vtx2vtx_idx = vec!(0_usize; num_vtx + 1);
+    let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
     for i_vtx in 0..num_vtx {
         vtx2flg[i_vtx] = i_vtx;
-        for iv2e in vtx2elem_idx[i_vtx]..vtx2elem_idx[i_vtx + 1] {
-            let j_elem = vtx2elem[iv2e];
+        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
+            let j_elem = idx2elem[idx0];
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
-                    vtx2vtx_idx[i_vtx + 1] += 1;
+                    vtx2jdx[i_vtx + 1] += 1;
                 }
             }
         }
     }
     for i_vtx in 0..num_vtx {
-        vtx2vtx_idx[i_vtx + 1] += vtx2vtx_idx[i_vtx];
+        vtx2jdx[i_vtx + 1] += vtx2jdx[i_vtx];
     }
-    let num_vtx2vtx = vtx2vtx_idx[num_vtx];
-    let mut vtx2vtx = vec!(0_usize; num_vtx2vtx);
+    let num_vtx2vtx = vtx2jdx[num_vtx];
+    let mut jdx2vtx = vec!(0_usize; num_vtx2vtx);
     vtx2flg.iter_mut().for_each(|v| *v = usize::MAX );
     for i_vtx in 0..num_vtx {
         vtx2flg[i_vtx] = i_vtx;
-        for iv2e in vtx2elem_idx[i_vtx]..vtx2elem_idx[i_vtx + 1] {
-            let j_elem = vtx2elem[iv2e];
+        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
+            let j_elem = idx2elem[idx0];
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
-                    let iv2v = vtx2vtx_idx[i_vtx];
-                    vtx2vtx[iv2v] = j_vtx;
-                    vtx2vtx_idx[i_vtx] += 1;
+                    let iv2v = vtx2jdx[i_vtx];
+                    jdx2vtx[iv2v] = j_vtx;
+                    vtx2jdx[i_vtx] += 1;
                 }
             }
         }
     }
     for i_vtx in (1..num_vtx).rev() {
-        vtx2vtx_idx[i_vtx] = vtx2vtx_idx[i_vtx - 1];
+        vtx2jdx[i_vtx] = vtx2jdx[i_vtx - 1];
     }
-    vtx2vtx_idx[0] = 0;
-    (vtx2vtx_idx, vtx2vtx)
+    vtx2jdx[0] = 0;
+    (vtx2jdx, jdx2vtx)
 }
 
 pub fn psup2(
@@ -125,21 +125,21 @@ pub fn psup2(
 /// * `vtx2elem_idx` - jagged array index of element surrounding point
 /// * `vtx2elem` - jagged array value of  element surrounding point
 ///
-///  triangle: face_node_idx = \[0,2,4,6]; face_node = \[1,2,2,0,0,1];
+///  triangle: `face2jdx` = \[0,2,4,6]; `jdx2node` = \[1,2,2,0,0,1];
 pub fn elsuel(
     elem2vtx: &[usize],
     num_node: usize,
-    vtx2elem_idx: &[usize],
-    vtx2elem: &[usize],
-    face2node_idx: &[usize],
-    face2node: &[usize]) -> Vec<usize> {
-    assert!(!vtx2elem_idx.is_empty());
-    let num_vtx = vtx2elem_idx.len() - 1;
-    let num_face_par_elem = face2node_idx.len() - 1;
+    vtx2idx: &[usize],
+    idx2elem: &[usize],
+    face2jdx: &[usize],
+    jdx2node: &[usize]) -> Vec<usize> {
+    assert!(!vtx2idx.is_empty());
+    let num_vtx = vtx2idx.len() - 1;
+    let num_face_par_elem = face2jdx.len() - 1;
     let num_max_node_on_face = {
         let mut n0 = 0_usize;
         for i_face in 0..num_face_par_elem {
-            let nno = face2node_idx[i_face + 1] - face2node_idx[i_face];
+            let nno = face2jdx[i_face + 1] - face2jdx[i_face];
             n0 = if nno > n0 { nno } else { n0 }
         }
         n0
@@ -149,28 +149,28 @@ pub fn elsuel(
     let mut elem2elem = vec!(usize::MAX; num_elem * num_face_par_elem);
 
     let mut vtx2flag = vec!(0; num_vtx); // vertex index -> flag
-    let mut fano2vtx = vec!(0; num_max_node_on_face);  // face node index -> vertex index
+    let mut jdx2vtx = vec!(0; num_max_node_on_face);  // face node index -> vertex index
     for i_elem in 0..num_elem {
         for i_face in 0..num_face_par_elem {
-            for ifano in 0..face2node_idx[i_face + 1] - face2node_idx[i_face] {
-                let i_node0 = face2node[ifano + face2node_idx[i_face]];
+            for jdx0 in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
+                let i_node0 = jdx2node[jdx0 + face2jdx[i_face]];
                 assert!(i_node0 < num_node);
                 let i_vtx = elem2vtx[i_elem * num_node + i_node0];
                 assert!(i_vtx < num_vtx);
-                fano2vtx[ifano] = i_vtx;
+                jdx2vtx[jdx0] = i_vtx;
                 vtx2flag[i_vtx] = 1;
             }
-            let i_vtx0 = fano2vtx[0];
+            let i_vtx0 = jdx2vtx[0];
             let mut flag0 = false;
-            for i_vtx2elem in vtx2elem_idx[i_vtx0]..vtx2elem_idx[i_vtx0 + 1] {
-                let j_elem0 = vtx2elem[i_vtx2elem];
+            for idx0 in vtx2idx[i_vtx0]..vtx2idx[i_vtx0 + 1] {
+                let j_elem0 = idx2elem[idx0];
                 if j_elem0 == i_elem {
                     continue;
                 }
                 for j_face in 0..num_face_par_elem {
                     flag0 = true;
-                    for j_fano in face2node_idx[j_face]..face2node_idx[j_face + 1] {
-                        let j_node0 = face2node[j_fano];
+                    for jdx0 in face2jdx[j_face]..face2jdx[j_face + 1] {
+                        let j_node0 = jdx2node[jdx0];
                         let j_vtx0 = elem2vtx[j_elem0 * num_node + j_node0];
                         if vtx2flag[j_vtx0] == 0 {
                             flag0 = false;
@@ -189,8 +189,8 @@ pub fn elsuel(
             if !flag0 {
                 elem2elem[i_elem * num_face_par_elem + i_face] = usize::MAX;
             }
-            for ifano in 0..face2node_idx[i_face + 1] - face2node_idx[i_face] {
-                vtx2flag[fano2vtx[ifano]] = 0;
+            for ifano in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
+                vtx2flag[jdx2vtx[ifano]] = 0;
             }
         }
     }
@@ -202,12 +202,12 @@ pub fn elsuel(
 /// * `num_node` - number of nodes par element
 /// * `num_vtx` - number of vertices
 ///
-///  triangle: face_node_idx = \[0,2,4,6]; face_node = \[1,2,2,0,0,1];
+///  triangle: face2idx = \[0,2,4,6]; idx2node = \[1,2,2,0,0,1];
 pub fn elsuel2(
     elem2vtx: &[usize],
     num_node: usize,
-    face2node_idx: &[usize],
-    face2node: &[usize],
+    face2idx: &[usize],
+    idx2node: &[usize],
     num_vtx: usize) -> Vec<usize> {
     let vtx2elem = elsup(
         &elem2vtx, num_node,
@@ -215,7 +215,7 @@ pub fn elsuel2(
     elsuel(
         &elem2vtx, num_node,
         &vtx2elem.0, &vtx2elem.1,
-        face2node_idx, face2node)
+        face2idx, idx2node)
 }
 
 // ------------------------------
@@ -224,20 +224,21 @@ pub fn psup_elem_edge(
     elem2vtx: &[usize],
     num_node: usize,
     edge2node: &[usize],
-    vtx2elem_idx: &Vec<usize>,
-    vtx2elem: &Vec<usize>,
+    vtx2idx: &Vec<usize>,
+    idx2elem: &Vec<usize>,
     is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
     let num_edge = edge2node.len() / 2;
     assert_eq!(edge2node.len(), num_edge * 2);
-    let mut vtx2vtx = Vec::<usize>::new();
 
-    let num_vtx = vtx2elem_idx.len() - 1;
-    let mut vtx2vtx_idx = vec!(0_usize; num_vtx + 1);
-    vtx2vtx_idx[0] = 0;
+    let num_vtx = vtx2idx.len() - 1;
+    let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
+    vtx2jdx[0] = 0;
+    let mut jdx2vtx = Vec::<usize>::new();
+    let mut set_vtx = std::collections::BTreeSet::new();
     for i_vtx in 0..num_vtx {
-        let mut set_vtx_idx = std::collections::BTreeSet::new();
-        for ielsup in vtx2elem_idx[i_vtx]..vtx2elem_idx[i_vtx + 1] {
-            let ielem0 = vtx2elem[ielsup];
+        set_vtx.clear();
+        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
+            let ielem0 = idx2elem[idx0];
             for iedge in 0..num_edge {
                 let inode0 = edge2node[iedge * 2 + 0];
                 let inode1 = edge2node[iedge * 2 + 1];
@@ -246,37 +247,37 @@ pub fn psup_elem_edge(
                 if ivtx0 != i_vtx && ivtx1 != i_vtx { continue; }
                 if ivtx0 == i_vtx {
                     if is_bidirectional || ivtx1 > i_vtx {
-                        set_vtx_idx.insert(ivtx1);
+                        set_vtx.insert(ivtx1);
                     }
                 } else {
                     if is_bidirectional || ivtx0 > i_vtx {
-                        set_vtx_idx.insert(ivtx0);
+                        set_vtx.insert(ivtx0);
                     }
                 }
             }
         }
-        for itr in &set_vtx_idx {
-            vtx2vtx.push((*itr).try_into().unwrap());
+        for vtx in &set_vtx {
+            jdx2vtx.push((*vtx).try_into().unwrap());
         }
-        vtx2vtx_idx[i_vtx + 1] = vtx2vtx_idx[i_vtx] + set_vtx_idx.len();
+        vtx2jdx[i_vtx + 1] = vtx2jdx[i_vtx] + set_vtx.len();
     }
-    (vtx2vtx_idx, vtx2vtx)
+    (vtx2jdx, jdx2vtx)
 }
 
 /// making vertex indexes list of edges from psup (point surrounding point)
 pub fn mshline_psup(
-    vtx2vtx_idx: &Vec<usize>,
-    vtx2vtx: &Vec<usize>) -> Vec<usize> {
-    let mut line_vtx = Vec::<usize>::with_capacity(vtx2vtx.len() * 2);
-    let np = vtx2vtx_idx.len() - 1;
-    for ip in 0..np {
-        for ipsup in vtx2vtx_idx[ip]..vtx2vtx_idx[ip + 1] {
-            let jp = vtx2vtx[ipsup];
-            line_vtx.push(ip);
-            line_vtx.push(jp);
+    vtx2idx: &Vec<usize>,
+    idx2vtx: &Vec<usize>) -> Vec<usize> {
+    let mut line2vtx = Vec::<usize>::with_capacity(idx2vtx.len() * 2);
+    let num_vtx = vtx2idx.len() - 1;
+    for i_vtx in 0..num_vtx {
+        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
+            let j_vtx = idx2vtx[idx0];
+            line2vtx.push(i_vtx);
+            line2vtx.push(j_vtx);
         }
     }
-    line_vtx
+    line2vtx
 }
 
 pub fn mshline(
