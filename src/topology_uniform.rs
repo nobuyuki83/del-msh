@@ -112,8 +112,7 @@ pub fn psup2(
         &elem2vtx, num_node, num_vtx);
     assert_eq!(vtx2elem.0.len(), num_vtx + 1);
     let vtx2vtx = psup(
-        &elem2vtx,
-        num_node, num_vtx,
+        &elem2vtx, num_node, num_vtx,
         &vtx2elem.0, &vtx2elem.1);
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
     vtx2vtx

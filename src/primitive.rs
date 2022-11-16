@@ -92,15 +92,15 @@ pub fn capsule_tri3<T>(
           f32: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
 {
-    let (mut vtx_xyz, tri_vtx) = cylinder_closed_end_tri3::<T>(
+    let (mut vtx2xyz, tri2vtx) = cylinder_closed_end_tri3::<T>(
         (1.).as_(), (1.).as_(),
         nc, 2 * nr + nl - 2);
-    assert!(vtx_xyz.len() / 3 == (2 * nr + nl - 1) * nc + 2);
+    assert!(vtx2xyz.len() / 3 == (2 * nr + nl - 1) * nc + 2);
     let pi: T = (std::f32::consts::PI).as_();
     {
-        vtx_xyz[0 * 3 + 0] = 0.as_();
-        vtx_xyz[0 * 3 + 1] = -l * 0.5.as_() - r;
-        vtx_xyz[0 * 3 + 2] = 0.as_();
+        vtx2xyz[0 * 3 + 0] = 0.as_();
+        vtx2xyz[0 * 3 + 1] = -l * 0.5.as_() - r;
+        vtx2xyz[0 * 3 + 2] = 0.as_();
     }
     for ir in 0..nr {
         let t0 = pi * 0.5.as_() * (nr - 1 - ir).as_() / nr.as_();
@@ -108,18 +108,18 @@ pub fn capsule_tri3<T>(
         let c0 = r * t0.cos();
         for ic in 0..nc {
             let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx_xyz[(1 + ir * nc + ic) * 3 + 0] = c0 * theta.cos();
-            vtx_xyz[(1 + ir * nc + ic) * 3 + 1] = y0;
-            vtx_xyz[(1 + ir * nc + ic) * 3 + 2] = c0 * theta.sin();
+            vtx2xyz[(1 + ir * nc + ic) * 3 + 0] = c0 * theta.cos();
+            vtx2xyz[(1 + ir * nc + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + ir * nc + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
     for il in 0..nl - 1 {
         let y0 = -l * 0.5.as_() + (il + 1).as_() * l / nl.as_();
         for ic in 0..nc {
             let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx_xyz[(1 + (il + nr) * nc + ic) * 3 + 0] = r * theta.cos();
-            vtx_xyz[(1 + (il + nr) * nc + ic) * 3 + 1] = y0;
-            vtx_xyz[(1 + (il + nr) * nc + ic) * 3 + 2] = r * theta.sin();
+            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 0] = r * theta.cos();
+            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 2] = r * theta.sin();
         }
     }
     for ir in 0..nr {
@@ -128,18 +128,18 @@ pub fn capsule_tri3<T>(
         let c0 = r * t0.cos();
         for ic in 0..nc {
             let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx_xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 0] = c0 * theta.cos();
-            vtx_xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 1] = y0;
-            vtx_xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 2] = c0 * theta.sin();
+            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 0] = c0 * theta.cos();
+            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
     {
-        let np = vtx_xyz.len() / 3;
-        vtx_xyz[(np - 1) * 3 + 0] = 0.as_();
-        vtx_xyz[(np - 1) * 3 + 1] = l * 0.5.as_() + r;
-        vtx_xyz[(np - 1) * 3 + 2] = 0.as_();
+        let np = vtx2xyz.len() / 3;
+        vtx2xyz[(np - 1) * 3 + 0] = 0.as_();
+        vtx2xyz[(np - 1) * 3 + 1] = l * 0.5.as_() + r;
+        vtx2xyz[(np - 1) * 3 + 2] = 0.as_();
     }
-    (vtx_xyz, tri_vtx)
+    (vtx2xyz, tri2vtx)
 }
 
 #[test]
