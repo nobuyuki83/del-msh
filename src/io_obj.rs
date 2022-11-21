@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 
 fn parse_vertex(str_in: &str) -> (i32, i32, i32) {
     let snums: Vec<&str> = str_in.split('/').collect();
@@ -121,4 +121,28 @@ pub fn load_tri_mesh(
         crate::transform::normalize_coords3(&mut vtx2xyz, scale.unwrap());
     }
     (tri2vtx, vtx2xyz)
+}
+
+pub fn save_tri_mesh(
+    filepath: &str,
+    tri2vtx_xyz: &[usize],
+    vtx2xyz: &[f32],
+    tri2vtx_uv: &[usize],
+    vtx2uv: &[f32]) {
+    assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
+    let mut file = File::create(filepath).expect("file not found.");
+    for i_vtx in 0..vtx2xyz.len() / 3 {
+        writeln!(file, "v {} {} {}",
+                 vtx2xyz[i_vtx * 3 + 0], vtx2xyz[i_vtx * 3 + 1], vtx2xyz[i_vtx * 3 + 2]).expect("fail");
+    }
+    for i_vtx in 0..vtx2uv.len() / 2 {
+        writeln!(file, "vt {} {}",
+                 vtx2uv[i_vtx * 2 + 0], vtx2uv[i_vtx * 2 + 1]).expect("fail");
+    }
+    for i_tri in 0..tri2vtx_xyz.len() / 3 {
+        writeln!(file, "f {}/{} {}/{} {}/{}",
+                 tri2vtx_xyz[i_tri * 3 + 0] + 1, tri2vtx_uv[i_tri * 3 + 0] + 1,
+                 tri2vtx_xyz[i_tri * 3 + 1] + 1, tri2vtx_uv[i_tri * 3 + 1] + 1,
+                 tri2vtx_xyz[i_tri * 3 + 2] + 1, tri2vtx_uv[i_tri * 3 + 2] + 1).expect("fail");
+    }
 }
