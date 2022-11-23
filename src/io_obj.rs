@@ -1,22 +1,7 @@
+//! Wavefront Obj format loader and saver
+
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
-
-fn parse_vertex(str_in: &str) -> (i32, i32, i32) {
-    let snums: Vec<&str> = str_in.split('/').collect();
-    let mut nums: [i32; 3] = [0, 0, 0];
-    for i in 0..snums.len() {
-        nums[i] = snums[i].parse::<i32>().unwrap_or(0);
-    }
-    return (nums[0] - 1, nums[1] - 1, nums[2] - 1);
-}
-
-#[test]
-fn test_parse_vertex() {
-    assert_eq!(parse_vertex("1/2/3"), (0, 1, 2));
-    assert_eq!(parse_vertex("1//3"), (0, -1, 2));
-    assert_eq!(parse_vertex("1/2"), (0, 1, -1));
-    assert_eq!(parse_vertex("1"), (0, -1, -1));
-}
 
 pub struct WavefrontObj<T> {
     pub vtx2xyz: Vec<T>,
@@ -26,6 +11,8 @@ pub struct WavefrontObj<T> {
     pub idx2vtx_xyz: Vec<usize>,
     pub idx2vtx_uv: Vec<usize>,
     pub idx2vtx_nrm: Vec<usize>,
+    pub elem2group: Vec<usize>,
+    pub group2name: Vec<String>,
 }
 
 impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
@@ -38,14 +25,21 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             idx2vtx_uv: Vec::new(),
             idx2vtx_nrm: Vec::new(),
             idx2vtx_xyz: Vec::new(),
+            elem2group: Vec::new(),
+            group2name: Vec::new(),
         }
     }
+    /// load wavefront obj file into the class
     pub fn load(&mut self, filename: &str) {
         let mut elem2vtx_xyz0: Vec<i32> = vec!();
         let mut elem2vtx_uv0: Vec<i32> = vec!();
         let mut elem2vtx_nrm0: Vec<i32> = vec!();
+        self.elem2group.clear();
+        self.elem2idx = vec!(0);
+        let mut name2group = std::collections::BTreeMap::<String, usize>::new();
+        name2group.insert("_default".to_string(), 0);
+        let mut i_group = 0_usize;
         let f = File::open(filename).expect("file not found");
-        self.elem2idx.push(0);
         let reader = BufReader::new(f);
         for line in reader.lines() {
             let line = line.unwrap();
@@ -56,6 +50,7 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             let char1 = line.chars().nth(1);
             if char1.is_none() { continue; }
             let char1 = char1.unwrap();
+            if char0 == '#' { continue; }
             if char0 == 'v' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 let x = v[1].parse::<T>().ok().unwrap();
@@ -64,6 +59,17 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                 self.vtx2xyz.push(x);
                 self.vtx2xyz.push(y);
                 self.vtx2xyz.push(z);
+            }
+            if char0 == 'g' {
+                let v: Vec<&str> = line.split_whitespace().collect();
+                let name = v[1].to_string();
+                match name2group.get(&name) {
+                    None => {
+                        i_group = name2group.len();
+                        name2group.insert(name, i_group);
+                    }
+                    Some(&v) => {i_group = v;}
+                };
             }
             if char0 == 'v' && char1 == 'n' {
                 let v: Vec<&str> = line.split_whitespace().collect();
@@ -90,8 +96,13 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                     elem2vtx_nrm0.push(inrm);
                 }
                 self.elem2idx.push(elem2vtx_xyz0.len());
+                self.elem2group.push(i_group);
             }
         } // end loop over text
+        self.group2name = vec!("".to_string(); name2group.len());
+        for (name, &i_group) in name2group.iter() {
+            self.group2name[i_group] = name.clone();
+        }
         {  // fix veretx_xyz index
             let nvtx_xyz = self.vtx2xyz.len() / 3;
             self.idx2vtx_xyz = elem2vtx_xyz0.iter().map(
@@ -145,4 +156,24 @@ pub fn save_tri_mesh(
                  tri2vtx_xyz[i_tri * 3 + 1] + 1, tri2vtx_uv[i_tri * 3 + 1] + 1,
                  tri2vtx_xyz[i_tri * 3 + 2] + 1, tri2vtx_uv[i_tri * 3 + 2] + 1).expect("fail");
     }
+}
+
+// -------------------------
+// below: private functions
+
+fn parse_vertex(str_in: &str) -> (i32, i32, i32) {
+    let snums: Vec<&str> = str_in.split('/').collect();
+    let mut nums: [i32; 3] = [0, 0, 0];
+    for i in 0..snums.len() {
+        nums[i] = snums[i].parse::<i32>().unwrap_or(0);
+    }
+    return (nums[0] - 1, nums[1] - 1, nums[2] - 1);
+}
+
+#[test]
+fn test_parse_vertex() {
+    assert_eq!(parse_vertex("1/2/3"), (0, 1, 2));
+    assert_eq!(parse_vertex("1//3"), (0, -1, 2));
+    assert_eq!(parse_vertex("1/2"), (0, 1, -1));
+    assert_eq!(parse_vertex("1"), (0, -1, -1));
 }

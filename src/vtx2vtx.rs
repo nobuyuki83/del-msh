@@ -1,3 +1,4 @@
+//! methods that genertes vertices connected to a vertex with an element
 
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
@@ -118,7 +119,7 @@ pub fn from_specific_edges_of_uniform_mesh(
 }
 
 
-pub fn edges_of_meshtriquad(
+pub fn edges_of_tri_quad_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     vtx2jdx: &[usize],

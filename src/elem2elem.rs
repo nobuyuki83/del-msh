@@ -1,5 +1,6 @@
+//! list the elements adjacent to an element
 
-/// element surrounding element
+/// element adjacency of uniform mesh
 /// * `elem2vtx` - vertex index of elements
 /// * `num_node` - number of nodes par element
 /// * `vtx2elem_idx` - jagged array index of element surrounding point

@@ -1,3 +1,4 @@
+//! extract subset of elements as mesh
 
 pub fn extract(
     tri2vtx: &[usize],

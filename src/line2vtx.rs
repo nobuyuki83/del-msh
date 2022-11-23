@@ -1,3 +1,5 @@
+//! methods generates line mesh
+
 
 /// making vertex indexes list of edges from psup (point surrounding point)
 pub fn from_vtx2vtx(
@@ -38,7 +40,7 @@ pub fn from_tri_quad_mesh(
     let vtx2elem = crate::vtx2elem::from_mix_mesh(
         &elem2idx, &idx2vtx,
         num_vtx);
-    let vtx2vtx = crate::vtx2vtx::edges_of_meshtriquad(
+    let vtx2vtx = crate::vtx2vtx::edges_of_tri_quad_mesh(
         &elem2idx, &idx2vtx,
         &vtx2elem.0, &vtx2elem.1,
         false);

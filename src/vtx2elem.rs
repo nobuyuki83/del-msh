@@ -1,3 +1,4 @@
+//! method generate list of elemement indices surrounding a vertex
 
 /// element surrounding point (elsup)
 pub fn from_mix_mesh(

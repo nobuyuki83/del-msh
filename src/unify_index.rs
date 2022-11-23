@@ -1,17 +1,4 @@
-//! utility library to find topology information of uniform mesh
-//! uniform mesh is a mesh that has single type of element (quad, tri, tet)
-
-fn find_index_tri(
-    tri_vtx: &[usize],
-    ixyz: usize) -> usize {
-    if tri_vtx[0] == ixyz { return 0; }
-    if tri_vtx[1] == ixyz { return 1; }
-    if tri_vtx[2] == ixyz { return 2; }
-    panic!();
-}
-
-// ------------------------------
-
+//! unify the index of uv and xyz vertices for Wavefront Obj format
 
 pub fn unify_separate_trimesh_indexing_xyz_uv(
     vtx_xyz2xyz: &Vec<f32>,
@@ -44,7 +31,7 @@ pub fn unify_separate_trimesh_indexing_xyz_uv(
             uni2vtx_uv.push(ivtx_uv);
             for jtri0 in intersection.into_iter() {
                 let jtri = *jtri0;
-                let jno = find_index_tri(&tri2vtx_xyz[jtri*3..jtri*3+3], ivtx_xyz);
+                let jno = crate::tri2vtx::find_index_tri(&tri2vtx_xyz[jtri*3..jtri*3+3], ivtx_xyz);
                 assert_eq!(tri2vtx_xyz[jtri * 3 + jno], ivtx_xyz);
                 assert_eq!(tri2vtx_uv[jtri * 3 + jno], ivtx_uv);
                 assert_eq!(tri2uni[jtri * 3 + jno], usize::MAX);
