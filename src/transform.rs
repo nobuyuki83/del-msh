@@ -1,4 +1,4 @@
-
+//! method for coordinate transformations
 
 pub fn normalize_coords3 (
     vtx2xyz: &mut Vec<f32>,
