@@ -1,6 +1,7 @@
-//! method generate list of elemement indices surrounding a vertex
+//! methods that generate list of elemements surrounding a vertex
 
-/// element surrounding point (elsup)
+/// elements surrounding a vertex.
+/// The element can be mixture of line, polygon and polyhedron
 pub fn from_mix_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
@@ -43,7 +44,7 @@ fn test_mix_mesh() {
 }
 
 
-/// element surrounding points
+/// element surrounding vertex
 pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,

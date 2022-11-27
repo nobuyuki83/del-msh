@@ -1,4 +1,4 @@
-//! methods that genertes vertices connected to a vertex with an element
+//! methods that genertes vertices connected to a vertex
 
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
@@ -35,7 +35,7 @@ pub fn from_uniform_mesh(
     }
     let num_vtx2vtx = vtx2jdx[num_vtx];
     let mut jdx2vtx = vec!(0_usize; num_vtx2vtx);
-    vtx2flg.iter_mut().for_each(|v| *v = usize::MAX );
+    vtx2flg.iter_mut().for_each(|v| *v = usize::MAX);
     for i_vtx in 0..num_vtx {
         vtx2flg[i_vtx] = i_vtx;
         for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
@@ -119,15 +119,15 @@ pub fn from_specific_edges_of_uniform_mesh(
 }
 
 
-pub fn edges_of_tri_quad_mesh(
+/// make vertex surrounding vertex as edges of polygon mesh.
+/// A polygon mesh is a mixture of elements such as triangle, quadrilateal, pentagon.
+pub fn edges_of_polygon_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     vtx2jdx: &[usize],
     jdx2elem: &[usize],
     is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
     let nvtx = vtx2jdx.len() - 1;
-    const EDGES_PAR_TRI: [usize; 6] = [0, 1, 1, 2, 2, 0];
-    const EDGES_PAR_QUAD: [usize; 8] = [0, 1, 1, 2, 2, 3, 3, 0];
 
     let mut vtx2kdx = vec![0; nvtx + 1];
     let mut kdx2vtx = Vec::<usize>::new();
@@ -136,21 +136,12 @@ pub fn edges_of_tri_quad_mesh(
         let mut set_vtx_idx = std::collections::BTreeSet::new();
         for &ielem0 in &jdx2elem[vtx2jdx[i_vtx]..vtx2jdx[i_vtx + 1]] {
             let num_node = elem2idx[ielem0 + 1] - elem2idx[ielem0];
-            let nedge = if num_node == 3 { 3 } else { 4 };
-            for iedge in 0..nedge {
-                let inode0: usize;
-                let inode1: usize;
-                {
-                    if num_node == 3 {
-                        inode0 = EDGES_PAR_TRI[iedge * 2 + 0];
-                        inode1 = EDGES_PAR_TRI[iedge * 2 + 1];
-                    } else {
-                        inode0 = EDGES_PAR_QUAD[iedge * 2 + 0];
-                        inode1 = EDGES_PAR_QUAD[iedge * 2 + 1];
-                    }
-                }
-                let j_vtx0 = idx2vtx[elem2idx[ielem0] + inode0];
-                let j_vtx1 = idx2vtx[elem2idx[ielem0] + inode1];
+            let num_edge = num_node;
+            for i_edge in 0..num_edge {
+                let i_node0 = i_edge;
+                let i_node1 = (i_edge + 1) % num_node;
+                let j_vtx0 = idx2vtx[elem2idx[ielem0] + i_node0];
+                let j_vtx1 = idx2vtx[elem2idx[ielem0] + i_node1];
                 if j_vtx0 != i_vtx && j_vtx1 != i_vtx { continue; }
                 if j_vtx0 == i_vtx {
                     if is_bidirectional || j_vtx1 > i_vtx {

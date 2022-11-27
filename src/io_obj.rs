@@ -1,4 +1,4 @@
-//! Wavefront Obj format loader and saver
+//! methods to load and save files with Wavefront Obj format
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
