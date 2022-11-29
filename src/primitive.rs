@@ -1,4 +1,4 @@
-//! generate mesh for primitive shapes
+//! methods that generate meshes of primitive shapes (e.g., cylinder, torus)
 
 use num_traits::AsPrimitive;
 

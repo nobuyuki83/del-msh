@@ -1,4 +1,4 @@
-//! list the elements adjacent to an element
+//! methods that generate the elements adjacent to an element
 
 /// element adjacency of uniform mesh
 /// * `elem2vtx` - vertex index of elements

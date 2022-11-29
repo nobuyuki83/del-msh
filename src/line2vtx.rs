@@ -1,4 +1,4 @@
-//! methods that generates line mesh
+//! methods that generate line mesh
 
 /// making vertex indexes list of line mesh from vertex surrounding vertex
 /// * `vtx2idx` - vertex to index list
@@ -16,7 +16,7 @@ pub fn from_vtx2vtx(
     line2vtx
 }
 
-pub fn from_epecific_edges_of_uniform_mesh(
+pub fn from_sepecific_edges_of_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     edge2node: &[usize],

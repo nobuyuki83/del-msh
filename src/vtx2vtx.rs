@@ -1,4 +1,4 @@
-//! methods that genertes vertices connected to a vertex
+//! methods that generte vertices connected to a vertex
 
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
