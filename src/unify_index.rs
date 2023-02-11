@@ -1,10 +1,10 @@
 //! unify the index of uv and xyz vertices for Wavefront Obj format
 
 pub fn unify_separate_trimesh_indexing_xyz_uv(
-    vtx_xyz2xyz: &Vec<f32>,
-    vtx_uv2uv: &Vec<f32>,
-    tri2vtx_xyz: &Vec<usize>,
-    tri2vtx_uv: &Vec<usize>) -> (Vec<f32>, Vec<f32>, Vec<usize>, Vec<usize>, Vec<usize>)
+    vtx_xyz2xyz: &[f32],
+    vtx_uv2uv: &[f32],
+    tri2vtx_xyz: &[usize],
+    tri2vtx_uv: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<usize>, Vec<usize>, Vec<usize>)
 {
     assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
     let vtx_xyz2tri = crate::vtx2elem::from_uniform_mesh(
