@@ -9,7 +9,7 @@ pub fn cylinder_closed_end_tri3<T>(
     r: T,
     l: T,
     nr: usize,
-    nl: usize) -> (Vec<T>, Vec<usize>)
+    nl: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
@@ -17,7 +17,7 @@ pub fn cylinder_closed_end_tri3<T>(
     let mut vtx2xyz = Vec::<T>::new();
     let mut tri2vtx = Vec::<usize>::new();
     if nl < 1 || nr <= 2 {
-        return (vtx2xyz, tri2vtx);
+        return (tri2vtx, vtx2xyz);
     }
     let pi: T = std::f32::consts::PI.as_();
     let dl: T = l / (nl).as_();
@@ -71,7 +71,7 @@ pub fn cylinder_closed_end_tri3<T>(
         tri2vtx.push((nla - 2) * nr + 1 + (ilo + 1) % nr);
         tri2vtx.push((nla - 2) * nr + 1 + (ilo + 0) % nr);
     }
-    (vtx2xyz, tri2vtx)
+    (tri2vtx, vtx2xyz)
 }
 
 #[test]
@@ -87,12 +87,12 @@ pub fn capsule_tri3<T>(
     l: T,
     nc: usize,
     nr: usize,
-    nl: usize) -> (Vec<T>, Vec<usize>)
+    nl: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
 {
-    let (mut vtx2xyz, tri2vtx) = cylinder_closed_end_tri3::<T>(
+    let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_tri3::<T>(
         (1.).as_(), (1.).as_(),
         nc, 2 * nr + nl - 2);
     assert!(vtx2xyz.len() / 3 == (2 * nr + nl - 1) * nc + 2);
@@ -139,7 +139,7 @@ pub fn capsule_tri3<T>(
         vtx2xyz[(np - 1) * 3 + 1] = l * 0.5.as_() + r;
         vtx2xyz[(np - 1) * 3 + 2] = 0.as_();
     }
-    (vtx2xyz, tri2vtx)
+    (tri2vtx, vtx2xyz)
 }
 
 #[test]
@@ -151,7 +151,7 @@ fn test_capsule_tri3() {
 
 pub fn grid_quad2<T>(
     nx: usize,
-    ny: usize) -> (Vec<T>, Vec<usize>)
+    ny: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -175,7 +175,7 @@ pub fn grid_quad2<T>(
             quad2vtx[iq * 4 + 3] = (iy + 1) * (nx + 1) + (ix + 0);
         }
     }
-    (vtx2xy, quad2vtx)
+    (quad2vtx, vtx2xy)
 }
 
 #[test]
@@ -190,7 +190,7 @@ pub fn torus_tri3<T>(
     radius_tube_: T, // meridian
     nlg: usize, // latitude
     nlt: usize) // meridian
-    -> (Vec<T>, Vec<usize>)
+    -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -219,7 +219,7 @@ pub fn torus_tri3<T>(
             tri2vtx[(ilg * nlt + ilt) * 6 + 4] = ilg * nlt + iut;
         }
     }
-    (vtx2xyz, tri2vtx)
+    (tri2vtx, vtx2xyz)
 }
 
 #[test]
@@ -233,7 +233,7 @@ fn test_torus_tri3() {
 pub fn sphere_tri3<T>(
     radius: T,
     n_longitude: usize,
-    n_latitude: usize)  -> (Vec<T>, Vec<usize>)
+    n_latitude: usize)  -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -242,7 +242,7 @@ pub fn sphere_tri3<T>(
     let mut tri2vtx = Vec::<usize>::new();
     vtx2xyz.clear();
     if n_longitude <= 1 || n_latitude <= 2 {
-        return (vtx2xyz, tri2vtx);
+        return (tri2vtx, vtx2xyz);
     }
     let pi: T = 3.1415926535_f32.as_();
     let dl: T = pi / n_longitude.as_();
@@ -287,5 +287,5 @@ pub fn sphere_tri3<T>(
         tri2vtx.push((n_longitude - 2) * n_latitude + 1 + (ilo + 1) % n_latitude);
         tri2vtx.push((n_longitude - 2) * n_latitude + 1 + (ilo + 0) % n_latitude);
     }
-    (vtx2xyz, tri2vtx)
+    (tri2vtx, vtx2xyz)
 }
