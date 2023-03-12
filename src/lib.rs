@@ -11,3 +11,4 @@ pub mod vtx2vtx;
 pub mod elem2elem;
 pub mod line2vtx;
 pub mod tri2vtx;
+pub mod unindex;
