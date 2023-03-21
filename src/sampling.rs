@@ -6,6 +6,7 @@ pub fn cumulative_area_sum_condition<F: Fn(usize) -> bool>(
     tri2isvalid: F) -> Vec<f32> {
     let mut cumulative_area_sum = vec!();
     let num_tri = tri2vtx.len() / 3;
+    assert_eq!(tri2vtx.len(), num_tri * 3);
     cumulative_area_sum.reserve(num_tri + 1);
     cumulative_area_sum.push(0.);
     for idx_tri in 0..num_tri {
@@ -35,8 +36,28 @@ pub fn cumulative_area_sum(
         vtx2xyz, tri2vtx, |_itri| { true })
 }
 
+pub fn areas_of_triangles_of_mesh(
+    tri2vtx: &[usize],
+    vtx2xyz: &[f32],) -> Vec<f32>
+{
+    let num_tri = tri2vtx.len() / 3;
+    let mut tri2area = vec!(0_f32; num_tri);
+    for idx_tri in 0..num_tri {
+        let i0 = tri2vtx[idx_tri * 3 + 0];
+        let i1 = tri2vtx[idx_tri * 3 + 1];
+        let i2 = tri2vtx[idx_tri * 3 + 2];
+        let area = area3(
+            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
+            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
+            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3]);
+        tri2area[idx_tri] = area;
+    }
+    tri2area
+}
+
+
 pub fn sample_uniform(
-    cumulative_area_sum: &Vec<f32>,
+    cumulative_area_sum: &[f32],
     val01: f32,
     r1: f32) -> (usize, f32, f32)
 {
