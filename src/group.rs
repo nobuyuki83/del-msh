@@ -54,5 +54,5 @@ pub fn make_group_elem(
             itri_ker, i_group, elem2elem_adj);
         i_group += 1;
     }
-    (i_group + 1, elem2group)
+    (i_group, elem2group)
 }

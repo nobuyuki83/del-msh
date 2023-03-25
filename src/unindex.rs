@@ -1,3 +1,5 @@
+//! methods related to unindexed mesh (array of vertex coordinates)
+
 pub fn unidex_vertex_attribute_for_triangle_mesh(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> Vec<f32> {

@@ -1,4 +1,4 @@
-//! methods that generate list of elemements surrounding a vertex
+//! methods that generate list of elements surrounding a vertex
 
 /// elements surrounding a vertex.
 /// The element can be mixture of line, polygon and polyhedron

@@ -1,3 +1,4 @@
+//! methods to compute graph distance on mesh
 
 struct Node
 {
@@ -26,12 +27,11 @@ impl PartialEq for Node {
 }
 
 
-/**
- * propergating from one element, finding the topologycal distance
- * @param ielm_ker
- * @param aElSuEl
- * @param nelem
- */
+
+/// propergating from one element, finding the topologycal distance
+/// * `idx_elm_kernel` - index of element where distance is zero
+/// * `elem2elem_adj` - index of adjacent element for each element
+/// * `num_elem` - number of elements in the mesh
 pub fn topological_distance_on_uniform_mesh(
     idx_elem_kernel: usize,
     elem2elem_adj: &[usize],
@@ -61,6 +61,6 @@ pub fn topological_distance_on_uniform_mesh(
             que.push(Node {ind: i_elm1, dist: i_dist1 }); // candidate of shortest path
         }
     }
-    assert_eq!(count, num_elem);
+    assert!(count <= num_elem);
     elem2dist
 }

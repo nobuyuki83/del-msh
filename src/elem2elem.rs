@@ -1,5 +1,40 @@
 //! methods that generate the elements adjacent to an element
 
+
+pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
+{
+    let mut face2idx = vec!(0; num_node + 1);
+    let mut idx2node = vec!(0; num_node * 2);
+    for iedge in 0..num_node {
+        face2idx[iedge + 1] = (iedge + 1) * 2;
+        idx2node[iedge * 2 + 0] = iedge;
+        idx2node[iedge * 2 + 1] = (iedge + 1) % num_node;
+    }
+    (face2idx, idx2node)
+}
+
+
+pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
+{
+    let num_node_face = num_node - 1;
+    let mut face2idx = vec!(0; num_node + 1);
+    let mut idx2node = vec!(0; num_node * num_node_face);
+    for iedge in 0..num_node {
+        face2idx[iedge + 1] = (iedge + 1) * 2;
+        let mut icnt = 0;
+        for ino in 0..num_node {
+            let ino1 = (iedge + ino) % num_node;
+            if ino1 == iedge {
+                continue;
+            }
+            idx2node[iedge * num_node_face + icnt] = ino1;
+            icnt += 1;
+        }
+    }
+    (face2idx, idx2node)
+}
+
+
 /// element adjacency of uniform mesh
 /// * `elem2vtx` - vertex index of elements
 /// * `num_node` - number of nodes par element
