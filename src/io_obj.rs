@@ -13,6 +13,9 @@ pub struct WavefrontObj<T> {
     pub idx2vtx_nrm: Vec<usize>,
     pub elem2group: Vec<usize>,
     pub group2name: Vec<String>,
+    pub elem2mtl: Vec<usize>,
+    pub mtl_file_name: String,
+    pub mtl2name: Vec<String>,
 }
 
 impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
@@ -27,6 +30,9 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             idx2vtx_xyz: Vec::new(),
             elem2group: Vec::new(),
             group2name: Vec::new(),
+            mtl_file_name: "".to_string(),
+            elem2mtl: Vec::new(),
+            mtl2name: Vec::new(),
         }
     }
     /// load wavefront obj file into the class
@@ -35,10 +41,14 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
         let mut elem2vtx_uv0: Vec<i32> = vec!();
         let mut elem2vtx_nrm0: Vec<i32> = vec!();
         self.elem2group.clear();
+        self.elem2mtl.clear();
         self.elem2idx = vec!(0);
         let mut name2group = std::collections::BTreeMap::<String, usize>::new();
+        let mut name2mtl = std::collections::BTreeMap::<String, usize>::new();
         name2group.insert("_default".to_string(), 0);
+        name2mtl.insert("_default".to_string(), 0);
         let mut i_group = 0_usize;
+        let mut i_mtl = 0_usize;
         let f = File::open(filename).expect("file not found");
         let reader = BufReader::new(f);
         for line in reader.lines() {
@@ -60,7 +70,7 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                 self.vtx2xyz.push(y);
                 self.vtx2xyz.push(z);
             }
-            if char0 == 'g' {
+            if char0 == 'g' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 let name = v[1].to_string();
                 match name2group.get(&name) {
@@ -69,6 +79,21 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                         name2group.insert(name, i_group);
                     }
                     Some(&v) => {i_group = v;}
+                };
+            }
+            if char0 == 'm' && char1 == 't' {
+                let v: Vec<&str> = line.split_whitespace().collect();
+                self.mtl_file_name = v[1].to_string();
+            }
+            if char0 == 'u' && char1 == 's' {
+                let v: Vec<&str> = line.split_whitespace().collect();
+                let name = v[1].to_string();
+                match name2mtl.get(&name) {
+                    None => {
+                        i_mtl = name2mtl.len();
+                        name2mtl.insert(name, i_mtl);
+                    }
+                    Some(&v) => {i_mtl = v;}
                 };
             }
             if char0 == 'v' && char1 == 'n' {
@@ -97,11 +122,16 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
                 }
                 self.elem2idx.push(elem2vtx_xyz0.len());
                 self.elem2group.push(i_group);
+                self.elem2mtl.push(i_mtl);
             }
         } // end loop over text
         self.group2name = vec!("".to_string(); name2group.len());
         for (name, &i_group) in name2group.iter() {
             self.group2name[i_group] = name.clone();
+        }
+        self.mtl2name = vec!("".to_string(); name2mtl.len());
+        for (name, &i_mtl) in name2mtl.iter() {
+            self.mtl2name[i_mtl] = name.clone();
         }
         {  // fix veretx_xyz index
             let nvtx_xyz = self.vtx2xyz.len() / 3;

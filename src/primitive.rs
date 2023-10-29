@@ -95,7 +95,7 @@ pub fn capsule_tri3<T>(
     let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_tri3::<T>(
         (1.).as_(), (1.).as_(),
         nc, 2 * nr + nl - 2);
-    assert!(vtx2xyz.len() / 3 == (2 * nr + nl - 1) * nc + 2);
+    assert_eq!(vtx2xyz.len() / 3, (2 * nr + nl - 1) * nc + 2);
     let pi: T = (std::f32::consts::PI).as_();
     {
         vtx2xyz[0 * 3 + 0] = 0.as_();

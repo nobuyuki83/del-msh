@@ -1,74 +1,93 @@
 //! unify the index of uv and xyz vertices for Wavefront Obj format
 
-pub fn unify_separate_trimesh_indexing_xyz_uv(
-    vtx_xyz2xyz: &[f32],
-    vtx_uv2uv: &[f32],
-    tri2vtx_xyz: &[usize],
-    tri2vtx_uv: &[usize]) -> (Vec<f32>, Vec<f32>, Vec<usize>, Vec<usize>, Vec<usize>)
+pub fn unify_two_indices_of_triangle_mesh(
+    tri2vtxa: &[usize],
+    tri2vtxb: &[usize]) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 {
-    assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
-    let vtx_xyz2tri = crate::vtx2elem::from_uniform_mesh(
-        tri2vtx_xyz, 3, vtx_xyz2xyz.len() / 3);
-    let vtx_uv2tri = crate::vtx2elem::from_uniform_mesh(
-        tri2vtx_uv, 3, vtx_uv2uv.len() / 2);
-    let num_tri = tri2vtx_xyz.len() / 3;
+    let num_vtxa = tri2vtxa.iter().max().unwrap() + 1;
+    let num_vtxb = tri2vtxb.iter().max().unwrap() + 1;
+    assert_eq!(tri2vtxa.len(), tri2vtxb.len());
+    let vtxa2tri = crate::vtx2elem::from_uniform_mesh(
+        tri2vtxa, 3, num_vtxa);
+    let vtxb2tri = crate::vtx2elem::from_uniform_mesh(
+        tri2vtxb, 3, num_vtxb);
+    let num_tri = tri2vtxa.len() / 3;
     let mut tri2uni = vec!(usize::MAX; num_tri * 3);
-    let mut uni2vtx_uv = Vec::<usize>::new();
-    let mut uni2vtx_xyz = Vec::<usize>::new();
-
-    for i_tri in 0..num_tri {
-        for i_node in 0..3 {
-            let i_vtx_uv = tri2vtx_uv[i_tri * 3 + i_node];
-            let s1 = &vtx_uv2tri.1[vtx_uv2tri.0[i_vtx_uv]..vtx_uv2tri.0[i_vtx_uv + 1]];
-            for jtri0 in s1.into_iter() {
-                let jtri = *jtri0;
-                let jno = crate::tri2vtx::find_index_tri(&tri2vtx_uv[jtri*3..jtri*3+3], i_vtx_uv);
-                assert_eq!(tri2vtx_uv[jtri * 3 + jno], i_vtx_uv);
-            }
-        }
-    }
+    let mut uni2vtxa = Vec::<usize>::new();
+    let mut uni2vtxb = Vec::<usize>::new();
 
     for i_tri in 0..num_tri {
         for i_node in 0..3 {
             if tri2uni[i_tri * 3 + i_node] != usize::MAX { continue; }
-            let i_vtx_xyz = tri2vtx_xyz[i_tri * 3 + i_node];
-            let i_vtx_uv = tri2vtx_uv[i_tri * 3 + i_node];
-            let s0 = &vtx_xyz2tri.1[vtx_xyz2tri.0[i_vtx_xyz]..vtx_xyz2tri.0[i_vtx_xyz + 1]];
-            let s1 = &vtx_uv2tri.1[vtx_uv2tri.0[i_vtx_uv]..vtx_uv2tri.0[i_vtx_uv + 1]];
+            let i_vtxa = tri2vtxa[i_tri * 3 + i_node];
+            let i_vtxb = tri2vtxb[i_tri * 3 + i_node];
+            let s0 = &vtxa2tri.1[vtxa2tri.0[i_vtxa]..vtxa2tri.0[i_vtxa + 1]];
+            let s1 = &vtxb2tri.1[vtxb2tri.0[i_vtxb]..vtxb2tri.0[i_vtxb + 1]];
             let s0 = std::collections::BTreeSet::<&usize>::from_iter(s0.iter());
             let s1 = std::collections::BTreeSet::<&usize>::from_iter(s1.iter());
             let intersection: Vec<_> = s0.intersection(&s1).collect();
             if intersection.is_empty() { continue; }
-            let i_uni = uni2vtx_uv.len(); // new unified vertex
-            assert_eq!(uni2vtx_uv.len(), uni2vtx_xyz.len());
-            uni2vtx_xyz.push(i_vtx_xyz);
-            uni2vtx_uv.push(i_vtx_uv);
+            let i_uni = uni2vtxb.len(); // new unified vertex
+            assert_eq!(uni2vtxb.len(), uni2vtxa.len());
+            uni2vtxa.push(i_vtxa);
+            uni2vtxb.push(i_vtxb);
             for j_tri in intersection.into_iter().cloned() {
-                let j_node_xyz = crate::tri2vtx::find_index_tri(&tri2vtx_xyz[j_tri *3..j_tri *3+3], i_vtx_xyz);
-                assert_eq!(tri2vtx_xyz[j_tri * 3 + j_node_xyz], i_vtx_xyz);
-                let j_node_uv = crate::tri2vtx::find_index_tri(&tri2vtx_uv[j_tri *3..j_tri *3+3], i_vtx_uv);
-                assert_eq!(tri2vtx_uv[j_tri * 3 + j_node_uv], i_vtx_uv);
-                if j_node_xyz != j_node_uv {  // this sometime happens
-                    continue;
+                for j_node in 0..3 {
+                    if tri2vtxa[j_tri * 3 + j_node] == i_vtxa
+                        && tri2vtxb[j_tri * 3 + j_node] == i_vtxb {
+                        tri2uni[j_tri * 3 + j_node] = i_uni;
+                    }
                 }
-                assert_eq!(tri2uni[j_tri * 3 + j_node_xyz], usize::MAX);
-                tri2uni[j_tri * 3 + j_node_xyz] = i_uni;
             }
         }
     }
-    let num_uni = uni2vtx_xyz.len();
-    let mut uni2xyz = vec!(0_f32; num_uni * 3);
-    for i_uni in 0..num_uni {
-        let ivtx_xyz = uni2vtx_xyz[i_uni];
-        uni2xyz[i_uni * 3 + 0] = vtx_xyz2xyz[ivtx_xyz * 3 + 0];
-        uni2xyz[i_uni * 3 + 1] = vtx_xyz2xyz[ivtx_xyz * 3 + 1];
-        uni2xyz[i_uni * 3 + 2] = vtx_xyz2xyz[ivtx_xyz * 3 + 2];
+    (tri2uni, uni2vtxa, uni2vtxb)
+}
+
+pub fn unify_two_indices_of_polygon_mesh(
+    elem2idx: &[usize],
+    idx2vtxa: &[usize],
+    idx2vtxb: &[usize]) -> (Vec<usize>, Vec<usize>, Vec<usize>)
+{
+    let num_vtxa: usize = idx2vtxa.iter().max().unwrap() + 1;
+    let num_vtxb: usize = idx2vtxb.iter().max().unwrap() + 1;
+    let num_idx = idx2vtxa.len();
+    assert_eq!(idx2vtxb.len(), num_idx);
+    let vtxa2elem = crate::vtx2elem::from_polygon_mesh(
+        elem2idx, idx2vtxa, num_vtxa);
+    let vtxb2elem = crate::vtx2elem::from_polygon_mesh(
+        elem2idx, idx2vtxb, num_vtxb);
+    let num_elem = elem2idx.len() - 1;
+    let mut idx2uni = vec!(usize::MAX; num_idx);
+    let mut uni2vtxa = Vec::<usize>::new();
+    let mut uni2vtxb = Vec::<usize>::new();
+
+    for i_elem in 0..num_elem {
+        for idx in elem2idx[i_elem]..elem2idx[i_elem+1] {
+            if idx2uni[idx] != usize::MAX { continue; }
+            let i_vtxa = idx2vtxa[idx];
+            let i_vtxb = idx2vtxb[idx];
+            let s0 = &vtxa2elem.1[vtxa2elem.0[i_vtxa]..vtxa2elem.0[i_vtxa + 1]];
+            let s1 = &vtxb2elem.1[vtxb2elem.0[i_vtxb]..vtxb2elem.0[i_vtxb + 1]];
+            let s0 = std::collections::BTreeSet::<&usize>::from_iter(s0.iter());
+            let s1 = std::collections::BTreeSet::<&usize>::from_iter(s1.iter());
+            let intersection: Vec<_> = s0.intersection(&s1).collect();
+            assert!(!intersection.is_empty());
+            let i_uni = uni2vtxb.len(); // new unified vertex
+            assert_eq!(uni2vtxb.len(), uni2vtxa.len());
+            uni2vtxa.push(i_vtxa);
+            uni2vtxb.push(i_vtxb);
+            assert!(intersection.clone().into_iter().find(|&&&v| v == i_elem).is_some());
+            // idx2uni[idx] = i_uni;
+            for &j_elem in intersection.into_iter().cloned() {
+                for jdx in elem2idx[j_elem]..elem2idx[j_elem+1] {
+                    if idx2vtxa[jdx] == i_vtxa
+                        && idx2vtxb[jdx] == i_vtxb {
+                        idx2uni[jdx] = i_uni;
+                    }
+                }
+            }
+        }
     }
-    let mut uni2uv = vec!(0_f32; num_uni * 2);
-    for i_uni in 0..num_uni {
-        let i_vtx_uv = uni2vtx_uv[i_uni];
-        uni2uv[i_uni * 2 + 0] = vtx_uv2uv[i_vtx_uv * 2 + 0];
-        uni2uv[i_uni * 2 + 1] = vtx_uv2uv[i_vtx_uv * 2 + 1];
-    }
-    (uni2xyz, uni2uv, tri2uni, uni2vtx_xyz, uni2vtx_uv)
+    (idx2uni, uni2vtxa, uni2vtxb)
 }

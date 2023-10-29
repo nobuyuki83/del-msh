@@ -39,7 +39,7 @@ pub fn edge_of_polygon_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     num_vtx: usize) -> Vec<usize> {
-    let vtx2elem = crate::vtx2elem::from_mix_mesh(
+    let vtx2elem = crate::vtx2elem::from_polygon_mesh(
         &elem2idx, &idx2vtx,
         num_vtx);
     let vtx2vtx = crate::vtx2vtx::edges_of_polygon_mesh(

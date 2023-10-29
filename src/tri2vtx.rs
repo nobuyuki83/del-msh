@@ -43,7 +43,7 @@ pub fn from_quad_mesh(
     tri2vtx
 }
 
-pub fn find_index_tri(
+pub fn find_node_tri(
     tri2vtx: &[usize],
     i_vtx: usize) -> usize {
     if tri2vtx[0] == i_vtx { return 0; }

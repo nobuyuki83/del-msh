@@ -2,7 +2,7 @@
 
 /// elements surrounding a vertex.
 /// The element can be mixture of line, polygon and polyhedron
-pub fn from_mix_mesh(
+pub fn from_polygon_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     num_vtx: usize) -> (Vec<usize>, Vec<usize>)
@@ -35,10 +35,10 @@ pub fn from_mix_mesh(
 }
 
 #[test]
-fn test_mix_mesh() {
+fn test_polygon_mesh() {
     let elem2idx = vec![0, 3, 7, 11, 14];
     let idx2vtx = vec![0, 4, 2, 4, 3, 5, 2, 1, 6, 7, 5, 3, 1, 5];
-    let (vtx2jdx, jdx2elem) = from_mix_mesh(&elem2idx, &idx2vtx, 8);
+    let (vtx2jdx, jdx2elem) = from_polygon_mesh(&elem2idx, &idx2vtx, 8);
     assert_eq!(vtx2jdx, vec![0, 1, 3, 5, 7, 9, 12, 13, 14]);
     assert_eq!(jdx2elem, vec![0, 2, 3, 0, 1, 1, 3, 0, 1, 1, 2, 3, 2, 2]);
 }

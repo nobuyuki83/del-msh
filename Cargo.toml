@@ -1,6 +1,6 @@
 [package]
 name = "del-msh"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -10,4 +10,4 @@ description = "mesh utility library for computer graphics research"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-traits = "0.2.15"
+num-traits = "0.2.16"
