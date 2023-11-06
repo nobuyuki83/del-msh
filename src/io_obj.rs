@@ -36,7 +36,9 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
         }
     }
     /// load wavefront obj file into the class
-    pub fn load(&mut self, filename: &str) {
+    pub fn load<P: AsRef<std::path::Path>>(
+        &mut self,
+        filename: P) {
         let mut elem2vtx_xyz0: Vec<i32> = vec!();
         let mut elem2vtx_uv0: Vec<i32> = vec!();
         let mut elem2vtx_nrm0: Vec<i32> = vec!();
@@ -151,8 +153,8 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
     }
 }
 
-pub fn load_tri_mesh(
-    filepath: &str,
+pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
+    filepath: P,
     scale: Option<f32>) -> (Vec<usize>, Vec<f32>) {
     let mut obj = WavefrontObj::<f32>::new();
     obj.load(&filepath);
@@ -164,7 +166,7 @@ pub fn load_tri_mesh(
     (tri2vtx, vtx2xyz)
 }
 
-pub fn save_tri_mesh(
+pub fn save_tri_mesh_texture(
     filepath: &str,
     tri2vtx_xyz: &[usize],
     vtx2xyz: &[f32],
@@ -185,6 +187,26 @@ pub fn save_tri_mesh(
                  tri2vtx_xyz[i_tri * 3 + 0] + 1, tri2vtx_uv[i_tri * 3 + 0] + 1,
                  tri2vtx_xyz[i_tri * 3 + 1] + 1, tri2vtx_uv[i_tri * 3 + 1] + 1,
                  tri2vtx_xyz[i_tri * 3 + 2] + 1, tri2vtx_uv[i_tri * 3 + 2] + 1).expect("fail");
+    }
+}
+
+pub fn save_tri_mesh<P, T>(
+    filepath: P,
+    tri2vtx: &[usize],
+    vtx2xyz: &[T])
+where P: AsRef<std::path::Path>,
+      T: std::fmt::Display
+{
+    let mut file = File::create(filepath).expect("file not found.");
+    for i_vtx in 0..vtx2xyz.len() / 3 {
+        writeln!(file, "v {} {} {}",
+                 vtx2xyz[i_vtx * 3 + 0], vtx2xyz[i_vtx * 3 + 1], vtx2xyz[i_vtx * 3 + 2]).expect("fail");
+    }
+    for i_tri in 0..tri2vtx.len() / 3 {
+        writeln!(file, "f {} {} {}",
+                 tri2vtx[i_tri * 3 + 0] + 1,
+                 tri2vtx[i_tri * 3 + 1] + 1,
+                 tri2vtx[i_tri * 3 + 2] + 1).expect("fail");
     }
 }
 
