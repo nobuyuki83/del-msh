@@ -1,6 +1,6 @@
 //! stochastic sampling on mesh
 
-pub fn cumulative_area_sum_condition<F: Fn(usize) -> bool>(
+pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool>(
     vtx2xyz: &[f32],
     tri2vtx: &[usize],
     tri2isvalid: F) -> Vec<f32> {
@@ -32,31 +32,11 @@ pub fn cumulative_area_sum(
     vtx2xyz: &[f32],
     tri2vtx: &[usize]) -> Vec<f32>
 {
-    cumulative_area_sum_condition(
+    cumulative_areas_trimesh3_condition(
         vtx2xyz, tri2vtx, |_itri| { true })
 }
 
-pub fn areas_of_triangles_of_mesh(
-    tri2vtx: &[usize],
-    vtx2xyz: &[f32],) -> Vec<f32>
-{
-    let num_tri = tri2vtx.len() / 3;
-    let mut tri2area = vec!(0_f32; num_tri);
-    for idx_tri in 0..num_tri {
-        let i0 = tri2vtx[idx_tri * 3 + 0];
-        let i1 = tri2vtx[idx_tri * 3 + 1];
-        let i2 = tri2vtx[idx_tri * 3 + 2];
-        let area = area3(
-            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
-            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3]);
-        tri2area[idx_tri] = area;
-    }
-    tri2area
-}
-
-
-pub fn sample_uniform(
+pub fn sample_uniformly_trimesh(
     cumulative_area_sum: &[f32],
     val01: f32,
     r1: f32) -> (usize, f32, f32)
@@ -87,7 +67,7 @@ pub fn sample_uniform(
     return (itri_l, r0, r1);
 }
 
-pub fn position_on_mesh_tri3(
+pub fn position_on_trimesh3(
     itri: usize,
     r0: f32,
     r1: f32,

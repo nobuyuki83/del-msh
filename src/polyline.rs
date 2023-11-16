@@ -32,14 +32,15 @@ pub fn resample<T, const X: usize>(
 }
 
 pub fn parallel_transport_polyline<T>(
-    vtx2xyz: &nalgebra::Matrix3xX::<T>) -> nalgebra::Matrix3xX::<T>
+    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
 where T: nalgebra::RealField + 'static + Copy,
     f64: num_traits::AsPrimitive<T>
 {
-    let num_vtx = vtx2xyz.shape().1;
+    use del_geo::vec3::navec3;
+    let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
     {   // first segment
-        let v01 = (vtx2xyz.column(1) - vtx2xyz.column(0)).into_owned();
+        let v01 = (navec3(vtx2xyz, 1) - navec3(vtx2xyz,0)).into_owned();
         let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
         vtx2bin.column_mut(0).copy_from(&x);
     }
@@ -48,8 +49,8 @@ where T: nalgebra::RealField + 'static + Copy,
         let iv1 = iseg1;
         let iv2 = (iseg1 + 1) % num_vtx;
         let iseg0 = iseg1 - 1;
-        let v01 = (vtx2xyz.column(iv1) - vtx2xyz.column(iv0)).into_owned();
-        let v12 = (vtx2xyz.column(iv2) - vtx2xyz.column(iv1)).into_owned();
+        let v01 = navec3(vtx2xyz,iv1) - navec3(vtx2xyz,iv0);
+        let v12 = navec3(vtx2xyz,iv2) - navec3(vtx2xyz,iv1);
         let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
         let b01: nalgebra::Vector3::<T> = vtx2bin.column(iseg0).into_owned();
         let b12: nalgebra::Vector3::<T> = rot * b01;
