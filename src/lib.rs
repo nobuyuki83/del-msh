@@ -9,17 +9,20 @@ pub mod unify_index;
 // mesh from here
 pub mod edgeloop;
 pub mod polyline;
-pub mod trimesh;
+pub mod trimesh2;
+pub mod trimesh3;
+pub mod trimesh3_search;
 pub mod group;
 pub mod sampling;
 pub mod transform;
 pub mod extract;
+pub mod primitive;
+pub mod unindex;
+pub mod dijkstra;
 
 // io
 pub mod io_obj;
 pub mod io_off;
 
-pub mod primitive
-;
-pub mod unindex;
-pub mod dijkstra;
+// search
+pub mod kdtree2;
