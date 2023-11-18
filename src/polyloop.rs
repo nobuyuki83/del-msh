@@ -1,3 +1,5 @@
+//! methods for polyloop mesh
+
 use num_traits::AsPrimitive;
 
 pub fn arclength<T, const X: usize>(

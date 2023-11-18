@@ -1,4 +1,4 @@
-//! methods related to triangle mesh
+//! methods related to triangle mesh topology
 
 /// split polygons of polygonal mesh into triangles
 pub fn from_polygon_mesh(

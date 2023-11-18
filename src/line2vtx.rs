@@ -1,4 +1,4 @@
-//! methods related to line mesh
+//! methods related to line mesh topology
 
 /// making vertex indexes list of line mesh from vertex surrounding vertex
 /// * `vtx2idx` - vertex to index list

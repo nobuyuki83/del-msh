@@ -1,3 +1,5 @@
+//! class and methods for Kd-Tree
+
 use num_traits::AsPrimitive;
 
 #[derive(Clone)]

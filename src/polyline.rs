@@ -1,3 +1,5 @@
+//! methods for polyline mesh
+
 use num_traits::AsPrimitive;
 
 pub fn resample<T, const X: usize>(

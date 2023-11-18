@@ -1,4 +1,4 @@
-//! methods related to unindexed mesh (array of vertex coordinates)
+//! methods related to unindexed mesh (e.g., array of vertex coordinates)
 
 pub fn unidex_vertex_attribute_for_triangle_mesh(
     tri2vtx: &[usize],

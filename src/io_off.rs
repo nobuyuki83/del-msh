@@ -1,3 +1,5 @@
+//! methods to save files with OFF format
+
 pub fn save_tri_mesh<P: AsRef<std::path::Path>>(
     filepath: P,
     tri2vtx: &[usize],
