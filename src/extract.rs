@@ -45,3 +45,59 @@ pub fn map_values_old2new(
     }
     new2value
 }
+
+pub fn from_polygonal_mesh_array(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    elem2flag: &[bool]) -> (Vec<usize>, Vec<usize>)
+{
+    assert_eq!(elem2idx.len(), elem2flag.len() + 1);
+    let mut felem2jdx = vec!(0_usize; 1);
+    let mut jdx2vtx = vec!(0_usize; 0);
+    for i_elem in 0..elem2flag.len() {
+        if !elem2flag[i_elem] { continue; }
+        let idx0 = elem2idx[i_elem];
+        let idx1 = elem2idx[i_elem + 1];
+        for idx in idx0..idx1 {
+            jdx2vtx.push(idx2vtx[idx]);
+        }
+        felem2jdx.push(jdx2vtx.len());
+    }
+    (felem2jdx, jdx2vtx)
+}
+
+pub fn from_polygonal_mesh_lambda<F: Fn(usize) -> bool>(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    elem2flag: F) -> (Vec<usize>, Vec<usize>)
+{
+    let mut felem2jdx = vec!(0_usize; 1);
+    let mut jdx2vtx = vec!(0_usize; 0);
+    let num_elem = elem2idx.len() - 1;
+    for i_elem in 0..num_elem {
+        if !elem2flag(i_elem) { continue; }
+        let idx0 = elem2idx[i_elem];
+        let idx1 = elem2idx[i_elem + 1];
+        for idx in idx0..idx1 {
+            jdx2vtx.push(idx2vtx[idx]);
+        }
+        felem2jdx.push(jdx2vtx.len());
+    }
+    (felem2jdx, jdx2vtx)
+}
+
+pub fn from_uniform_mesh_lambda<F: Fn(usize) -> bool>(
+    elem2vtx: &[usize],
+    num_node: usize,
+    elem2flag: F) -> Vec<usize>
+{
+    let num_elem = elem2vtx.len() / num_node;
+    let mut felem2vtx = vec!(0_usize; 0);
+    for i_elem in 0..num_elem {
+        if !elem2flag(i_elem) { continue; }
+        for i_node in 0..num_node {
+            felem2vtx.push(elem2vtx[i_elem*num_node+i_node]);
+        }
+    }
+    felem2vtx
+}

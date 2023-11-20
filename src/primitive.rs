@@ -149,6 +149,40 @@ fn test_capsule_tri3() {
 }
 
 
+pub fn capsule_tri3_connecting_two_point<T>(
+    p0: [T;3],
+    p1: [T;3],
+    rad: T,
+    nc: usize,
+    nr: usize,
+    nl: usize) -> (Vec<usize>, Vec<T>)
+where T: nalgebra::RealField + Copy + num_traits::Float,
+    f32: AsPrimitive<T>,
+    f64: AsPrimitive<T>,
+    usize: AsPrimitive<T>
+{
+    let p0 = nalgebra::Vector3::<T>::from_column_slice(&p0);
+    let p1 = nalgebra::Vector3::<T>::from_column_slice(&p1);
+    let len = (p1-p0).norm();
+    let (tri2vtx, mut vtx2xyz) = capsule_tri3(rad, len, nc, nr, nl);
+    let q2 = nalgebra::Vector3::<T>::new(T::zero(), len*0.5_f64.as_(),T::zero());
+    let mat = del_geo::mat3::minimum_rotation_matrix(
+        nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
+        (p1-p0).normalize());
+    for v in vtx2xyz.chunks_mut(3) {
+        let q0 =  nalgebra::Vector3::<T>::new(v[0],v[1],v[2]);
+        let q1 = mat * (q0+q2) + p0;
+        v[0] = q1.x;
+        v[1] = q1.y;
+        v[2] = q1.z;
+    }
+    (tri2vtx, vtx2xyz)
+}
+
+
+// --------------------------------------------------------
+
+
 pub fn grid_quad2<T>(
     nx: usize,
     ny: usize) -> (Vec<usize>, Vec<T>)

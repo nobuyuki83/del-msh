@@ -12,7 +12,7 @@ pub mod polyline;
 pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_search;
-pub mod group;
+pub mod elem2group;
 pub mod sampling;
 pub mod transform;
 pub mod extract;

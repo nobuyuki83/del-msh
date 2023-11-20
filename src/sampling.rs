@@ -1,22 +1,27 @@
 //! stochastic sampling on mesh
 
-pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool>(
-    vtx2xyz: &[f32],
+use num_traits::AsPrimitive;
+
+pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, T>(
     tri2vtx: &[usize],
-    tri2isvalid: F) -> Vec<f32> {
-    let mut cumulative_area_sum = vec!();
+    vtx2xyz: &[T],
+    tri2isvalid: F) -> Vec<T>
+where T: num_traits::Float + Copy + 'static,
+    f64: AsPrimitive<T>
+{
+    let mut cumulative_area_sum: Vec<T> = vec!();
     let num_tri = tri2vtx.len() / 3;
     assert_eq!(tri2vtx.len(), num_tri * 3);
     cumulative_area_sum.reserve(num_tri + 1);
-    cumulative_area_sum.push(0.);
+    cumulative_area_sum.push(0_f64.as_());
     for idx_tri in 0..num_tri {
         let a0 = if !tri2isvalid(idx_tri) {
-            0.0
+            0_f64.as_()
         } else {
             let i0 = tri2vtx[idx_tri * 3 + 0];
             let i1 = tri2vtx[idx_tri * 3 + 1];
             let i2 = tri2vtx[idx_tri * 3 + 2];
-            area3(
+            del_geo::tri3::area_(
                 &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
                 &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
                 &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3])
@@ -28,18 +33,21 @@ pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool>(
 }
 
 
-pub fn cumulative_area_sum(
-    vtx2xyz: &[f32],
-    tri2vtx: &[usize]) -> Vec<f32>
+pub fn cumulative_area_sum<T>(
+    tri2vtx: &[usize],
+    vtx2xyz: &[T]) -> Vec<T>
+    where T: num_traits::Float + Copy + 'static,
+          f64: AsPrimitive<T>
 {
     cumulative_areas_trimesh3_condition(
-        vtx2xyz, tri2vtx, |_itri| { true })
+        tri2vtx, vtx2xyz, |_itri| { true })
 }
 
-pub fn sample_uniformly_trimesh(
-    cumulative_area_sum: &[f32],
-    val01: f32,
-    r1: f32) -> (usize, f32, f32)
+pub fn sample_uniformly_trimesh<T>(
+    cumulative_area_sum: &[T],
+    val01: T,
+    r1: T) -> (usize, T, T)
+where T: num_traits::Float
 {
     let ntri = cumulative_area_sum.len() - 1;
     let a0 = val01 * cumulative_area_sum[ntri];
@@ -59,20 +67,22 @@ pub fn sample_uniformly_trimesh(
     assert!(cumulative_area_sum[itri_l] < a0);
     assert!(a0 <= cumulative_area_sum[itri_l + 1]);
     let r0 = (a0 - cumulative_area_sum[itri_l]) / (cumulative_area_sum[itri_l + 1] - cumulative_area_sum[itri_l]);
-    if r0 + r1 > 1_f32 {
+    if r0 + r1 > T::one() {
         let r0a = r0;
         let r1a = r1;
-        return (itri_l, 1_f32 - r1a, 1_f32 - r0a);
+        return (itri_l, T::one() - r1a, T::one() - r0a);
     }
     return (itri_l, r0, r1);
 }
 
-pub fn position_on_trimesh3(
+pub fn position_on_trimesh3<T>(
     itri: usize,
-    r0: f32,
-    r1: f32,
-    vtx2xyz: &[f32],
-    tri2vtx: &[usize]) -> [f32; 3] {
+    r0: T,
+    r1: T,
+    tri2vtx: &[usize],
+    vtx2xyz: &[T]) -> [T; 3]
+where T: num_traits::Float
+{
     assert!(itri < tri2vtx.len() / 3);
     let i0 = tri2vtx[itri * 3 + 0];
     let i1 = tri2vtx[itri * 3 + 1];
@@ -80,7 +90,7 @@ pub fn position_on_trimesh3(
     let p0 = &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3];
     let p1 = &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3];
     let p2 = &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3];
-    let r2 = 1_f32 - r0 - r1;
+    let r2 = T::one() - r0 - r1;
     [
         r0 * p0[0] + r1 * p1[0] + r2 * p2[0],
         r0 * p0[1] + r1 * p1[1] + r2 * p2[1],
@@ -90,17 +100,3 @@ pub fn position_on_trimesh3(
 // ---------------------------
 // below: private functions
 
-fn area3<T>(p0: &[T], p1: &[T], p2: &[T]) -> T
-    where T: num_traits::real::Real + 'static,
-          f32: num_traits::AsPrimitive<T>
-{
-    use num_traits::AsPrimitive;
-    assert!(p0.len() == 3 && p1.len() == 3 && p2.len() == 3);
-    let v1 = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]];
-    let v2 = [p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]];
-    let n = [
-        v1[1] * v2[2] - v2[1] * v1[2],
-        v1[2] * v2[0] - v2[2] * v1[0],
-        v1[0] * v2[1] - v2[0] * v1[1]];
-    return (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt() * 0.5_f32.as_();
-}

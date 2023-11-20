@@ -42,7 +42,7 @@ pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 /// * `vtx2elem` - jagged array value of  element surrounding point
 ///
 ///  triangle: `face2jdx` = \[0,2,4,6]; `jdx2node` = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh(
+pub fn from_uniform_mesh_with_vtx2elem(
     elem2vtx: &[usize],
     num_node: usize,
     vtx2idx: &[usize],
@@ -119,7 +119,7 @@ pub fn from_uniform_mesh(
 /// * `num_vtx` - number of vertices
 ///
 ///  triangle: face2idx = \[0,2,4,6]; idx2node = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh2(
+pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     face2idx: &[usize],
@@ -128,7 +128,7 @@ pub fn from_uniform_mesh2(
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(
         &elem2vtx, num_node,
         num_vtx);
-    from_uniform_mesh(
+    from_uniform_mesh_with_vtx2elem(
         &elem2vtx, num_node,
         &vtx2elem.0, &vtx2elem.1,
         face2idx, idx2node)

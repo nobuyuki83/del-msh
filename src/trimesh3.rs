@@ -1,3 +1,5 @@
+//! methods for 3D triangle mesh
+
 pub fn normal(
     tri2vtx: &[usize],
     vtx2xyz: &[f64]) -> Vec<f64> {
@@ -98,4 +100,16 @@ pub fn mean_edge_length(
             &vtx2xyz[i0 * 3..i0 * 3 + 3]);
     }
     sum / (num_tri * 3) as f32
+}
+
+
+pub fn merge(
+    out_tri2vtx: &mut Vec<usize>,
+    out_vtx2xyz: &mut Vec<f64>,
+    tri2vtx: &[usize],
+    vtx2xyz: &[f64])
+{
+    let num_vtx0 = out_vtx2xyz.len() / 3;
+    tri2vtx.iter().for_each(|&v| out_tri2vtx.push(num_vtx0+v));
+    vtx2xyz.iter().for_each(|&v| out_vtx2xyz.push(v));
 }
