@@ -1,7 +1,8 @@
-//! methods for polyloop mesh
+//! methods for poly loop
 
 use num_traits::AsPrimitive;
 
+/// return  arc-length of a 2D or 3D poly loop
 pub fn arclength<T, const X: usize>(
     vtxs: &Vec<nalgebra::base::SVector<T, X>>) -> T
     where T: nalgebra::RealField + Copy,
@@ -14,7 +15,27 @@ pub fn arclength<T, const X: usize>(
         let ip1 = (ip0 + 1) % np;
         len += (vtxs[ip0] - vtxs[ip1]).norm();
     }
-    return len;
+    len
+}
+
+/// area2
+pub fn area2<T>(
+    vtx2xy: &[T]) -> T
+where T: num_traits::Float + Copy + 'static + std::ops::AddAssign,
+      f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xy.len() / 2;
+    assert_eq!(vtx2xy.len(), num_vtx*2);
+    let zero = [T::zero(), T::zero()];
+    let mut area = T::zero();
+    for i_edge in 0..num_vtx {
+        let i0 = i_edge;
+        let i1 = (i_edge + 1) % num_vtx;
+        let p0 = &vtx2xy[i0*2..i0*2+2];
+        let p1 = &vtx2xy[i1*2..i1*2+2];
+        area += del_geo::tri2::area_(&zero, p0,p1);
+    }
+    area
 }
 
 fn match_frames_of_two_ends<T>(
@@ -135,7 +156,7 @@ pub fn extend_avoid_intersection(
     let mut p1 = p0 + v0.scale(eps);
     for _i in 0..n {
         let v1 = -smooth_gradient_of_distance(vtx2xyz, &p1).normalize();
-        p1 = p1 + v1.scale(eps);
+        p1 += v1.scale(eps);
     }
     p1
 }

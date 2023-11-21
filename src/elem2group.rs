@@ -13,8 +13,7 @@ pub fn mark_connected_elements(
     let num_face_par_elem = elem2adjelem.len() / num_elem;
     elem2group[idx_elem_kernel] = idx_group;
     let mut next = vec!(idx_elem_kernel);
-    while !next.is_empty() {
-        let i_elem0 = next.pop().unwrap();
+    while let Some(i_elem0) = next.pop() {
         for ie in 0..num_face_par_elem {
             let ita = elem2adjelem[i_elem0 * num_face_par_elem + ie];
             if ita == usize::MAX {
@@ -42,9 +41,9 @@ pub fn from_uniform_mesh_with_elem2elem(
     let mut i_group = 0;
     loop {
         let mut itri_ker = usize::MAX;
-        for itri in 0..nelem {
-            if elem2group[itri] == usize::MAX {
-                itri_ker = itri;
+        for (i_tri,&group) in elem2group.iter().enumerate() {
+            if group == usize::MAX {
+                itri_ker = i_tri;
                 break;
             }
         }

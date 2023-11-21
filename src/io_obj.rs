@@ -1,4 +1,4 @@
-//! methods to load and save files with Wavefront Obj format
+//! methods for Wavefront Obj files
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
@@ -116,8 +116,8 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             }
             if char0 == 'f' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
-                for i in 1..v.len() { // skip first 'f'
-                    let (ipnt, itex, inrm) = parse_vertex(v[i]);
+                for v_ in v.iter().skip(1) { // skip first 'f'
+                    let (ipnt, itex, inrm) = parse_vertex(v_);
                     elem2vtx_xyz0.push(ipnt);
                     elem2vtx_uv0.push(itex);
                     elem2vtx_nrm0.push(inrm);
@@ -160,8 +160,8 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
     obj.load(&filepath);
     let tri2vtx = obj.idx2vtx_xyz;
     let mut vtx2xyz = obj.vtx2xyz;
-    if scale.is_some() {
-        crate::transform::normalize_coords3(&mut vtx2xyz, scale.unwrap());
+    if let Some(scale_) = scale {
+        crate::transform::normalize_coords3(&mut vtx2xyz, scale_);
     }
     (tri2vtx, vtx2xyz)
 }
@@ -219,7 +219,7 @@ fn parse_vertex(str_in: &str) -> (i32, i32, i32) {
     for i in 0..snums.len() {
         nums[i] = snums[i].parse::<i32>().unwrap_or(0);
     }
-    return (nums[0] - 1, nums[1] - 1, nums[2] - 1);
+    (nums[0] - 1, nums[1] - 1, nums[2] - 1)
 }
 
 #[test]

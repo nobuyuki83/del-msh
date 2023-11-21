@@ -12,7 +12,7 @@ pub fn first_intersection_ray(
         let i1 = tri2vtx[itri * 3 + 1];
         let i2 = tri2vtx[itri * 3 + 2];
         let res = tri3::ray_triangle_intersection_(
-            &ray_org, &ray_dir,
+            ray_org, ray_dir,
             &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
             &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
             &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3]);
@@ -30,7 +30,7 @@ pub fn first_intersection_ray(
         t * ray_dir[0] + ray_org[0],
         t * ray_dir[1] + ray_org[1],
         t * ray_dir[2] + ray_org[2] ];
-    return Some((a, hit_pos[0].1));
+    Some((a, hit_pos[0].1))
 }
 
 fn triangles_in_sphere(
@@ -73,16 +73,16 @@ fn triangles_in_sphere(
 pub fn is_point_inside_sphere(
     smpli: &(usize, f32, f32),
     rad: f32,
-    samples: &Vec<(usize, f32, f32)>,
+    samples: &[(usize, f32, f32)],
     elem2smpl: &std::collections::HashMap<usize, Vec<usize> >,
-    vtx2xyz: &Vec<f32>,
-    tri2vtx: &Vec<usize>,
-    tri2adjtri: &Vec<usize>) -> bool
+    vtx2xyz: &[f32],
+    tri2vtx: &[usize],
+    tri2adjtri: &[usize]) -> bool
 {
     use del_geo::vec3;
     let pos_i = crate::sampling::position_on_trimesh3(
         smpli.0, smpli.1, smpli.2,
-        &tri2vtx, &vtx2xyz);
+        tri2vtx, vtx2xyz);
     let indexes_tri = triangles_in_sphere(
         pos_i, rad,
         smpli.0, vtx2xyz, tri2vtx, tri2adjtri);
@@ -94,10 +94,10 @@ pub fn is_point_inside_sphere(
             let smpl_j = samples[j_smpl];
             let pos_j = crate::sampling::position_on_trimesh3(
                 smpl_j.0, smpl_j.1, smpl_j.2,
-                &tri2vtx, &vtx2xyz);
+                tri2vtx, vtx2xyz);
             let dist = vec3::distance_(&pos_i, &pos_j);
             if dist < rad { return true; }
         }
     }
-    return false;
+    false
 }

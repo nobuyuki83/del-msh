@@ -8,7 +8,7 @@ pub fn resample<T, const X: usize>(
     where T: nalgebra::RealField + Copy,
           f64: num_traits::AsPrimitive<T>
 {
-    if stroke0.len() == 0 {
+    if stroke0.is_empty() {
         return vec!();
     }
     let mut stroke = Vec::<nalgebra::base::SVector<T, X>>::new();

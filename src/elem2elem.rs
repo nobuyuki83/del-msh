@@ -126,10 +126,10 @@ pub fn from_uniform_mesh(
     idx2node: &[usize],
     num_vtx: usize) -> Vec<usize> {
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(
-        &elem2vtx, num_node,
+        elem2vtx, num_node,
         num_vtx);
     from_uniform_mesh_with_vtx2elem(
-        &elem2vtx, num_node,
+        elem2vtx, num_node,
         &vtx2elem.0, &vtx2elem.1,
         face2idx, idx2node)
 }

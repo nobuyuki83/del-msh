@@ -1,4 +1,4 @@
-
+//! methods for OFF files
 
 pub fn save_tri_mesh<P: AsRef<std::path::Path>, T>(
     filepath: P,
@@ -35,7 +35,7 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     let mut line = String::new();
     let _ = reader.read_line(&mut line);
     let strs = line.clone();
-    let strs: Vec<_> = strs.trim().split_whitespace().collect();
+    let strs: Vec<_> = strs.split_whitespace().collect();
     line.clear();
     assert_eq!(strs[0], "OFF");
     use std::str::FromStr;
@@ -47,7 +47,7 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     for _i_vtx in 0..num_vtx {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();
-        let strs: Vec<_> = strs.trim().split_whitespace().collect();
+        let strs: Vec<_> = strs.split_whitespace().collect();
         line.clear();
         assert_eq!(strs.len(),3);
         let x = f64::from_str(strs[0]).unwrap();
@@ -62,7 +62,7 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     for _i_elem in 0..num_elem {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();
-        let strs: Vec<_> = strs.trim().split_whitespace().collect();
+        let strs: Vec<_> = strs.split_whitespace().collect();
         line.clear();
         assert_eq!(strs.len(),4);
         assert_eq!(strs[0], "3");

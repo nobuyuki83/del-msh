@@ -77,7 +77,7 @@ pub fn unify_two_indices_of_polygon_mesh(
             assert_eq!(uni2vtxb.len(), uni2vtxa.len());
             uni2vtxa.push(i_vtxa);
             uni2vtxb.push(i_vtxb);
-            assert!(intersection.clone().into_iter().find(|&&&v| v == i_elem).is_some());
+            assert!(intersection.clone().into_iter().any(|&&v| v == i_elem));
             // idx2uni[idx] = i_uni;
             for &j_elem in intersection.into_iter().cloned() {
                 for jdx in elem2idx[j_elem]..elem2idx[j_elem+1] {

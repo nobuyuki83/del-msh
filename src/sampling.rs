@@ -72,7 +72,7 @@ where T: num_traits::Float
         let r1a = r1;
         return (itri_l, T::one() - r1a, T::one() - r0a);
     }
-    return (itri_l, r0, r1);
+    (itri_l, r0, r1)
 }
 
 pub fn position_on_trimesh3<T>(

@@ -278,7 +278,7 @@ pub fn sphere_tri3<T>(
     if n_longitude <= 1 || n_latitude <= 2 {
         return (tri2vtx, vtx2xyz);
     }
-    let pi: T = 3.1415926535_f32.as_();
+    let pi: T = std::f32::consts::PI.as_();
     let dl: T = pi / n_longitude.as_();
     let dr: T = 2.as_() * pi / n_latitude.as_();
     vtx2xyz.reserve((n_latitude * (n_longitude - 1) + 2) * 3);

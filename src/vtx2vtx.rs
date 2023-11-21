@@ -65,10 +65,10 @@ pub fn from_uniform_mesh2(
 {  // set pattern to sparse matrix
     assert_eq!(elem2vtx.len() % num_node, 0);
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(
-        &elem2vtx, num_node, num_vtx);
+        elem2vtx, num_node, num_vtx);
     assert_eq!(vtx2elem.0.len(), num_vtx + 1);
     let vtx2vtx = from_uniform_mesh(
-        &elem2vtx, num_node, num_vtx,
+        elem2vtx, num_node, num_vtx,
         &vtx2elem.0, &vtx2elem.1);
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
     vtx2vtx
@@ -79,7 +79,7 @@ pub fn from_specific_edges_of_uniform_mesh(
     num_node: usize,
     edge2node: &[usize],
     vtx2idx: &Vec<usize>,
-    idx2elem: &Vec<usize>,
+    idx2elem: &[usize],
     is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
     let num_edge = edge2node.len() / 2;
     assert_eq!(edge2node.len(), num_edge * 2);
@@ -111,7 +111,7 @@ pub fn from_specific_edges_of_uniform_mesh(
             }
         }
         for vtx in &set_vtx {
-            jdx2vtx.push((*vtx).try_into().unwrap());
+            jdx2vtx.push(*vtx);
         }
         vtx2jdx[i_vtx + 1] = vtx2jdx[i_vtx] + set_vtx.len();
     }
@@ -155,7 +155,7 @@ pub fn edges_of_polygon_mesh(
             }
         }
         for itr in &set_vtx_idx {
-            kdx2vtx.push((*itr).try_into().unwrap());
+            kdx2vtx.push(*itr);
         }
         vtx2kdx[i_vtx + 1] = vtx2kdx[i_vtx] + set_vtx_idx.len();
     }

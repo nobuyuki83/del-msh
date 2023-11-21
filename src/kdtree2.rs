@@ -133,7 +133,7 @@ fn signed_distance_aabb<Real>(
     let y_center = (max0.y + min0.y) * half;
     let x_dist = (pos_in.x - x_center).abs() - (max0.x - min0.x) * half;
     let y_dist = (pos_in.y - y_center).abs() - (max0.y - min0.y) * half;
-    return x_dist.max(y_dist);
+    x_dist.max(y_dist)
 }
 
 pub fn nearest<Real>(

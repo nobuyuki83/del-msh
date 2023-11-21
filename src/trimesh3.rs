@@ -37,7 +37,7 @@ pub fn extend_avoid_intersection(
         dq -= dw;
     }
     let q = q + dq.normalize() * step;
-    return [q[0], q[1], q[2]];
+    [q[0], q[1], q[2]]
 }
 
 pub fn areas(
