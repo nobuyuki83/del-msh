@@ -7,7 +7,7 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
     let mut idx2node = vec!(0; num_node * 2);
     for iedge in 0..num_node {
         face2idx[iedge + 1] = (iedge + 1) * 2;
-        idx2node[iedge * 2 + 0] = iedge;
+        idx2node[iedge * 2] = iedge;
         idx2node[iedge * 2 + 1] = (iedge + 1) % num_node;
     }
     (face2idx, idx2node)
@@ -78,15 +78,13 @@ pub fn from_uniform_mesh_with_vtx2elem(
             }
             let i_vtx0 = jdx2vtx[0];
             let mut flag0 = false;
-            for idx0 in vtx2idx[i_vtx0]..vtx2idx[i_vtx0 + 1] {
-                let j_elem0 = idx2elem[idx0];
+            for &j_elem0 in &idx2elem[vtx2idx[i_vtx0]..vtx2idx[i_vtx0 + 1]] {
                 if j_elem0 == i_elem {
                     continue;
                 }
                 for j_face in 0..num_face_par_elem {
                     flag0 = true;
-                    for jdx0 in face2jdx[j_face]..face2jdx[j_face + 1] {
-                        let j_node0 = jdx2node[jdx0];
+                    for &j_node0 in &jdx2node[face2jdx[j_face]..face2jdx[j_face + 1]] {
                         let j_vtx0 = elem2vtx[j_elem0 * num_node + j_node0];
                         if vtx2flag[j_vtx0] == 0 {
                             flag0 = false;

@@ -58,8 +58,8 @@ pub fn from_polygonal_mesh_array(
         if !elem2flag[i_elem] { continue; }
         let idx0 = elem2idx[i_elem];
         let idx1 = elem2idx[i_elem + 1];
-        for idx in idx0..idx1 {
-            jdx2vtx.push(idx2vtx[idx]);
+        for &vtx in &idx2vtx[idx0..idx1] {
+            jdx2vtx.push(vtx);
         }
         felem2jdx.push(jdx2vtx.len());
     }
@@ -78,8 +78,8 @@ pub fn from_polygonal_mesh_lambda<F: Fn(usize) -> bool>(
         if !elem2flag(i_elem) { continue; }
         let idx0 = elem2idx[i_elem];
         let idx1 = elem2idx[i_elem + 1];
-        for idx in idx0..idx1 {
-            jdx2vtx.push(idx2vtx[idx]);
+        for &vtx in &idx2vtx[idx0..idx1] {
+            jdx2vtx.push(vtx);
         }
         felem2jdx.push(jdx2vtx.len());
     }

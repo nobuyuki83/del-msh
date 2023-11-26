@@ -56,7 +56,7 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
         for line in reader.lines() {
             let line = line.unwrap();
             if line.is_empty() { continue; }
-            let char0 = line.chars().nth(0);
+            let char0 = line.chars().next();
             if char0.is_none() { continue; }
             let char0 = char0.unwrap();
             let char1 = line.chars().nth(1);

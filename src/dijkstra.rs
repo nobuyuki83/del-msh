@@ -28,7 +28,7 @@ impl PartialEq for Node {
 
 
 
-/// propergating from one element, finding the topologycal distance
+/// propagating from one element, finding the topological distance
 /// * `idx_elm_kernel` - index of element where distance is zero
 /// * `elem2elem_adj` - index of adjacent element for each element
 /// * `num_elem` - number of elements in the mesh

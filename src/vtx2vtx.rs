@@ -6,7 +6,7 @@
 /// * `num_vtx` - number of vertex
 /// * `vtx2idx` - map vertex to element index: cumulative sum
 /// * `idx2elem` - map vertex to element value: list of value
-pub fn from_uniform_mesh(
+pub fn from_uniform_mesh_with_vtx2elem(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize,
@@ -19,8 +19,7 @@ pub fn from_uniform_mesh(
     let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
     for i_vtx in 0..num_vtx {
         vtx2flg[i_vtx] = i_vtx;
-        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
-            let j_elem = idx2elem[idx0];
+        for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
                 if vtx2flg[j_vtx] != i_vtx {
@@ -38,8 +37,7 @@ pub fn from_uniform_mesh(
     vtx2flg.iter_mut().for_each(|v| *v = usize::MAX);
     for i_vtx in 0..num_vtx {
         vtx2flg[i_vtx] = i_vtx;
-        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
-            let j_elem = idx2elem[idx0];
+        for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
                 if vtx2flg[j_vtx] != i_vtx {
@@ -58,7 +56,7 @@ pub fn from_uniform_mesh(
     (vtx2jdx, jdx2vtx)
 }
 
-pub fn from_uniform_mesh2(
+pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize) -> (Vec<usize>, Vec<usize>)
@@ -67,7 +65,7 @@ pub fn from_uniform_mesh2(
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(
         elem2vtx, num_node, num_vtx);
     assert_eq!(vtx2elem.0.len(), num_vtx + 1);
-    let vtx2vtx = from_uniform_mesh(
+    let vtx2vtx = from_uniform_mesh_with_vtx2elem(
         elem2vtx, num_node, num_vtx,
         &vtx2elem.0, &vtx2elem.1);
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
@@ -91,10 +89,9 @@ pub fn from_specific_edges_of_uniform_mesh(
     let mut set_vtx = std::collections::BTreeSet::new();
     for i_vtx in 0..num_vtx {
         set_vtx.clear();
-        for idx0 in vtx2idx[i_vtx]..vtx2idx[i_vtx + 1] {
-            let ielem0 = idx2elem[idx0];
+        for &ielem0 in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for iedge in 0..num_edge {
-                let inode0 = edge2node[iedge * 2 + 0];
+                let inode0 = edge2node[iedge * 2];
                 let inode1 = edge2node[iedge * 2 + 1];
                 let ivtx0 = elem2vtx[ielem0 * num_node + inode0];
                 let ivtx1 = elem2vtx[ielem0 * num_node + inode1];
@@ -103,10 +100,8 @@ pub fn from_specific_edges_of_uniform_mesh(
                     if is_bidirectional || ivtx1 > i_vtx {
                         set_vtx.insert(ivtx1);
                     }
-                } else {
-                    if is_bidirectional || ivtx0 > i_vtx {
-                        set_vtx.insert(ivtx0);
-                    }
+                } else if is_bidirectional || ivtx0 > i_vtx {
+                    set_vtx.insert(ivtx0);
                 }
             }
         }
@@ -147,10 +142,8 @@ pub fn edges_of_polygon_mesh(
                     if is_bidirectional || j_vtx1 > i_vtx {
                         set_vtx_idx.insert(j_vtx1);
                     }
-                } else {
-                    if is_bidirectional || j_vtx0 > i_vtx {
-                        set_vtx_idx.insert(j_vtx0);
-                    }
+                } else if is_bidirectional || j_vtx0 > i_vtx {
+                    set_vtx_idx.insert(j_vtx0);
                 }
             }
         }

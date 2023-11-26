@@ -9,10 +9,9 @@ pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, T>(
 where T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>
 {
-    let mut cumulative_area_sum: Vec<T> = vec!();
     let num_tri = tri2vtx.len() / 3;
     assert_eq!(tri2vtx.len(), num_tri * 3);
-    cumulative_area_sum.reserve(num_tri + 1);
+    let mut cumulative_area_sum = Vec::<T>::with_capacity(num_tri + 1);
     cumulative_area_sum.push(0_f64.as_());
     for idx_tri in 0..num_tri {
         let a0 = if !tri2isvalid(idx_tri) {

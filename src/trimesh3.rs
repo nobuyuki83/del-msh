@@ -1,19 +1,20 @@
 //! methods for 3D triangle mesh
 
-pub fn normal(
+pub fn vtx2normal(
     tri2vtx: &[usize],
     vtx2xyz: &[f64]) -> Vec<f64> {
     let mut vtx2nrm = vec!(0_f64; vtx2xyz.len());
-    for t in tri2vtx.chunks(3) {
-        let p0 = &vtx2xyz[t[0] * 3..t[0] * 3 + 3];
-        let p1 = &vtx2xyz[t[1] * 3..t[1] * 3 + 3];
-        let p2 = &vtx2xyz[t[2] * 3..t[2] * 3 + 3];
+    for node2vtx in tri2vtx.chunks(3) {
+        let (i0,i1,i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
+        let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3];
+        let p1 = &vtx2xyz[i1 * 3..i1 * 3 + 3];
+        let p2 = &vtx2xyz[i2 * 3..i2 * 3 + 3];
         let mut un = [0_f64; 3];
         del_geo::tri3::unit_normal_(&mut un, p0, p1, p2);
-        for i in 0..3 {
-            vtx2nrm[t[i] * 3 + 0] += un[0];
-            vtx2nrm[t[i] * 3 + 1] += un[1];
-            vtx2nrm[t[i] * 3 + 2] += un[2];
+        for &i_vtx in &node2vtx[0..3] {
+            vtx2nrm[i_vtx * 3 + 0] += un[0];
+            vtx2nrm[i_vtx * 3 + 1] += un[1];
+            vtx2nrm[i_vtx * 3 + 2] += un[2];
         }
     }
     for v in vtx2nrm.chunks_mut(3) {
@@ -40,16 +41,13 @@ pub fn extend_avoid_intersection(
     [q[0], q[1], q[2]]
 }
 
-pub fn areas(
+pub fn elem2area(
     tri2vtx: &[usize],
-    vtx2xyz: &[f32], ) -> Vec<f32>
+    vtx2xyz: &[f32]) -> Vec<f32>
 {
-    let mut tri2area = vec!();
-    tri2area.reserve(tri2vtx.len() / 3);
-    for idx_tri in tri2vtx.chunks(3) {
-        let i0 = idx_tri[0];
-        let i1 = idx_tri[1];
-        let i2 = idx_tri[2];
+    let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
+    for node2vtx in tri2vtx.chunks(3) {
+        let (i0,i1,i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let area = del_geo::tri3::area_(
             &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
             &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
@@ -59,7 +57,7 @@ pub fn areas(
     tri2area
 }
 
-pub fn area_par_vertex(
+pub fn vtx2area(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> Vec<f32> {
     let num_vtx = vtx2xyz.len() / 3;

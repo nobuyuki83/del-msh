@@ -5,7 +5,7 @@ use num_traits::AsPrimitive;
 /// generate 3D mesh of closed cylinder
 /// * `r` - radius
 /// * 'l' - length
-pub fn cylinder_closed_end_tri3<T>(
+pub fn from_cylinder_closed_end<T>(
     r: T,
     l: T,
     nr: usize,
@@ -76,61 +76,61 @@ pub fn cylinder_closed_end_tri3<T>(
 
 #[test]
 fn test_cylider_closed_end_tri3() {
-    cylinder_closed_end_tri3::<f32>(1., 1., 32, 32);
-    cylinder_closed_end_tri3::<f64>(1., 1., 32, 32);
+    from_cylinder_closed_end::<f32>(1., 1., 32, 32);
+    from_cylinder_closed_end::<f64>(1., 1., 32, 32);
 }
 
 // ------------------------
 
-pub fn capsule_tri3<T>(
+pub fn from_capsule<T>(
     r: T,
     l: T,
-    nc: usize,
-    nr: usize,
-    nl: usize) -> (Vec<usize>, Vec<T>)
+    ndiv_circum: usize,
+    ndiv_longtitude: usize,
+    ndiv_length: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
 {
-    let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_tri3::<T>(
+    let (tri2vtx, mut vtx2xyz) = from_cylinder_closed_end::<T>(
         (1.).as_(), (1.).as_(),
-        nc, 2 * nr + nl - 2);
-    assert_eq!(vtx2xyz.len() / 3, (2 * nr + nl - 1) * nc + 2);
+        ndiv_circum, 2 * ndiv_longtitude + ndiv_length - 2);
+    assert_eq!(vtx2xyz.len() / 3, (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2);
     let pi: T = (std::f32::consts::PI).as_();
     {
-        vtx2xyz[0 * 3 + 0] = 0.as_();
-        vtx2xyz[0 * 3 + 1] = -l * 0.5.as_() - r;
-        vtx2xyz[0 * 3 + 2] = 0.as_();
+        vtx2xyz[0] = 0.as_();
+        vtx2xyz[1] = -l * 0.5.as_() - r;
+        vtx2xyz[2] = 0.as_();
     }
-    for ir in 0..nr {
-        let t0 = pi * 0.5.as_() * (nr - 1 - ir).as_() / nr.as_();
+    for ir in 0..ndiv_longtitude {
+        let t0 = pi * 0.5.as_() * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
         let y0 = -l * 0.5.as_() - r * t0.sin();
         let c0 = r * t0.cos();
-        for ic in 0..nc {
-            let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx2xyz[(1 + ir * nc + ic) * 3 + 0] = c0 * theta.cos();
-            vtx2xyz[(1 + ir * nc + ic) * 3 + 1] = y0;
-            vtx2xyz[(1 + ir * nc + ic) * 3 + 2] = c0 * theta.sin();
+        for ic in 0..ndiv_circum {
+            let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 0] = c0 * theta.cos();
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
-    for il in 0..nl - 1 {
-        let y0 = -l * 0.5.as_() + (il + 1).as_() * l / nl.as_();
-        for ic in 0..nc {
-            let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 0] = r * theta.cos();
-            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 1] = y0;
-            vtx2xyz[(1 + (il + nr) * nc + ic) * 3 + 2] = r * theta.sin();
+    for il in 0..ndiv_length - 1 {
+        let y0 = -l * 0.5.as_() + (il + 1).as_() * l / ndiv_length.as_();
+        for ic in 0..ndiv_circum {
+            let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 0] = r * theta.cos();
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 2] = r * theta.sin();
         }
     }
-    for ir in 0..nr {
-        let t0 = pi * 0.5.as_() * ir.as_() / nr.as_();
+    for ir in 0..ndiv_longtitude {
+        let t0 = pi * 0.5.as_() * ir.as_() / ndiv_longtitude.as_();
         let y0 = l * 0.5.as_() + r * (t0).sin();
         let c0 = r * t0.cos();
-        for ic in 0..nc {
-            let theta = 2.as_() * pi * ic.as_() / nc.as_();
-            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 0] = c0 * theta.cos();
-            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 1] = y0;
-            vtx2xyz[(1 + (ir + nl + nr - 1) * nc + ic) * 3 + 2] = c0 * theta.sin();
+        for ic in 0..ndiv_circum {
+            let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
+            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 0] = c0 * theta.cos();
+            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 1] = y0;
+            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
     {
@@ -144,18 +144,18 @@ pub fn capsule_tri3<T>(
 
 #[test]
 fn test_capsule_tri3() {
-    capsule_tri3::<f32>(1., 1., 32, 12, 5);
-    capsule_tri3::<f64>(1., 1., 32, 12, 5);
+    from_capsule::<f32>(1., 1., 32, 12, 5);
+    from_capsule::<f64>(1., 1., 32, 12, 5);
 }
 
 
-pub fn capsule_tri3_connecting_two_point<T>(
+pub fn from_capsule_connecting_two_point<T>(
     p0: [T;3],
     p1: [T;3],
     rad: T,
-    nc: usize,
-    nr: usize,
-    nl: usize) -> (Vec<usize>, Vec<T>)
+    ndiv_circum: usize,
+    ndiv_longtitude: usize,
+    ndiv_length: usize) -> (Vec<usize>, Vec<T>)
 where T: nalgebra::RealField + Copy + num_traits::Float,
     f32: AsPrimitive<T>,
     f64: AsPrimitive<T>,
@@ -164,7 +164,9 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
     let p0 = nalgebra::Vector3::<T>::from_column_slice(&p0);
     let p1 = nalgebra::Vector3::<T>::from_column_slice(&p1);
     let len = (p1-p0).norm();
-    let (tri2vtx, mut vtx2xyz) = capsule_tri3(rad, len, nc, nr, nl);
+    let (tri2vtx, mut vtx2xyz) = from_capsule(
+        rad, len,
+        ndiv_circum, ndiv_longtitude, ndiv_length);
     let q2 = nalgebra::Vector3::<T>::new(T::zero(), len*0.5_f64.as_(),T::zero());
     let mat = del_geo::mat3::minimum_rotation_matrix(
         nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
@@ -183,43 +185,7 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
 // --------------------------------------------------------
 
 
-pub fn grid_quad2<T>(
-    nx: usize,
-    ny: usize) -> (Vec<usize>, Vec<T>)
-    where T: num_traits::Float + 'static,
-          f32: AsPrimitive<T>,
-          usize: AsPrimitive<T>
-{
-    let np = (nx + 1) * (ny + 1);
-    let mut vtx2xy: Vec<T> = vec![0_f32.as_(); np * 2];
-    for iy in 0..ny + 1 {
-        for ix in 0..nx + 1 {
-            let ip = iy * (nx + 1) + ix;
-            vtx2xy[ip * 2 + 0] = ix.as_();
-            vtx2xy[ip * 2 + 1] = iy.as_();
-        }
-    }
-    let mut quad2vtx = vec![0; nx * ny * 4];
-    for iy in 0..ny {
-        for ix in 0..nx {
-            let iq = iy * nx + ix;
-            quad2vtx[iq * 4 + 0] = (iy + 0) * (nx + 1) + (ix + 0);
-            quad2vtx[iq * 4 + 1] = (iy + 0) * (nx + 1) + (ix + 1);
-            quad2vtx[iq * 4 + 2] = (iy + 1) * (nx + 1) + (ix + 1);
-            quad2vtx[iq * 4 + 3] = (iy + 1) * (nx + 1) + (ix + 0);
-        }
-    }
-    (quad2vtx, vtx2xy)
-}
-
-#[test]
-fn test_grid_quad2() {
-    grid_quad2::<f32>(12, 5);
-    grid_quad2::<f64>(12, 5);
-}
-
-
-pub fn torus_tri3<T>(
+pub fn from_torus<T>(
     radius_: T, // latitude
     radius_tube_: T, // meridian
     nlg: usize, // latitude
@@ -258,13 +224,13 @@ pub fn torus_tri3<T>(
 
 #[test]
 fn test_torus_tri3() {
-    torus_tri3::<f64>(1., 1., 32, 32);
-    torus_tri3::<f32>(1., 1., 32, 32);
+    from_torus::<f64>(1., 1., 32, 32);
+    from_torus::<f32>(1., 1., 32, 32);
 }
 
 // --------------
 
-pub fn sphere_tri3<T>(
+pub fn from_sphere<T>(
     radius: T,
     n_longitude: usize,
     n_latitude: usize)  -> (Vec<usize>, Vec<T>)

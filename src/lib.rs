@@ -8,15 +8,19 @@ pub mod unify_index;
 
 // mesh from here
 pub mod polyloop;
+pub mod polyloop2;
+pub mod polyloop3;
 pub mod polyline;
 pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_search;
+pub mod quadmesh;
 pub mod elem2group;
+pub mod elem2center;
 pub mod sampling;
 pub mod transform;
 pub mod extract;
-pub mod primitive;
+pub mod trimesh3_primitive;
 pub mod unindex;
 pub mod dijkstra;
 
@@ -26,7 +30,7 @@ pub mod io_off;
 
 // search
 pub mod kdtree2;
-
+pub mod bvh3;
 
 pub fn merge(
     node2row: &[usize],
