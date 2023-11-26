@@ -68,7 +68,6 @@ fn divide_list_of_elements(
     };
     let inode_ch0 = nodes.len() / 3;
     let inode_ch1 = inode_ch0 + 1;
-    dbg!(i_elem_ker, i_node_root, inode_ch0, inode_ch1);
     nodes.resize(nodes.len() + 6, usize::MAX);
     nodes[inode_ch0 * 3 + 0] = i_node_root;
     nodes[inode_ch1 * 3 + 0] = i_node_root;
@@ -155,7 +154,7 @@ pub fn build_geometry_aabb_for_uniform_mesh(
     vtx2xyz: &[f32])
 {
     // aabbs.resize();
-    assert_eq!(aabbs.len(), bvhnodes.len() / 3 * 6);
+    assert_eq!(aabbs.len() / 6, bvhnodes.len() / 3);
     assert!(i_bvhnode < bvhnodes.len() / 3);
     let i_bvhnode_child0 = bvhnodes[i_bvhnode * 3 + 1];
     let i_bvhnode_child1 = bvhnodes[i_bvhnode * 3 + 2];
