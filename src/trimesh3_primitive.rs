@@ -5,6 +5,7 @@ use num_traits::AsPrimitive;
 /// generate 3D mesh of closed cylinder
 /// * `r` - radius
 /// * 'l' - length
+#[allow(clippy::identity_op)]
 pub fn from_cylinder_closed_end<T>(
     r: T,
     l: T,
@@ -82,6 +83,7 @@ fn test_cylider_closed_end_tri3() {
 
 // ------------------------
 
+#[allow(clippy::identity_op)]
 pub fn from_capsule<T>(
     r: T,
     l: T,
@@ -184,7 +186,7 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
 
 // --------------------------------------------------------
 
-
+#[allow(clippy::identity_op)]
 pub fn from_torus<T>(
     radius_: T, // latitude
     radius_tube_: T, // meridian
@@ -230,6 +232,7 @@ fn test_torus_tri3() {
 
 // --------------
 
+#[allow(clippy::identity_op)]
 pub fn from_sphere<T>(
     radius: T,
     n_longitude: usize,

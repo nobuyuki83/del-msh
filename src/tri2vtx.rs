@@ -16,6 +16,7 @@ pub fn from_polygon_mesh(
         let num_node = elem2idx[i_elem + 1] - elem2idx[i_elem];
         let idx0 = elem2idx[i_elem];
         for i_node in 0..num_node - 2 {
+            #[allow(clippy::identity_op)]
             tri2vtx.push(idx2vtx[idx0 + 0]);
             tri2vtx.push(idx2vtx[idx0 + 1 + i_node]);
             tri2vtx.push(idx2vtx[idx0 + 2 + i_node]);
@@ -26,6 +27,7 @@ pub fn from_polygon_mesh(
 }
 
 /// split quad element to triangle element
+#[allow(clippy::identity_op)]
 pub fn from_quad_mesh(
     quad2vtx: &[usize]) -> Vec<usize>
 {

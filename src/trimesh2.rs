@@ -1,5 +1,6 @@
 //! methods for 2D triangle mesh
 
+#[allow(clippy::identity_op)]
 pub fn tri2area(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> Vec<f32>

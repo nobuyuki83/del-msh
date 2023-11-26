@@ -21,6 +21,7 @@ fn dominant_direction_pca(
     (org, dir)
 }
 
+#[allow(dead_code)]
 fn dominant_direction_aabb(
     remaining_elems: &[usize],
     elem2center: &[f32]) -> (nalgebra::Vector3::<f32>, nalgebra::Vector3::<f32>)
@@ -41,6 +42,7 @@ fn dominant_direction_aabb(
     (org, dir)
 }
 
+#[allow(clippy::identity_op)]
 fn divide_list_of_elements(
     i_node_root: usize,
     elem2node: &mut [usize],
@@ -145,6 +147,7 @@ pub fn build_topology_for_uniform_mesh_with_elem2elem_elem2center(
 
 
 
+#[allow(clippy::identity_op)]
 pub fn build_geometry_aabb_for_uniform_mesh(
     aabbs: &mut [f32],
     i_bvhnode: usize,

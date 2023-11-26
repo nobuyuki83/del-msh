@@ -2,6 +2,7 @@
 
 use num_traits::AsPrimitive;
 
+#[allow(clippy::identity_op)]
 pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, T>(
     tri2vtx: &[usize],
     vtx2xyz: &[T],
@@ -74,6 +75,7 @@ where T: num_traits::Float
     (itri_l, r0, r1)
 }
 
+#[allow(clippy::identity_op)]
 pub fn position_on_trimesh3<T>(
     itri: usize,
     r0: T,

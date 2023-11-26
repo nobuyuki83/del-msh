@@ -1,5 +1,6 @@
 //! methods for OFF files
 
+#[allow(clippy::identity_op)]
 pub fn save_tri_mesh<P: AsRef<std::path::Path>, T>(
     filepath: P,
     tri2vtx: &[usize],

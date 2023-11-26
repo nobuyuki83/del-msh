@@ -14,18 +14,13 @@ pub fn from_uniform_mesh<T>(
     let ratio: T = T::one() / num_node.as_();
     let mut cog = vec!(T::zero();num_node);
     for node2vtx in elem2vtx.chunks(num_node) {
-        for idim in 0..num_dim {
-            cog[idim] = 0_f64.as_();
-        }
-        for inode in 0..num_node {
-            let i_vtx = node2vtx[inode];
+        cog.fill(T::zero());
+        for i_vtx in &node2vtx[0..num_node] {
             for idim in 0..num_dim {
                 cog[idim] += vtx2xyz[i_vtx * num_node + idim];
             }
         }
-        for idim in 0..num_dim {
-            elem2cog.push(cog[idim] * ratio);
-        }
+        cog.iter().for_each(|&v| elem2cog.push(v*ratio) );
     }
     elem2cog
 }

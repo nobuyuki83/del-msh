@@ -1,5 +1,6 @@
 //! methods for coordinate transformations
 
+#[allow(clippy::identity_op)]
 pub fn normalize_coords3 (
     vtx2xyz: &mut Vec<f32>,
     size: f32) {

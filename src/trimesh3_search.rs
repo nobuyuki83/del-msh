@@ -1,5 +1,6 @@
 //! methods for query computation on 3D triangle mesh
 
+#[allow(clippy::identity_op)]
 pub fn first_intersection_ray(
     ray_org: &[f32],
     ray_dir: &[f32],
@@ -33,6 +34,7 @@ pub fn first_intersection_ray(
     Some((a, hit_pos[0].1))
 }
 
+#[allow(clippy::identity_op)]
 fn triangles_in_sphere(
     pos: [f32; 3],
     rad: f32,

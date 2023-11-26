@@ -166,6 +166,7 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
     (tri2vtx, vtx2xyz)
 }
 
+#[allow(clippy::identity_op)]
 pub fn save_tri_mesh_texture(
     filepath: &str,
     tri2vtx_xyz: &[usize],
@@ -190,6 +191,7 @@ pub fn save_tri_mesh_texture(
     }
 }
 
+#[allow(clippy::identity_op)]
 pub fn save_tri_mesh<P, T>(
     filepath: P,
     tri2vtx: &[usize],

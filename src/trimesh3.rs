@@ -1,5 +1,6 @@
 //! methods for 3D triangle mesh
 
+#[allow(clippy::identity_op)]
 pub fn vtx2normal(
     tri2vtx: &[usize],
     vtx2xyz: &[f64]) -> Vec<f64> {
@@ -41,6 +42,7 @@ pub fn extend_avoid_intersection(
     [q[0], q[1], q[2]]
 }
 
+#[allow(clippy::identity_op)]
 pub fn elem2area(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> Vec<f32>
@@ -57,6 +59,7 @@ pub fn elem2area(
     tri2area
 }
 
+#[allow(clippy::identity_op)]
 pub fn vtx2area(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> Vec<f32> {
@@ -78,6 +81,7 @@ pub fn vtx2area(
     areas
 }
 
+#[allow(clippy::identity_op)]
 pub fn mean_edge_length(
     tri2vtx: &[usize],
     vtx2xyz: &[f32]) -> f32 {
