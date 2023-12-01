@@ -61,7 +61,6 @@ fn test_circle() {
         let edge2length2 = crate::polyloop::edge2length::<f32, 2>(vtx2xy2.as_slice());
         let min_edge_len2 = edge2length2.iter()
             .min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
-        dbg!(min_edge_len2);
         assert!((min_edge_len2-arclen2/ndiv2 as f32).abs()<1.0e-3);
     }
 }

@@ -21,6 +21,14 @@ impl<Real> Node<Real>
     }
 }
 
+impl<Real> Default for Node<Real>
+    where Real: num_traits::Zero
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 
 /// construct Kd-tree recursively
 /// * `nodes`

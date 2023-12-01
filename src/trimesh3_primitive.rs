@@ -232,6 +232,7 @@ fn test_torus_tri3() {
 
 // --------------
 
+/// the spherical cooridnate around y-axis
 #[allow(clippy::identity_op)]
 pub fn from_sphere<T>(
     radius: T,
@@ -292,3 +293,62 @@ pub fn from_sphere<T>(
     }
     (tri2vtx, vtx2xyz)
 }
+
+// ----------------------------------------
+
+#[allow(clippy::identity_op)]
+pub fn from_hemisphere_zup<T>(
+    radius: T,
+    n_longitude: usize,
+    n_latitude: usize)  -> (Vec<usize>, Vec<T>)
+    where T: num_traits::Float + 'static,
+          f32: AsPrimitive<T>,
+          usize: AsPrimitive<T>
+{
+    if n_longitude == 0 || n_latitude <= 2 {
+        return (vec!(), vec!());
+    }
+    let pi: T = std::f32::consts::PI.as_();
+    let dl: T = 0.5.as_() * pi / n_longitude.as_();
+    let dr: T = 2.as_() * pi / n_latitude.as_();
+    let nvtx = n_latitude * n_longitude  + 1;
+    let mut vtx2xyz = Vec::<T>::with_capacity( nvtx * 3);
+    for ila in 0..n_longitude + 1 {
+        let z0 = (dl * ila.as_()).cos();
+        let r0 = (dl * ila.as_()).sin();
+        for ilo in 0..n_latitude {
+            let x0 = r0 * (dr * ilo.as_()).sin();
+            let y0 = r0 * (dr * ilo.as_()).cos();
+            vtx2xyz.push(radius * x0);
+            vtx2xyz.push(radius * y0);
+            vtx2xyz.push(radius * z0);
+            if ila == 0 { break; }
+        }
+    }
+    assert_eq!(nvtx*3,vtx2xyz.len());
+    //
+    let ntri = n_latitude * (n_longitude-1) * 2 + n_latitude;
+    let mut tri2vtx = Vec::<usize>::with_capacity(ntri * 3);
+    for ilo in 0..n_latitude {
+        tri2vtx.push(0);
+        tri2vtx.push((ilo + 0) % n_latitude + 1);
+        tri2vtx.push((ilo + 1) % n_latitude + 1);
+    }
+    for ilong in 0..n_longitude-1 {
+        for ilat in 0..n_latitude {
+            let i1 = (ilong + 0) * n_latitude + 1 + (ilat + 0) % n_latitude;
+            let i2 = (ilong + 0) * n_latitude + 1 + (ilat + 1) % n_latitude;
+            let i3 = (ilong + 1) * n_latitude + 1 + (ilat + 1) % n_latitude;
+            let i4 = (ilong + 1) * n_latitude + 1 + (ilat + 0) % n_latitude;
+            tri2vtx.push(i3);
+            tri2vtx.push(i2);
+            tri2vtx.push(i1);
+            tri2vtx.push(i4);
+            tri2vtx.push(i3);
+            tri2vtx.push(i1);
+        }
+    }
+    assert_eq!(ntri*3,tri2vtx.len());
+    (tri2vtx, vtx2xyz)
+}
+

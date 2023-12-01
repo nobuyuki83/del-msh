@@ -19,6 +19,7 @@ pub struct WavefrontObj<T> {
 }
 
 impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
+
     pub fn new() -> Self {
         WavefrontObj::<T> {
             vtx2xyz: Vec::new(),
@@ -35,6 +36,7 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             mtl2name: Vec::new(),
         }
     }
+
     /// load wavefront obj file into the class
     pub fn load<P: AsRef<std::path::Path>>(
         &mut self,
@@ -150,6 +152,12 @@ impl<T: std::str::FromStr + std::fmt::Display> WavefrontObj<T> {
             self.idx2vtx_nrm = elem2vtx_nrm0.iter().map(
                 |i| if *i >= 0 { *i as usize } else { (nvtx_nrm as i32 + *i) as usize }).collect();
         }
+    }
+}
+
+impl<T: std::str::FromStr + std::fmt::Display> Default for WavefrontObj<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

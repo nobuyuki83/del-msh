@@ -27,10 +27,12 @@ pub mod dijkstra;
 // io
 pub mod io_obj;
 pub mod io_off;
+pub mod io_vtk;
 
 // search
 pub mod kdtree2;
 pub mod bvh3;
+pub mod bvh3_intersection_self;
 
 pub fn merge(
     node2row: &[usize],

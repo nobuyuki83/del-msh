@@ -28,17 +28,17 @@ fn dominant_direction_aabb(
 {
     let aabb = del_geo::aabb3::from_list_of_vertices(
         remaining_elems, elem2center, 1.0e-6);
-    let lenx = aabb.1.x - aabb.0.x;
-    let leny = aabb.1.y - aabb.0.y;
-    let lenz = aabb.1.z - aabb.0.z;
+    let lenx = aabb[3] - aabb[0];
+    let leny = aabb[4] - aabb[1];
+    let lenz = aabb[5] - aabb[2];
     let mut dir = nalgebra::Vector3::<f32>::zeros(); // longest direction of AABB
     if lenx > leny && lenx > lenz { dir.x = 1.; }
     if leny > lenz && leny > lenx { dir.y = 1.; }
     if lenz > lenx && lenz > leny { dir.z = 1.; }
     let org = nalgebra::Vector3::<f32>::new(
-        (aabb.0.x + aabb.1.x) * 0.5,
-        (aabb.0.y + aabb.1.y) * 0.5,
-        (aabb.0.z + aabb.1.z) * 0.5);
+        (aabb[0] + aabb[3]) * 0.5,
+        (aabb[1] + aabb[4]) * 0.5,
+        (aabb[2] + aabb[5]) * 0.5);
     (org, dir)
 }
 
@@ -52,22 +52,6 @@ fn divide_list_of_elements(
     elem2elem: &[usize],
     elem2center: &[f32])
 {
-    assert!(remaining_elems.len() > 1);
-    let (org, mut dir) = dominant_direction_pca(
-        remaining_elems, elem2center);
-    let i_elem_ker = { // pick one element
-        let mut i_elem_ker = usize::MAX;
-        for &i_elem in remaining_elems {
-            let cntr = nalgebra::Vector3::<f32>::from_row_slice(
-                &elem2center[i_elem * 3..i_elem * 3 + 3]);
-            let det0 = (cntr - org).dot(&dir);
-            if det0.abs() < 1.0e-10 { continue; }
-            if det0 < 0. { dir *= -1.; }
-            i_elem_ker = i_elem;
-            break;
-        }
-        i_elem_ker
-    };
     let inode_ch0 = nodes.len() / 3;
     let inode_ch1 = inode_ch0 + 1;
     nodes.resize(nodes.len() + 6, usize::MAX);
@@ -75,29 +59,52 @@ fn divide_list_of_elements(
     nodes[inode_ch1 * 3 + 0] = i_node_root;
     nodes[i_node_root * 3 + 1] = inode_ch0;
     nodes[i_node_root * 3 + 2] = inode_ch1;
-    let mut list_ch0 = vec!(0_usize; 0);
-    {
-        // extract the triangles in the child node 0
-        // triangles connected to `itri_ker` and in the direction of `dir`
-        elem2node[i_elem_ker] = inode_ch0;
-        list_ch0.push(i_elem_ker);
-        let mut elem_stack = vec!(0_usize; 0);
-        elem_stack.push(i_elem_ker);
-        while let Some(itri0) = elem_stack.pop() {
-            for i_face in 0..num_adjacent_elems {
-                let j_elem = elem2elem[itri0 * num_adjacent_elems + i_face];
-                if j_elem == usize::MAX { continue; }
-                if elem2node[j_elem] != i_node_root { continue; }
-                let cntr = nalgebra::Vector3::<f32>::from_row_slice(
-                    &elem2center[j_elem * 3..j_elem * 3 + 3]);
-                if (cntr - org).dot(&dir) < 0. { continue; }
-                elem_stack.push(j_elem);
-                elem2node[j_elem] = inode_ch0;
-                list_ch0.push(j_elem);
+    let list_ch0 = {
+        let mut list_ch0 = vec!(0_usize; 0);
+        if remaining_elems.len() == 2 {
+            let i_tri0 = remaining_elems[0];
+            list_ch0.push(i_tri0);
+            elem2node[i_tri0] = inode_ch0;
+        } else {
+            // extract the triangles in the child node 0
+            assert!(remaining_elems.len() > 1);
+            let (org, mut dir) = dominant_direction_pca(
+                remaining_elems, elem2center);
+            let i_elem_ker = { // pick one element
+                let mut i_elem_ker = usize::MAX;
+                for &i_elem in remaining_elems {
+                    let cntr = nalgebra::Vector3::<f32>::from_row_slice(
+                        &elem2center[i_elem * 3..i_elem * 3 + 3]);
+                    let det0 = (cntr - org).dot(&dir);
+                    if det0.abs() < 1.0e-10 { continue; }
+                    if det0 < 0. { dir *= -1.; }
+                    i_elem_ker = i_elem;
+                    break;
+                }
+                i_elem_ker
+            };
+            // triangles connected to `itri_ker` and in the direction of `dir`
+            elem2node[i_elem_ker] = inode_ch0;
+            list_ch0.push(i_elem_ker);
+            let mut elem_stack = vec!(0_usize; 0);
+            elem_stack.push(i_elem_ker);
+            while let Some(itri0) = elem_stack.pop() {
+                for i_face in 0..num_adjacent_elems {
+                    let j_elem = elem2elem[itri0 * num_adjacent_elems + i_face];
+                    if j_elem == usize::MAX { continue; }
+                    if elem2node[j_elem] != i_node_root { continue; }
+                    let cntr = nalgebra::Vector3::<f32>::from_row_slice(
+                        &elem2center[j_elem * 3..j_elem * 3 + 3]);
+                    if (cntr - org).dot(&dir) < 0. { continue; }
+                    elem_stack.push(j_elem);
+                    elem2node[j_elem] = inode_ch0;
+                    list_ch0.push(j_elem);
+                }
             }
         }
-        assert!(!list_ch0.is_empty());
-    }
+        list_ch0
+    };
+    assert!(!list_ch0.is_empty());
     // extract the triangles in child node １
     // exclude the triangles that is included in the child node 0
     let mut list_ch1 = vec!(0_usize; 0);
@@ -108,7 +115,7 @@ fn divide_list_of_elements(
         list_ch1.push(i_tri);
     }
     assert!(!list_ch1.is_empty());
-// ---------------------------
+    // ---------------------------
     if list_ch0.len() == 1 {
         nodes[inode_ch0 * 3 + 1] = list_ch0[0];
         nodes[inode_ch0 * 3 + 2] = usize::MAX;
@@ -117,7 +124,6 @@ fn divide_list_of_elements(
             inode_ch0, elem2node, nodes,
             &list_ch0, num_adjacent_elems, elem2elem, elem2center);
     }
-    list_ch0.clear();
     // -----------------------------
     if list_ch1.len() == 1 {
         nodes[inode_ch1 * 3 + 1] = list_ch1[0];
@@ -146,7 +152,6 @@ pub fn build_topology_for_uniform_mesh_with_elem2elem_elem2center(
 }
 
 
-
 #[allow(clippy::identity_op)]
 pub fn build_geometry_aabb_for_uniform_mesh(
     aabbs: &mut [f32],
@@ -166,8 +171,8 @@ pub fn build_geometry_aabb_for_uniform_mesh(
         let aabb = del_geo::aabb3::from_list_of_vertices(
             &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
             vtx2xyz, 0.0);
-        aabbs[i_bvhnode * 6 + 0..i_bvhnode * 6 + 3].copy_from_slice(aabb.0.as_slice());
-        aabbs[i_bvhnode * 6 + 3..i_bvhnode * 6 + 6].copy_from_slice(aabb.1.as_slice());
+        aabbs[i_bvhnode * 6 + 0..i_bvhnode * 6 + 3].copy_from_slice(&aabb[0..3]);
+        aabbs[i_bvhnode * 6 + 3..i_bvhnode * 6 + 6].copy_from_slice(&aabb[3..6]);
     } else {  // branch node
         assert_eq!(bvhnodes[i_bvhnode_child0 * 3 + 0], i_bvhnode);
         assert_eq!(bvhnodes[i_bvhnode_child1 * 3 + 0], i_bvhnode);

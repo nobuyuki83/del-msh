@@ -206,3 +206,30 @@ pub fn distance_from_edge3(
     min_dist
 }
 
+
+pub fn winding_number(
+    vtx2xyz: &[f64],
+    org: &[f64],
+    dir: &[f64]) -> f64
+{
+    use num_traits::FloatConst;
+    let org = nalgebra::Vector3::<f64>::from_row_slice(org);
+    let dir = nalgebra::Vector3::<f64>::from_row_slice(dir);
+    let num_vtx = vtx2xyz.len() / 3;
+    assert_eq!(vtx2xyz.len(), num_vtx*3);
+    let mut sum = 0.;
+    for i_edge in 0..num_vtx {
+        let iv0 = i_edge;
+        let iv1 = (i_edge + 1) % num_vtx;
+        let q0 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv0 * 3..(iv0+1) * 3])-org;
+        let q1 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv1 * 3..(iv1+1) * 3])-org;
+        let q0 = q0 - dir.scale(q0.dot(&dir));
+        let q1 = q1 - dir.scale(q1.dot(&dir));
+        let q0 = q0.normalize();
+        let q1 = q1.normalize();
+        let s = q0.cross(&q1).dot(&dir);
+        let c = q0.dot(&q1);
+        sum += s.atan2(c);
+    }
+    sum * f64::FRAC_1_PI() * 0.5
+}

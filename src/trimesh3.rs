@@ -1,5 +1,7 @@
 //! methods for 3D triangle mesh
 
+use num_traits::AsPrimitive;
+
 #[allow(clippy::identity_op)]
 pub fn vtx2normal(
     tri2vtx: &[usize],
@@ -60,12 +62,16 @@ pub fn elem2area(
 }
 
 #[allow(clippy::identity_op)]
-pub fn vtx2area(
+pub fn vtx2area<T>(
     tri2vtx: &[usize],
-    vtx2xyz: &[f32]) -> Vec<f32> {
+    vtx2xyz: &[T]) -> Vec<T>
+where T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
+    f64: AsPrimitive<T>
+{
     let num_vtx = vtx2xyz.len() / 3;
     let num_tri = tri2vtx.len() / 3;
-    let mut areas = vec!(0_f32; num_vtx);
+    let mut areas = vec!(T::zero(); num_vtx);
+    let one_third = T::one() / 3_f64.as_();
     for i_tri in 0..num_tri {
         let i0 = tri2vtx[i_tri * 3 + 0];
         let i1 = tri2vtx[i_tri * 3 + 1];
@@ -73,12 +79,26 @@ pub fn vtx2area(
         let a0 = del_geo::tri3::area_(
             &vtx2xyz[i0 * 3..i0 * 3 + 3],
             &vtx2xyz[i1 * 3..i1 * 3 + 3],
-            &vtx2xyz[i2 * 3..i2 * 3 + 3]) / 3_f32;
+            &vtx2xyz[i2 * 3..i2 * 3 + 3]) * one_third;
         areas[i0] += a0;
         areas[i1] += a0;
         areas[i2] += a0;
     }
     areas
+}
+
+
+#[cfg(test)]
+mod tests {
+    use num_traits::FloatConst;
+    #[test]
+    fn test_vtx2area() {
+        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::from_sphere(
+            1_f64, 128, 256);
+        let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
+        let total_area: f64 = vtx2area.iter().sum();
+        assert!((total_area - f64::PI() * 4.0).abs() < 1.0e-2);
+    }
 }
 
 #[allow(clippy::identity_op)]
