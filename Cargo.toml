@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/nobuyuki83/del-msh/"
-description = "mesh utility library for computer graphics research"
+description = "mesh utility library for computer graphics research and prototyping"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,5 +15,5 @@ num-traits = "0.2.17"
 nalgebra = "0.32.3"
 ordered-float = "4.1.1"
 
-del-geo = {path="../del-geo"}
-# del-geo = "0.1.11"
+# del-geo = {path="../del-geo"}
+del-geo = "0.1.11"
