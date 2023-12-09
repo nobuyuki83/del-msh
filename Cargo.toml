@@ -13,7 +13,7 @@ description = "mesh utility library for computer graphics research and prototypi
 rand = "0.8.5"
 num-traits = "0.2.17"
 nalgebra = "0.32.3"
-ordered-float = "4.1.1"
+ordered-float = "4.2.0"
 
 # del-geo = {path="../del-geo"}
 del-geo = "0.1.11"

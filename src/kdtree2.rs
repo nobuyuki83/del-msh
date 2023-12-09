@@ -19,6 +19,14 @@ pub fn construct_kdtree<Real>(
     i_depth: i32)
     where Real: nalgebra::RealField + Copy
 {
+    if points.is_empty() {
+        tree.clear();
+        return;
+    }
+    if idx_node == 0 {
+        tree.resize(3, usize::MAX);
+    }
+
     if idx_point_end - idx_point_begin == 1 { // leaf node
         tree[idx_node * 3 + 0] = points[idx_point_begin].1;
         return;
@@ -216,7 +224,6 @@ mod tests {
                     (nalgebra::Vector2::<Real>::new(xy[0], xy[1]), ivtx))
                 .collect();
             let mut tree = Vec::<usize>::new();
-            tree.resize(3, usize::MAX);
             crate::kdtree2::construct_kdtree(
                 &mut tree, 0,
                 &mut pairs_xy_idx, 0, xys.len() / 2,
