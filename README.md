@@ -9,7 +9,7 @@ See [the documentation generated from code](https://docs.rs/del-msh).
 [Python binding](https://github.com/nobuyuki83/pydel-msh) is available.
 
 > [!WARNING]
-> **del-msh** is still in its initial development phase. Crates published to https://crates.io in the 0.0.x series do not obey SemVer and are unstable.
+> **del-msh** is still in its initial development phase. Crates published to https://crates.io/crates/del-msh in the 0.1.x series do not obey SemVer and are unstable.
 
 - [x] generating primitive meshes (sphere, cylinder, torus)
 - [x] load/save wavefront obj mesh
