@@ -16,7 +16,7 @@ pub fn from_vtx2vtx(
     line2vtx
 }
 
-pub fn from_sepecific_edges_of_uniform_mesh(
+pub fn from_specific_edges_of_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     edge2node: &[usize],

@@ -1,5 +1,6 @@
-use num_traits::AsPrimitive;
+//! method for quad mesh
 
+use num_traits::AsPrimitive;
 #[allow(clippy::identity_op)]
 pub fn from_grid<T>(
     nx: usize,

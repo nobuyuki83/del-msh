@@ -1,3 +1,5 @@
+//! compute the centers of elements in the mesh used mainly for constructing spatial hash
+
 pub fn from_uniform_mesh<T>(
     elem2vtx: &[usize],
     num_node: usize,

@@ -1,3 +1,5 @@
+//! method for finding self-intersection using BVH
+
 pub struct IntersectingPair {
     pub i_tri: usize,
     pub j_tri: usize,

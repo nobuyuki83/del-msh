@@ -1,3 +1,5 @@
+//! method for VTK files
+
 pub enum VtkElementType {
     TRIANGLE = 5,
     QUAD = 9,

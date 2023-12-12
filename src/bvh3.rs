@@ -1,3 +1,5 @@
+//! method for 3D Bounding Volume Hierarchy
+
 fn dominant_direction_pca(
     remaining_elems: &[usize],
     elem2center: &[f32]) -> (nalgebra::Vector3::<f32>, nalgebra::Vector3::<f32>)

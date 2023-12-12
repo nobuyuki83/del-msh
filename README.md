@@ -9,7 +9,7 @@ Originally, the code is written in C++ as [DelFEM2](https://github.com/nobuyuki8
 🐍 [Python binding](https://github.com/nobuyuki83/pydel-msh) is available.
 
 > [!WARNING]
-> ⚠ **del-msh** is still in its initial development phase. Crates published to https://crates.io/crates/del-msh in the 0.1.x series do not obey SemVer and are unstable.
+> **del-msh** is still in its initial development phase. Crates published to https://crates.io/crates/del-msh in the 0.1.x series do not obey SemVer and are unstable.
 
 ## Features
 
