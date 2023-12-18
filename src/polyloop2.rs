@@ -67,7 +67,7 @@ pub fn is_inside<Real>(
             &vtx2xy[i * 2..(i + 1) * 2],
             &vtx2xy[j * 2..(j + 1) * 2], p);
     }
-    if (wn - Real::one()).abs() < 0.01.as_() { return true; }
+    if (wn - Real::one()).abs() < 0.1.as_() { return true; }
     false
 }
 
