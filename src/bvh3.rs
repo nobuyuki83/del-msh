@@ -1,21 +1,26 @@
 //! method for 3D Bounding Volume Hierarchy
 
-fn dominant_direction_pca(
+use num_traits::AsPrimitive;
+
+fn dominant_direction_pca<T>(
     remaining_elems: &[usize],
-    elem2center: &[f32]) -> (nalgebra::Vector3::<f32>, nalgebra::Vector3::<f32>)
+    elem2center: &[T])
+    -> (nalgebra::Vector3::<T>, nalgebra::Vector3::<T>)
+    where T: nalgebra::RealField + 'static + Copy,
+    usize: AsPrimitive<T>
 {
-    let mut org = nalgebra::Vector3::<f32>::zeros();
+    let mut org = nalgebra::Vector3::<T>::zeros();
     for i_tri in remaining_elems { // center of the gravity of list
-        org += nalgebra::Vector3::<f32>::from_row_slice(&elem2center[i_tri * 3..i_tri * 3 + 3]);
+        org += nalgebra::Vector3::<T>::from_row_slice(&elem2center[i_tri * 3..i_tri * 3 + 3]);
     }
-    org /= remaining_elems.len() as f32;
-    let mut cov = nalgebra::Matrix3::<f32>::zeros();
+    org /= remaining_elems.len().as_();
+    let mut cov = nalgebra::Matrix3::<T>::zeros();
     for i_tri in remaining_elems {
-        let v = nalgebra::Vector3::<f32>::from_row_slice(
+        let v = nalgebra::Vector3::<T>::from_row_slice(
             &elem2center[i_tri * 3..i_tri * 3 + 3]) - org;
         cov += v * v.transpose();
     }
-    let mut dir = nalgebra::Vector3::<f32>::new(1., 1., 1.);
+    let mut dir = nalgebra::Vector3::<T>::new(T::one(), T::one(), T::one());
     for _ in 0..10 {// power method to find the max eigen value/vector
         dir = cov * dir;
         dir = dir.normalize();
@@ -45,14 +50,17 @@ fn dominant_direction_aabb(
 }
 
 #[allow(clippy::identity_op)]
-fn divide_list_of_elements(
+fn divide_list_of_elements<T>(
     i_node_root: usize,
     elem2node: &mut [usize],
     nodes: &mut Vec<usize>,
     remaining_elems: &[usize],
     num_adjacent_elems: usize,
     elem2elem: &[usize],
-    elem2center: &[f32])
+    elem2center: &[T])
+where T: nalgebra::RealField + Copy + 'static,
+    usize: AsPrimitive<T>,
+      f64: AsPrimitive<T>
 {
     let inode_ch0 = nodes.len() / 3;
     let inode_ch1 = inode_ch0 + 1;
@@ -75,11 +83,11 @@ fn divide_list_of_elements(
             let i_elem_ker = { // pick one element
                 let mut i_elem_ker = usize::MAX;
                 for &i_elem in remaining_elems {
-                    let cntr = nalgebra::Vector3::<f32>::from_row_slice(
+                    let cntr = nalgebra::Vector3::<T>::from_row_slice(
                         &elem2center[i_elem * 3..i_elem * 3 + 3]);
                     let det0 = (cntr - org).dot(&dir);
-                    if det0.abs() < 1.0e-10 { continue; }
-                    if det0 < 0. { dir *= -1.; }
+                    if det0.abs() < 1.0e-10f64.as_() { continue; }
+                    if det0 < T::zero() { dir *= -(T::one()); }
                     i_elem_ker = i_elem;
                     break;
                 }
@@ -95,9 +103,9 @@ fn divide_list_of_elements(
                     let j_elem = elem2elem[itri0 * num_adjacent_elems + i_face];
                     if j_elem == usize::MAX { continue; }
                     if elem2node[j_elem] != i_node_root { continue; }
-                    let cntr = nalgebra::Vector3::<f32>::from_row_slice(
+                    let cntr = nalgebra::Vector3::<T>::from_row_slice(
                         &elem2center[j_elem * 3..j_elem * 3 + 3]);
-                    if (cntr - org).dot(&dir) < 0. { continue; }
+                    if (cntr - org).dot(&dir) < T::zero() { continue; }
                     elem_stack.push(j_elem);
                     elem2node[j_elem] = inode_ch0;
                     list_ch0.push(j_elem);
@@ -138,10 +146,13 @@ fn divide_list_of_elements(
 }
 
 
-pub fn build_topology_for_uniform_mesh_with_elem2elem_elem2center(
+pub fn build_topology_for_uniform_mesh_with_elem2elem_elem2center<T>(
     elem2elem: &[usize],
     num_adjacent_elems: usize,
-    elem2center: &[f32]) -> Vec<usize>
+    elem2center: &[T]) -> Vec<usize>
+where T: nalgebra::RealField + Copy + 'static,
+    usize: AsPrimitive<T>,
+    f64: AsPrimitive<T>
 {
     let nelem = elem2center.len() / 3;
     let remaining_elems: Vec<usize> = (0..nelem).collect();
@@ -153,15 +164,40 @@ pub fn build_topology_for_uniform_mesh_with_elem2elem_elem2center(
     nodes
 }
 
+pub fn build_topology_for_triangle_mesh<T>(
+    tri2vtx: &[usize],
+    vtx2xyz: &[T]) -> Vec<usize>
+where T: num_traits::Float + std::ops::AddAssign + 'static + Copy + nalgebra::RealField,
+      f64: AsPrimitive<T>,
+    usize: AsPrimitive<T>
+{
+    let (face2idx, idx2node)
+        = crate::elem2elem::face2node_of_simplex_element(3);
+    let tri2tri= crate::elem2elem::from_uniform_mesh(
+        tri2vtx, 3,
+        &face2idx, &idx2node,
+        vtx2xyz.len()/3);
+    let tri2center = crate::elem2center::from_uniform_mesh(
+        tri2vtx, 3,
+        vtx2xyz, 3);
+    crate::bvh3::build_topology_for_uniform_mesh_with_elem2elem_elem2center(
+        &tri2tri ,3, &tri2center)
+}
 
+
+/// build aabb for uniform mesh
+/// if 'elem2vtx' is empty, bvh stores the vertex index directly
+/// if 'vtx2xyz1' is not empty, compute AABB for Continous-Collision Detection (CCD)
 #[allow(clippy::identity_op)]
-pub fn build_geometry_aabb_for_uniform_mesh(
-    aabbs: &mut [f32],
+pub fn build_geometry_aabb_for_uniform_mesh<T>(
+    aabbs: &mut [T],
     i_bvhnode: usize,
     bvhnodes: &[usize],
     elem2vtx: &[usize],
     num_noel: usize,
-    vtx2xyz: &[f32])
+    vtx2xyz0: &[T],
+    vtx2xyz1: &[T])
+where T: num_traits::Float
 {
     // aabbs.resize();
     assert_eq!(aabbs.len() / 6, bvhnodes.len() / 3);
@@ -170,25 +206,44 @@ pub fn build_geometry_aabb_for_uniform_mesh(
     let i_bvhnode_child1 = bvhnodes[i_bvhnode * 3 + 2];
     if i_bvhnode_child1 == usize::MAX { // leaf node
         let i_elem = i_bvhnode_child0;
-        let aabb = del_geo::aabb3::from_list_of_vertices(
-            &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-            vtx2xyz, 0.0);
-        aabbs[i_bvhnode * 6 + 0..i_bvhnode * 6 + 3].copy_from_slice(&aabb[0..3]);
-        aabbs[i_bvhnode * 6 + 3..i_bvhnode * 6 + 6].copy_from_slice(&aabb[3..6]);
+        let aabb = if !elem2vtx.is_empty() { // element index is provided
+            let aabb0 = del_geo::aabb3::from_list_of_vertices(
+                &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
+                vtx2xyz0, T::zero());
+            if vtx2xyz1.is_empty() { aabb0 }
+            else {
+                let aabb1 = del_geo::aabb3::from_list_of_vertices(
+                    &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
+                    vtx2xyz1, T::zero());
+                del_geo::aabb3::from_two_aabbs_slice6(&aabb0,&aabb1)
+            }
+        } else {
+            let aabb0 = [ vtx2xyz0[i_elem*3+0],  vtx2xyz0[i_elem*3+1], vtx2xyz0[i_elem*3+2],
+                vtx2xyz0[i_elem*3+0],  vtx2xyz0[i_elem*3+1], vtx2xyz0[i_elem*3+2]];
+            if vtx2xyz1.is_empty() { aabb0 }
+            else {
+                let aabb1 = [ vtx2xyz1[i_elem*3+0],  vtx2xyz1[i_elem*3+1], vtx2xyz1[i_elem*3+2],
+                    vtx2xyz1[i_elem*3+0],  vtx2xyz1[i_elem*3+1], vtx2xyz1[i_elem*3+2]];
+                del_geo::aabb3::from_two_aabbs_slice6(&aabb0,&aabb1)
+            }
+        };
+        aabbs[i_bvhnode * 6 + 0..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
     } else {  // branch node
         assert_eq!(bvhnodes[i_bvhnode_child0 * 3 + 0], i_bvhnode);
         assert_eq!(bvhnodes[i_bvhnode_child1 * 3 + 0], i_bvhnode);
         // build right tree
         build_geometry_aabb_for_uniform_mesh(
             aabbs,
-            i_bvhnode_child0, bvhnodes, elem2vtx, num_noel, vtx2xyz);
+            i_bvhnode_child0, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1);
         // build left tree
         build_geometry_aabb_for_uniform_mesh(
             aabbs,
-            i_bvhnode_child1, bvhnodes, elem2vtx, num_noel, vtx2xyz);
+            i_bvhnode_child1, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1);
         let aabb = del_geo::aabb3::from_two_aabbs_slice6(
             &aabbs[i_bvhnode_child0 * 6..(i_bvhnode_child0 + 1) * 6],
             &aabbs[i_bvhnode_child1 * 6..(i_bvhnode_child1 + 1) * 6]);
         aabbs[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
     }
 }
+
+

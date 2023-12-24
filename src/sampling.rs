@@ -98,6 +98,3 @@ where T: num_traits::Float
         r0 * p0[2] + r1 * p1[2] + r2 * p2[2]]
 }
 
-// ---------------------------
-// below: private functions
-

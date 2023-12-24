@@ -1,21 +1,22 @@
 //! method for finding self-intersection using BVH
 
-pub struct IntersectingPair {
+pub struct IntersectingPair<T>{
     pub i_tri: usize,
     pub j_tri: usize,
-    pub p0: nalgebra::Vector3::<f32>,
-    pub p1: nalgebra::Vector3::<f32>,
+    pub p0: nalgebra::Vector3::<T>,
+    pub p1: nalgebra::Vector3::<T>,
 }
 
 #[allow(clippy::identity_op)]
-pub fn intersection_triangle_mesh_between_bvh_branches(
-    pairs: &mut Vec<IntersectingPair>,
+pub fn intersection_triangle_mesh_between_bvh_branches<T>(
+    pairs: &mut Vec<IntersectingPair<T>>,
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[T],
     ibvh0: usize,
     ibvh1: usize,
     bvhnodes: &[usize],
-    aabbs: &[f32])
+    aabbs: &[T])
+where T: nalgebra::RealField + Copy
 {
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
@@ -62,12 +63,12 @@ pub fn intersection_triangle_mesh_between_bvh_branches(
         if i1 == j0 || i1 == j1 || i1 == j2 { return; };
         if i2 == j0 || i2 == j1 || i2 == j2 { return; };
         let res = del_geo::tri3::is_intersection_tri3(
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[i0 * 3..(i0 + 1) * 3]),
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[i1 * 3..(i1 + 1) * 3]),
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[i2 * 3..(i2 + 1) * 3]),
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[j0 * 3..(j0 + 1) * 3]),
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[j1 * 3..(j1 + 1) * 3]),
-            &nalgebra::Vector3::<f32>::from_row_slice(&vtx2xyz[j2 * 3..(j2 + 1) * 3]));
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i0 * 3..(i0 + 1) * 3]),
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i1 * 3..(i1 + 1) * 3]),
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i2 * 3..(i2 + 1) * 3]),
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[j0 * 3..(j0 + 1) * 3]),
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[j1 * 3..(j1 + 1) * 3]),
+            &nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[j2 * 3..(j2 + 1) * 3]));
         if let Some((p0, p1)) = res {
             let itp = IntersectingPair {
                 i_tri: itri,
@@ -80,13 +81,14 @@ pub fn intersection_triangle_mesh_between_bvh_branches(
     }
 }
 
-pub fn intersection_triangle_mesh_inside_branch(
-    tripairs: &mut Vec<IntersectingPair>,
+pub fn intersection_triangle_mesh_inside_branch<T>(
+    tripairs: &mut Vec<IntersectingPair<T>>,
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[T],
     ibvh: usize,
     bvhnodes: &[usize],
-    aabbs: &[f32])
+    aabbs: &[T])
+ where T: nalgebra::RealField + Copy
 {
     let ichild0 = bvhnodes[ibvh * 3 + 1];
     let ichild1 = bvhnodes[ibvh * 3 + 2];
@@ -103,7 +105,7 @@ pub fn intersection_triangle_mesh_inside_branch(
 #[cfg(test)]
 mod tests {
     use crate::{elem2center, elem2elem};
-    use crate::bvh3_intersection_self::IntersectingPair;
+    use crate::bvh3_selfintersection::IntersectingPair;
 
     #[test]
     fn test0() {
@@ -119,9 +121,9 @@ mod tests {
         let mut aabb = Vec::<f32>::new();
         aabb.resize(bvhnodes.len() / 3 * 6, 0.);
         crate::bvh3::build_geometry_aabb_for_uniform_mesh(
-            &mut aabb, 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz);
-        let mut pairs = Vec::<IntersectingPair>::new();
-        crate::bvh3_intersection_self::intersection_triangle_mesh_inside_branch(
+            &mut aabb, 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, &[]);
+        let mut pairs = Vec::<IntersectingPair<f32>>::new();
+        crate::bvh3_selfintersection::intersection_triangle_mesh_inside_branch(
             &mut pairs, &tri2vtx, &vtx2xyz, 0, &bvhnodes, &aabb);
         assert_eq!(pairs.len(), 0);
     }

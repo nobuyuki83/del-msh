@@ -27,6 +27,8 @@ where T: std::fmt::Display
     }
 }
 
+/// load OFF file and output triangle mesh
+/// * `file_path` - path to the file
 pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     file_path: P) -> (Vec<usize>, Vec<f64>)
 {
@@ -42,7 +44,7 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     use std::str::FromStr;
     let num_vtx = usize::from_str(strs[1]).unwrap();
     let num_elem = usize::from_str(strs[2]).unwrap();
-    dbg!(num_vtx, num_elem);
+    // dbg!(num_vtx, num_elem);
     let mut vtx2xyz = Vec::<f64>::new();
     vtx2xyz.reserve(num_vtx*3);
     for _i_vtx in 0..num_vtx {

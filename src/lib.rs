@@ -6,21 +6,23 @@ pub mod edge2vtx;
 pub mod tri2vtx;
 pub mod unify_index;
 
-// mesh from here
+// functions specific to type of mesh
+pub mod map_idx;
 pub mod polyloop;
 pub mod polyloop2;
 pub mod polyloop3;
 pub mod polyline;
 pub mod trimesh2;
 pub mod trimesh3;
-pub mod trimesh3_search;
+pub mod trimesh3_primitive;
 pub mod quadmesh;
+
+// functions
 pub mod elem2group;
 pub mod elem2center;
 pub mod sampling;
 pub mod transform;
 pub mod extract;
-pub mod trimesh3_primitive;
 pub mod unindex;
 pub mod dijkstra;
 
@@ -33,7 +35,11 @@ pub mod io_nas;
 // search
 pub mod kdtree2;
 pub mod bvh3;
-pub mod bvh3_intersection_self;
+pub mod bvh3_selfintersection;
+pub mod trimesh3_search;
+pub mod bvh3_ccd;
+pub mod bvh3_morton;
+pub mod bvh;
 
 
 pub fn merge(

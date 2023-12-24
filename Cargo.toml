@@ -1,6 +1,6 @@
 [package]
 name = "del-msh"
-version = "0.1.20"
+version = "0.1.21"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -16,4 +16,4 @@ nalgebra = "0.32.3"
 ordered-float = "4.2.0"
 
 #del-geo = {path="../del-geo"}
-del-geo = "0.1.12"
+del-geo = "0.1.13"

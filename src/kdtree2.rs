@@ -1,4 +1,4 @@
-//! class and methods for 2D Kd-tree
+//! methods for 2D Kd-tree
 
 use num_traits::AsPrimitive;
 

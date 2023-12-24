@@ -152,8 +152,8 @@ fn test_capsule_tri3() {
 
 
 pub fn from_capsule_connecting_two_point<T>(
-    p0: [T;3],
-    p1: [T;3],
+    p0: &[T],
+    p1: &[T],
     rad: T,
     ndiv_circum: usize,
     ndiv_longtitude: usize,
@@ -163,8 +163,8 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>
 {
-    let p0 = nalgebra::Vector3::<T>::from_column_slice(&p0);
-    let p1 = nalgebra::Vector3::<T>::from_column_slice(&p1);
+    let p0 = nalgebra::Vector3::<T>::from_column_slice(p0);
+    let p1 = nalgebra::Vector3::<T>::from_column_slice(p1);
     let len = (p1-p0).norm();
     let (tri2vtx, mut vtx2xyz) = from_capsule(
         rad, len,

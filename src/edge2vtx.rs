@@ -46,5 +46,5 @@ pub fn edge_of_polygon_mesh(
         elem2idx, idx2vtx,
         &vtx2elem.0, &vtx2elem.1,
         false);
-    crate::edge2vtx::from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
+    from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
 }

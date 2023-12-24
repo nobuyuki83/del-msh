@@ -52,6 +52,29 @@ pub fn smooth_frame<T>(
     match_frames_of_two_ends(vtx2xyz, &vtx2bin0)
 }
 
+pub fn normal_binormal<T>(
+    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX::<T>, nalgebra::Matrix3xX::<T>)
+where T: nalgebra::RealField + Copy
+{
+    let num_vtx = vtx2xyz.len()/3;
+    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    let mut vtx2nrm = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    for ivtx1 in 0..num_vtx {
+        let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
+        let ivtx2 = (ivtx1 + 1) % num_vtx;
+        let v0 = del_geo::vec3::navec3(vtx2xyz, ivtx0);
+        let v1 = del_geo::vec3::navec3(vtx2xyz, ivtx1);
+        let v2 = del_geo::vec3::navec3(vtx2xyz, ivtx2);
+        let v01 = v1- v0;
+        let v12 = v2 - v1;
+        let binormal = v12.cross(&v01);
+        vtx2bin.column_mut(ivtx1).copy_from(&binormal.normalize());
+        let norm = (v01 + v12).cross(&binormal);
+        vtx2nrm.column_mut(ivtx1).copy_from(&norm.normalize());
+    }
+    (vtx2nrm,vtx2bin)
+}
+
 pub fn tube_mesh(
     vtx2xyz: &nalgebra::Matrix3xX::<f32>,
     vtx2bin: &nalgebra::Matrix3xX::<f32>,
