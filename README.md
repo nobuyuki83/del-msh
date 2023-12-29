@@ -20,4 +20,5 @@ Originally, the code is written in C++ as [DelFEM2](https://github.com/nobuyuki8
 - [x] adjacent element 
 - [x] Kd-tree
 - [x] Bounding Box Hierarchy (BVH)
+- [x] intersection of triangle mesh (intersection, proximity, CCD)
 

@@ -30,7 +30,7 @@ pub fn first_intersection_ray(
     let a = [
         t * ray_dir[0] + ray_org[0],
         t * ray_dir[1] + ray_org[1],
-        t * ray_dir[2] + ray_org[2] ];
+        t * ray_dir[2] + ray_org[2]];
     Some((a, hit_pos[0].1))
 }
 
@@ -41,8 +41,9 @@ fn triangles_in_sphere(
     itri0: usize,
     vtx2xyz: &[f32],
     tri2vtx: &[usize],
-    tri2adjtri: &[usize]) -> Vec<usize> {
-    use del_geo::{tri3, vec3};
+    tri2adjtri: &[usize]) -> Vec<usize>
+{
+    use del_geo::{tri3, vec3, vec3::navec3};
     let mut res = Vec::<usize>::new();
     let mut searched = std::collections::BTreeSet::<usize>::new();
     let mut next0 = Vec::<usize>::new();
@@ -54,12 +55,12 @@ fn triangles_in_sphere(
             let i0 = tri2vtx[iel0 * 3 + 0];
             let i1 = tri2vtx[iel0 * 3 + 1];
             let i2 = tri2vtx[iel0 * 3 + 2];
-            let (pn, _r0, _r1) = tri3::nearest_to_point3_(
-                &pos,
-                &vtx2xyz[i0 * 3..i0 * 3 + 3],
-                &vtx2xyz[i1 * 3..i1 * 3 + 3],
-                &vtx2xyz[i2 * 3..i2 * 3 + 3]);
-            vec3::distance_(&pn, &pos)
+            let (pn, _r0, _r1) = tri3::nearest_to_point3(
+                &navec3(vtx2xyz, i0),
+                &navec3(vtx2xyz, i1),
+                &navec3(vtx2xyz, i2),
+                &nalgebra::Vector3::<f32>::from_row_slice(&pos));
+            vec3::distance_(pn.as_slice(), &pos)
         };
         if dist_min > rad { continue; }
         res.push(iel0);
@@ -76,7 +77,7 @@ pub fn is_point_inside_sphere(
     smpli: &(usize, f32, f32),
     rad: f32,
     samples: &[(usize, f32, f32)],
-    elem2smpl: &std::collections::HashMap<usize, Vec<usize> >,
+    elem2smpl: &std::collections::HashMap<usize, Vec<usize>>,
     vtx2xyz: &[f32],
     tri2vtx: &[usize],
     tri2adjtri: &[usize]) -> bool
@@ -103,3 +104,5 @@ pub fn is_point_inside_sphere(
     }
     false
 }
+
+

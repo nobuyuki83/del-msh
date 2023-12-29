@@ -16,7 +16,7 @@ pub fn from_vtx2vtx(
     line2vtx
 }
 
-pub fn from_specific_edges_of_uniform_mesh(
+pub fn from_uniform_mesh_with_specific_edges(
     elem2vtx: &[usize],
     num_node: usize,
     edge2node: &[usize],
@@ -32,10 +32,19 @@ pub fn from_specific_edges_of_uniform_mesh(
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
 }
 
+pub fn from_triangle_mesh(
+    tri2vtx: &[usize],
+    num_vtx: usize) -> Vec<usize>
+{
+    from_uniform_mesh_with_specific_edges(
+        tri2vtx, 3,
+        &[0,1,1,2,2,0], num_vtx)
+}
+
 /// generate line mesh as edges of polygon mesh
 /// polygon mesh is a mixture of triangle, quadrilateal, pentagon mesh
 /// * `num_vtx` - number of vertex
-pub fn edge_of_polygon_mesh(
+pub fn from_polygon_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     num_vtx: usize) -> Vec<usize> {

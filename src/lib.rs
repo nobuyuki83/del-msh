@@ -14,6 +14,7 @@ pub mod polyloop3;
 pub mod polyline;
 pub mod trimesh2;
 pub mod trimesh3;
+pub mod trimesh3_search_bruteforce;
 pub mod trimesh3_primitive;
 pub mod quadmesh;
 
@@ -35,11 +36,14 @@ pub mod io_nas;
 // search
 pub mod kdtree2;
 pub mod bvh3;
-pub mod bvh3_selfintersection;
-pub mod trimesh3_search;
-pub mod bvh3_ccd;
-pub mod bvh3_morton;
+pub mod bvh3_topology_morton;
 pub mod bvh;
+pub mod bvh3_topology_topdown;
+
+// self intersection
+pub mod trimesh3_intersection;
+pub mod trimesh3_intersection_time;
+pub mod trimesh3_proximity;
 
 
 pub fn merge(

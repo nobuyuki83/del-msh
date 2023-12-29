@@ -29,8 +29,9 @@ where T: std::fmt::Display
 
 /// load OFF file and output triangle mesh
 /// * `file_path` - path to the file
-pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
-    file_path: P) -> (Vec<usize>, Vec<f64>)
+pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, T>(
+    file_path: P) -> (Vec<usize>, Vec<T>)
+where T: std::str::FromStr, <T as std::str::FromStr>::Err: std::fmt::Debug
 {
     let file = std::fs::File::open(file_path).expect("file not found.");
     let mut reader = std::io::BufReader::new(file);
@@ -45,7 +46,7 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
     let num_vtx = usize::from_str(strs[1]).unwrap();
     let num_elem = usize::from_str(strs[2]).unwrap();
     // dbg!(num_vtx, num_elem);
-    let mut vtx2xyz = Vec::<f64>::new();
+    let mut vtx2xyz = Vec::<T>::new();
     vtx2xyz.reserve(num_vtx*3);
     for _i_vtx in 0..num_vtx {
         let _ = reader.read_line(&mut line);
@@ -53,9 +54,9 @@ pub fn load_as_tri_mesh<P: AsRef<std::path::Path>>(
         let strs: Vec<_> = strs.split_whitespace().collect();
         line.clear();
         assert_eq!(strs.len(),3);
-        let x = f64::from_str(strs[0]).unwrap();
-        let y = f64::from_str(strs[1]).unwrap();
-        let z = f64::from_str(strs[2]).unwrap();
+        let x = T::from_str(strs[0]).unwrap();
+        let y = T::from_str(strs[1]).unwrap();
+        let z = T::from_str(strs[2]).unwrap();
         vtx2xyz.push(x);
         vtx2xyz.push(y);
         vtx2xyz.push(z);
