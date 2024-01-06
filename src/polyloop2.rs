@@ -71,6 +71,28 @@ pub fn is_inside<Real>(
     false
 }
 
+pub fn distance_to_point<Real>(
+    vtx2xy: &[Real],
+    p: &[Real]) -> Real
+where Real: nalgebra::RealField + Copy,
+    f64: AsPrimitive<Real>
+{
+    let g = nalgebra::Vector2::<Real>::from_row_slice(p);
+    // visit all the boudnary
+    let np = vtx2xy.len() / 2;
+    let mut dist_min = Real::max_value().unwrap();
+    for ip in 0..np {
+        let jp = (ip + 1) % np;
+        let pi = del_geo::vec2::to_na(vtx2xy, ip);
+        let pj = del_geo::vec2::to_na(vtx2xy, jp);
+        let dist = del_geo::edge::distance_to_point(&g, &pi, &pj);
+        if dist < dist_min {
+            dist_min = dist;
+        }
+    }
+    dist_min
+}
+
 pub fn to_uniform_density_random_points<Real>(
     vtx2xy: &[Real],
     cell_len: Real,
@@ -94,6 +116,25 @@ pub fn to_uniform_density_random_points<Real>(
             if !is_inside { continue; }
             res.push(x);
             res.push(y);
+        }
+    }
+    res
+}
+
+#[allow(clippy::identity_op)]
+pub fn to_svg<Real>(
+    vtx2xy: &[Real],
+    transform: &nalgebra::Matrix3::<Real>) -> String
+where Real: std::fmt::Display + Copy + nalgebra::RealField
+{
+    let mut res = String::new();
+    for ivtx in 0..vtx2xy.len() / 2 {
+        let x = vtx2xy[ivtx*2+0];
+        let y = vtx2xy[ivtx*2+1];
+        let a = transform * nalgebra::Vector3::<Real>::new(x, y, Real::one());
+        res += format!("{} {}", a.x, a.y).as_str();
+        if ivtx != vtx2xy.len()/2 - 1 {
+            res += ",";
         }
     }
     res

@@ -46,8 +46,7 @@ where T: std::str::FromStr, <T as std::str::FromStr>::Err: std::fmt::Debug
     let num_vtx = usize::from_str(strs[1]).unwrap();
     let num_elem = usize::from_str(strs[2]).unwrap();
     // dbg!(num_vtx, num_elem);
-    let mut vtx2xyz = Vec::<T>::new();
-    vtx2xyz.reserve(num_vtx*3);
+    let mut vtx2xyz = Vec::<T>::with_capacity(num_vtx*3);
     for _i_vtx in 0..num_vtx {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();
@@ -61,8 +60,7 @@ where T: std::str::FromStr, <T as std::str::FromStr>::Err: std::fmt::Debug
         vtx2xyz.push(y);
         vtx2xyz.push(z);
     }
-    let mut elem2vtx = Vec::<usize>::new();
-    elem2vtx.reserve(num_elem*3);
+    let mut elem2vtx = Vec::<usize>::with_capacity(num_elem*3);
     for _i_elem in 0..num_elem {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();

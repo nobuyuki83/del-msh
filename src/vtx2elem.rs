@@ -8,8 +8,7 @@ pub fn from_polygon_mesh(
     num_vtx: usize) -> (Vec<usize>, Vec<usize>)
 {
     let num_elem = elem2idx.len() - 1;
-    let mut vtx2jdx = Vec::new();
-    vtx2jdx.resize(num_vtx + 1, 0);
+    let mut vtx2jdx = vec![0usize;num_vtx + 1];
     for ielem in 0..num_elem {
         for ivtx0 in &idx2vtx[elem2idx[ielem]..elem2idx[ielem + 1]] {
             vtx2jdx[ivtx0 + 1] += 1;
