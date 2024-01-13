@@ -89,7 +89,7 @@ mod test {
 
     #[test]
     fn trimesh3_scalardata() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::from_hemisphere_zup::<f64>(
+        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::hemisphere_zup::<f64>(
             1., 16, 32);
         let mut file = std::fs::File::create("target/trimesh3.vtk").expect("file not found.");
         let _ = crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3);

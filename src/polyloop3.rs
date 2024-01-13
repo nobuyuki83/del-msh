@@ -2,6 +2,34 @@
 
 use num_traits::AsPrimitive;
 
+pub fn vtx2framex<T>(
+    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
+    where T: nalgebra::RealField + 'static + Copy,
+          f64: num_traits::AsPrimitive<T>
+{
+    use del_geo::vec3::to_na;
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    {   // first segment
+        let v01 = (to_na(vtx2xyz, 1) - to_na(vtx2xyz, 0)).into_owned();
+        let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
+        vtx2bin.column_mut(0).copy_from(&x);
+    }
+    for iseg1 in 1..num_vtx { // parallel transport
+        let iv0 = iseg1 - 1;
+        let iv1 = iseg1;
+        let iv2 = (iseg1 + 1)%num_vtx;
+        let iseg0 = iseg1 - 1;
+        let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
+        let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
+        let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
+        let b01: nalgebra::Vector3::<T> = vtx2bin.column(iseg0).into_owned();
+        let b12: nalgebra::Vector3::<T> = rot * b01;
+        vtx2bin.column_mut(iseg1).copy_from(&b12);
+    }
+    vtx2bin
+}
+
 fn match_frames_of_two_ends<T>(
     vtx2xyz: &[T],
     vtx2bin0: &nalgebra::Matrix3xX::<T>) -> nalgebra::Matrix3xX::<T>
@@ -9,14 +37,14 @@ fn match_frames_of_two_ends<T>(
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
 {
-    use del_geo::vec3::navec3;
+    use del_geo::vec3::to_na;
     let num_vtx = vtx2xyz.len() / 3;
     let theta = {
         let x0 = vtx2bin0.column(0);
-        let xn = vtx2bin0.column(num_vtx - 1);
-        let vn0 = (navec3(vtx2xyz, 0) - navec3(vtx2xyz, num_vtx - 1)).normalize();
-        let v01 = (navec3(vtx2xyz, 1) - navec3(vtx2xyz, 0)).normalize();
+        let v01 = (to_na(vtx2xyz, 1) - to_na(vtx2xyz, 0)).normalize();
         assert!(x0.dot(&v01).abs() < 1.0e-6_f64.as_());
+        let xn = vtx2bin0.column(num_vtx - 1);
+        let vn0 = (to_na(vtx2xyz, 0) - to_na(vtx2xyz, num_vtx - 1)).normalize();
         let rot = del_geo::mat3::minimum_rotation_matrix(vn0, v01);
         let x1a = rot * xn;
         let y0 = v01.cross(&x0);
@@ -33,7 +61,7 @@ fn match_frames_of_two_ends<T>(
         let x0 = vtx2bin0.column(iseg);
         let ivtx0 = iseg;
         let ivtx1 = (iseg + 1) % num_vtx;
-        let v01 = (navec3(vtx2xyz, ivtx1) - navec3(vtx2xyz, ivtx0)).normalize();
+        let v01 = (to_na(vtx2xyz, ivtx1) - to_na(vtx2xyz, ivtx0)).normalize();
         let y0 = v01.cross(&x0);
         assert!((x0.cross(&y0).dot(&v01) - 1.as_()).abs() < 1.0e-5_f64.as_());
         let x1 = x0.scale(dtheta.sin()) + y0.scale(dtheta.cos());
@@ -48,38 +76,39 @@ pub fn smooth_frame<T>(
           f64: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
 {
-    let vtx2bin0 = crate::polyline::parallel_transport_polyline(vtx2xyz);
+    let vtx2bin0 = vtx2framex(vtx2xyz);
     match_frames_of_two_ends(vtx2xyz, &vtx2bin0)
 }
 
 pub fn normal_binormal<T>(
     vtx2xyz: &[T]) -> (nalgebra::Matrix3xX::<T>, nalgebra::Matrix3xX::<T>)
-where T: nalgebra::RealField + Copy
+    where T: nalgebra::RealField + Copy
 {
-    let num_vtx = vtx2xyz.len()/3;
+    let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
     let mut vtx2nrm = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
     for ivtx1 in 0..num_vtx {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
-        let v0 = del_geo::vec3::navec3(vtx2xyz, ivtx0);
-        let v1 = del_geo::vec3::navec3(vtx2xyz, ivtx1);
-        let v2 = del_geo::vec3::navec3(vtx2xyz, ivtx2);
-        let v01 = v1- v0;
+        let v0 = del_geo::vec3::to_na(vtx2xyz, ivtx0);
+        let v1 = del_geo::vec3::to_na(vtx2xyz, ivtx1);
+        let v2 = del_geo::vec3::to_na(vtx2xyz, ivtx2);
+        let v01 = v1 - v0;
         let v12 = v2 - v1;
         let binormal = v12.cross(&v01);
         vtx2bin.column_mut(ivtx1).copy_from(&binormal.normalize());
         let norm = (v01 + v12).cross(&binormal);
         vtx2nrm.column_mut(ivtx1).copy_from(&norm.normalize());
     }
-    (vtx2nrm,vtx2bin)
+    (vtx2nrm, vtx2bin)
 }
 
 pub fn tube_mesh(
     vtx2xyz: &nalgebra::Matrix3xX::<f32>,
     vtx2bin: &nalgebra::Matrix3xX::<f32>,
-    rad: f32) -> (Vec<usize>, Vec<f32>) {
-    let n = 8;
+    rad: f32,
+    ndiv_circum: usize) -> (Vec<usize>, Vec<f32>) {
+    let n = ndiv_circum;
     let dtheta = std::f32::consts::PI * 2. / n as f32;
     let num_vtx = vtx2xyz.ncols();
     let mut pnt2xyz = Vec::<f32>::new();
@@ -118,16 +147,16 @@ pub fn smooth_gradient_of_distance(
     vtx2xyz: &[f64],
     q: &nalgebra::Vector3::<f64>) -> nalgebra::Vector3::<f64>
 {
-    use del_geo::vec3::navec3;
+    use del_geo::vec3::to_na;
     let n = vtx2xyz.len() / 3;
     let mut dd = nalgebra::Vector3::<f64>::zeros();
-    for iseg in 0..n {
-        let ip0 = iseg;
-        let ip1 = (iseg + 1) % n;
+    for i_seg in 0..n {
+        let ip0 = i_seg;
+        let ip1 = (i_seg + 1) % n;
         let (_, dd0) = del_geo::edge3::wdw_integral_of_inverse_distance_cubic(
             q,
-            &navec3(vtx2xyz, ip0),
-            &navec3(vtx2xyz, ip1));
+            &to_na(vtx2xyz, ip0),
+            &to_na(vtx2xyz, ip1));
         dd += dd0;
     }
     dd
@@ -154,14 +183,14 @@ pub fn tube_mesh_avoid_intersection(
     eps: f64,
     niter: usize) -> (Vec<usize>, Vec<f64>)
 {
-    use del_geo::vec3::navec3;
+    use del_geo::vec3::to_na;
     let n = 8;
     let dtheta = std::f64::consts::PI * 2. / n as f64;
     let num_vtx = vtx2xyz.len() / 3;
     let mut pnt2xyz = Vec::<f64>::new();
     for ipnt in 0..num_vtx {
-        let p0 = navec3(vtx2xyz, ipnt);
-        let p1 = navec3(vtx2xyz, (ipnt + 1) % num_vtx);
+        let p0 = to_na(vtx2xyz, ipnt);
+        let p1 = to_na(vtx2xyz, (ipnt + 1) % num_vtx);
         let z0 = (p1 - p0).normalize();
         let x0 = vtx2bin.column(ipnt);
         let y0 = z0.cross(&x0);
@@ -207,26 +236,58 @@ pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(
     writeln!(file, "1").expect("fail");
 }
 
-pub fn distance_from_edge3(
-    vtx2xyz: &[f64],
-    p0: &[f64],
-    p1: &[f64]) -> f64{
-    assert_eq!(p0.len(),3);
-    assert_eq!(p1.len(),3);
+pub fn nearest_to_edge3<T>(
+    vtx2xyz: &[T],
+    p0: &nalgebra::Vector3::<T>,
+    p1: &nalgebra::Vector3::<T>) -> (T, T, T)
+    where T: nalgebra::RealField + Copy,
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
+{
     let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx*3);
-    let p0 = nalgebra::Vector3::<f64>::from_row_slice(p0);
-    let p1 = nalgebra::Vector3::<f64>::from_row_slice(p1);
-    let mut min_dist = f64::MAX;
+    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let mut res = (T::max_value().unwrap(), T::zero(), T::zero());
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv0 * 3..iv0 * 3 + 3]);
-        let q1 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv1 * 3..iv1 * 3 + 3]);
-        let (dist,_,_) = del_geo::edge3::nearest_to_edge3(&p0, &p1, &q0, &q1);
-        min_dist = if dist < min_dist {dist} else {min_dist};
+        let q0 = nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[iv0 * 3..iv0 * 3 + 3]);
+        let q1 = nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[iv1 * 3..iv1 * 3 + 3]);
+        let (dist, r0, r1) = del_geo::edge3::nearest_to_edge3(p0, p1, &q0, &q1);
+        if dist > res.0 { continue; }
+        //dbg!((p0+(p1-p0)*r0));
+        //dbg!((q0+(q1-q0)*r1));
+        res.0 = dist;
+        res.1 = <usize as AsPrimitive<T>>::as_(i_edge) + r1;
+        res.2 = r0;
     }
-    min_dist
+    res
+}
+
+pub fn nearest_to_point3<T>(
+    vtx2xyz: &[T],
+    p0: &nalgebra::Vector3::<T>) -> (T, T)
+    where T: nalgebra::RealField + Copy,
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
+{
+    assert_eq!(p0.len(), 3);
+    let num_vtx = vtx2xyz.len() / 3;
+    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let mut res = (T::max_value().unwrap(), T::zero());
+    for i_edge in 0..num_vtx {
+        let iv0 = i_edge;
+        let iv1 = (i_edge + 1) % num_vtx;
+        let q0 = del_geo::vec3::to_na(vtx2xyz, iv0);
+        let q1 = del_geo::vec3::to_na(vtx2xyz, iv1);
+        let (dist, rq) = del_geo::edge3::nearest_to_point3(&q0, &q1, p0);
+        if dist < res.0 {
+            //dbg!((p0+(p1-p0)*r0));
+            //dbg!((q0+(q1-q0)*r1));
+            res.0 = dist;
+            res.1 = <usize as AsPrimitive<T>>::as_(i_edge) + rq;
+        }
+    }
+    res
 }
 
 
@@ -239,13 +300,13 @@ pub fn winding_number(
     let org = nalgebra::Vector3::<f64>::from_row_slice(org);
     let dir = nalgebra::Vector3::<f64>::from_row_slice(dir);
     let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx*3);
+    assert_eq!(vtx2xyz.len(), num_vtx * 3);
     let mut sum = 0.;
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv0 * 3..(iv0+1) * 3])-org;
-        let q1 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv1 * 3..(iv1+1) * 3])-org;
+        let q0 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv0 * 3..(iv0 + 1) * 3]) - org;
+        let q1 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[iv1 * 3..(iv1 + 1) * 3]) - org;
         let q0 = q0 - dir.scale(q0.dot(&dir));
         let q1 = q1 - dir.scale(q1.dot(&dir));
         let q0 = q0.normalize();
@@ -255,4 +316,20 @@ pub fn winding_number(
         sum += s.atan2(c);
     }
     sum * f64::FRAC_1_PI() * 0.5
+}
+
+#[allow(clippy::identity_op)]
+pub fn position_from_barycentric_coordinate<T>(
+    vtx2xyz: &[T],
+    r: T) -> nalgebra::Vector3::<T>
+    where T: nalgebra::RealField + AsPrimitive<usize>,
+          usize: AsPrimitive<T>
+{
+    let ied: usize = r.as_();
+    let ned = vtx2xyz.len() / 3;
+    assert!(ied < ned);
+    let p0 = del_geo::vec3::to_na(vtx2xyz, ied);
+    let p1 = del_geo::vec3::to_na(vtx2xyz, (ied + 1) % ned);
+    let r0 = r - ied.as_();
+    p0 + (p1 - p0).scale(r0)
 }

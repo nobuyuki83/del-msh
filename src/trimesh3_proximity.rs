@@ -21,11 +21,11 @@ pub fn contacting_pair<T>(
             let j0 = edge2vtx[j_edge * 2 + 0];
             let j1 = edge2vtx[j_edge * 2 + 1];
             if i0 == j0 || i0 == j1 || i1 == j0 || i1 == j1 { continue; };
-            use del_geo::vec3::navec3;
-            let a0 = navec3(vtx2xyz, i0);
-            let a1 = navec3(vtx2xyz, i1);
-            let b0 = navec3(vtx2xyz, j0);
-            let b1 = navec3(vtx2xyz, j1);
+            use del_geo::vec3::to_na;
+            let a0 = to_na(vtx2xyz, i0);
+            let a1 = to_na(vtx2xyz, i1);
+            let b0 = to_na(vtx2xyz, j0);
+            let b1 = to_na(vtx2xyz, j1);
             let (dist, ra1, rb1) = del_geo::edge3::nearest_to_edge3(
                 &a0, &a1, &b0, &b1);
             if dist > threshold { continue; }
@@ -43,11 +43,11 @@ pub fn contacting_pair<T>(
             let i1 = tri2vtx[i_tri * 3 + 1];
             let i2 = tri2vtx[i_tri * 3 + 2];
             if i0 == j_vtx || i1 == j_vtx || i2 == j_vtx { continue; };
-            use del_geo::vec3::navec3;
-            let f0 = navec3(vtx2xyz, i0);
-            let f1 = navec3(vtx2xyz, i1);
-            let f2 = navec3(vtx2xyz, i2);
-            let v0 = navec3(vtx2xyz, j_vtx);
+            use del_geo::vec3::to_na;
+            let f0 = to_na(vtx2xyz, i0);
+            let f1 = to_na(vtx2xyz, i1);
+            let f2 = to_na(vtx2xyz, i2);
+            let v0 = to_na(vtx2xyz, j_vtx);
             let (_p, rf0, rf1) = del_geo::tri3::nearest_to_point3(
                 &f0, &f1, &f2, &v0);
             let rf2 = T::one() - rf0 - rf1;

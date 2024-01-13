@@ -25,15 +25,15 @@ where T: Copy + nalgebra::RealField
     let icnt1 = if i1 == j0 || i1 == j1 || i1 == j2 { 1 } else { 0 };
     let icnt2 = if i2 == j0 || i2 == j1 || i2 == j2 { 1 } else { 0 };
     if icnt0 + icnt1 + icnt2 > 1 { return None; } // return  if sharing edge, identical triangle
-    use del_geo::vec3::navec3;
+    use del_geo::vec3::to_na;
     if icnt0 + icnt1 + icnt2 == 0 {
         del_geo::tri3::is_intersection_tri3(
-            &navec3(vtx2xyz, i0),
-            &navec3(vtx2xyz, i1),
-            &navec3(vtx2xyz, i2),
-            &navec3(vtx2xyz, j0),
-            &navec3(vtx2xyz, j1),
-            &navec3(vtx2xyz, j2))
+            &to_na(vtx2xyz, i0),
+            &to_na(vtx2xyz, i1),
+            &to_na(vtx2xyz, i2),
+            &to_na(vtx2xyz, j0),
+            &to_na(vtx2xyz, j1),
+            &to_na(vtx2xyz, j2))
     } else { // sharing one point
         // compute permutation
         let is = if icnt0 == 1 { 0 } else if icnt1 == 1 { 1 } else { 2 };
@@ -46,12 +46,12 @@ where T: Copy + nalgebra::RealField
         let node2vtx_j = [j0, j1, j2];
         assert_eq!(node2vtx_i[is], node2vtx_j[js]);
         del_geo::tri3::is_intersection_tri3(
-            &navec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
-            &navec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
-            &navec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
-            &navec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
-            &navec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
-            &navec3(vtx2xyz, node2vtx_j[(js + 2) % 3]))
+            &to_na(vtx2xyz, node2vtx_i[(is + 0) % 3]),
+            &to_na(vtx2xyz, node2vtx_i[(is + 1) % 3]),
+            &to_na(vtx2xyz, node2vtx_i[(is + 2) % 3]),
+            &to_na(vtx2xyz, node2vtx_j[(js + 0) % 3]),
+            &to_na(vtx2xyz, node2vtx_j[(js + 1) % 3]),
+            &to_na(vtx2xyz, node2vtx_j[(js + 2) % 3]))
     }
 }
 
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test0() {
         let (tri2vtx, vtx2xyz)
-            = crate::trimesh3_primitive::from_sphere(1.0, 16, 32);
+            = crate::trimesh3_primitive::sphere_yup(1.0, 16, 32);
         let pairs = crate::trimesh3_intersection::search_brute_force(
             &tri2vtx, &vtx2xyz);
         assert_eq!(pairs.len(), 0);

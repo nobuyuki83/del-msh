@@ -6,7 +6,7 @@ use num_traits::AsPrimitive;
 /// * `r` - radius
 /// * 'l' - length
 #[allow(clippy::identity_op)]
-pub fn from_cylinder_closed_end<T>(
+pub fn cylinder_closed_end_yup<T>(
     r: T,
     l: T,
     nr: usize,
@@ -77,14 +77,14 @@ pub fn from_cylinder_closed_end<T>(
 
 #[test]
 fn test_cylider_closed_end_tri3() {
-    from_cylinder_closed_end::<f32>(1., 1., 32, 32);
-    from_cylinder_closed_end::<f64>(1., 1., 32, 32);
+    cylinder_closed_end_yup::<f32>(1., 1., 32, 32);
+    cylinder_closed_end_yup::<f64>(1., 1., 32, 32);
 }
 
 // ------------------------
 
 #[allow(clippy::identity_op)]
-pub fn from_capsule<T>(
+pub fn capsule_yup<T>(
     r: T,
     l: T,
     ndiv_circum: usize,
@@ -94,19 +94,20 @@ pub fn from_capsule<T>(
           f32: num_traits::AsPrimitive<T>,
           usize: num_traits::AsPrimitive<T>
 {
-    let (tri2vtx, mut vtx2xyz) = from_cylinder_closed_end::<T>(
-        (1.).as_(), (1.).as_(),
+    let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_yup::<T>(
+        T::one(), T::one(),
         ndiv_circum, 2 * ndiv_longtitude + ndiv_length - 2);
     assert_eq!(vtx2xyz.len() / 3, (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2);
     let pi: T = (std::f32::consts::PI).as_();
-    {
-        vtx2xyz[0] = 0.as_();
-        vtx2xyz[1] = -l * 0.5.as_() - r;
-        vtx2xyz[2] = 0.as_();
+    let half: T = 0.5.as_();
+    {   // south pole
+        vtx2xyz[0] = T::zero();
+        vtx2xyz[1] = -l * half - r;
+        vtx2xyz[2] = T::zero();
     }
     for ir in 0..ndiv_longtitude {
-        let t0 = pi * 0.5.as_() * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
-        let y0 = -l * 0.5.as_() - r * t0.sin();
+        let t0 = pi * half * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
+        let y0 = -l * half - r * t0.sin();
         let c0 = r * t0.cos();
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
@@ -116,7 +117,7 @@ pub fn from_capsule<T>(
         }
     }
     for il in 0..ndiv_length - 1 {
-        let y0 = -l * 0.5.as_() + (il + 1).as_() * l / ndiv_length.as_();
+        let y0 = -l * half + (il + 1).as_() * l / ndiv_length.as_();
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
             vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 0] = r * theta.cos();
@@ -125,8 +126,8 @@ pub fn from_capsule<T>(
         }
     }
     for ir in 0..ndiv_longtitude {
-        let t0 = pi * 0.5.as_() * ir.as_() / ndiv_longtitude.as_();
-        let y0 = l * 0.5.as_() + r * (t0).sin();
+        let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
+        let y0 = l * half + r * (t0).sin();
         let c0 = r * t0.cos();
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
@@ -135,23 +136,23 @@ pub fn from_capsule<T>(
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
-    {
+    {  // north pole
         let np = vtx2xyz.len() / 3;
-        vtx2xyz[(np - 1) * 3 + 0] = 0.as_();
-        vtx2xyz[(np - 1) * 3 + 1] = l * 0.5.as_() + r;
-        vtx2xyz[(np - 1) * 3 + 2] = 0.as_();
+        vtx2xyz[(np - 1) * 3 + 0] = T::zero();
+        vtx2xyz[(np - 1) * 3 + 1] = l * half + r;
+        vtx2xyz[(np - 1) * 3 + 2] = T::zero();
     }
     (tri2vtx, vtx2xyz)
 }
 
 #[test]
 fn test_capsule_tri3() {
-    from_capsule::<f32>(1., 1., 32, 12, 5);
-    from_capsule::<f64>(1., 1., 32, 12, 5);
+    capsule_yup::<f32>(1., 1., 32, 12, 5);
+    capsule_yup::<f64>(1., 1., 32, 12, 5);
 }
 
 
-pub fn from_capsule_connecting_two_point<T>(
+pub fn capsule_connecting_two_point<T>(
     p0: &[T],
     p1: &[T],
     rad: T,
@@ -166,7 +167,7 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
     let p0 = nalgebra::Vector3::<T>::from_column_slice(p0);
     let p1 = nalgebra::Vector3::<T>::from_column_slice(p1);
     let len = (p1-p0).norm();
-    let (tri2vtx, mut vtx2xyz) = from_capsule(
+    let (tri2vtx, mut vtx2xyz) = capsule_yup(
         rad, len,
         ndiv_circum, ndiv_longtitude, ndiv_length);
     let q2 = nalgebra::Vector3::<T>::new(T::zero(), len*0.5_f64.as_(),T::zero());
@@ -187,7 +188,7 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
 // --------------------------------------------------------
 
 #[allow(clippy::identity_op)]
-pub fn from_torus<T>(
+pub fn torus_yup<T>(
     radius_: T, // latitude
     radius_tube_: T, // meridian
     nlg: usize, // latitude
@@ -226,15 +227,15 @@ pub fn from_torus<T>(
 
 #[test]
 fn test_torus_tri3() {
-    from_torus::<f64>(1., 1., 32, 32);
-    from_torus::<f32>(1., 1., 32, 32);
+    torus_yup::<f64>(1., 1., 32, 32);
+    torus_yup::<f32>(1., 1., 32, 32);
 }
 
 // --------------
 
 /// the spherical cooridnate around y-axis
 #[allow(clippy::identity_op)]
-pub fn from_sphere<T>(
+pub fn sphere_yup<T>(
     radius: T,
     n_longitude: usize,
     n_latitude: usize)  -> (Vec<usize>, Vec<T>)
@@ -297,7 +298,7 @@ pub fn from_sphere<T>(
 // ----------------------------------------
 
 #[allow(clippy::identity_op)]
-pub fn from_hemisphere_zup<T>(
+pub fn hemisphere_zup<T>(
     radius: T,
     n_longitude: usize,
     n_latitude: usize)  -> (Vec<usize>, Vec<T>)

@@ -55,3 +55,15 @@ pub fn from_uniform_mesh_with_elem2elem(
     }
     (i_group, elem2group)
 }
+
+
+pub fn from_triangle_mesh(
+    tri2vtx: &[usize],
+    num_vtx: usize) -> (usize, Vec<usize>) {
+    let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(3);
+    let tri2tri = crate::elem2elem::from_uniform_mesh(
+        tri2vtx, 3, &face2idx, &idx2node,
+        num_vtx);
+    crate::elem2group::from_uniform_mesh_with_elem2elem(
+        tri2vtx, 3, &tri2tri)
+}

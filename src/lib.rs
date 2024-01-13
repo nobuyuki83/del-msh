@@ -12,13 +12,15 @@ pub mod polyloop;
 pub mod polyloop2;
 pub mod polyloop3;
 pub mod polyline;
+pub mod polyline3;
 pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_search_bruteforce;
 pub mod trimesh3_primitive;
 pub mod quadmesh;
+pub mod vtx2xyz;
 
-// functions
+// misc functions general to mesh type
 pub mod elem2group;
 pub mod elem2center;
 pub mod sampling;
@@ -44,6 +46,7 @@ pub mod bvh3_topology_topdown;
 pub mod trimesh3_intersection;
 pub mod trimesh3_intersection_time;
 pub mod trimesh3_proximity;
+pub mod trimesh3_move_avoid_intersection;
 
 
 pub fn merge(

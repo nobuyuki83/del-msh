@@ -63,15 +63,15 @@ pub fn edge_edge_between_bvh_branches<T>(
         let j1 = edge2vtx[j_edge * 2 + 1];
         if i0 == j0 || i0 == j1 { return; };
         if i1 == j0 || i1 == j1 { return; };
-        use del_geo::vec3::navec3;
-        let a0s = navec3(vtx2xyz0, i0);
-        let a1s = navec3(vtx2xyz0, i1);
-        let b0s = navec3(vtx2xyz0, j0);
-        let b1s = navec3(vtx2xyz0, j1);
-        let a0e = navec3(vtx2xyz1, i0);
-        let a1e = navec3(vtx2xyz1, i1);
-        let b0e = navec3(vtx2xyz1, j0);
-        let b1e = navec3(vtx2xyz1, j1);
+        use del_geo::vec3::to_na;
+        let a0s = to_na(vtx2xyz0, i0);
+        let a1s = to_na(vtx2xyz0, i1);
+        let b0s = to_na(vtx2xyz0, j0);
+        let b1s = to_na(vtx2xyz0, j1);
+        let a0e = to_na(vtx2xyz1, i0);
+        let a1e = to_na(vtx2xyz1, i1);
+        let b0e = to_na(vtx2xyz1, j0);
+        let b1e = to_na(vtx2xyz1, j1);
         let t = del_geo::ccd::intersecting_time_ee(
             &a0s, &a1s, &b0s, &b1s,
             &a0e, &a1e, &b0e, &b1e,
@@ -155,15 +155,15 @@ pub fn search_brute_force<T>(
             let j0 = edge2vtx[j_edge * 2 + 0];
             let j1 = edge2vtx[j_edge * 2 + 1];
             if i0 == j0 || i0 == j1 || i1 == j0 || i1 == j1 { continue; };
-            use del_geo::vec3::navec3;
-            let a0s = navec3(vtx2xyz0, i0);
-            let a1s = navec3(vtx2xyz0, i1);
-            let b0s = navec3(vtx2xyz0, j0);
-            let b1s = navec3(vtx2xyz0, j1);
-            let a0e = navec3(vtx2xyz1, i0);
-            let a1e = navec3(vtx2xyz1, i1);
-            let b0e = navec3(vtx2xyz1, j0);
-            let b1e = navec3(vtx2xyz1, j1);
+            use del_geo::vec3::to_na;
+            let a0s = to_na(vtx2xyz0, i0);
+            let a1s = to_na(vtx2xyz0, i1);
+            let b0s = to_na(vtx2xyz0, j0);
+            let b1s = to_na(vtx2xyz0, j1);
+            let a0e = to_na(vtx2xyz1, i0);
+            let a1e = to_na(vtx2xyz1, i1);
+            let b0e = to_na(vtx2xyz1, j0);
+            let b1e = to_na(vtx2xyz1, j1);
             let t = del_geo::ccd::intersecting_time_ee(
                 &a0s, &a1s, &b0s, &b1s,
                 &a0e, &a1e, &b0e, &b1e,
@@ -183,15 +183,15 @@ pub fn search_brute_force<T>(
             let i1 = tri2vtx[i_tri * 3 + 1];
             let i2 = tri2vtx[i_tri * 3 + 2];
             if i0 == j_vtx || i1 == j_vtx || i2 == j_vtx { continue; };
-            use del_geo::vec3::navec3;
-            let f0s = navec3(vtx2xyz0, i0);
-            let f1s = navec3(vtx2xyz0, i1);
-            let f2s = navec3(vtx2xyz0, i2);
-            let v0s = navec3(vtx2xyz0, j_vtx);
-            let f0e = navec3(vtx2xyz1, i0);
-            let f1e = navec3(vtx2xyz1, i1);
-            let f2e = navec3(vtx2xyz1, i2);
-            let v0e = navec3(vtx2xyz1, j_vtx);
+            use del_geo::vec3::to_na;
+            let f0s = to_na(vtx2xyz0, i0);
+            let f1s = to_na(vtx2xyz0, i1);
+            let f2s = to_na(vtx2xyz0, i2);
+            let v0s = to_na(vtx2xyz0, j_vtx);
+            let f0e = to_na(vtx2xyz1, i0);
+            let f1e = to_na(vtx2xyz1, i1);
+            let f2e = to_na(vtx2xyz1, i2);
+            let v0e = to_na(vtx2xyz1, j_vtx);
             let t = del_geo::ccd::intersecting_time_fv(
                 &f0s, &f1s, &f2s, &v0s,
                 &f0e, &f1e, &f2e, &v0e,

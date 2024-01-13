@@ -75,26 +75,5 @@ where T: num_traits::Float
     (itri_l, r0, r1)
 }
 
-#[allow(clippy::identity_op)]
-pub fn position_on_trimesh3<T>(
-    itri: usize,
-    r0: T,
-    r1: T,
-    tri2vtx: &[usize],
-    vtx2xyz: &[T]) -> [T; 3]
-where T: num_traits::Float
-{
-    assert!(itri < tri2vtx.len() / 3);
-    let i0 = tri2vtx[itri * 3 + 0];
-    let i1 = tri2vtx[itri * 3 + 1];
-    let i2 = tri2vtx[itri * 3 + 2];
-    let p0 = &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3];
-    let p1 = &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3];
-    let p2 = &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3];
-    let r2 = T::one() - r0 - r1;
-    [
-        r0 * p0[0] + r1 * p1[0] + r2 * p2[0],
-        r0 * p0[1] + r1 * p1[1] + r2 * p2[1],
-        r0 * p0[2] + r1 * p1[2] + r2 * p2[2]]
-}
+
 

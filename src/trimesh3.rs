@@ -87,13 +87,36 @@ where T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     areas
 }
 
+#[allow(clippy::identity_op)]
+pub fn position_from_barycentric_coordinate<T>(
+    tri2vtx: &[usize],
+    vtx2xyz: &[T],
+    itri: usize,
+    r0: T,
+    r1: T) -> [T; 3]
+    where T: num_traits::Float
+{
+    assert!(itri < tri2vtx.len() / 3);
+    let i0 = tri2vtx[itri * 3 + 0];
+    let i1 = tri2vtx[itri * 3 + 1];
+    let i2 = tri2vtx[itri * 3 + 2];
+    let p0 = &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3];
+    let p1 = &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3];
+    let p2 = &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3];
+    let r2 = T::one() - r0 - r1;
+    [
+        r0 * p0[0] + r1 * p1[0] + r2 * p2[0],
+        r0 * p0[1] + r1 * p1[1] + r2 * p2[1],
+        r0 * p0[2] + r1 * p1[2] + r2 * p2[2]]
+}
+
 
 #[cfg(test)]
 mod tests {
     use num_traits::FloatConst;
     #[test]
     fn test_vtx2area() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::from_sphere(
+        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(
             1_f64, 128, 256);
         let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
         let total_area: f64 = vtx2area.iter().sum();
@@ -125,11 +148,12 @@ pub fn mean_edge_length(
 }
 
 
-pub fn merge(
+pub fn merge<T>(
     out_tri2vtx: &mut Vec<usize>,
-    out_vtx2xyz: &mut Vec<f64>,
+    out_vtx2xyz: &mut Vec<T>,
     tri2vtx: &[usize],
-    vtx2xyz: &[f64])
+    vtx2xyz: &[T])
+where T: Copy
 {
     let num_vtx0 = out_vtx2xyz.len() / 3;
     tri2vtx.iter().for_each(|&v| out_tri2vtx.push(num_vtx0+v));

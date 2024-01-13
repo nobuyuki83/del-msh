@@ -2,16 +2,19 @@
 
 use num_traits::AsPrimitive;
 
-pub fn resample<T, const X: usize>(
-    stroke0: &Vec<nalgebra::base::SVector<T, X>>,
-    l: T) -> Vec<nalgebra::base::SVector<T, X>>
+/// resample the input polyline with a fix interval
+/// the first point of the input point will be preserved
+/// the output polyline will be shorter than the input
+pub fn resample<T, const NDIM: usize>(
+    stroke0: &Vec<nalgebra::base::SVector<T, NDIM>>,
+    l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
     where T: nalgebra::RealField + Copy,
           f64: num_traits::AsPrimitive<T>
 {
     if stroke0.is_empty() {
         return vec!();
     }
-    let mut stroke = Vec::<nalgebra::base::SVector<T, X>>::new();
+    let mut stroke = Vec::<nalgebra::base::SVector<T, NDIM>>::new();
     stroke.push(stroke0[0]);
     let mut jcur = 0;
     let mut rcur: T = 0_f64.as_();
@@ -33,30 +36,30 @@ pub fn resample<T, const X: usize>(
     stroke
 }
 
-pub fn parallel_transport_polyline<T>(
-    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
-where T: nalgebra::RealField + 'static + Copy,
-    f64: num_traits::AsPrimitive<T>
+pub fn resample_preserve_corner<T, const NDIM: usize>(
+    stroke0: &Vec<nalgebra::base::SVector<T, NDIM>>,
+    l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
+    where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
+          f64: num_traits::AsPrimitive<T>,
+          usize: AsPrimitive<T>
 {
-    use del_geo::vec3::navec3;
-    let num_vtx = vtx2xyz.len() / 3;
-    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
-    {   // first segment
-        let v01 = (navec3(vtx2xyz, 1) - navec3(vtx2xyz,0)).into_owned();
-        let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
-        vtx2bin.column_mut(0).copy_from(&x);
+    if stroke0.is_empty() {
+        return vec!();
     }
-    for iseg1 in 1..num_vtx {
-        let iv0 = iseg1 - 1;
-        let iv1 = iseg1;
-        let iv2 = (iseg1 + 1) % num_vtx;
-        let iseg0 = iseg1 - 1;
-        let v01 = navec3(vtx2xyz,iv1) - navec3(vtx2xyz,iv0);
-        let v12 = navec3(vtx2xyz,iv2) - navec3(vtx2xyz,iv1);
-        let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
-        let b01: nalgebra::Vector3::<T> = vtx2bin.column(iseg0).into_owned();
-        let b12: nalgebra::Vector3::<T> = rot * b01;
-        vtx2bin.column_mut(iseg1).copy_from(&b12);
+    let mut stroke = Vec::<nalgebra::base::SVector<T, NDIM>>::new();
+    let num_pnt0 = stroke0.len();
+    for i_seg0 in 0..num_pnt0 - 1 {
+        let p0 = stroke0[i_seg0];
+        let q0 = stroke0[i_seg0+1];
+        let len = (p0-q0).norm();
+        let np_new: usize = (len / l).as_();
+        let dr = T::one() / (np_new+1).as_();
+        stroke.push(stroke0[i_seg0]);
+        for ip_new in 1..np_new+1 {
+            let p_new = p0 + (q0-p0).scale(ip_new.as_()*dr);
+            stroke.push(p_new);
+        }
     }
-    vtx2bin
+    stroke.push(stroke0[stroke0.len()-1]);
+    stroke
 }

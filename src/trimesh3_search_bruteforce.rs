@@ -43,7 +43,7 @@ fn triangles_in_sphere(
     tri2vtx: &[usize],
     tri2adjtri: &[usize]) -> Vec<usize>
 {
-    use del_geo::{tri3, vec3, vec3::navec3};
+    use del_geo::{tri3, vec3, vec3::to_na};
     let mut res = Vec::<usize>::new();
     let mut searched = std::collections::BTreeSet::<usize>::new();
     let mut next0 = Vec::<usize>::new();
@@ -56,9 +56,9 @@ fn triangles_in_sphere(
             let i1 = tri2vtx[iel0 * 3 + 1];
             let i2 = tri2vtx[iel0 * 3 + 2];
             let (pn, _r0, _r1) = tri3::nearest_to_point3(
-                &navec3(vtx2xyz, i0),
-                &navec3(vtx2xyz, i1),
-                &navec3(vtx2xyz, i2),
+                &to_na(vtx2xyz, i0),
+                &to_na(vtx2xyz, i1),
+                &to_na(vtx2xyz, i2),
                 &nalgebra::Vector3::<f32>::from_row_slice(&pos));
             vec3::distance_(pn.as_slice(), &pos)
         };
@@ -83,9 +83,9 @@ pub fn is_point_inside_sphere(
     tri2adjtri: &[usize]) -> bool
 {
     use del_geo::vec3;
-    let pos_i = crate::sampling::position_on_trimesh3(
-        smpli.0, smpli.1, smpli.2,
-        tri2vtx, vtx2xyz);
+    let pos_i = crate::trimesh3::position_from_barycentric_coordinate(
+        tri2vtx, vtx2xyz,
+        smpli.0, smpli.1, smpli.2);
     let indexes_tri = triangles_in_sphere(
         pos_i, rad,
         smpli.0, vtx2xyz, tri2vtx, tri2adjtri);
@@ -95,14 +95,16 @@ pub fn is_point_inside_sphere(
         }
         for &j_smpl in elem2smpl[idx_tri].iter() {
             let smpl_j = samples[j_smpl];
-            let pos_j = crate::sampling::position_on_trimesh3(
-                smpl_j.0, smpl_j.1, smpl_j.2,
-                tri2vtx, vtx2xyz);
+            let pos_j = crate::trimesh3::position_from_barycentric_coordinate(
+                tri2vtx, vtx2xyz,
+                smpl_j.0, smpl_j.1, smpl_j.2);
             let dist = vec3::distance_(&pos_i, &pos_j);
             if dist < rad { return true; }
         }
     }
     false
 }
+
+
 
 
