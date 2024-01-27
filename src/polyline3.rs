@@ -1,5 +1,25 @@
 use num_traits::AsPrimitive;
 
+pub fn cg<T>(
+    vtx2xyz: &[T]) -> nalgebra::Vector3::<T>
+where T : nalgebra::RealField + Copy,
+    f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut cg = nalgebra::Vector3::<T>::zeros();
+    let mut w = T::zero();
+    for iseg in 0..num_vtx-1 {
+        let ip0 = iseg;
+        let ip1 = iseg+1;
+        let p0 = del_geo::vec3::to_na(vtx2xyz, ip0);
+        let p1 = del_geo::vec3::to_na(vtx2xyz, ip1);
+        let len = (p0-p1).norm();
+        cg += (p0+p1).scale(0.5f64.as_()*len);
+        w += len;
+    }
+    cg / w
+}
+
 pub fn vtx2framex<T>(
     vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
     where T: nalgebra::RealField + 'static + Copy,
@@ -72,9 +92,48 @@ pub fn vtx2framey<T>(
     vtx2framey
 }
 
+pub fn normal_binormal<T>(
+    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX::<T>, nalgebra::Matrix3xX::<T>)
+    where T: nalgebra::RealField + Copy
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    let mut vtx2nrm = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    for ivtx1 in 1..num_vtx-1 {
+        let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
+        let ivtx2 = (ivtx1 + 1) % num_vtx;
+        let v0 = del_geo::vec3::to_na(vtx2xyz, ivtx0);
+        let v1 = del_geo::vec3::to_na(vtx2xyz, ivtx1);
+        let v2 = del_geo::vec3::to_na(vtx2xyz, ivtx2);
+        let v01 = v1 - v0;
+        let v12 = v2 - v1;
+        let binormal = v12.cross(&v01);
+        vtx2bin.column_mut(ivtx1).copy_from(&binormal.normalize());
+        let norm = (v01 + v12).cross(&binormal);
+        vtx2nrm.column_mut(ivtx1).copy_from(&norm.normalize());
+    }
+    {
+        let c1 = vtx2nrm.column(1).into_owned();
+        vtx2nrm.column_mut(0).copy_from(&c1);
+    }
+    {
+        let c1 = vtx2nrm.column(num_vtx-2).into_owned();
+        vtx2nrm.column_mut(num_vtx-1).copy_from(&c1);
+    }
+    {
+        let c1 = vtx2bin.column(1).into_owned();
+        vtx2bin.column_mut(0).copy_from(&c1);
+    }
+    {
+        let c1 = vtx2bin.column(num_vtx-2).into_owned();
+        vtx2bin.column_mut(num_vtx-1).copy_from(&c1);
+    }
+    (vtx2nrm, vtx2bin)
+}
+
 
 #[allow(clippy::identity_op)]
-pub fn capsule<T>(
+pub fn to_trimesh3_capsule<T>(
     vtxl2xyz: &[T],
     ndiv_circum: usize,
     ndiv_longtitude: usize,
@@ -237,4 +296,30 @@ pub fn position_from_barycentric_coordinate<T>(
     let p1 = del_geo::vec3::to_na(vtx2xyz, ied + 1);
     let r0 = r - ied.as_();
     p0 + (p1 - p0).scale(r0)
+}
+
+#[allow(clippy::identity_op)]
+pub fn smooth<T>(
+    vtx2xyz: &[T],
+    r: T,
+    num_iter: usize) -> Vec<T>
+    where T: nalgebra::RealField + Copy,
+          f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut vtx2xyz1 = Vec::from(vtx2xyz);
+    for _iter in 0..num_iter {
+        for ip1 in 1..num_vtx-1 {
+            let ip0 = (ip1 + num_vtx - 1) % num_vtx;
+            let ip2 = (ip1 + 1) % num_vtx;
+            let p0 = del_geo::vec3::to_na(&vtx2xyz1, ip0);
+            let p1 = del_geo::vec3::to_na(&vtx2xyz1, ip1);
+            let p2 = del_geo::vec3::to_na(&vtx2xyz1, ip2);
+            let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
+            vtx2xyz1[ip1 * 3 + 0] = p1n.x;
+            vtx2xyz1[ip1 * 3 + 1] = p1n.y;
+            vtx2xyz1[ip1 * 3 + 2] = p1n.z;
+        }
+    }
+    vtx2xyz1
 }

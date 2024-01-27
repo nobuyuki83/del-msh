@@ -207,7 +207,8 @@ pub fn save_tri_mesh<P, T>(
 where P: AsRef<std::path::Path>,
       T: std::fmt::Display
 {
-    let mut file = File::create(filepath).expect("file not found.");
+    let file = File::create(filepath).expect("file not found.");
+    let mut file = std::io::BufWriter::new(file);
     for i_vtx in 0..vtx2xyz.len() / 3 {
         writeln!(file, "v {} {} {}",
                  vtx2xyz[i_vtx * 3 + 0], vtx2xyz[i_vtx * 3 + 1], vtx2xyz[i_vtx * 3 + 2]).expect("fail");

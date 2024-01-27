@@ -1,6 +1,7 @@
 //! methods for polyline mesh
 
 use num_traits::AsPrimitive;
+use crate::polyloop::cog;
 
 /// resample the input polyline with a fix interval
 /// the first point of the input point will be preserved
@@ -62,4 +63,24 @@ pub fn resample_preserve_corner<T, const NDIM: usize>(
     }
     stroke.push(stroke0[stroke0.len()-1]);
     stroke
+}
+
+pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix::<T, N, N>
+    where T: nalgebra::RealField + Copy + 'static,
+          f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xyz.len() / N;
+    assert_eq!(vtx2xyz.len(), num_vtx * N);
+    let cog = cog::<T, N>(vtx2xyz);
+    let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
+    for i_edge in 0..num_vtx-1 {
+        let iv0 = i_edge;
+        let iv1 = i_edge + 1;
+        let q0 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[iv0 * N..iv0 * N + N]) - cog;
+        let q1 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[iv1 * N..iv1 * N + N]) - cog;
+        let l = (q0 - q1).norm();
+        cov += (q0 * q0.transpose() + q1 * q1.transpose()).scale(l / 3_f64.as_());
+        cov += (q0 * q1.transpose() + q1 * q0.transpose()).scale(l / 6_f64.as_());
+    }
+    cov
 }

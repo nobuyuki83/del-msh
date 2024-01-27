@@ -29,3 +29,11 @@ where T: nalgebra::RealField + Copy
     }
     res
 }
+
+pub fn cast<T,U>(vtx2xyz0: &[U]) -> Vec<T>
+where T: Copy + 'static,
+    U: AsPrimitive<T>
+{
+    let res: Vec<T> = vtx2xyz0.iter().map(|v| v.as_() ).collect();
+    res
+}

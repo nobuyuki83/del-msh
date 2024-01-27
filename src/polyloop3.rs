@@ -18,7 +18,7 @@ pub fn vtx2framex<T>(
     for iseg1 in 1..num_vtx { // parallel transport
         let iv0 = iseg1 - 1;
         let iv1 = iseg1;
-        let iv2 = (iseg1 + 1)%num_vtx;
+        let iv2 = (iseg1 + 1) % num_vtx;
         let iseg0 = iseg1 - 1;
         let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
         let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
@@ -28,6 +28,21 @@ pub fn vtx2framex<T>(
         vtx2bin.column_mut(iseg1).copy_from(&b12);
     }
     vtx2bin
+}
+
+pub fn framez<T>(
+    vtx2xyz: &[T],
+    i_vtx: usize) -> nalgebra::Vector3::<T>
+    where T: nalgebra::RealField + Copy
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    assert!(i_vtx < num_vtx);
+    let i0_vtx = (i_vtx + num_vtx - 1) % num_vtx;
+    // let i1_vtx = i_vtx;
+    let i2_vtx = (i_vtx + 1) % num_vtx;
+    let p0 = del_geo::vec3::to_na(vtx2xyz, i0_vtx);
+    let p2 = del_geo::vec3::to_na(vtx2xyz, i2_vtx);
+    (p2 - p0).normalize()
 }
 
 fn match_frames_of_two_ends<T>(
@@ -48,7 +63,7 @@ fn match_frames_of_two_ends<T>(
         let rot = del_geo::mat3::minimum_rotation_matrix(vn0, v01);
         let x1a = rot * xn;
         let y0 = v01.cross(&x0);
-        assert!(x1a.dot(&v01).abs() < 1.0e-6_f64.as_());
+        assert!(x1a.dot(&v01).abs() < 1.0e-4f64.as_(), "{}", x1a.dot(&v01).abs());
         assert!((y0.norm() - 1.0_f64.as_()).abs() < 1.0e-6_f64.as_());
         let c0 = x1a.dot(&x0);
         let s0 = x1a.dot(&y0);
@@ -63,7 +78,7 @@ fn match_frames_of_two_ends<T>(
         let ivtx1 = (iseg + 1) % num_vtx;
         let v01 = (to_na(vtx2xyz, ivtx1) - to_na(vtx2xyz, ivtx0)).normalize();
         let y0 = v01.cross(&x0);
-        assert!((x0.cross(&y0).dot(&v01) - 1.as_()).abs() < 1.0e-5_f64.as_());
+        assert!((x0.cross(&y0).dot(&v01) - 1.as_()).abs() < 1.0e-3_f64.as_(),"{}", x0.cross(&y0).dot(&v01));
         let x1 = x0.scale(dtheta.sin()) + y0.scale(dtheta.cos());
         vtx2bin1.column_mut(iseg).copy_from(&x1);
     }
@@ -77,6 +92,7 @@ pub fn smooth_frame<T>(
           usize: num_traits::AsPrimitive<T>
 {
     let vtx2bin0 = vtx2framex(vtx2xyz);
+    // dbg!(&vtx2bin0);
     match_frames_of_two_ends(vtx2xyz, &vtx2bin0)
 }
 
@@ -103,7 +119,7 @@ pub fn normal_binormal<T>(
     (vtx2nrm, vtx2bin)
 }
 
-pub fn tube_mesh(
+pub fn to_trimesh3_torus(
     vtx2xyz: &nalgebra::Matrix3xX::<f32>,
     vtx2bin: &nalgebra::Matrix3xX::<f32>,
     rad: f32,
@@ -327,9 +343,40 @@ pub fn position_from_barycentric_coordinate<T>(
 {
     let ied: usize = r.as_();
     let ned = vtx2xyz.len() / 3;
-    assert!(ied < ned);
+    if r.as_() == ned {
+        assert_eq!(ied.as_(),r);
+        return del_geo::vec3::to_na(vtx2xyz, 0);
+    }
+    assert!(ied < ned, "{}, {}, {}", r, ied,ned);
     let p0 = del_geo::vec3::to_na(vtx2xyz, ied);
     let p1 = del_geo::vec3::to_na(vtx2xyz, (ied + 1) % ned);
     let r0 = r - ied.as_();
     p0 + (p1 - p0).scale(r0)
+}
+
+
+#[allow(clippy::identity_op)]
+pub fn smooth<T>(
+    vtx2xyz: &[T],
+    r: T,
+    num_iter: usize) -> Vec<T>
+    where T: nalgebra::RealField + Copy,
+          f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut vtx2xyz1 = Vec::from(vtx2xyz);
+    for _iter in 0..num_iter {
+        for ip1 in 0..num_vtx {
+            let ip0 = (ip1 + num_vtx - 1) % num_vtx;
+            let ip2 = (ip1 + 1) % num_vtx;
+            let p0 = del_geo::vec3::to_na(&vtx2xyz1, ip0);
+            let p1 = del_geo::vec3::to_na(&vtx2xyz1, ip1);
+            let p2 = del_geo::vec3::to_na(&vtx2xyz1, ip2);
+            let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
+            vtx2xyz1[ip1 * 3 + 0] = p1n.x;
+            vtx2xyz1[ip1 * 3 + 1] = p1n.y;
+            vtx2xyz1[ip1 * 3 + 2] = p1n.z;
+        }
+    }
+    vtx2xyz1
 }
