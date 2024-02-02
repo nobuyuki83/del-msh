@@ -166,3 +166,6 @@ pub fn match_vtx2xyz_while_avoid_collision(
     }
     vtx2xyz
 }
+
+
+// TODO: write some test

@@ -49,15 +49,16 @@ pub mod trimesh3_proximity;
 pub mod trimesh3_move_avoid_intersection;
 
 
-pub fn merge(
+pub fn merge<T>(
     node2row: &[usize],
     node2col: &[usize],
-    emat: &[f64],
+    emat: &[T],
     row2idx: &[usize],
     idx2col: &[usize],
-    row2val: &mut [f64],
-    idx2val: &mut [f64],
+    row2val: &mut [T],
+    idx2val: &mut [T],
     merge_buffer: &mut Vec<usize>)
+where T: std::ops::AddAssign + Copy
 {
     let num_blk = row2idx.len() - 1;
     assert_eq!(emat.len(), node2row.len() * node2col.len());

@@ -8,7 +8,7 @@ pub fn vtx2normal(
     vtx2xyz: &[f64]) -> Vec<f64> {
     let mut vtx2nrm = vec!(0_f64; vtx2xyz.len());
     for node2vtx in tri2vtx.chunks(3) {
-        let (i0,i1,i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
+        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3];
         let p1 = &vtx2xyz[i1 * 3..i1 * 3 + 3];
         let p2 = &vtx2xyz[i2 * 3..i2 * 3 + 3];
@@ -51,7 +51,7 @@ pub fn elem2area(
 {
     let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
     for node2vtx in tri2vtx.chunks(3) {
-        let (i0,i1,i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
+        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let area = del_geo::tri3::area_(
             &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
             &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
@@ -65,8 +65,8 @@ pub fn elem2area(
 pub fn vtx2area<T>(
     tri2vtx: &[usize],
     vtx2xyz: &[T]) -> Vec<T>
-where T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
-    f64: AsPrimitive<T>
+    where T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
+          f64: AsPrimitive<T>
 {
     let num_vtx = vtx2xyz.len() / 3;
     let num_tri = tri2vtx.len() / 3;
@@ -114,6 +114,7 @@ pub fn position_from_barycentric_coordinate<T>(
 #[cfg(test)]
 mod tests {
     use num_traits::FloatConst;
+
     #[test]
     fn test_vtx2area() {
         let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(
@@ -153,9 +154,115 @@ pub fn merge<T>(
     out_vtx2xyz: &mut Vec<T>,
     tri2vtx: &[usize],
     vtx2xyz: &[T])
-where T: Copy
+    where T: Copy
 {
     let num_vtx0 = out_vtx2xyz.len() / 3;
-    tri2vtx.iter().for_each(|&v| out_tri2vtx.push(num_vtx0+v));
+    tri2vtx.iter().for_each(|&v| out_tri2vtx.push(num_vtx0 + v));
     vtx2xyz.iter().for_each(|&v| out_vtx2xyz.push(v));
+}
+
+
+pub fn mesh_laplacian_cotangent<T>(
+    tri2vtx: &[usize],
+    vtx2xyz: &[T],
+    row2idx: &[usize],
+    idx2col: &[usize],
+    row2val: &mut [T],
+    idx2val: &mut [T],
+    merge_buffer: &mut Vec<usize>)
+    where T: num_traits::Float + 'static + std::ops::AddAssign,
+          f64: num_traits::AsPrimitive<T>
+{
+    for node2vtx in tri2vtx.chunks(3) {
+        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
+        let v0 = &vtx2xyz[i0 * 3..i0 * 3 + 3];
+        let v1 = &vtx2xyz[i1 * 3..i1 * 3 + 3];
+        let v2 = &vtx2xyz[i2 * 3..i2 * 3 + 3];
+        let emat: [T; 9] = del_geo::tri3::emat_cotangent_laplacian(v0,v1,v2);
+        crate::merge(
+            node2vtx, node2vtx, &emat,
+            row2idx, idx2col,
+            row2val, idx2val,
+            merge_buffer);
+    }
+}
+
+pub fn optimal_rotation_for_arap<T>(
+    i_vtx: usize,
+    adj2vtx: &[usize],
+    vtx2xyz_ini: &[T],
+    vtx2xyz_def: &[T],
+    adj2weight: &[T],
+    weight_scale: T) -> nalgebra::Matrix3::<T>
+    where T: nalgebra::RealField + Copy + std::ops::AddAssign
+{
+    let p0 = &vtx2xyz_ini[i_vtx * 3..i_vtx * 3 + 3];
+    let p1 = &vtx2xyz_def[i_vtx * 3..i_vtx * 3 + 3];
+    let mut a = nalgebra::Matrix3::<T>::zeros();
+    for idx in 0..adj2vtx.len() {
+        let j_vtx = adj2vtx[idx];
+        let q0 = &vtx2xyz_ini[j_vtx * 3..j_vtx * 3 + 3];
+        let q1 = &vtx2xyz_def[j_vtx * 3..j_vtx * 3 + 3];
+        let pq0 = del_geo::vec3::sub_(q0, p0);
+        let pq1 = del_geo::vec3::sub_(q1, p1);
+        let w = adj2weight[idx] * weight_scale;
+        a.m11 += w * pq1[0] * pq0[0];
+        a.m12 += w * pq1[0] * pq0[1];
+        a.m13 += w * pq1[0] * pq0[2];
+        a.m21 += w * pq1[1] * pq0[0];
+        a.m22 += w * pq1[1] * pq0[1];
+        a.m23 += w * pq1[1] * pq0[2];
+        a.m31 += w * pq1[2] * pq0[0];
+        a.m32 += w * pq1[2] * pq0[1];
+        a.m33 += w * pq1[2] * pq0[2];
+    }
+    del_geo::mat3::rotational_component(&a)
+}
+
+#[test]
+fn test_optimal_rotation_for_arap() {
+    let (tri2vtx, vtx2xyz_ini)
+        = crate::trimesh3_primitive::capsule_yup(
+        0.2, 1.6, 24, 4, 24);
+    let num_vtx = vtx2xyz_ini.len() / 3;
+    let (row2idx, idx2col)
+        = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, num_vtx);
+    let (_row2val, idx2val) = {
+        let mut row2val = vec!(0f64; num_vtx);
+        let mut idx2val = vec!(0f64; idx2col.len());
+        let mut merge_buffer = vec!(0usize; 0);
+        mesh_laplacian_cotangent(
+            &tri2vtx, &vtx2xyz_ini,
+            &row2idx, &idx2col,
+            &mut row2val, &mut idx2val, &mut merge_buffer);
+        (row2val, idx2val)
+    };
+    let mut vtx2xyz_def = vtx2xyz_ini.clone();
+    let r0 = {
+        let a_mat = nalgebra::Matrix4::<f64>::new_rotation(
+            nalgebra::Vector3::<f64>::new(1., 2., 3.));
+        for i_vtx in 0..vtx2xyz_def.len() / 3 {
+            let p0 = nalgebra::Vector3::<f64>::new(
+                vtx2xyz_ini[i_vtx*3+0],
+                vtx2xyz_ini[i_vtx*3+1],
+                vtx2xyz_ini[i_vtx*3+2]);
+            let p1 = a_mat.transform_vector(&p0);
+            vtx2xyz_def[i_vtx*3+0] = p1.x;
+            vtx2xyz_def[i_vtx*3+1] = p1.y;
+            vtx2xyz_def[i_vtx*3+2] = p1.z;
+        }
+        let r0: nalgebra::Matrix3::<f64> = a_mat.fixed_view::<3,3>(0,0).into();
+        r0
+    };
+    for i_vtx in 0..vtx2xyz_ini.len() / 3 {
+        let r = optimal_rotation_for_arap(
+            i_vtx,
+            &idx2col[row2idx[i_vtx]..row2idx[i_vtx+1]],
+            &vtx2xyz_ini,
+            &vtx2xyz_def,
+            &idx2val[row2idx[i_vtx]..row2idx[i_vtx+1]], -1.);
+        assert!((r.determinant()-1.0).abs()<1.0e-5);
+        assert!((r-r0).norm()<1.0e-5);
+    }
+
 }
