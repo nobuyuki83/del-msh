@@ -15,8 +15,8 @@ pub fn area<T>(
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = &vtx2xy[i0 * 2..i0 * 2 + 2];
-        let p1 = &vtx2xy[i1 * 2..i1 * 2 + 2];
+        let p0 = (&vtx2xy[i0 * 2..i0 * 2 + 2]).try_into().unwrap();
+        let p1 = (&vtx2xy[i1 * 2..i1 * 2 + 2]).try_into().unwrap();
         area += del_geo::tri2::area_(&zero, p0, p1);
     }
     area
@@ -55,7 +55,7 @@ pub fn from_pentagram<Real>(
 
 pub fn is_inside<Real>(
     vtx2xy: &[Real],
-    p: &[Real]) -> bool
+    p: &[Real;2]) -> bool
     where Real: num_traits::Float + Copy + 'static + std::ops::AddAssign,
           f64: AsPrimitive<Real>
 {
@@ -64,8 +64,9 @@ pub fn is_inside<Real>(
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
         wn += del_geo::edge2::winding_number_(
-            &vtx2xy[i * 2..(i + 1) * 2],
-            &vtx2xy[j * 2..(j + 1) * 2], p);
+            (&vtx2xy[i * 2..(i + 1) * 2]).try_into().unwrap(),
+            (&vtx2xy[j * 2..(j + 1) * 2]).try_into().unwrap(),
+            p);
     }
     if (wn - Real::one()).abs() < 0.1.as_() { return true; }
     false

@@ -56,8 +56,8 @@ where T: num_traits::Float
             aabbs,
             i_bvhnode_child1, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1);
         let aabb = del_geo::aabb3::from_two_aabbs_slice6(
-            &aabbs[i_bvhnode_child0 * 6..(i_bvhnode_child0 + 1) * 6],
-            &aabbs[i_bvhnode_child1 * 6..(i_bvhnode_child1 + 1) * 6]);
+            (&aabbs[i_bvhnode_child0 * 6..(i_bvhnode_child0 + 1) * 6]).try_into().unwrap(),
+             (&aabbs[i_bvhnode_child1 * 6..(i_bvhnode_child1 + 1) * 6]).try_into().unwrap());
         aabbs[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
     }
 }

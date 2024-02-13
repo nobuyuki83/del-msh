@@ -17,8 +17,8 @@ pub fn edge_edge_between_bvh_branches<T>(
     assert!(ibvh1 < aabbs.len() / 6);
     // trim branch
     if !del_geo::aabb3::is_intersect(
-        &aabbs[ibvh0 * 6..(ibvh0 + 1) * 6],
-        &aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]) {
+        (&aabbs[ibvh0 * 6..(ibvh0 + 1) * 6]).try_into().unwrap(),
+        (&aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]).try_into().unwrap()) {
         return;
     }
     let ichild0_left = bvhnodes[ibvh0 * 3 + 1];

@@ -309,8 +309,8 @@ pub fn nearest_to_point3<T>(
 
 pub fn winding_number(
     vtx2xyz: &[f64],
-    org: &[f64],
-    dir: &[f64]) -> f64
+    org: &[f64;3],
+    dir: &[f64;3]) -> f64
 {
     use num_traits::FloatConst;
     let org = nalgebra::Vector3::<f64>::from_row_slice(org);

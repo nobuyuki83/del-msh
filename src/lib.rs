@@ -47,6 +47,7 @@ pub mod trimesh3_intersection;
 pub mod trimesh3_intersection_time;
 pub mod trimesh3_proximity;
 pub mod trimesh3_move_avoid_intersection;
+pub mod mesh_laplacian;
 
 
 pub fn merge<T>(

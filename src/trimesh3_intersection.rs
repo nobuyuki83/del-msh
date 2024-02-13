@@ -69,8 +69,8 @@ pub fn search_with_bvh_between_branches<T>(
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
     if !del_geo::aabb3::is_intersect(
-        &aabbs[ibvh0 * 6..(ibvh0 + 1) * 6],
-        &aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]) {
+        (&aabbs[ibvh0 * 6..(ibvh0 + 1) * 6]).try_into().unwrap(),
+         (&aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]).try_into().unwrap()) {
         return;
     }
     let ichild0_0 = bvhnodes[ibvh0 * 3 + 1];

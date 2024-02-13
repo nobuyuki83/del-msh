@@ -2,8 +2,8 @@
 
 #[allow(clippy::identity_op)]
 pub fn first_intersection_ray(
-    ray_org: &[f32],
-    ray_dir: &[f32],
+    ray_org: &[f32;3],
+    ray_dir: &[f32;3],
     vtx2xyz: &[f32],
     tri2vtx: &[usize]) -> Option<([f32; 3], usize)> {
     use del_geo::tri3;
@@ -14,9 +14,9 @@ pub fn first_intersection_ray(
         let i2 = tri2vtx[itri * 3 + 2];
         let res = tri3::ray_triangle_intersection_(
             ray_org, ray_dir,
-            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
-            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3]);
+            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
+            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
+            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap());
         match res {
             None => { continue; }
             Some(t) => {
@@ -60,7 +60,7 @@ fn triangles_in_sphere(
                 &to_na(vtx2xyz, i1),
                 &to_na(vtx2xyz, i2),
                 &nalgebra::Vector3::<f32>::from_row_slice(&pos));
-            vec3::distance_(pn.as_slice(), &pos)
+            vec3::distance_(pn.as_ref(), &pos)
         };
         if dist_min > rad { continue; }
         res.push(iel0);

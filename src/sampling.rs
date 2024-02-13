@@ -22,9 +22,9 @@ where T: num_traits::Float + Copy + 'static,
             let i1 = tri2vtx[idx_tri * 3 + 1];
             let i2 = tri2vtx[idx_tri * 3 + 2];
             del_geo::tri3::area_(
-                &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3],
-                &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3],
-                &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3])
+                &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
+                &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
+                &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap())
         };
         let t0 = cumulative_area_sum[cumulative_area_sum.len() - 1];
         cumulative_area_sum.push(a0 + t0);
