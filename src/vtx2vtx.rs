@@ -11,14 +11,15 @@ pub fn from_uniform_mesh_with_vtx2elem(
     num_node: usize,
     num_vtx: usize,
     vtx2idx: &[usize],
-    idx2elem: &[usize]) -> (Vec<usize>, Vec<usize>)
+    idx2elem: &[usize],
+    is_self: bool) -> (Vec<usize>, Vec<usize>)
 {
     assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);
     let mut vtx2flg = vec!(usize::MAX; num_vtx);
     let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
     for i_vtx in 0..num_vtx {
-        vtx2flg[i_vtx] = i_vtx;
+        if !is_self { vtx2flg[i_vtx] = i_vtx; }
         for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
@@ -36,7 +37,7 @@ pub fn from_uniform_mesh_with_vtx2elem(
     let mut jdx2vtx = vec!(0_usize; num_vtx2vtx);
     vtx2flg.iter_mut().for_each(|v| *v = usize::MAX);
     for i_vtx in 0..num_vtx {
-        vtx2flg[i_vtx] = i_vtx;
+        if !is_self { vtx2flg[i_vtx] = i_vtx; }
         for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
@@ -59,7 +60,8 @@ pub fn from_uniform_mesh_with_vtx2elem(
 pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
-    num_vtx: usize) -> (Vec<usize>, Vec<usize>)
+    num_vtx: usize,
+    is_self: bool) -> (Vec<usize>, Vec<usize>)
 {  // set pattern to sparse matrix
     assert_eq!(elem2vtx.len() % num_node, 0);
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(
@@ -67,7 +69,8 @@ pub fn from_uniform_mesh(
     assert_eq!(vtx2elem.0.len(), num_vtx + 1);
     let vtx2vtx = from_uniform_mesh_with_vtx2elem(
         elem2vtx, num_node, num_vtx,
-        &vtx2elem.0, &vtx2elem.1);
+        &vtx2elem.0, &vtx2elem.1,
+        is_self);
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
     vtx2vtx
 }

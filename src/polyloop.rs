@@ -125,3 +125,78 @@ pub fn resample<T, const N: usize>(
     }
     v2x_out
 }
+
+
+pub fn resample_multiple_loops_remain_original_vtxs<T>(
+    loop2idx_inout: &mut Vec<usize>,
+    idx2vtx_inout: &mut Vec<usize>,
+    vtx2vec_inout: &mut Vec<nalgebra::Vector2<T>>,
+    max_edge_length: T)
+where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
+    usize: AsPrimitive<T>
+{
+    assert_eq!(vtx2vec_inout.len(), idx2vtx_inout.len());
+    let loop2idx_in = loop2idx_inout.clone();
+    let idx2vtx_in = idx2vtx_inout.clone();
+    assert!(idx2vtx_in.len() >= 2);
+    let num_loop = loop2idx_in.len() - 1;
+    let mut edge2point: Vec<Vec<usize>> = vec!(vec!(); idx2vtx_in.len());
+    {
+        for i_loop in 0..num_loop {
+            assert!(loop2idx_in[i_loop + 1] > loop2idx_in[i_loop]);
+            let np = loop2idx_in[i_loop + 1] - loop2idx_in[i_loop];
+            for ip in 0..np {
+                let iipo0 = loop2idx_in[i_loop] + (ip + 0) % np;
+                let iipo1 = loop2idx_in[i_loop] + (ip + 1) % np;
+                assert!(iipo0 < idx2vtx_in.len());
+                assert!(iipo1 < idx2vtx_in.len());
+                let ipo0 = idx2vtx_in[iipo0];
+                let ipo1 = idx2vtx_in[iipo1];
+                assert!(ipo0 < vtx2vec_inout.len());
+                assert!(ipo1 < vtx2vec_inout.len());
+                let po0 = vtx2vec_inout[ipo0]; // never use reference here because aVec2 will resize afterward
+                let po1 = vtx2vec_inout[ipo1]; // never use reference here because aVec2 will resize afterward
+                let nadd: usize = ((po0-po1).norm() / max_edge_length).as_();
+                if nadd == 0 {
+                    continue;
+                }
+                for iadd in 0..nadd {
+                    let r2: T = (iadd + 1).as_() / (nadd + 1).as_();
+                    let v2 = po0.scale(T::one() - r2) + po1.scale(r2);
+                    let ipo2 = vtx2vec_inout.len();
+                    vtx2vec_inout.push(v2);
+                    assert!(iipo0 < edge2point.len());
+                    edge2point[iipo0].push(ipo2);
+                }
+            }
+        }
+    }
+    ////
+    loop2idx_inout.resize(num_loop + 1, usize::MAX);
+    loop2idx_inout[0] = 0;
+    for iloop in 0..num_loop {
+        let nbar0 = loop2idx_in[iloop + 1] - loop2idx_in[iloop];
+        let mut nbar1 = nbar0;
+        for ibar in 0..nbar0 {
+            let iip_loop = loop2idx_in[iloop] + ibar;
+            nbar1 += edge2point[iip_loop].len();
+        }
+        loop2idx_inout[iloop + 1] = loop2idx_inout[iloop] + nbar1;
+    }
+    // adding new vertices on the outline
+    idx2vtx_inout.resize(loop2idx_inout[num_loop], usize::MAX);
+    let mut i_vtx0 = 0;
+    for i_loop in 0..num_loop {
+        for iip_loop in loop2idx_in[i_loop]..loop2idx_in[i_loop + 1] {
+            let ip_loop = idx2vtx_in[iip_loop];
+            idx2vtx_inout[i_vtx0] = ip_loop;
+            i_vtx0 += 1;
+            for iadd in 0..edge2point[ip_loop].len() {
+                idx2vtx_inout[i_vtx0] = edge2point[iip_loop][iadd];
+                i_vtx0 += 1;
+            }
+        }
+    }
+    assert_eq!(idx2vtx_inout.len(), vtx2vec_inout.len());
+    assert_eq!(idx2vtx_inout.len(), i_vtx0);
+}
