@@ -200,24 +200,67 @@ pub fn save_tri_mesh_texture(
 }
 
 #[allow(clippy::identity_op)]
-pub fn save_tri_mesh<P, T>(
+pub fn save_tri_mesh_<P, T>(
     filepath: P,
     tri2vtx: &[usize],
-    vtx2xyz: &[T])
+    vtx2xyz: &[T],
+    num_dim: usize)
 where P: AsRef<std::path::Path>,
-      T: std::fmt::Display
+      T: num_traits::Float + std::fmt::Display
 {
     let file = File::create(filepath).expect("file not found.");
     let mut file = std::io::BufWriter::new(file);
-    for i_vtx in 0..vtx2xyz.len() / 3 {
-        writeln!(file, "v {} {} {}",
-                 vtx2xyz[i_vtx * 3 + 0], vtx2xyz[i_vtx * 3 + 1], vtx2xyz[i_vtx * 3 + 2]).expect("fail");
+    match num_dim {
+        3_usize => {
+            for i_vtx in 0..vtx2xyz.len() / 3 {
+                writeln!(file, "v {} {} {}",
+                         vtx2xyz[i_vtx * 3 + 0],
+                         vtx2xyz[i_vtx * 3 + 1],
+                         vtx2xyz[i_vtx * 3 + 2]).expect("fail");
+            }
+        }
+        2_usize => {
+            for i_vtx in 0..vtx2xyz.len() / 2 {
+                writeln!(file, "v {} {} {}",
+                         vtx2xyz[i_vtx * 2 + 0],
+                         vtx2xyz[i_vtx * 2 + 1], 0.).expect("fail");
+            }
+        }
+        _ => { panic!(); }
     }
     for i_tri in 0..tri2vtx.len() / 3 {
         writeln!(file, "f {} {} {}",
                  tri2vtx[i_tri * 3 + 0] + 1,
                  tri2vtx[i_tri * 3 + 1] + 1,
                  tri2vtx[i_tri * 3 + 2] + 1).expect("fail");
+    }
+}
+
+#[allow(clippy::identity_op)]
+pub fn save_tri_mesh<P, T, const N: usize>(
+    filepath: P,
+    tri2vtx: &[usize],
+    vtx2xyz: &[nalgebra::SVector<T, N>])
+    where P: AsRef<std::path::Path>,
+          T: num_traits::Float + std::fmt::Display
+{
+    let file = File::create(filepath).expect("file not found.");
+    let mut file = std::io::BufWriter::new(file);
+    match N {
+        3_usize => {
+            for vtx in vtx2xyz {
+                writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2]).expect("fail");
+            }
+        }
+        2_usize => {
+            for vtx in vtx2xyz {
+                writeln!(file, "v {} {} {}", vtx[0], vtx[1], 0.).expect("fail");
+            }
+        }
+        _ => { panic!(); }
+    }
+    for tri in tri2vtx.chunks(3) {
+        writeln!(file, "f {} {} {}", tri[0] + 1, tri[1] + 1, tri[2] + 1).expect("fail");
     }
 }
 

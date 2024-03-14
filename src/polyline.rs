@@ -7,7 +7,7 @@ use crate::polyloop::cog;
 /// the first point of the input point will be preserved
 /// the output polyline will be shorter than the input
 pub fn resample<T, const NDIM: usize>(
-    stroke0: &Vec<nalgebra::base::SVector<T, NDIM>>,
+    stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
     where T: nalgebra::RealField + Copy,
           f64: num_traits::AsPrimitive<T>
@@ -38,7 +38,7 @@ pub fn resample<T, const NDIM: usize>(
 }
 
 pub fn resample_preserve_corner<T, const NDIM: usize>(
-    stroke0: &Vec<nalgebra::base::SVector<T, NDIM>>,
+    stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
     where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
           f64: num_traits::AsPrimitive<T>,

@@ -79,7 +79,7 @@ pub fn from_specific_edges_of_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     edge2node: &[usize],
-    vtx2idx: &Vec<usize>,
+    vtx2idx: &[usize],
     idx2elem: &[usize],
     is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
     let num_edge = edge2node.len() / 2;

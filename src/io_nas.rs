@@ -28,7 +28,7 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
     let file = std::fs::File::open(path).expect("file not found.");
     let reader = std::io::BufReader::new(file);
     use std::io::BufRead;
-    for line in reader.lines().flatten() {
+    for line in reader.lines().map_while(Result::ok) {
         // println!("{:?}", line);
         if line.starts_with("GRID") {
             assert_eq!(line.len(), 48);

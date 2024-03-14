@@ -2,7 +2,7 @@
 
 #[allow(clippy::identity_op)]
 pub fn normalize_coords3 (
-    vtx2xyz: &mut Vec<f32>,
+    vtx2xyz: &mut [f32],
     size: f32) {
     let num_vtx = vtx2xyz.len() / 3;
     let mut mins = [1_f32; 3];

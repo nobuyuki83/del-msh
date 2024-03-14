@@ -4,7 +4,7 @@ use num_traits::AsPrimitive;
 
 /// return  arc-length of a 2D or 3D poly loop
 pub fn arclength_vec<T, const N: usize>(
-    vtxs: &Vec<nalgebra::SVector<T, N>>) -> T
+    vtxs: &[nalgebra::SVector<T, N>]) -> T
     where T: nalgebra::RealField + Copy,
           f64: num_traits::AsPrimitive<T>
 {
@@ -126,7 +126,7 @@ pub fn resample<T, const N: usize>(
     v2x_out
 }
 
-
+#[allow(clippy::identity_op)]
 pub fn resample_multiple_loops_remain_original_vtxs<T>(
     loop2idx_inout: &mut Vec<usize>,
     idx2vtx_inout: &mut Vec<usize>,

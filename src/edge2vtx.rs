@@ -4,8 +4,8 @@
 /// * `vtx2idx` - vertex to index list
 /// * `idx2vtx` - index to vertex list
 pub fn from_vtx2vtx(
-    vtx2idx: &Vec<usize>,
-    idx2vtx: &Vec<usize>) -> Vec<usize> {
+    vtx2idx: &[usize],
+    idx2vtx: &[usize]) -> Vec<usize> {
     let mut line2vtx = Vec::<usize>::with_capacity(idx2vtx.len() * 2);
     for i_vtx in 0..vtx2idx.len() - 1 {
         for &j_vtx in &idx2vtx[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
