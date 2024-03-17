@@ -42,3 +42,17 @@ pub fn vtx2area<T>(
     }
     vtx2area
 }
+
+
+#[allow(clippy::identity_op)]
+pub fn area_of_a_triangle<T>(
+    tri2vtx: &[usize],
+    vtx2xy: &[nalgebra::Vector2<T>],
+    i_tri: usize) -> T
+    where T: num_traits::Float
+{
+    let i0 = tri2vtx[i_tri*3+0];
+    let i1 = tri2vtx[i_tri*3+1];
+    let i2 = tri2vtx[i_tri*3+2];
+    del_geo::tri2::area(&vtx2xy[i0], &vtx2xy[i1], &vtx2xy[i2])
+}
