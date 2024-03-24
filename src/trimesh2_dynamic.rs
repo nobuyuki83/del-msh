@@ -40,8 +40,8 @@ pub fn add_points_to_mesh<T>(
     vtx2tri: &mut [usize],
     vtx2xy: &[nalgebra::Vector2<T>],
     i_vtx: usize)
-    where T: num_traits::Float + 'static + Copy + std::fmt::Debug,
-          f64: AsPrimitive<T>
+    where T: nalgebra::RealField + Copy + std::fmt::Debug,
+    f64: AsPrimitive<T>
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     if vtx2tri[i_vtx] != usize::MAX { return; } // already added
@@ -77,7 +77,7 @@ pub fn should_flip<T>(
     tri2vtx: &[usize],
     tri2tri: &[usize],
     vtx2xy: &[nalgebra::Vector2<T>]) -> bool
-    where T: num_traits::Float + std::fmt::Debug + 'static + Copy,
+    where T: nalgebra::RealField + 'static + Copy,
           f64: AsPrimitive<T>
 {
     if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() / 3 { return false; }// there is adjacent triangle
@@ -113,7 +113,7 @@ pub fn delaunay_around_point<T>(
     tri2tri: &mut [usize],
     vtx2tri: &mut [usize],
     vtx2xy: &[nalgebra::Vector2<T>])
-    where T: num_traits::Float + 'static + Copy + std::fmt::Debug,
+    where T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
           f64: AsPrimitive<T>
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
@@ -171,7 +171,7 @@ fn find_edge_point_across_edge<T>(
     tri2tri: &[usize],
     vtx2tri: &[usize],
     vtx2xy: &[nalgebra::Vector2<T>]) -> Option<(usize, usize, usize, T)>
-    where T: num_traits::Float + 'static + Copy + std::fmt::Debug,
+    where T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
           f64: AsPrimitive<T>
 {
     let i_tri_ini = vtx2tri[ipo0];
@@ -192,7 +192,7 @@ fn find_edge_point_across_edge<T>(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]]);
-                if area1 > -(1.0e-20_f64.as_()) {
+                if area1 > (-1.0e-20_f64).as_() {
                     assert!(area0 + area1 > 1.0e-20_f64.as_());
                     let ratio = area0 / (area0 + area1);
                     return Some((i_tri_cur, i2_node, i3_node, ratio));
@@ -229,12 +229,12 @@ fn find_edge_point_across_edge<T>(
                 &vtx2xy[ipo0],
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1]);
-            if area0 > -(1.0e-20_f64.as_()) {
+            if area0 > (-1.0e-20_f64).as_() {
                 let area1 = del_geo::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]]);
-                if area1 > -(1.0e-20_f64.as_()) {
+                if area1 > (-1.0e-20_f64).as_() {
                     assert!(area0 + area1 > 1.0e-20_f64.as_());
                     let ratio = area0 / (area0 + area1);
                     return Some((i_tri_cur, i2_node, i3_node, ratio));
@@ -266,7 +266,7 @@ pub fn enforce_edge<T>(
     i0_vtx: usize,
     i1_vtx: usize,
     vtx2xy: &[nalgebra::Vector2<T>])
-    where T: num_traits::Float + 'static + Copy + std::fmt::Debug,
+    where T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
           f64: AsPrimitive<T>
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
@@ -299,7 +299,7 @@ pub fn enforce_edge<T>(
                 find_edge_point_across_edge(
                     i0_vtx, i1_vtx,
                     tri2vtx, tri2tri, vtx2tri, vtx2xy) else { panic!(); };
-            assert!(ratio > -(1.0e-20_f64.as_()));
+            assert!(ratio > (-1.0e-20_f64).as_());
             // assert!( ratio < 1_f64.as_() + 1.0e-20_f64.as_());
             assert!(del_geo::tri2::area(&vtx2xy[i0_vtx], &vtx2xy[tri2vtx[i0_tri * 3 + i0_node]], &vtx2xy[i1_vtx]) > 1.0e-20_f64.as_());
             assert!(del_geo::tri2::area(&vtx2xy[i0_vtx], &vtx2xy[i1_vtx], &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]) > 1.0e-20_f64.as_());
@@ -425,27 +425,26 @@ pub fn laplacian_mesh_smoothing_around_point<T>(
     tri2vtx: &[usize],
     tri2tri: &[usize],
     vtx2tri: &[usize]) -> bool
-    where T: num_traits::Float + std::fmt::Debug
-    + std::ops::AddAssign + std::ops::DivAssign + 'static + Copy,
-          usize: num_traits::AsPrimitive<T>,
+    where T: nalgebra::RealField + 'static + Copy,
+          usize: AsPrimitive<T>,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     let mut i_tri0 = vtx2tri[i_vtx0];
     let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx, i_tri0);
     let pos_before = vtx2xy[i_vtx0];
     let mut pos_new = vtx2xy[i_vtx0];
-    let mut ntri_around: usize = 1;
+    let mut num_tri_around: usize = 1;
     loop { // counter-clock wise
         assert!(i_tri0 < tri2vtx.len() && i_node0 < 3 );
         assert_eq!(tri2vtx[i_tri0*3+i_node0], i_vtx0);
         pos_new += vtx2xy[tri2vtx[i_tri0*3+(i_node0 + 1) % 3]];
-        ntri_around += 1;
+        num_tri_around += 1;
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0, &mut i_node0, usize::MAX, tri2vtx, tri2tri) {
             return false; }
         if i_tri0 == vtx2tri[i_vtx0] { break; }
     }
-    vtx2xy[i_vtx0] = pos_new / ntri_around.as_();
+    vtx2xy[i_vtx0] = pos_new / num_tri_around.as_();
     //
     let mut flipped = false;
     i_tri0 = vtx2tri[i_vtx0];
@@ -479,8 +478,7 @@ pub fn add_points_uniformly<T>(
     num_vtx_fix: usize,
     nflgpnt_offset: usize,
     target_len: T)
-    where T: num_traits::Float + std::ops::AddAssign + std::ops::DivAssign+
-    'static + std::fmt::Debug + Default + std::ops::MulAssign,
+    where T: nalgebra::RealField + Copy + 'static + std::fmt::Debug + Default,
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
 {

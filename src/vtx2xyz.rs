@@ -20,7 +20,7 @@ pub fn normalize<T>(
 
 
 pub fn from_array_of_nalgebra<T>(
-    vecs: &Vec::<nalgebra::Vector3::<T>>) -> Vec<T>
+    vecs: &Vec<nalgebra::Vector3<T>>) -> Vec<T>
 where T: nalgebra::RealField + Copy
 {
     let mut res = Vec::<T>::with_capacity(vecs.len()*3);
