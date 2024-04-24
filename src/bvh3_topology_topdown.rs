@@ -2,7 +2,7 @@ use num_traits::AsPrimitive;
 fn dominant_direction_pca<T>(
     remaining_elems: &[usize],
     elem2center: &[T])
-    -> (nalgebra::Vector3::<T>, nalgebra::Vector3::<T>)
+    -> (nalgebra::Vector3<T>, nalgebra::Vector3<T>)
     where T: nalgebra::RealField + 'static + Copy,
           usize: AsPrimitive<T>
 {
@@ -28,7 +28,7 @@ fn dominant_direction_pca<T>(
 #[allow(dead_code)]
 fn dominant_direction_aabb(
     remaining_elems: &[usize],
-    elem2center: &[f32]) -> (nalgebra::Vector3::<f32>, nalgebra::Vector3::<f32>)
+    elem2center: &[f32]) -> (nalgebra::Vector3<f32>, nalgebra::Vector3<f32>)
 {
     let aabb = del_geo::aabb3::from_list_of_vertices(
         remaining_elems, elem2center, 1.0e-6);
@@ -177,6 +177,6 @@ pub fn from_triangle_mesh<T>(
     let tri2center = crate::elem2center::from_uniform_mesh(
         tri2vtx, 3,
         vtx2xyz, 3);
-    crate::bvh3_topology_topdown::from_uniform_mesh_with_elem2elem_elem2center(
+    from_uniform_mesh_with_elem2elem_elem2center(
         &tri2tri ,3, &tri2center)
 }

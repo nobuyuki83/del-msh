@@ -1,6 +1,6 @@
 [package]
 name = "del-msh"
-version = "0.1.27"
+version = "0.1.28"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -12,8 +12,8 @@ description = "mesh utility library for computer graphics research and prototypi
 [dependencies]
 rand = "0.8.5"
 num-traits = "0.2.18"
-nalgebra = "0.32.4"
+nalgebra = "0.32.5"
 ordered-float = "4.2.0"
 
 # del-geo = {path="../del-geo"}
-del-geo = "0.1.21"
+del-geo = "0.1.22"

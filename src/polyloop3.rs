@@ -3,9 +3,9 @@
 use num_traits::AsPrimitive;
 
 pub fn vtx2framex<T>(
-    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
+    vtx2xyz: &[T]) -> nalgebra::Matrix3xX<T>
     where T: nalgebra::RealField + 'static + Copy,
-          f64: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     use del_geo::vec3::to_na;
     let num_vtx = vtx2xyz.len() / 3;
@@ -23,8 +23,8 @@ pub fn vtx2framex<T>(
         let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
         let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
         let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
-        let b01: nalgebra::Vector3::<T> = vtx2bin.column(iseg0).into_owned();
-        let b12: nalgebra::Vector3::<T> = rot * b01;
+        let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
+        let b12: nalgebra::Vector3<T> = rot * b01;
         vtx2bin.column_mut(iseg1).copy_from(&b12);
     }
     vtx2bin
@@ -32,7 +32,7 @@ pub fn vtx2framex<T>(
 
 pub fn framez<T>(
     vtx2xyz: &[T],
-    i_vtx: usize) -> nalgebra::Vector3::<T>
+    i_vtx: usize) -> nalgebra::Vector3<T>
     where T: nalgebra::RealField + Copy
 {
     let num_vtx = vtx2xyz.len() / 3;
@@ -47,7 +47,7 @@ pub fn framez<T>(
 
 fn match_frames_of_two_ends<T>(
     vtx2xyz: &[T],
-    vtx2bin0: &nalgebra::Matrix3xX::<T>) -> nalgebra::Matrix3xX::<T>
+    vtx2bin0: &nalgebra::Matrix3xX<T>) -> nalgebra::Matrix3xX<T>
     where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -86,10 +86,10 @@ fn match_frames_of_two_ends<T>(
 }
 
 pub fn smooth_frame<T>(
-    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
+    vtx2xyz: &[T]) -> nalgebra::Matrix3xX<T>
     where T: nalgebra::RealField + 'static + Copy,
-          f64: num_traits::AsPrimitive<T>,
-          usize: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
 {
     let vtx2bin0 = vtx2framex(vtx2xyz);
     // dbg!(&vtx2bin0);
@@ -97,7 +97,7 @@ pub fn smooth_frame<T>(
 }
 
 pub fn normal_binormal<T>(
-    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX::<T>, nalgebra::Matrix3xX::<T>)
+    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX<T>, nalgebra::Matrix3xX<T>)
     where T: nalgebra::RealField + Copy
 {
     let num_vtx = vtx2xyz.len() / 3;
@@ -119,9 +119,10 @@ pub fn normal_binormal<T>(
     (vtx2nrm, vtx2bin)
 }
 
+/// TODO: it might be better to specify the normal vector
 pub fn to_trimesh3_torus(
-    vtx2xyz: &nalgebra::Matrix3xX::<f32>,
-    vtx2bin: &nalgebra::Matrix3xX::<f32>,
+    vtx2xyz: &nalgebra::Matrix3xX<f32>,
+    vtx2bin: &nalgebra::Matrix3xX<f32>,
     rad: f32,
     ndiv_circum: usize) -> (Vec<usize>, Vec<f32>) {
     let n = ndiv_circum;
@@ -161,7 +162,7 @@ pub fn to_trimesh3_torus(
 
 pub fn smooth_gradient_of_distance(
     vtx2xyz: &[f64],
-    q: &nalgebra::Vector3::<f64>) -> nalgebra::Vector3::<f64>
+    q: &nalgebra::Vector3<f64>) -> nalgebra::Vector3<f64>
 {
     use del_geo::vec3::to_na;
     let n = vtx2xyz.len() / 3;
@@ -179,11 +180,11 @@ pub fn smooth_gradient_of_distance(
 }
 
 pub fn extend_avoid_intersection(
-    p0: &nalgebra::Vector3::<f64>,
-    v0: &nalgebra::Vector3::<f64>,
+    p0: &nalgebra::Vector3<f64>,
+    v0: &nalgebra::Vector3<f64>,
     vtx2xyz: &[f64],
     eps: f64,
-    n: usize) -> nalgebra::Vector3::<f64>
+    n: usize) -> nalgebra::Vector3<f64>
 {
     let mut p1 = p0 + v0.scale(eps);
     for _i in 0..n {
@@ -195,7 +196,7 @@ pub fn extend_avoid_intersection(
 
 pub fn tube_mesh_avoid_intersection(
     vtx2xyz: &[f64],
-    vtx2bin: &nalgebra::Matrix3xX::<f64>,
+    vtx2bin: &nalgebra::Matrix3xX<f64>,
     eps: f64,
     niter: usize) -> (Vec<usize>, Vec<f64>)
 {
@@ -238,7 +239,7 @@ pub fn tube_mesh_avoid_intersection(
 
 pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(
     filepath: P,
-    vtx2xyz: &nalgebra::Matrix3xX::<f32>) {
+    vtx2xyz: &nalgebra::Matrix3xX<f32>) {
     use std::io::Write;
     let mut file = std::fs::File::create(filepath).expect("file not found.");
     for vtx in vtx2xyz.column_iter() {
@@ -254,8 +255,8 @@ pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(
 
 pub fn nearest_to_edge3<T>(
     vtx2xyz: &[T],
-    p0: &nalgebra::Vector3::<T>,
-    p1: &nalgebra::Vector3::<T>) -> (T, T, T)
+    p0: &nalgebra::Vector3<T>,
+    p1: &nalgebra::Vector3<T>) -> (T, T, T)
     where T: nalgebra::RealField + Copy,
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -281,7 +282,7 @@ pub fn nearest_to_edge3<T>(
 
 pub fn nearest_to_point3<T>(
     vtx2xyz: &[T],
-    p0: &nalgebra::Vector3::<T>) -> (T, T)
+    p0: &nalgebra::Vector3<T>) -> (T, T)
     where T: nalgebra::RealField + Copy,
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -337,7 +338,7 @@ pub fn winding_number(
 #[allow(clippy::identity_op)]
 pub fn position_from_barycentric_coordinate<T>(
     vtx2xyz: &[T],
-    r: T) -> nalgebra::Vector3::<T>
+    r: T) -> nalgebra::Vector3<T>
     where T: nalgebra::RealField + AsPrimitive<usize>,
           usize: AsPrimitive<T>
 {

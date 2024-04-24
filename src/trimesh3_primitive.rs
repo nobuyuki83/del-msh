@@ -2,63 +2,108 @@
 
 use num_traits::AsPrimitive;
 
-/// generate 3D mesh of closed cylinder
-/// * `r` - radius
-/// * 'l' - length
+/// generate 3D mesh of open cylinder
+/// * `radius` - radius
+/// * 'length' - length
 #[allow(clippy::identity_op)]
-pub fn cylinder_closed_end_yup<T>(
-    r: T,
-    l: T,
-    nr: usize,
-    nl: usize) -> (Vec<usize>, Vec<T>)
-    where T: num_traits::Float + 'static,
-          f32: num_traits::AsPrimitive<T>,
-          usize: num_traits::AsPrimitive<T>
+pub fn cylinder_open_end_yup<T>(
+    ndiv_circumference: usize)
+    -> (nalgebra::Matrix3xX<usize>, nalgebra::Matrix3xX<T>)
+    where T: nalgebra::RealField + num_traits::FloatConst + Copy + 'static,
+          usize: AsPrimitive<T>
 {
-    let mut vtx2xyz = Vec::<T>::new();
-    let mut tri2vtx = Vec::<usize>::new();
-    if nl < 1 || nr <= 2 {
-        return (tri2vtx, vtx2xyz);
-    }
-    let pi: T = std::f32::consts::PI.as_();
-    let dl: T = l / (nl).as_();
-    let dr: T = (2.).as_() * pi / (nr).as_();
-    vtx2xyz.reserve((nr * (nl + 1) + 2) * 3);
-    {
-        vtx2xyz.push(0.as_());
-        vtx2xyz.push(-l * (0.5).as_());
-        vtx2xyz.push((0.).as_());
-    }
-    for il in 0..nl + 1 {
-        let y0 = -l * (0.5).as_() + dl * (il).as_();
-        for ilo in 0..nr {
-            let x0 = r * (dr * (ilo).as_()).cos();
-            let z0 = r * (dr * (ilo).as_()).sin();
-            vtx2xyz.push(x0);
-            vtx2xyz.push(y0);
-            vtx2xyz.push(z0);
-        }
-    }
-    {
-        vtx2xyz.push((0.).as_());
-        vtx2xyz.push(l * (0.5).as_());
-        vtx2xyz.push((0.).as_());
+    assert!(ndiv_circumference > 2);
+    let mut vtx2xyz = nalgebra::Matrix3xX::<T>::zeros(ndiv_circumference * 2);
+    let zero = T::zero();
+    let one = T::one();
+    let two = T::one() + T::one();
+    let pi: T = T::PI();
+    let dr: T = two * pi / ndiv_circumference.as_();
+    for ilo in 0..ndiv_circumference {
+        let x0 = (dr * ilo.as_()).cos();
+        let z0 = (dr * ilo.as_()).sin();
+        vtx2xyz.column_mut(ilo).x = x0;
+        vtx2xyz.column_mut(ilo).y = zero;
+        vtx2xyz.column_mut(ilo).z = z0;
+        vtx2xyz.column_mut(ilo + ndiv_circumference).x = x0;
+        vtx2xyz.column_mut(ilo + ndiv_circumference).y = one;
+        vtx2xyz.column_mut(ilo + ndiv_circumference).z = z0;
     }
     // ------------------------------------
-    let nla = nl + 2;
-    let ntri = nr * (nla - 1) * 2 + nr * 2;
-    tri2vtx.reserve(ntri * 3);
-    for ilo in 0..nr {
-        tri2vtx.push(0);
-        tri2vtx.push((ilo + 0) % nr + 1);
-        tri2vtx.push((ilo + 1) % nr + 1);
+    let mut tri2vtx = nalgebra::Matrix3xX::<usize>::zeros(ndiv_circumference * 2);
+    for i_edge in 0..ndiv_circumference {
+        let i0_vtx = i_edge;
+        let i1_vtx = (i_edge + 1) % ndiv_circumference;
+        let i2_vtx = i_edge + ndiv_circumference;
+        let i3_vtx = (i_edge + 1) % ndiv_circumference + ndiv_circumference;
+        tri2vtx.column_mut(i_edge*2+0).x = i0_vtx;
+        tri2vtx.column_mut(i_edge*2+0).y = i3_vtx;
+        tri2vtx.column_mut(i_edge*2+0).z = i1_vtx;
+        tri2vtx.column_mut(i_edge*2+1).x = i0_vtx;
+        tri2vtx.column_mut(i_edge*2+1).y = i2_vtx;
+        tri2vtx.column_mut(i_edge*2+1).z = i3_vtx;
     }
-    for ila in 0..nla - 2 {
-        for ilo in 0..nr {
-            let i1 = (ila + 0) * nr + 1 + (ilo + 0) % nr;
-            let i2 = (ila + 0) * nr + 1 + (ilo + 1) % nr;
-            let i3 = (ila + 1) * nr + 1 + (ilo + 1) % nr;
-            let i4 = (ila + 1) * nr + 1 + (ilo + 0) % nr;
+    (tri2vtx, vtx2xyz)
+}
+
+#[test]
+fn test_cylider_open_end_tri3() {
+    crate::trimesh3_primitive::cylinder_open_end_yup::<f32>(32);
+    crate::trimesh3_primitive::cylinder_open_end_yup::<f64>(32);
+}
+
+// -------------------------------------
+
+pub fn cylinder_open_connecting_two_points<Real>(
+    ndiv_circumference: usize,
+    r: Real,
+    p0: nalgebra::Vector3::<Real>,
+    p1: nalgebra::Vector3::<Real>)
+    -> (nalgebra::Matrix3xX<usize>, nalgebra::Matrix3xX<Real>)
+    where Real: 'static + nalgebra::RealField + Copy + num_traits::FloatConst,
+          usize: AsPrimitive<Real>,
+            f64: AsPrimitive<Real>
+{
+    let (tri2vtx, vtx2xyz0)
+        = cylinder_open_end_yup(ndiv_circumference);
+    let len = (p1 - p0).norm();
+    let scale = {
+        let mut scale = nalgebra::Matrix3::<Real>::zeros();
+        scale.m11 = r;
+        scale.m22 = len;
+        scale.m33 = r;
+        scale
+    };
+    let rot = del_geo::mat3::minimum_rotation_matrix(
+        nalgebra::Vector3::<Real>::new(Real::zero(), Real::one(), Real::zero()),
+        (p1-p0).normalize());
+    let mut vtx2xyz1 = (rot * scale) * vtx2xyz0;
+    for mut xyz in vtx2xyz1.column_iter_mut() { xyz += p0; }
+    (tri2vtx, vtx2xyz1)
+}
+
+
+// -------------------------------------
+
+#[allow(clippy::identity_op)]
+fn cylinder_like_topology(
+    ndiv_side: usize,
+    ndiv_circumference: usize) -> Vec<usize>
+{
+    let ndiv_longtitude = ndiv_side + 2;
+    let num_tri = ndiv_circumference * (ndiv_longtitude - 1) * 2 + ndiv_circumference * 2;
+    let mut tri2vtx = Vec::<usize>::with_capacity(num_tri * 3);
+    for ic in 0..ndiv_circumference {
+        tri2vtx.push(0);
+        tri2vtx.push((ic + 0) % ndiv_circumference + 1);
+        tri2vtx.push((ic + 1) % ndiv_circumference + 1);
+    }
+    for ih in 0..ndiv_longtitude - 2 {
+        for ic in 0..ndiv_circumference {
+            let i1 = (ih + 0) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference;
+            let i2 = (ih + 0) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference;
+            let i3 = (ih + 1) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference;
+            let i4 = (ih + 1) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference;
             tri2vtx.push(i3);
             tri2vtx.push(i2);
             tri2vtx.push(i1);
@@ -67,11 +112,59 @@ pub fn cylinder_closed_end_yup<T>(
             tri2vtx.push(i1);
         }
     }
-    for ilo in 0..nr {
-        tri2vtx.push(nr * (nla - 1) + 1);
-        tri2vtx.push((nla - 2) * nr + 1 + (ilo + 1) % nr);
-        tri2vtx.push((nla - 2) * nr + 1 + (ilo + 0) % nr);
+    for ic in 0..ndiv_circumference {
+        tri2vtx.push(ndiv_circumference * (ndiv_longtitude - 1) + 1);
+        tri2vtx.push((ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference);
+        tri2vtx.push((ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference);
     }
+    tri2vtx
+}
+
+/// generate 3D mesh of closed cylinder
+/// * `radius` - radius
+/// * 'length' - length
+#[allow(clippy::identity_op)]
+pub fn cylinder_closed_end_yup<T>(
+    radius: T,
+    length: T,
+    ndiv_circumference: usize,
+    ndiv_length: usize) -> (Vec<usize>, Vec<T>)
+    where T: num_traits::Float + num_traits::FloatConst + 'static,
+          usize: AsPrimitive<T>
+{
+    let mut vtx2xyz = Vec::<T>::new();
+    if ndiv_length < 1 || ndiv_circumference <= 2 {
+        return (vec!(), vtx2xyz);
+    }
+    let zero = T::zero();
+    let two = T::one() + T::one();
+    let half = T::one() / two;
+    let pi: T = T::PI();
+    let dl: T = length / ndiv_length.as_();
+    let dr: T = two * pi / ndiv_circumference.as_();
+    vtx2xyz.reserve((ndiv_circumference * (ndiv_length + 1) + 2) * 3);
+    { // bottom
+        vtx2xyz.push(zero);
+        vtx2xyz.push(-length * half);
+        vtx2xyz.push(zero);
+    }
+    for il in 0..ndiv_length + 1 {
+        let y0 = -length * half + dl * il.as_();
+        for ilo in 0..ndiv_circumference {
+            let x0 = radius * (dr * ilo.as_()).cos();
+            let z0 = radius * (dr * ilo.as_()).sin();
+            vtx2xyz.push(x0);
+            vtx2xyz.push(y0);
+            vtx2xyz.push(z0);
+        }
+    }
+    { // top
+        vtx2xyz.push(zero);
+        vtx2xyz.push(length * half);
+        vtx2xyz.push(zero);
+    }
+    // ------------------------------------
+    let tri2vtx = cylinder_like_topology(ndiv_length, ndiv_circumference);
     (tri2vtx, vtx2xyz)
 }
 
@@ -90,17 +183,17 @@ pub fn capsule_yup<T>(
     ndiv_circum: usize,
     ndiv_longtitude: usize,
     ndiv_length: usize) -> (Vec<usize>, Vec<T>)
-    where T: num_traits::Float + 'static,
-          f32: num_traits::AsPrimitive<T>,
-          usize: num_traits::AsPrimitive<T>
+    where T: num_traits::Float + num_traits::FloatConst + 'static,
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
 {
     let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_yup::<T>(
         T::one(), T::one(),
         ndiv_circum, 2 * ndiv_longtitude + ndiv_length - 2);
     assert_eq!(vtx2xyz.len() / 3, (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2);
-    let pi: T = (std::f32::consts::PI).as_();
+    let pi: T = T::PI();
     let half: T = 0.5.as_();
-    {   // south pole
+    {   // South Pole
         vtx2xyz[0] = T::zero();
         vtx2xyz[1] = -l * half - r;
         vtx2xyz[2] = T::zero();
@@ -127,7 +220,7 @@ pub fn capsule_yup<T>(
     }
     for ir in 0..ndiv_longtitude {
         let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
-        let y0 = l * half + r * (t0).sin();
+        let y0 = l * half + r * t0.sin();
         let c0 = r * t0.cos();
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
@@ -136,7 +229,7 @@ pub fn capsule_yup<T>(
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] = c0 * theta.sin();
         }
     }
-    {  // north pole
+    {  // North Pole
         let np = vtx2xyz.len() / 3;
         vtx2xyz[(np - 1) * 3 + 0] = T::zero();
         vtx2xyz[(np - 1) * 3 + 1] = l * half + r;
@@ -153,30 +246,29 @@ fn test_capsule_tri3() {
 
 
 pub fn capsule_connecting_two_point<T>(
-    p0: &[T],
-    p1: &[T],
+    p0: &[T; 3],
+    p1: &[T; 3],
     rad: T,
     ndiv_circum: usize,
     ndiv_longtitude: usize,
     ndiv_length: usize) -> (Vec<usize>, Vec<T>)
-where T: nalgebra::RealField + Copy + num_traits::Float,
-    f32: AsPrimitive<T>,
-    f64: AsPrimitive<T>,
-    usize: AsPrimitive<T>
+    where T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
 {
     let p0 = nalgebra::Vector3::<T>::from_column_slice(p0);
     let p1 = nalgebra::Vector3::<T>::from_column_slice(p1);
-    let len = (p1-p0).norm();
+    let len = (p1 - p0).norm();
     let (tri2vtx, mut vtx2xyz) = capsule_yup(
         rad, len,
         ndiv_circum, ndiv_longtitude, ndiv_length);
-    let q2 = nalgebra::Vector3::<T>::new(T::zero(), len*0.5_f64.as_(),T::zero());
+    let q2 = nalgebra::Vector3::<T>::new(T::zero(), len * 0.5_f64.as_(), T::zero());
     let mat = del_geo::mat3::minimum_rotation_matrix(
         nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
-        (p1-p0).normalize());
+        (p1 - p0).normalize());
     for v in vtx2xyz.chunks_mut(3) {
-        let q0 =  nalgebra::Vector3::<T>::new(v[0],v[1],v[2]);
-        let q1 = mat * (q0+q2) + p0;
+        let q0 = nalgebra::Vector3::<T>::new(v[0], v[1], v[2]);
+        let q1 = mat * (q0 + q2) + p0;
         v[0] = q1.x;
         v[1] = q1.y;
         v[2] = q1.z;
@@ -188,38 +280,41 @@ where T: nalgebra::RealField + Copy + num_traits::Float,
 // --------------------------------------------------------
 
 #[allow(clippy::identity_op)]
-pub fn torus_yup<T>(
-    radius_: T, // latitude
-    radius_tube_: T, // meridian
-    nlg: usize, // latitude
-    nlt: usize) // meridian
-    -> (Vec<usize>, Vec<T>)
-    where T: num_traits::Float + 'static,
-          f32: AsPrimitive<T>,
-          usize: AsPrimitive<T>
+pub fn torus_yup<Index, Float>(
+    major_radius: Float,
+    minor_radius: Float,
+    ndiv_major: usize, // latitude
+    ndiv_minor: usize) // longtitude
+    -> (Vec<Index>, Vec<Float>)
+    where Float: num_traits::Float + Default + 'static,
+          Index: Default + 'static + Copy,
+          f32: AsPrimitive<Float>,
+          usize: AsPrimitive<Float> + AsPrimitive<Index>
 {
-    let rlg: T = (std::f32::consts::PI * 2_f32).as_() / nlg.as_();  // latitude
-    let rlt: T = (std::f32::consts::PI * 2_f32).as_() / nlt.as_();
-    let mut vtx2xyz: Vec<T> = vec![0_f32.as_(); nlg * nlt * 3];
-    for ilg in 0..nlg {
-        for ilt in 0..nlt {
-            let r0: T = radius_ + radius_tube_ * (ilt.as_() * rlt).cos();
-            vtx2xyz[(ilg * nlt + ilt) * 3 + 0] = r0 * (ilg.as_() * rlg).sin();
-            vtx2xyz[(ilg * nlt + ilt) * 3 + 1] = r0 * (ilg.as_() * rlg).cos();
-            vtx2xyz[(ilg * nlt + ilt) * 3 + 2] = radius_tube_ * (ilt.as_() * rlt).sin();
+    let rlg: Float = (std::f32::consts::PI * 2_f32).as_() / ndiv_major.as_();  // latitude
+    let rlt: Float = (std::f32::consts::PI * 2_f32).as_() / ndiv_minor.as_();
+    let mut vtx2xyz: Vec<Float> = vec![Default::default(); ndiv_major * ndiv_minor * 3];
+    for ilg in 0..ndiv_major {
+        for ilt in 0..ndiv_minor {
+            let lt: Float = <usize as AsPrimitive<Float>>::as_(ilt) * rlt;
+            let lg: Float = <usize as AsPrimitive<Float>>::as_(ilg) * rlg;
+            let r0: Float = major_radius + minor_radius * lt.cos();
+            vtx2xyz[(ilg * ndiv_minor + ilt) * 3 + 0] = r0 * lg.sin();
+            vtx2xyz[(ilg * ndiv_minor + ilt) * 3 + 1] = r0 * lg.cos();
+            vtx2xyz[(ilg * ndiv_minor + ilt) * 3 + 2] = minor_radius * lt.sin();
         }
     }
-    let mut tri2vtx = vec![0; nlg * nlt * 2 * 3];
-    for ilg in 0..nlg {
-        for ilt in 0..nlt {
-            let iug = if ilg == nlg - 1 { 0 } else { ilg + 1 };
-            let iut = if ilt == nlt - 1 { 0 } else { ilt + 1 };
-            tri2vtx[(ilg * nlt + ilt) * 6 + 0] = ilg * nlt + ilt;
-            tri2vtx[(ilg * nlt + ilt) * 6 + 2] = iug * nlt + ilt;
-            tri2vtx[(ilg * nlt + ilt) * 6 + 1] = iug * nlt + iut;
-            tri2vtx[(ilg * nlt + ilt) * 6 + 3] = ilg * nlt + ilt;
-            tri2vtx[(ilg * nlt + ilt) * 6 + 5] = iug * nlt + iut;
-            tri2vtx[(ilg * nlt + ilt) * 6 + 4] = ilg * nlt + iut;
+    let mut tri2vtx: Vec<Index> = vec![Default::default(); ndiv_major * ndiv_minor * 6];
+    for ilg in 0..ndiv_major {
+        for ilt in 0..ndiv_minor {
+            let iug = if ilg == ndiv_major - 1 { 0 } else { ilg + 1 };
+            let iut = if ilt == ndiv_minor - 1 { 0 } else { ilt + 1 };
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 0] = (ilg * ndiv_minor + ilt).as_();
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 2] = (iug * ndiv_minor + ilt).as_();
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 1] = (iug * ndiv_minor + iut).as_();
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 3] = (ilg * ndiv_minor + ilt).as_();
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 5] = (iug * ndiv_minor + iut).as_();
+            tri2vtx[(ilg * ndiv_minor + ilt) * 6 + 4] = (ilg * ndiv_minor + iut).as_();
         }
     }
     (tri2vtx, vtx2xyz)
@@ -227,18 +322,18 @@ pub fn torus_yup<T>(
 
 #[test]
 fn test_torus_tri3() {
-    torus_yup::<f64>(1., 1., 32, 32);
-    torus_yup::<f32>(1., 1., 32, 32);
+    torus_yup::<usize, f32>(1., 1., 32, 32);
+    torus_yup::<usize, f64>(1., 1., 32, 32);
 }
 
 // --------------
 
-/// the spherical cooridnate around y-axis
+/// the spherical coordinate around y-axis
 #[allow(clippy::identity_op)]
 pub fn sphere_yup<T>(
     radius: T,
     n_longitude: usize,
-    n_latitude: usize)  -> (Vec<usize>, Vec<T>)
+    n_latitude: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -268,31 +363,17 @@ pub fn sphere_yup<T>(
 //
     let ntri = n_latitude * (n_longitude - 1) * 2 + n_latitude * 2;
     tri2vtx.reserve(ntri * 3);
-    for ilo in 0..n_latitude {
-        tri2vtx.push(0);
-        tri2vtx.push((ilo + 0) % n_latitude + 1);
-        tri2vtx.push((ilo + 1) % n_latitude + 1);
-    }
-    for ila in 0..n_longitude -2 {
-        for ilo in 0..n_latitude {
-            let i1 = (ila + 0) * n_latitude + 1 + (ilo + 0) % n_latitude;
-            let i2 = (ila + 0) * n_latitude + 1 + (ilo + 1) % n_latitude;
-            let i3 = (ila + 1) * n_latitude + 1 + (ilo + 1) % n_latitude;
-            let i4 = (ila + 1) * n_latitude + 1 + (ilo + 0) % n_latitude;
-            tri2vtx.push(i3);
-            tri2vtx.push(i2);
-            tri2vtx.push(i1);
-            tri2vtx.push(i4);
-            tri2vtx.push(i3);
-            tri2vtx.push(i1);
-        }
-    }
-    for ilo in 0..n_latitude {
-        tri2vtx.push(n_latitude * (n_longitude - 1) + 1);
-        tri2vtx.push((n_longitude - 2) * n_latitude + 1 + (ilo + 1) % n_latitude);
-        tri2vtx.push((n_longitude - 2) * n_latitude + 1 + (ilo + 0) % n_latitude);
-    }
+
+    let tri2vtx = cylinder_like_topology(n_longitude - 2, n_latitude);
     (tri2vtx, vtx2xyz)
+}
+
+#[test]
+fn test_sphere_yup() {
+    let (tri2vtx, vtx2xyz) = sphere_yup::<f64>(1.0, 16, 8);
+    crate::io_obj::save_tri_mesh_(
+        "target/sphere_yup.obj",
+        &tri2vtx, &vtx2xyz, 3).unwrap();
 }
 
 // ----------------------------------------
@@ -301,7 +382,7 @@ pub fn sphere_yup<T>(
 pub fn hemisphere_zup<T>(
     radius: T,
     n_longitude: usize,
-    n_latitude: usize)  -> (Vec<usize>, Vec<T>)
+    n_latitude: usize) -> (Vec<usize>, Vec<T>)
     where T: num_traits::Float + 'static,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -312,8 +393,8 @@ pub fn hemisphere_zup<T>(
     let pi: T = std::f32::consts::PI.as_();
     let dl: T = 0.5.as_() * pi / n_longitude.as_();
     let dr: T = 2.as_() * pi / n_latitude.as_();
-    let nvtx = n_latitude * n_longitude  + 1;
-    let mut vtx2xyz = Vec::<T>::with_capacity( nvtx * 3);
+    let nvtx = n_latitude * n_longitude + 1;
+    let mut vtx2xyz = Vec::<T>::with_capacity(nvtx * 3);
     for ila in 0..n_longitude + 1 {
         let z0 = (dl * ila.as_()).cos();
         let r0 = (dl * ila.as_()).sin();
@@ -326,16 +407,16 @@ pub fn hemisphere_zup<T>(
             if ila == 0 { break; }
         }
     }
-    assert_eq!(nvtx*3,vtx2xyz.len());
+    assert_eq!(nvtx * 3, vtx2xyz.len());
     //
-    let ntri = n_latitude * (n_longitude-1) * 2 + n_latitude;
+    let ntri = n_latitude * (n_longitude - 1) * 2 + n_latitude;
     let mut tri2vtx = Vec::<usize>::with_capacity(ntri * 3);
     for ilo in 0..n_latitude {
         tri2vtx.push(0);
         tri2vtx.push((ilo + 0) % n_latitude + 1);
         tri2vtx.push((ilo + 1) % n_latitude + 1);
     }
-    for ilong in 0..n_longitude-1 {
+    for ilong in 0..n_longitude - 1 {
         for ilat in 0..n_latitude {
             let i1 = (ilong + 0) * n_latitude + 1 + (ilat + 0) % n_latitude;
             let i2 = (ilong + 0) * n_latitude + 1 + (ilat + 1) % n_latitude;
@@ -349,7 +430,141 @@ pub fn hemisphere_zup<T>(
             tri2vtx.push(i1);
         }
     }
-    assert_eq!(ntri*3,tri2vtx.len());
+    assert_eq!(ntri * 3, tri2vtx.len());
     (tri2vtx, vtx2xyz)
 }
 
+// ---------------------------
+
+#[allow(clippy::identity_op)]
+pub fn bypyramid_zup<Real>(
+    length: Real,
+    rad_ratio: Real,
+    node_ratio: Real) -> (Vec<usize>, Vec<Real>)
+    where Real: num_traits::FloatConst + num_traits::Float + 'static,
+          usize: AsPrimitive<Real>
+{
+    let zero = Real::zero();
+    let mut vtx2xyz: Vec<Real> = vec!(
+        zero, zero, zero,
+        zero, zero, length);
+    {
+        let dt = Real::PI() / (Real::one() + Real::one());
+        let r0 = length * rad_ratio;
+        for idiv in 0..4 {
+            let s0 = r0 * (idiv.as_() * dt).sin();
+            let c0 = r0 * (idiv.as_() * dt).cos();
+            vtx2xyz.push(s0);
+            vtx2xyz.push(c0);
+            vtx2xyz.push(length * node_ratio);
+        }
+    }
+    //
+    let mut tri2vtx: Vec<usize> = vec!();
+    for idiv in 0..4 {
+        tri2vtx.push(0);
+        tri2vtx.push(2 + (0 + idiv) % 4);
+        tri2vtx.push(2 + (1 + idiv) % 4);
+        //
+        tri2vtx.push(1);
+        tri2vtx.push(2 + (1 + idiv) % 4);
+        tri2vtx.push(2 + (0 + idiv) % 4);
+    }
+    (tri2vtx, vtx2xyz)
+}
+
+#[test]
+fn test_biypyramid_zup() {
+    let (tri2vtx, vtx2xyz)
+        = bypyramid_zup::<f64>(2.0, 0.2, 0.3);
+    crate::io_obj::save_tri_mesh_(
+        "target/bipyramid_zup.obj",
+        &tri2vtx, &vtx2xyz, 3).unwrap();
+}
+
+// ------------------
+
+#[allow(clippy::identity_op)]
+fn arrow_yup<Real>(
+    num_division_circumference: usize) -> (Vec<usize>, Vec<Real>)
+    where Real: num_traits::Float + num_traits::FloatConst + 'static,
+          f64: AsPrimitive<Real>,
+          usize: AsPrimitive<Real>
+{
+    let dr: Real = Real::PI() * 2f64.as_() / num_division_circumference.as_();
+    let stem_height: Real = 0.65f64.as_();
+    let radius_small: Real = 0.1.as_();
+    let radius_large: Real = 0.2.as_();
+    let (tri2vtx, mut vtx2xyz)
+        = cylinder_closed_end_yup(Real::one(), Real::one(),
+                                  num_division_circumference, 2);
+    assert_eq!(vtx2xyz.len(), (2 + 3 * num_division_circumference) * 3);
+    vtx2xyz[0] = Real::zero();
+    vtx2xyz[1] = Real::zero();
+    vtx2xyz[2] = Real::zero();
+    let height_rad = [
+        (Real::zero(), radius_small),
+        (stem_height, radius_small),
+        (stem_height, radius_large)];
+    for (il, (height, rad)) in height_rad.iter().enumerate() {
+        for ilo in 0..num_division_circumference {
+            let theta: Real = dr * ilo.as_();
+            let x0 = theta.cos() * *rad;
+            let z0 = theta.sin() * *rad;
+            vtx2xyz[(1 + il * num_division_circumference + ilo) * 3 + 0] = x0;
+            vtx2xyz[(1 + il * num_division_circumference + ilo) * 3 + 1] = *height;
+            vtx2xyz[(1 + il * num_division_circumference + ilo) * 3 + 2] = z0;
+        }
+    }
+    let n = 1 + 3 * num_division_circumference;
+    vtx2xyz[n * 3 + 0] = Real::zero();
+    vtx2xyz[n * 3 + 1] = Real::one();
+    vtx2xyz[n * 3 + 2] = Real::zero();
+    (tri2vtx, vtx2xyz)
+}
+
+
+#[test]
+fn test_arrow_zup() {
+    let (tri2vtx, vtx2xyz) = arrow_yup::<f64>(16);
+    crate::io_obj::save_tri_mesh_(
+        "target/arrow_zup.obj",
+        &tri2vtx, &vtx2xyz, 3).unwrap();
+}
+
+// --------------------------------
+
+pub fn arrow_connecting_two_points<T>(
+    p0: &[T; 3],
+    p1: &[T; 3],
+    num_division_circumference: usize) -> (Vec<usize>, Vec<T>)
+    where T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
+{
+    let p0 = nalgebra::Vector3::<T>::from_column_slice(p0);
+    let p1 = nalgebra::Vector3::<T>::from_column_slice(p1);
+    let len = (p1 - p0).norm();
+    let (tri2vtx, mut vtx2xyz) = arrow_yup(num_division_circumference);
+    let mat = del_geo::mat3::minimum_rotation_matrix(
+        nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
+        (p1 - p0).normalize()).scale(len);
+    for v in vtx2xyz.chunks_mut(3) {
+        let q0 = nalgebra::Vector3::<T>::new(v[0], v[1], v[2]);
+        let q1 = mat * q0 + p0;
+        v[0] = q1.x;
+        v[1] = q1.y;
+        v[2] = q1.z;
+    }
+    (tri2vtx, vtx2xyz)
+}
+
+#[test]
+fn test_arrow_connecting_two_points() {
+    let (tri2vtx, vtx2xyz) = arrow_connecting_two_points::<f64>(
+        &[1.0, 1.0, 1.0],
+        &[1.0, 1.0, 2.0], 16);
+    crate::io_obj::save_tri_mesh_(
+        "target/arrow_connecting_two_points.obj",
+        &tri2vtx, &vtx2xyz, 3).unwrap();
+}

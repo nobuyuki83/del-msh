@@ -6,7 +6,7 @@ pub fn make_super_triangle<T>(
     vtx2xy: &mut Vec<nalgebra::Vector2<T>>,
     min_xy: &[T; 2],
     max_xy: &[T; 2]) -> (Vec<usize>, Vec<usize>, Vec<usize>)
-    where T: num_traits::Float + 'static + std::fmt::Debug + Default,
+    where T: nalgebra::RealField + 'static + Copy,
           f64: AsPrimitive<T>
 { // super triangle
     let mut vtx2tri = vec!(usize::MAX; vtx2xy.len());
@@ -21,7 +21,7 @@ pub fn make_super_triangle<T>(
     let tmp_len: T = tri_len * (3.0_f64.sqrt() / 6.0_f64).as_();
     let npo = vtx2xy.len();
     //
-    vtx2xy.resize(npo + 3, Default::default());
+    vtx2xy.resize(npo + 3, nalgebra::Vector2::<T>::zeros());
     vtx2xy[npo + 0] = nalgebra::Vector2::<T>::new(center[0], center[1] + 2_f64.as_() * tmp_len);
     vtx2xy[npo + 1] = nalgebra::Vector2::<T>::new(center[0] - 0.5_f64.as_() * tri_len, center[1] - tmp_len);
     vtx2xy[npo + 2] = nalgebra::Vector2::<T>::new(center[0] + 0.5_f64.as_() * tri_len, center[1] - tmp_len);
@@ -41,7 +41,7 @@ pub fn add_points_to_mesh<T>(
     vtx2xy: &[nalgebra::Vector2<T>],
     i_vtx: usize)
     where T: nalgebra::RealField + Copy + std::fmt::Debug,
-    f64: AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     if vtx2tri[i_vtx] != usize::MAX { return; } // already added
@@ -321,11 +321,14 @@ pub fn enforce_edge<T>(
 }
 
 /// Returns (vtx2tri, vtx2xy)
-pub fn delete_unreferenced_points(
+pub fn delete_unreferenced_points<Real>(
     tri2vtx: &mut [usize],
     vtx2tri_tmp: &[usize],
-    vtx2xy_tmp: &[nalgebra::Vector2<f32>],
-    point_idxs_to_delete: &Vec<usize>) -> (Vec<usize>, Vec<nalgebra::Vector2<f32>>) {
+    vtx2xy_tmp: &[nalgebra::Vector2<Real>],
+    point_idxs_to_delete: &Vec<usize>)
+    -> (Vec<usize>, Vec<nalgebra::Vector2<Real>>)
+    where Real: nalgebra::RealField + Copy
+{
     assert_eq!(vtx2tri_tmp.len(), vtx2xy_tmp.len());
     let (map_po_del, npo_pos) = {
         let mut map_po_del = vec!(usize::MAX - 1; vtx2tri_tmp.len());
@@ -342,7 +345,7 @@ pub fn delete_unreferenced_points(
         (map_po_del, npo_pos)
     };
     let mut vtx2tri = vec!(0; npo_pos);
-    let mut vtx2xy = vec!(Default::default(); npo_pos);
+    let mut vtx2xy = vec!(nalgebra::Vector2::<Real>::zeros(); npo_pos);
     {
         for ipo in 0..map_po_del.len() {
             if map_po_del[ipo] == usize::MAX {
@@ -366,10 +369,12 @@ pub fn delete_unreferenced_points(
 ///
 /// Returns tri2vtx, tri2tri, vtx2tri
 #[allow(clippy::identity_op)]
-pub fn triangulate_single_connected_shape(
-    vtx2xy: &mut Vec<nalgebra::Vector2<f32>>,
+pub fn triangulate_single_connected_shape<Real>(
+    vtx2xy: &mut Vec<nalgebra::Vector2<Real>>,
     loop2idx: &[usize],
     idx2vtx: &[usize]) -> (Vec<usize>, Vec<usize>, Vec<usize>)
+    where Real: nalgebra::RealField + Copy + 'static,
+          f64: AsPrimitive<Real>
 {
     let point_idx_to_delete = { // vertices of the super triangle are to be deleted
         let npo = vtx2xy.len();
@@ -435,13 +440,14 @@ pub fn laplacian_mesh_smoothing_around_point<T>(
     let mut pos_new = vtx2xy[i_vtx0];
     let mut num_tri_around: usize = 1;
     loop { // counter-clock wise
-        assert!(i_tri0 < tri2vtx.len() && i_node0 < 3 );
-        assert_eq!(tri2vtx[i_tri0*3+i_node0], i_vtx0);
-        pos_new += vtx2xy[tri2vtx[i_tri0*3+(i_node0 + 1) % 3]];
+        assert!(i_tri0 < tri2vtx.len() && i_node0 < 3);
+        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
+        pos_new += vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]];
         num_tri_around += 1;
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0, &mut i_node0, usize::MAX, tri2vtx, tri2tri) {
-            return false; }
+            return false;
+        }
         if i_tri0 == vtx2tri[i_vtx0] { break; }
     }
     vtx2xy[i_vtx0] = pos_new / num_tri_around.as_();
@@ -455,8 +461,8 @@ pub fn laplacian_mesh_smoothing_around_point<T>(
             flipped = true;
             break;
         }
-        assert!(i_tri0 < tri2vtx.len() && i_node0 < 3 );
-        assert_eq!(tri2vtx[i_tri0*3+i_node0], i_vtx0);
+        assert!(i_tri0 < tri2vtx.len() && i_node0 < 3);
+        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0, &mut i_node0, usize::MAX, tri2vtx, tri2tri) { return false; }
         if i_tri0 == vtx2tri[i_vtx0] { break; }
@@ -478,28 +484,28 @@ pub fn add_points_uniformly<T>(
     num_vtx_fix: usize,
     nflgpnt_offset: usize,
     target_len: T)
-    where T: nalgebra::RealField + Copy + 'static + std::fmt::Debug + Default,
+    where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     assert_eq!(vtx2flag.len(), vtx2tri.len());
-    assert_eq!(tri2flag.len(), tri2vtx.len()/3);
+    assert_eq!(tri2flag.len(), tri2vtx.len() / 3);
 
     let mut ratio: T = 3_f64.as_();
     loop {
         let mut nadd = 0;
-        for i_tri in 0..tri2vtx.len()/3 {
+        for i_tri in 0..tri2vtx.len() / 3 {
             let area = crate::trimesh2::area_of_a_triangle(tri2vtx, vtx2xy, i_tri);
             let len2 = target_len; // len * mesh_density.edgeLengthRatio(pcnt[0], pcnt[1]); //
             if area < len2 * len2 * ratio { continue; }
             let ipo0 = vtx2tri.len();
             vtx2tri.resize(vtx2tri.len() + 1, usize::MAX);
-            vtx2xy.resize(vtx2xy.len() + 1, Default::default());
+            vtx2xy.resize(vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
             vtx2xy[ipo0] =
-                ( vtx2xy[tri2vtx[i_tri *3+0]]
-                + vtx2xy[tri2vtx[i_tri *3+1]]
-                + vtx2xy[tri2vtx[i_tri *3+2]]) / 3_f64.as_();
+                (vtx2xy[tri2vtx[i_tri * 3 + 0]]
+                    + vtx2xy[tri2vtx[i_tri * 3 + 1]]
+                    + vtx2xy[tri2vtx[i_tri * 3 + 2]]) / 3_f64.as_();
             crate::trimesh_topology::insert_a_point_inside_an_element(
                 ipo0, i_tri, tri2vtx, tri2tri, vtx2tri);
             let flag_i_tri = tri2flag[i_tri];
@@ -530,6 +536,43 @@ pub fn add_points_uniformly<T>(
             i_vtx,
             tri2vtx, tri2tri, vtx2tri, vtx2xy);
     }
+}
+
+/// generate 2D triangle mesh from 2D polyloop
+/// * `edge_leength` - length of the edge of triangles
+/// * `vtxl2xy` contiguous array of coordinates of the vertex of the polyloop. counter-clock wise order.
+pub fn meshing_from_polyloop2<Index, Real>(
+    vtxl2xy: &[Real],
+    edge_length: Real) -> (Vec<Index>, Vec<Real>)
+    where Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
+          Index: Copy + 'static,
+          f64: AsPrimitive<Real>,
+          usize: AsPrimitive<Real> + AsPrimitive<Index>
+{
+    let mut vtx2xy: Vec<nalgebra::Vector2<Real>>
+        = vtxl2xy.chunks(2)
+        .map(|v| nalgebra::Vector2::<Real>::new(v[0], v[1])).collect();
+    let mut loop2idx = vec!(0, vtx2xy.len());
+    let mut idx2vtx: Vec<usize> = (0..vtx2xy.len()).collect();
+    if edge_length > Real::zero() { // resample edge edge
+        crate::polyloop::resample_multiple_loops_remain_original_vtxs(
+            &mut loop2idx, &mut idx2vtx, &mut vtx2xy, edge_length);
+    }
+    let (mut tri2vtx, mut tri2tri, mut vtx2tri) =
+        triangulate_single_connected_shape(
+            &mut vtx2xy, &loop2idx, &idx2vtx);
+    let mut vtx2flag = vec!(0; vtx2xy.len());
+    let mut tri2flag = vec!(0; tri2vtx.len() / 3);
+    let num_vtx_fix = vtx2xy.len();
+    add_points_uniformly(
+        &mut tri2vtx, &mut tri2tri, &mut vtx2tri, &mut vtx2xy,
+        &mut vtx2flag, &mut tri2flag,
+        num_vtx_fix,
+        0,
+        edge_length);
+    let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v.x, v.y]).collect();
+    let tri2vtx: Vec<Index> = tri2vtx.iter().map(|&v| v.as_() ).collect();
+    (tri2vtx, vtx2xy)
 }
 
 #[test]
@@ -563,7 +606,8 @@ fn test_square() {
         Vec2::new(0.0, 1.0),
         Vec2::new(-1.0, 1.0),
         Vec2::new(-1.0, 0.0));
-    let vtx2xy3 = vec!( // comb model
+    // comb model
+    let vtx2xy3 = vec!(
         Vec2::new(-1.0, -1.0),
         Vec2::new(1.0, -1.0),
         Vec2::new(1.0, -0.0),
@@ -580,24 +624,17 @@ fn test_square() {
         Vec2::new(-0.1, 1.0),
         //
         Vec2::new(-1.0, 1.0));
-    for mut vtx2xy in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3] {
-        let loop2idx = [0, vtx2xy.len()];
-        let idx2vtx: Vec<usize> = (0..vtx2xy.len()).collect();
-        let (mut tri2vtx, mut tri2tri, mut vtx2tri) =
-            triangulate_single_connected_shape(
-                &mut vtx2xy, &loop2idx, &idx2vtx);
-        crate::io_obj::save_tri_mesh("target/a.obj", &tri2vtx, &vtx2xy);
-        let mut vtx2flag = vec!(0;vtx2xy.len());
-        let mut tri2flag = vec!(0;tri2vtx.len()/3);
-        let num_vtx_fix = vtx2xy.len();
-        add_points_uniformly(
-            &mut tri2vtx, &mut tri2tri, &mut vtx2tri, &mut vtx2xy,
-            &mut vtx2flag, &mut tri2flag,
-            num_vtx_fix,
-            0,
-            0.1);
-        crate::io_obj::save_tri_mesh("target/b.obj", &tri2vtx, &vtx2xy);
+    for vtx2xy in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3] {
+        let vtx2xy: Vec<f32> = vtx2xy.iter().flat_map(|v| [v[0], v[1]]).collect();
+        let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1);
+        let res = crate::io_obj::save_tri_mesh_("target/b.obj", &tri2vtx, &vtx2xy, 2);
+        assert!(res.is_ok());
     }
+}
+
+#[test]
+fn test_shape_with_hole() {
+    type Vec2 = nalgebra::Vector2<f32>;
     { // test shape with a hole
         let mut vtx2xy0 = vec!(
             Vec2::new(-1.0, -1.0),
@@ -611,7 +648,6 @@ fn test_square() {
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        crate::io_obj::save_tri_mesh("target/d.obj", &tri2vtx, &vtx2xy0);
+        let _ = crate::io_obj::save_tri_mesh("target/d.obj", &tri2vtx, &vtx2xy0);
     }
-
 }

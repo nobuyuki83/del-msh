@@ -3,8 +3,8 @@
 pub struct IntersectingPair<T> {
     pub i_tri: usize,
     pub j_tri: usize,
-    pub p0: nalgebra::Vector3::<T>,
-    pub p1: nalgebra::Vector3::<T>,
+    pub p0: nalgebra::Vector3<T>,
+    pub p1: nalgebra::Vector3<T>,
 }
 
 #[allow(clippy::identity_op)]
@@ -12,7 +12,7 @@ fn intersection_of_two_triangles_in_mesh<T>(
     tri2vtx: &[usize],
     vtx2xyz: &[T],
     i_tri: usize,
-    j_tri: usize) -> Option<(nalgebra::Vector3::<T>, nalgebra::Vector3::<T>)>
+    j_tri: usize) -> Option<(nalgebra::Vector3<T>, nalgebra::Vector3<T>)>
 where T: Copy + nalgebra::RealField
 {
     let i0 = tri2vtx[i_tri * 3 + 0];

@@ -1,7 +1,7 @@
 use num_traits::AsPrimitive;
 
 pub fn cg<T>(
-    vtx2xyz: &[T]) -> nalgebra::Vector3::<T>
+    vtx2xyz: &[T]) -> nalgebra::Vector3<T>
 where T : nalgebra::RealField + Copy,
     f64: AsPrimitive<T>
 {
@@ -21,9 +21,9 @@ where T : nalgebra::RealField + Copy,
 }
 
 pub fn vtx2framex<T>(
-    vtx2xyz: &[T]) -> nalgebra::Matrix3xX::<T>
+    vtx2xyz: &[T]) -> nalgebra::Matrix3xX<T>
     where T: nalgebra::RealField + 'static + Copy,
-          f64: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     use del_geo::vec3::to_na;
     let num_vtx = vtx2xyz.len() / 3;
@@ -41,12 +41,12 @@ pub fn vtx2framex<T>(
         let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
         let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
         let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
-        let b01: nalgebra::Vector3::<T> = vtx2bin.column(iseg0).into_owned();
-        let b12: nalgebra::Vector3::<T> = rot * b01;
+        let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
+        let b12: nalgebra::Vector3<T> = rot * b01;
         vtx2bin.column_mut(iseg1).copy_from(&b12);
     }
     {
-        let a: nalgebra::Vector3::<T> = vtx2bin.column(num_vtx-2).into();
+        let a: nalgebra::Vector3<T> = vtx2bin.column(num_vtx-2).into();
         vtx2bin.column_mut(num_vtx - 1).copy_from(&a);
     }
     vtx2bin
@@ -54,7 +54,7 @@ pub fn vtx2framex<T>(
 
 pub fn framez<T>(
     vtx2xyz: &[T],
-    i_vtx: usize) -> nalgebra::Vector3::<T>
+    i_vtx: usize) -> nalgebra::Vector3<T>
     where T: nalgebra::RealField + Copy
 {
     let num_vtx = vtx2xyz.len() / 3;
@@ -77,9 +77,9 @@ pub fn framez<T>(
 
 pub fn vtx2framey<T>(
     vtx2xyz: &[T],
-    vtx2framex: &nalgebra::Matrix3xX::<T>) -> nalgebra::Matrix3xX::<T>
+    vtx2framex: &nalgebra::Matrix3xX<T>) -> nalgebra::Matrix3xX<T>
     where T: nalgebra::RealField + 'static + Copy,
-          f64: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     let num_vtx = vtx2xyz.len() / 3;
     assert_eq!(vtx2framex.ncols(), num_vtx);
@@ -93,7 +93,7 @@ pub fn vtx2framey<T>(
 }
 
 pub fn normal_binormal<T>(
-    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX::<T>, nalgebra::Matrix3xX::<T>)
+    vtx2xyz: &[T]) -> (nalgebra::Matrix3xX<T>, nalgebra::Matrix3xX<T>)
     where T: nalgebra::RealField + Copy
 {
     let num_vtx = vtx2xyz.len() / 3;
@@ -138,7 +138,7 @@ pub fn to_trimesh3_capsule<T>(
     ndiv_circum: usize,
     ndiv_longtitude: usize,
     r: T) -> (Vec<usize>, Vec<T>)
-    where T: nalgebra::RealField + Copy + num_traits::Float,
+    where T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
           f64: AsPrimitive<T>,
           f32: AsPrimitive<T>,
           usize: AsPrimitive<T>
@@ -284,7 +284,7 @@ pub fn contacting_pair(
 #[allow(clippy::identity_op)]
 pub fn position_from_barycentric_coordinate<T>(
     vtx2xyz: &[T],
-    r: T) -> nalgebra::Vector3::<T>
+    r: T) -> nalgebra::Vector3<T>
     where T: num_traits::Float + nalgebra::RealField + AsPrimitive<usize>,
           usize: AsPrimitive<T>
 {

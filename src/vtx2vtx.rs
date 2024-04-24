@@ -57,6 +57,7 @@ pub fn from_uniform_mesh_with_vtx2elem(
     (vtx2jdx, jdx2vtx)
 }
 
+/// compute index of vertices adjacent to vertices for uniform mesh.
 pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,

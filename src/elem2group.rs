@@ -64,6 +64,6 @@ pub fn from_triangle_mesh(
     let tri2tri = crate::elem2elem::from_uniform_mesh(
         tri2vtx, 3, &face2idx, &idx2node,
         num_vtx);
-    crate::elem2group::from_uniform_mesh_with_elem2elem(
+    from_uniform_mesh_with_elem2elem(
         tri2vtx, 3, &tri2tri)
 }

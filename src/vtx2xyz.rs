@@ -1,14 +1,14 @@
 use num_traits::AsPrimitive;
 
-pub fn normalize<T>(
-    vtx2xyz: &[T]) -> Vec<T>
-    where T: num_traits::Float + 'static + Copy,
-          f64: AsPrimitive<T>
+pub fn normalize<Real>(
+    vtx2xyz: &[Real]) -> Vec<Real>
+    where Real: num_traits::Float + 'static + Copy,
+          f64: AsPrimitive<Real>
 {
-    let aabb = del_geo::aabb3::from_vtx2xyz(vtx2xyz, T::zero());
+    let aabb = del_geo::aabb3::from_vtx2xyz(vtx2xyz, Real::zero());
     let cnt = del_geo::aabb3::center(&aabb);
     let max_edge_size = del_geo::aabb3::max_edge_size(&aabb);
-    let tmp = T::one() / max_edge_size;
+    let tmp = Real::one() / max_edge_size;
     let mut vtx2xyz_out = Vec::from(vtx2xyz);
     vtx2xyz_out.chunks_mut(3).zip( vtx2xyz.chunks(3) ).for_each(
         |(o,v)| {
@@ -35,5 +35,15 @@ where T: Copy + 'static,
     U: AsPrimitive<T>
 {
     let res: Vec<T> = vtx2xyz0.iter().map(|v| v.as_() ).collect();
+    res
+}
+
+pub fn from_2d_to_3d<Real> (
+    vtx2xy: &[Real]) -> Vec<Real>
+where Real : num_traits::Zero + Copy
+{
+    let res : Vec<Real> =  vtx2xy.chunks(2)
+        .flat_map(|v| [v[0], v[1], Real::zero()] )
+        .collect();
     res
 }

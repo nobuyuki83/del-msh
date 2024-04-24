@@ -24,7 +24,7 @@ pub fn area<T>(
 
 pub fn from_circle(
     rad: f32,
-    n: usize) -> nalgebra::Matrix2xX::<f32> {
+    n: usize) -> nalgebra::Matrix2xX<f32> {
     let mut vtx2xy = nalgebra::Matrix2xX::<f32>::zeros(n);
     for i in 0..n {
         let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
@@ -125,7 +125,7 @@ pub fn to_uniform_density_random_points<Real>(
 #[allow(clippy::identity_op)]
 pub fn to_svg<Real>(
     vtx2xy: &[Real],
-    transform: &nalgebra::Matrix3::<Real>) -> String
+    transform: &nalgebra::Matrix3<Real>) -> String
 where Real: std::fmt::Display + Copy + nalgebra::RealField
 {
     let mut res = String::new();

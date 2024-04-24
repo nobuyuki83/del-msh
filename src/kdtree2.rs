@@ -13,7 +13,7 @@ use num_traits::AsPrimitive;
 pub fn construct_kdtree<Real>(
     tree: &mut Vec<usize>,
     idx_node: usize,
-    points: &mut Vec<(nalgebra::Vector2::<Real>, usize)>,
+    points: &mut Vec<(nalgebra::Vector2<Real>, usize)>,
     idx_point_begin: usize,
     idx_point_end: usize,
     i_depth: i32)
@@ -69,8 +69,8 @@ pub fn find_edges<Real>(
     vtx2xy: &[Real],
     nodes: &[usize],
     idx_node: usize,
-    min: nalgebra::Vector2::<Real>,
-    max: nalgebra::Vector2::<Real>,
+    min: nalgebra::Vector2<Real>,
+    max: nalgebra::Vector2<Real>,
     i_depth: i32)
     where Real: Copy
 {
@@ -238,7 +238,7 @@ mod tests {
         use crate::kdtree2::nearest;
         use std::time;
         type Real = f64;
-        type Vector = nalgebra::Vector2::<Real>;
+        type Vector = nalgebra::Vector2<Real>;
         let (vtx2xy, nodes) = test_data::<Real>(10000);
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
         let time_nearest = time::Instant::now();
@@ -268,7 +268,7 @@ mod tests {
         use std::time;
         use crate::kdtree2::inside_square;
         type Real = f64;
-        type Vector = nalgebra::Vector2::<Real>;
+        type Vector = nalgebra::Vector2<Real>;
         let (vtx2xy, nodes) = test_data::<Real>(10000);
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
         let rad: Real = 0.03;

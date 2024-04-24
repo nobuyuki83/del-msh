@@ -1,7 +1,6 @@
 //! methods for polyline mesh
 
 use num_traits::AsPrimitive;
-use crate::polyloop::cog;
 
 /// resample the input polyline with a fix interval
 /// the first point of the input point will be preserved
@@ -10,7 +9,7 @@ pub fn resample<T, const NDIM: usize>(
     stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
     where T: nalgebra::RealField + Copy,
-          f64: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     if stroke0.is_empty() {
         return vec!();
@@ -41,7 +40,7 @@ pub fn resample_preserve_corner<T, const NDIM: usize>(
     stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T) -> Vec<nalgebra::base::SVector<T, NDIM>>
     where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
-          f64: num_traits::AsPrimitive<T>,
+          f64: AsPrimitive<T>,
           usize: AsPrimitive<T>
 {
     if stroke0.is_empty() {
@@ -65,13 +64,13 @@ pub fn resample_preserve_corner<T, const NDIM: usize>(
     stroke
 }
 
-pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix::<T, N, N>
+pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix<T, N, N>
     where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>
 {
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
-    let cog = cog::<T, N>(vtx2xyz);
+    let cog = crate::polyloop::cog::<T, N>(vtx2xyz);
     let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
     for i_edge in 0..num_vtx-1 {
         let iv0 = i_edge;

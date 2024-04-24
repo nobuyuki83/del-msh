@@ -131,7 +131,7 @@ pub fn match_vtx2xyz_while_avoid_collision(
         let time_max = {
             let (intersection_pair, intersection_time)
                 = crate::trimesh3_intersection_time::search_brute_force(
-                &edge2vtx, tri2vtx, &vtx2xyz, &vtx2xyz_dist, std::f64::EPSILON);
+                &edge2vtx, tri2vtx, &vtx2xyz, &vtx2xyz_dist, f64::EPSILON);
             assert_eq!(intersection_pair.len(), intersection_time.len() * 3);
             dbg!(intersection_pair.len(), intersection_time.len());
             let time_max = intersection_time.iter().fold(f64::INFINITY, |a, &b| a.min(b));

@@ -6,7 +6,7 @@ use num_traits::AsPrimitive;
 pub fn arclength_vec<T, const N: usize>(
     vtxs: &[nalgebra::SVector<T, N>]) -> T
     where T: nalgebra::RealField + Copy,
-          f64: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>
 {
     if vtxs.len() < 2 { return T::zero(); }
     let np = vtxs.len();
@@ -69,7 +69,7 @@ pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
     cog / len
 }
 
-pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix::<T, N, N>
+pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix<T, N, N>
     where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>
 {
@@ -93,8 +93,8 @@ pub fn resample<T, const N: usize>(
     vtx2xyz_in: &[T],
     num_edge_out: usize) -> Vec<T>
     where T: nalgebra::RealField + num_traits::Float + Copy,
-          f64: num_traits::AsPrimitive<T>,
-          usize: num_traits::AsPrimitive<T>
+          f64: AsPrimitive<T>,
+          usize: AsPrimitive<T>
 {
     let mut v2x_out = Vec::<T>::new();
     let num_edge_in = vtx2xyz_in.len() / N;
@@ -132,8 +132,8 @@ pub fn resample_multiple_loops_remain_original_vtxs<T>(
     idx2vtx_inout: &mut Vec<usize>,
     vtx2vec_inout: &mut Vec<nalgebra::Vector2<T>>,
     max_edge_length: T)
-where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
-    usize: AsPrimitive<T>
+    where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
+          usize: AsPrimitive<T>
 {
     assert_eq!(vtx2vec_inout.len(), idx2vtx_inout.len());
     let loop2idx_in = loop2idx_inout.clone();
@@ -156,7 +156,7 @@ where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
                 assert!(ipo1 < vtx2vec_inout.len());
                 let po0 = vtx2vec_inout[ipo0]; // never use reference here because aVec2 will resize afterward
                 let po1 = vtx2vec_inout[ipo1]; // never use reference here because aVec2 will resize afterward
-                let nadd: usize = ((po0-po1).norm() / max_edge_length).as_();
+                let nadd: usize = ((po0 - po1).norm() / max_edge_length).as_();
                 if nadd == 0 {
                     continue;
                 }
@@ -199,4 +199,36 @@ where T: nalgebra::RealField + Copy + AsPrimitive<usize>,
     }
     assert_eq!(idx2vtx_inout.len(), vtx2vec_inout.len());
     assert_eq!(idx2vtx_inout.len(), i_vtx0);
+}
+
+pub fn to_cylinder_trimeshes<Real>(
+    vtx2xy: &[Real],
+    num_dim: usize,
+    radius: Real) -> (Vec<usize>, Vec<Real>)
+where Real: nalgebra::RealField + num_traits::FloatConst + 'static + Copy,
+    usize: AsPrimitive<Real>,
+    f64: AsPrimitive<Real>
+{
+    let num_vtx = vtx2xy.len() / num_dim;
+    let mut out_tri2vtx: Vec<usize> = vec!();
+    let mut out_vtx2xyz: Vec<Real> = vec!();
+    for i_edge in 0..num_vtx {
+        let i0 = i_edge;
+        let i1 = (i_edge + 1) % num_vtx;
+        let p0 = &vtx2xy[i0*num_dim..(i0+1)*num_dim];
+        let p1 = &vtx2xy[i1*num_dim..(i1+1)*num_dim];
+        let p0 =
+            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p0[0], p0[1], p0[2]) }
+            else { nalgebra::Vector3::<Real>::new(p0[0], p0[1], Real::zero()) };
+        let p1 =
+            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p1[0], p1[1], p1[2]) }
+            else { nalgebra::Vector3::<Real>::new(p1[0], p1[1], Real::zero()) };
+        let (tri2vtx, vtx2xyz)
+            = crate::trimesh3_primitive::cylinder_open_connecting_two_points(
+            32, radius, p0, p1);
+        crate::trimesh3::merge(
+            &mut out_tri2vtx, &mut out_vtx2xyz,
+            tri2vtx.as_slice(), vtx2xyz.as_slice());
+    }
+    (out_tri2vtx, out_vtx2xyz)
 }

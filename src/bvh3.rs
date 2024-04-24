@@ -4,15 +4,15 @@
 /// if 'elem2vtx' is empty, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is not empty, compute AABB for Continuous-Collision Detection (CCD)
 #[allow(clippy::identity_op)]
-pub fn build_geometry_aabb_for_uniform_mesh<T>(
-    aabbs: &mut [T],
+pub fn build_geometry_aabb_for_uniform_mesh<Real>(
+    aabbs: &mut [Real],
     i_bvhnode: usize,
     bvhnodes: &[usize],
     elem2vtx: &[usize],
     num_noel: usize,
-    vtx2xyz0: &[T],
-    vtx2xyz1: &[T])
-where T: num_traits::Float
+    vtx2xyz0: &[Real],
+    vtx2xyz1: &[Real])
+where Real: num_traits::Float
 {
     // aabbs.resize();
     assert_eq!(aabbs.len() / 6, bvhnodes.len() / 3);
@@ -25,12 +25,12 @@ where T: num_traits::Float
         let aabb = if !elem2vtx.is_empty() { // element index is provided
             let aabb0 = del_geo::aabb3::from_list_of_vertices(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                vtx2xyz0, T::zero());
+                vtx2xyz0, Real::zero());
             if vtx2xyz1.is_empty() { aabb0 }
             else {
                 let aabb1 = del_geo::aabb3::from_list_of_vertices(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                    vtx2xyz1, T::zero());
+                    vtx2xyz1, Real::zero());
                 del_geo::aabb3::from_two_aabbs_slice6(&aabb0,&aabb1)
             }
         } else {
