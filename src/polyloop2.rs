@@ -53,7 +53,7 @@ pub fn from_pentagram<Real>(
     xys
 }
 
-pub fn is_inside<Real>(
+pub fn is_inside_<Real>(
     vtx2xy: &[Real],
     p: &[Real;2]) -> bool
     where Real: num_traits::Float + Copy + 'static + std::ops::AddAssign,
@@ -113,7 +113,7 @@ pub fn to_uniform_density_random_points<Real>(
         for iy in 0..ny {
             let x = base_pos[0] + (ix.as_() + rng.gen::<Real>()) * cell_len;
             let y = base_pos[1] + (iy.as_() + rng.gen::<Real>()) * cell_len;
-            let is_inside = is_inside(vtx2xy, &[x, y]);
+            let is_inside = is_inside_(vtx2xy, &[x, y]);
             if !is_inside { continue; }
             res.push(x);
             res.push(y);
@@ -139,6 +139,26 @@ where Real: std::fmt::Display + Copy + nalgebra::RealField
         }
     }
     res
+}
+
+// -----------------------------------------------------
+
+pub fn winding_number<Real>(
+    vtx2xy: &[nalgebra::Vector2<Real>],
+    p: &nalgebra::Vector2<Real>) -> Real
+    where Real: num_traits::Float + Copy + 'static + std::ops::AddAssign + std::fmt::Debug,
+          f64: AsPrimitive<Real>
+{
+    let num_vtx = vtx2xy.len();
+    let mut wn: Real = Real::zero();
+    for i in 0..num_vtx {
+        let j = (i + 1) % num_vtx;
+        wn += del_geo::edge2::winding_number_(
+            &vtx2xy[i].as_slice().try_into().unwrap(),
+            &vtx2xy[j].as_slice().try_into().unwrap(),
+            p.as_slice().try_into().unwrap());
+    }
+    wn
 }
 
 // -----------------------------------------------------

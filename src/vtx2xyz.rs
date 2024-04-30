@@ -19,14 +19,12 @@ pub fn normalize<Real>(
 }
 
 
-pub fn from_array_of_nalgebra<T>(
-    vecs: &Vec<nalgebra::Vector3<T>>) -> Vec<T>
+pub fn from_array_of_nalgebra<T, const N: usize>(
+    vecs: &Vec<nalgebra::SVector<T,N>>) -> Vec<T>
 where T: nalgebra::RealField + Copy
 {
-    let mut res = Vec::<T>::with_capacity(vecs.len()*3);
-    for vec in vecs {
-        res.extend(vec.iter());
-    }
+    let mut res = Vec::<T>::with_capacity(vecs.len()*N);
+    for vec in vecs { res.extend(vec.iter()); }
     res
 }
 

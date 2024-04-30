@@ -149,9 +149,12 @@ pub fn to_trimesh3_capsule<T>(
     let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
     //
     let ndiv_length = vtxl2xyz.len() / 3 - 1;
-    let (tri2vtx, mut vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
+    let (tri2vtx, vtx2xyz)
+        = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
         T::one(), T::one(),
-        ndiv_circum, 2 * ndiv_longtitude + ndiv_length - 2);
+        ndiv_circum, 2 * ndiv_longtitude + ndiv_length - 2, true);
+    let tri2vtx = Vec::<usize>::from(tri2vtx.as_slice());
+    let mut vtx2xyz = Vec::<T>::from(vtx2xyz.as_slice());
     assert_eq!(vtx2xyz.len() / 3, (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2);
     let pi: T = (std::f32::consts::PI).as_();
     let half: T = 0.5.as_();
