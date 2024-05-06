@@ -418,3 +418,30 @@ pub fn delete_tri_flag(
     }
     (tri2vtx, tri2tri, tri2flag)
 }
+
+
+/// Get the boundary edges' connectivity (bedge2vtx)
+/// and connectivity between triangle and boundary edge (tri2tri)
+///
+/// # Return
+/// (bedge2vtx, tri2tri)
+pub fn boundaryedge2vtx(
+    tri2vtx: &[usize],
+    num_vtx: usize) -> (Vec<usize>, Vec<usize>)
+{
+    let num_tri = tri2vtx.len() / 3;
+    let (face2idx, idx2node)
+        = crate::elem2elem::face2node_of_simplex_element(3);
+    let mut tri2tri = crate::elem2elem::from_uniform_mesh(
+        tri2vtx, 3, &face2idx, &idx2node, num_vtx);
+    let mut bedge2vtx: Vec<usize> = vec!();
+    for (i_tri, node2tri) in tri2tri.chunks_mut(3).enumerate() {
+        for i_node in 0..3 {
+            if node2tri[i_node] != usize::MAX { continue; }
+            node2tri[i_node] = num_tri + bedge2vtx.len() / 2;
+            bedge2vtx.push(tri2vtx[i_tri * 3 + (i_node + 1) % 3]);
+            bedge2vtx.push(tri2vtx[i_tri * 3 + (i_node + 2) % 3]);
+        }
+    }
+    (bedge2vtx, tri2tri)
+}

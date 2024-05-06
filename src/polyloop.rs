@@ -49,12 +49,14 @@ pub fn edge2length<T, const N: usize>(
     edge2length
 }
 
-pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
+pub fn cog<T, const N: usize>(
+    vtx2xyz: &[T])
+    -> nalgebra::SVector<T, N>
     where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>
 {
-    let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let num_vtx = vtx2xyz.len() / N;
+    assert_eq!(vtx2xyz.len(), num_vtx * N);
     let mut cog = nalgebra::SVector::<T, N>::zeros();
     let mut len = T::zero();
     for i_edge in 0..num_vtx {
@@ -62,6 +64,28 @@ pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
         let iv1 = (i_edge + 1) % num_vtx;
         let q0 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[iv0 * N..iv0 * N + N]);
         let q1 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[iv1 * N..iv1 * N + N]);
+        let l = (q0 - q1).norm();
+        cog += (q0 + q1).scale(0.5_f64.as_() * l);
+        len += l;
+    }
+    cog / len
+}
+
+pub fn cog_from_vtx2vecn<T, const N: usize>(
+    vtx2xyz: &[nalgebra::SVector::<T,N>])
+    -> nalgebra::SVector<T, N>
+    where T: nalgebra::RealField + Copy + 'static,
+          f64: AsPrimitive<T>
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    assert_eq!(vtx2xyz.len(), num_vtx);
+    let mut cog = nalgebra::SVector::<T, N>::zeros();
+    let mut len = T::zero();
+    for i_edge in 0..num_vtx {
+        let iv0 = i_edge;
+        let iv1 = (i_edge + 1) % num_vtx;
+        let q0 = &vtx2xyz[iv0];
+        let q1 = &vtx2xyz[iv1];
         let l = (q0 - q1).norm();
         cog += (q0 + q1).scale(0.5_f64.as_() * l);
         len += l;

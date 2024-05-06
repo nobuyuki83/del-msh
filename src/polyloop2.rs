@@ -192,3 +192,16 @@ fn test_circle() {
         assert!((min_edge_len2 - arclen2 / ndiv2 as f32).abs() < 1.0e-3);
     }
 }
+
+pub fn meshing_to_trimesh2<Index, Real>(
+    vtxl2xy: &[Real],
+    edge_length_boundary: Real,
+    edge_length_internal: Real) -> (Vec<Index>, Vec<Real>)
+    where Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
+          Index: Copy + 'static,
+          f64: AsPrimitive<Real>,
+          usize: AsPrimitive<Real> + AsPrimitive<Index>
+{
+    crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
+        vtxl2xy, edge_length_boundary, edge_length_internal)
+}

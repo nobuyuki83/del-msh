@@ -2,6 +2,8 @@
 
 use num_traits::AsPrimitive;
 
+// TODO: insert point in KD-tree for poisson disk sampling
+
 /// construct Kd-tree recursively
 /// * `nodes`
 /// * `idx_node`

@@ -543,7 +543,8 @@ pub fn add_points_uniformly<T>(
 /// * `vtxl2xy` contiguous array of coordinates of the vertex of the polyloop. counter-clock wise order.
 pub fn meshing_from_polyloop2<Index, Real>(
     vtxl2xy: &[Real],
-    edge_length: Real) -> (Vec<Index>, Vec<Real>)
+    edge_length_boundary: Real,
+    edge_length_internal: Real) -> (Vec<Index>, Vec<Real>)
     where Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
           Index: Copy + 'static,
           f64: AsPrimitive<Real>,
@@ -554,9 +555,9 @@ pub fn meshing_from_polyloop2<Index, Real>(
         .map(|v| nalgebra::Vector2::<Real>::new(v[0], v[1])).collect();
     let mut loop2idx = vec!(0, vtx2xy.len());
     let mut idx2vtx: Vec<usize> = (0..vtx2xy.len()).collect();
-    if edge_length > Real::zero() { // resample edge edge
+    if edge_length_boundary > Real::zero() { // resample edge edge
         crate::polyloop::resample_multiple_loops_remain_original_vtxs(
-            &mut loop2idx, &mut idx2vtx, &mut vtx2xy, edge_length);
+            &mut loop2idx, &mut idx2vtx, &mut vtx2xy, edge_length_boundary);
     }
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) =
         triangulate_single_connected_shape(
@@ -569,7 +570,7 @@ pub fn meshing_from_polyloop2<Index, Real>(
         &mut vtx2flag, &mut tri2flag,
         num_vtx_fix,
         0,
-        edge_length);
+        edge_length_internal);
     let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v.x, v.y]).collect();
     let tri2vtx: Vec<Index> = tri2vtx.iter().map(|&v| v.as_() ).collect();
     (tri2vtx, vtx2xy)
@@ -626,8 +627,8 @@ fn test_square() {
         Vec2::new(-1.0, 1.0));
     for vtx2xy in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3] {
         let vtx2xy: Vec<f32> = vtx2xy.iter().flat_map(|v| [v[0], v[1]]).collect();
-        let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1);
-        let res = crate::io_obj::save_tri_mesh_("target/b.obj", &tri2vtx, &vtx2xy, 2);
+        let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
+        let res = crate::io_obj::save_tri2vtx_vtx2xyz("target/b.obj", &tri2vtx, &vtx2xy, 2);
         assert!(res.is_ok());
     }
 }
@@ -648,6 +649,6 @@ fn test_shape_with_hole() {
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        let _ = crate::io_obj::save_tri_mesh("target/d.obj", &tri2vtx, &vtx2xy0);
+        let _ = crate::io_obj::save_tri2vtx_vtx2vecn("target/d.obj", &tri2vtx, &vtx2xy0);
     }
 }

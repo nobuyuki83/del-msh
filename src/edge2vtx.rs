@@ -41,8 +41,8 @@ pub fn from_triangle_mesh(
         &[0,1,1,2,2,0], num_vtx)
 }
 
-/// generate line mesh as edges of polygon mesh
-/// polygon mesh is a mixture of triangle, quadrilateal, pentagon mesh
+/// generate line mesh from edges of mesh with polygonal elements
+/// The polygonal is a mixture of triangle, quadrilateral, pentagon mesh
 /// * `num_vtx` - number of vertex
 pub fn from_polygon_mesh(
     elem2idx: &[usize],

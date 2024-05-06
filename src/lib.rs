@@ -50,3 +50,5 @@ pub mod trimesh3_move_avoid_intersection;
 pub mod trimesh_topology;
 pub mod trimesh2_dynamic;
 pub mod io_svg;
+pub mod trimesh;
+pub mod volonoi2;

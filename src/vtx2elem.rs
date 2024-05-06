@@ -9,25 +9,25 @@ pub fn from_polygon_mesh(
 {
     let num_elem = elem2idx.len() - 1;
     let mut vtx2jdx = vec![0usize;num_vtx + 1];
-    for ielem in 0..num_elem {
-        for ivtx0 in &idx2vtx[elem2idx[ielem]..elem2idx[ielem + 1]] {
-            vtx2jdx[ivtx0 + 1] += 1;
+    for i_elem in 0..num_elem {
+        for i0_vtx in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
+            vtx2jdx[i0_vtx + 1] += 1;
         }
     }
-    for ivtx in 0..num_vtx {
-        vtx2jdx[ivtx + 1] += vtx2jdx[ivtx];
+    for i_vtx in 0..num_vtx {
+        vtx2jdx[i_vtx + 1] += vtx2jdx[i_vtx];
     }
     let num_jdx = vtx2jdx[num_vtx];
     let mut jdx2elem = vec!(0; num_jdx);
-    for ielem in 0..num_elem {
-        for &i_vtx0 in &idx2vtx[elem2idx[ielem]..elem2idx[ielem + 1]] {
+    for i_elem in 0..num_elem {
+        for &i_vtx0 in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
             let jdx0 = vtx2jdx[i_vtx0];
-            jdx2elem[jdx0] = ielem;
+            jdx2elem[jdx0] = i_elem;
             vtx2jdx[i_vtx0] += 1;
         }
     }
-    for ivtx in (1..num_vtx).rev() {
-        vtx2jdx[ivtx] = vtx2jdx[ivtx - 1];
+    for i_vtx in (1..num_vtx).rev() {
+        vtx2jdx[i_vtx] = vtx2jdx[i_vtx - 1];
     }
     vtx2jdx[0] = 0;
     (vtx2jdx, jdx2elem)

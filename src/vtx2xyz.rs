@@ -20,12 +20,19 @@ pub fn normalize<Real>(
 
 
 pub fn from_array_of_nalgebra<T, const N: usize>(
-    vecs: &Vec<nalgebra::SVector<T,N>>) -> Vec<T>
+    vtx2vecn: &Vec<nalgebra::SVector<T,N>>) -> Vec<T>
 where T: nalgebra::RealField + Copy
 {
-    let mut res = Vec::<T>::with_capacity(vecs.len()*N);
-    for vec in vecs { res.extend(vec.iter()); }
+    let mut res = Vec::<T>::with_capacity(vtx2vecn.len()*N);
+    for vec in vtx2vecn { res.extend(vec.iter()); }
     res
+}
+
+pub fn to_array_of_nalgebra_vector<T, const N: usize>(
+    vtx2xyz: &[T]) -> Vec< nalgebra::SVector<T,N> >
+where T: nalgebra::RealField
+{
+    vtx2xyz.chunks(N).map(|v| nalgebra::SVector::<T,N>::from_row_slice(v) ).collect()
 }
 
 pub fn cast<T,U>(vtx2xyz0: &[U]) -> Vec<T>

@@ -224,17 +224,12 @@ pub fn save_tri_mesh_texture(
 }
 
 #[allow(clippy::identity_op)]
-pub fn save_tri_mesh_<Path, Index, Real>(
-    filepath: Path,
-    tri2vtx: &[Index],
+fn write_vtx2xyz<Real>(
+    file: &mut std::io::BufWriter<File>,
     vtx2xyz: &[Real],
     num_dim: usize) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display,
-          Index: num_traits::PrimInt + std::fmt::Display,
+    where Real: std::fmt::Display
 {
-    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
-    let mut file = std::io::BufWriter::new(file);
     match num_dim {
         3_usize => {
             for i_vtx in 0..vtx2xyz.len() / 3 {
@@ -255,6 +250,48 @@ pub fn save_tri_mesh_<Path, Index, Real>(
         }
         _ => { panic!("dimension should be either 2 or 3"); }
     }
+    Ok(())
+}
+
+fn write_vtx2vecn<Real, const N: usize>(
+    file: &mut std::io::BufWriter<File>,
+    vtx2vecn: &[nalgebra::SVector<Real, N>]) -> Result<(), &'static str>
+    where Real: nalgebra::RealField + std::fmt::Display
+{
+    match N {
+        3_usize => {
+            for vtx in vtx2vecn {
+                if let Err(_e) = writeln!(
+                    file,
+                    "v {} {} {}",
+                    vtx[0], vtx[1], vtx[2]) { return Err("fail"); }
+            }
+        }
+        2_usize => {
+            for vtx in vtx2vecn {
+                if let Err(_e) = writeln!(
+                    file,
+                    "v {} {} {}", vtx[0], vtx[1], 0.) { return Err("fail"); }
+            }
+        }
+        _ => { panic!(); }
+    }
+    Ok(())
+}
+
+#[allow(clippy::identity_op)]
+pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
+    filepath: Path,
+    tri2vtx: &[Index],
+    vtx2xyz: &[Real],
+    num_dim: usize) -> Result<(), &'static str>
+    where Path: AsRef<std::path::Path>,
+          Real: num_traits::Float + std::fmt::Display,
+          Index: num_traits::PrimInt + std::fmt::Display,
+{
+    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     for i_tri in 0..tri2vtx.len() / 3 {
         if let Err(_e) = writeln!(
             file, "f {} {} {}",
@@ -266,33 +303,16 @@ pub fn save_tri_mesh_<Path, Index, Real>(
 }
 
 #[allow(clippy::identity_op)]
-pub fn save_tri_mesh<Path, Real, const N: usize>(
+pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
     filepath: Path,
     tri2vtx: &[usize],
-    vtx2xyz: &[nalgebra::SVector<Real, N>]) -> Result<(), &'static str>
+    vtx2vecn: &[nalgebra::SVector<Real, N>]) -> Result<(), &'static str>
     where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display
+          Real: nalgebra::RealField + std::fmt::Display
 {
     let Ok(file) = File::create(filepath) else { return Err("file not found."); };
     let mut file = std::io::BufWriter::new(file);
-    match N {
-        3_usize => {
-            for vtx in vtx2xyz {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}",
-                    vtx[0], vtx[1], vtx[2]) { return Err("fail"); }
-            }
-        }
-        2_usize => {
-            for vtx in vtx2xyz {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}", vtx[0], vtx[1], 0.) { return Err("fail"); }
-            }
-        }
-        _ => { panic!(); }
-    }
+    write_vtx2vecn(&mut file, vtx2vecn)?;
     for tri in tri2vtx.chunks(3) {
         if let Err(_e) = writeln!(
             file,
@@ -303,7 +323,7 @@ pub fn save_tri_mesh<Path, Real, const N: usize>(
 }
 
 #[allow(clippy::identity_op)]
-pub fn save_polyloop_<Path, Real>(
+pub fn save_vtx2xyz_as_polyloop<Path, Real>(
     filepath: Path,
     vtx2xyz: &[Real],
     num_dim: usize) -> Result<(), &'static str>
@@ -312,25 +332,30 @@ pub fn save_polyloop_<Path, Real>(
 {
     let Ok(file) = File::create(filepath) else { return Err("file not found."); };
     let mut file = std::io::BufWriter::new(file);
-    match num_dim {
-        3_usize => {
-            for vtx in vtx2xyz.chunks(3) {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}",
-                    vtx[0], vtx[1], vtx[2]) { return Err("fail"); }
-            }
-        }
-        2_usize => {
-            for vtx in vtx2xyz.chunks(2) {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}", vtx[0], vtx[1], 0.) { return Err("fail"); }
-            }
-        }
-        _ => { panic!(); }
-    }
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     let num_vtx = vtx2xyz.len() / num_dim;
+    for i_vtx in 0..num_vtx {
+        let i0 = i_vtx;
+        let i1 = (i_vtx + 1) % num_vtx;
+        if let Err(_e) = writeln!(
+            file,
+            "l {} {}", i0+1, i1+1) { return Err("fail"); }
+
+    }
+    Ok(())
+}
+
+#[allow(clippy::identity_op)]
+pub fn save_vtx2vecn_as_polyloop<Path, Real, const N: usize>(
+    filepath: Path,
+    vtx2vecn: &[nalgebra::SVector<Real,N>]) -> Result<(), &'static str>
+    where Path: AsRef<std::path::Path>,
+          Real: nalgebra::RealField + std::fmt::Display
+{
+    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2vecn(&mut file, vtx2vecn)?;
+    let num_vtx = vtx2vecn.len();
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
@@ -344,7 +369,27 @@ pub fn save_polyloop_<Path, Real>(
 
 // ------------------------
 
-
+#[allow(clippy::identity_op)]
+pub fn save_edge2vtx_vtx2xyz<Path, Real>(
+    filepath: Path,
+    edge2vtx: &[usize],
+    vtx2xyz: &[Real],
+    num_dim: usize) -> Result<(), &'static str>
+    where Path: AsRef<std::path::Path>,
+          Real: num_traits::Float + std::fmt::Display
+{
+    let Ok(file) = File::create(filepath) else { return Err("file  not found."); };
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    // let num_vtx = vtx2xyz.len() / num_dim;
+    for node2vtx in edge2vtx.chunks(2) {
+        let (i0, i1) = (node2vtx[0], node2vtx[1]);
+        if let Err(_e) = writeln!(
+            file,
+            "l {} {}", i0+1, i1+1) { return Err("fail"); }
+    }
+    Ok(())
+}
 
 // -------------------------
 // below: private functions

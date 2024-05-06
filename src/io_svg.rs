@@ -291,5 +291,5 @@ fn hoge2() {
         &loops[0].0, &loops[0].1, loops[0].2, 10.0);
     let polyline = crate::vtx2xyz::from_array_of_nalgebra(&polyline);
     let polyline = crate::polyloop::resample::<_,2>(&polyline, 100);
-    let _ = crate::io_obj::save_polyloop_("target/svg.obj", &polyline, 2);
+    let _ = crate::io_obj::save_vtx2xyz_as_polyloop("target/svg.obj", &polyline, 2);
 }

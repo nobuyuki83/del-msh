@@ -5,35 +5,47 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 {
     let mut face2idx = vec!(0; num_node + 1);
     let mut idx2node = vec!(0; num_node * 2);
-    for iedge in 0..num_node {
-        face2idx[iedge + 1] = (iedge + 1) * 2;
-        idx2node[iedge * 2] = iedge;
-        idx2node[iedge * 2 + 1] = (iedge + 1) % num_node;
+    for i_edge in 0..num_node {
+        face2idx[i_edge + 1] = (i_edge + 1) * 2;
+        idx2node[i_edge * 2] = i_edge;
+        idx2node[i_edge * 2 + 1] = (i_edge + 1) % num_node;
     }
     (face2idx, idx2node)
 }
 
 
+/// # Returs
+/// (face2idx, idx2node)
 pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 {
     let num_node_face = num_node - 1;
     let mut face2idx = vec!(0; num_node + 1);
     let mut idx2node = vec!(0; num_node * num_node_face);
-    for iedge in 0..num_node {
-        face2idx[iedge + 1] = (iedge + 1) * 2;
+    for i_edge in 0..num_node {
+        face2idx[i_edge + 1] = (i_edge + 1) * num_node_face;
         let mut icnt = 0;
         for ino in 0..num_node {
-            let ino1 = (iedge + ino) % num_node;
-            if ino1 == iedge {
+            let ino1 = (i_edge + ino) % num_node;
+            if ino1 == i_edge {
                 continue;
             }
-            idx2node[iedge * num_node_face + icnt] = ino1;
+            idx2node[i_edge * num_node_face + icnt] = ino1;
             icnt += 1;
         }
     }
     (face2idx, idx2node)
 }
 
+#[test]
+fn test_face2node_of_simplex_element() {
+    // TODO:
+    let (face2idx, idx2node) = face2node_of_simplex_element(2);
+    assert_eq!(face2idx, [0, 1, 2]);
+    assert_eq!(idx2node, [1, 0] );
+    let (face2idx, idx2node) = face2node_of_simplex_element(3);
+    assert_eq!(face2idx, [0, 2, 4, 6]);
+    assert_eq!(idx2node, [1,2, 2,0, 0,1] );
+}
 
 /// element adjacency of uniform mesh
 /// * `elem2vtx` - vertex index of elements

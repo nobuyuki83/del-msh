@@ -364,7 +364,7 @@ pub fn sphere_yup<T>(
 #[test]
 fn test_sphere_yup() {
     let (tri2vtx, vtx2xyz) = sphere_yup::<f64>(1.0, 16, 8);
-    crate::io_obj::save_tri_mesh_(
+    crate::io_obj::save_tri2vtx_vtx2xyz(
         "target/sphere_yup.obj",
         &tri2vtx, &vtx2xyz, 3).unwrap();
 }
@@ -470,7 +470,7 @@ pub fn bypyramid_zup<Real>(
 fn test_biypyramid_zup() {
     let (tri2vtx, vtx2xyz)
         = bypyramid_zup::<f64>(2.0, 0.2, 0.3);
-    crate::io_obj::save_tri_mesh_(
+    crate::io_obj::save_tri2vtx_vtx2xyz(
         "target/bipyramid_zup.obj",
         &tri2vtx, &vtx2xyz, 3).unwrap();
 }
@@ -521,7 +521,7 @@ fn arrow_yup<Real>(
 #[test]
 fn test_arrow_zup() {
     let (tri2vtx, vtx2xyz) = arrow_yup::<f64>(16);
-    crate::io_obj::save_tri_mesh_(
+    crate::io_obj::save_tri2vtx_vtx2xyz(
         "target/arrow_zup.obj",
         tri2vtx.as_slice(), vtx2xyz.as_slice(), 3).unwrap();
 }
@@ -556,7 +556,7 @@ fn test_arrow_connecting_two_points() {
     let (tri2vtx, vtx2xyz) = arrow_connecting_two_points::<f64>(
         &[1.0, 1.0, 1.0],
         &[1.0, 1.0, 2.0], 16);
-    crate::io_obj::save_tri_mesh_(
+    crate::io_obj::save_tri2vtx_vtx2xyz(
         "target/arrow_connecting_two_points.obj",
         tri2vtx.as_slice(), vtx2xyz.as_slice(), 3).unwrap();
 }
