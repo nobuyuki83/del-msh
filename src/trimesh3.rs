@@ -144,15 +144,5 @@ pub fn mean_edge_length(
 }
 
 
-pub fn merge<T>(
-    out_tri2vtx: &mut Vec<usize>,
-    out_vtx2xyz: &mut Vec<T>,
-    tri2vtx: &[usize],
-    vtx2xyz: &[T])
-    where T: Copy
-{
-    let num_vtx0 = out_vtx2xyz.len() / 3;
-    tri2vtx.iter().for_each(|&v| out_tri2vtx.push(num_vtx0 + v));
-    vtx2xyz.iter().for_each(|&v| out_vtx2xyz.push(v));
-}
+
 

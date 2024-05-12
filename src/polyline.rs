@@ -70,7 +70,7 @@ pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix<T, N, N>
 {
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
-    let cog = crate::polyloop::cog::<T, N>(vtx2xyz);
+    let cog = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz);
     let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
     for i_edge in 0..num_vtx-1 {
         let iv0 = i_edge;

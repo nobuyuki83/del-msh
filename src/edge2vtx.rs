@@ -51,9 +51,20 @@ pub fn from_polygon_mesh(
     let vtx2elem = crate::vtx2elem::from_polygon_mesh(
         elem2idx, idx2vtx,
         num_vtx);
-    let vtx2vtx = crate::vtx2vtx::edges_of_polygon_mesh(
+    let vtx2vtx = crate::vtx2vtx::from_polygon_mesh_edges(
         elem2idx, idx2vtx,
         &vtx2elem.0, &vtx2elem.1,
         false);
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
+}
+
+pub fn from_polyloop(
+    num_vtx: usize) -> Vec<usize>
+{
+    let mut edge2vtx = Vec::<usize>::with_capacity(num_vtx*2);
+    for i in 0..num_vtx {
+        edge2vtx.push(i);
+        edge2vtx.push((i+1)%num_vtx);
+    }
+    edge2vtx
 }

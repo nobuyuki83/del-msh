@@ -162,7 +162,7 @@ mod tests {
         let (face2idx, idx2node) = elem2elem::face2node_of_polygon_element(3);
         let tri2tri = elem2elem::from_uniform_mesh(
             &tri2vtx, 3, &face2idx, &idx2node, vtx2xyz.len() / 3);
-        let tri2center = elem2center::from_uniform_mesh(
+        let tri2center = elem2center::from_uniform_mesh_as_points(
             &tri2vtx, 3, &vtx2xyz, 3);
         let bvhnodes = crate::bvh3_topology_topdown::from_uniform_mesh_with_elem2elem_elem2center(
             &tri2tri, 3, &tri2center);

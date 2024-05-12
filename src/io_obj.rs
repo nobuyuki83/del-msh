@@ -391,6 +391,32 @@ pub fn save_edge2vtx_vtx2xyz<Path, Real>(
     Ok(())
 }
 
+#[allow(clippy::identity_op)]
+pub fn save_polyline2vtx_vtx2xyz<Path, Real>(
+    filepath: Path,
+    polyline2vtx: &[usize],
+    vtx2xyz: &[Real],
+    num_dim: usize) -> Result<(), &'static str>
+    where Path: AsRef<std::path::Path>,
+          Real: num_traits::Float + std::fmt::Display
+{
+    let Ok(file) = File::create(filepath) else { return Err("file  not found."); };
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    // let num_vtx = vtx2xyz.len() / num_dim;
+    for i_poly in 0..polyline2vtx.len()-1 {
+        let num_vtx_in_polyline = polyline2vtx[i_poly+1]-polyline2vtx[i_poly];
+        for i_vtx in  0..num_vtx_in_polyline - 1 {
+            let i0 = polyline2vtx[i_poly] + i_vtx;
+            let i1 = polyline2vtx[i_poly] + i_vtx + 1;
+            if let Err(_e) = writeln!(
+                file,
+                "l {} {}", i0 + 1, i1 + 1) { return Err("fail"); }
+        }
+    }
+    Ok(())
+}
+
 // -------------------------
 // below: private functions
 

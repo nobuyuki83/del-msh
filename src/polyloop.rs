@@ -3,7 +3,7 @@
 use num_traits::AsPrimitive;
 
 /// return  arc-length of a 2D or 3D poly loop
-pub fn arclength_vec<T, const N: usize>(
+pub fn arclength_from_vtx2vecn<T, const N: usize>(
     vtxs: &[nalgebra::SVector<T, N>]) -> T
     where T: nalgebra::RealField + Copy,
           f64: AsPrimitive<T>
@@ -49,7 +49,9 @@ pub fn edge2length<T, const N: usize>(
     edge2length
 }
 
-pub fn cog<T, const N: usize>(
+/// the center of gravity for polyloop.
+/// Here polyloop is a looped wire, not the polygonal face bounded by the polyloop
+pub fn cog_as_edges<T, const N: usize>(
     vtx2xyz: &[T])
     -> nalgebra::SVector<T, N>
     where T: nalgebra::RealField + Copy + 'static,
@@ -71,8 +73,20 @@ pub fn cog<T, const N: usize>(
     cog / len
 }
 
-pub fn cog_from_vtx2vecn<T, const N: usize>(
-    vtx2xyz: &[nalgebra::SVector::<T,N>])
+#[test]
+fn test_cog() {
+    let mut vtx2xy = crate::polyloop2::from_circle(1f32, 32);
+    let (x0, y0) = (1.3, 0.5);
+    vtx2xy.view_mut((0,0), (1,vtx2xy.ncols())).add_scalar_mut(x0);
+    vtx2xy.view_mut((1,0), (1,vtx2xy.ncols())).add_scalar_mut(y0);
+    let cog = cog_as_edges::<f32, 2>(vtx2xy.as_slice());
+    dbg!(cog);
+}
+
+/// the center of gravity for polyloop.
+/// Here "polyloop" is a looped wire, not the polygonal face bounded by the polyloop
+pub fn cog_from_vtx2vecn_as_edges<T, const N: usize>(
+    vtx2xyz: &[nalgebra::SVector::<T, N>])
     -> nalgebra::SVector<T, N>
     where T: nalgebra::RealField + Copy + 'static,
           f64: AsPrimitive<T>
@@ -99,7 +113,7 @@ pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix<T, N, N>
 {
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
-    let cog = cog::<T, N>(vtx2xyz);
+    let cog = cog_as_edges::<T, N>(vtx2xyz);
     let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
@@ -229,9 +243,9 @@ pub fn to_cylinder_trimeshes<Real>(
     vtx2xy: &[Real],
     num_dim: usize,
     radius: Real) -> (Vec<usize>, Vec<Real>)
-where Real: nalgebra::RealField + num_traits::FloatConst + 'static + Copy,
-    usize: AsPrimitive<Real>,
-    f64: AsPrimitive<Real>
+    where Real: nalgebra::RealField + num_traits::FloatConst + 'static + Copy,
+          usize: AsPrimitive<Real>,
+          f64: AsPrimitive<Real>
 {
     let num_vtx = vtx2xy.len() / num_dim;
     let mut out_tri2vtx: Vec<usize> = vec!();
@@ -239,20 +253,29 @@ where Real: nalgebra::RealField + num_traits::FloatConst + 'static + Copy,
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = &vtx2xy[i0*num_dim..(i0+1)*num_dim];
-        let p1 = &vtx2xy[i1*num_dim..(i1+1)*num_dim];
+        let p0 = &vtx2xy[i0 * num_dim..(i0 + 1) * num_dim];
+        let p1 = &vtx2xy[i1 * num_dim..(i1 + 1) * num_dim];
         let p0 =
-            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p0[0], p0[1], p0[2]) }
-            else { nalgebra::Vector3::<Real>::new(p0[0], p0[1], Real::zero()) };
+            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p0[0], p0[1], p0[2]) } else { nalgebra::Vector3::<Real>::new(p0[0], p0[1], Real::zero()) };
         let p1 =
-            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p1[0], p1[1], p1[2]) }
-            else { nalgebra::Vector3::<Real>::new(p1[0], p1[1], Real::zero()) };
+            if num_dim == 3 { nalgebra::Vector3::<Real>::new(p1[0], p1[1], p1[2]) } else { nalgebra::Vector3::<Real>::new(p1[0], p1[1], Real::zero()) };
         let (tri2vtx, vtx2xyz)
             = crate::trimesh3_primitive::cylinder_open_connecting_two_points(
             32, radius, p0, p1);
-        crate::trimesh3::merge(
+        crate::uniform_mesh::merge(
             &mut out_tri2vtx, &mut out_vtx2xyz,
-            tri2vtx.as_slice(), vtx2xyz.as_slice());
+            tri2vtx.as_slice(), vtx2xyz.as_slice(), 3);
     }
     (out_tri2vtx, out_vtx2xyz)
+}
+
+pub fn edge2vtx(
+    num_vtx: usize) -> Vec<usize>
+{
+    let mut edge2vtx = Vec::<usize>::with_capacity(num_vtx * 2);
+    for i_vtx in 0..num_vtx {
+        edge2vtx.push(i_vtx);
+        edge2vtx.push((i_vtx + 1) % num_vtx);
+    }
+    edge2vtx
 }

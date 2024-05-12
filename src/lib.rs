@@ -51,4 +51,6 @@ pub mod trimesh_topology;
 pub mod trimesh2_dynamic;
 pub mod io_svg;
 pub mod trimesh;
-pub mod volonoi2;
+pub mod voronoi2;
+pub mod uniform_mesh;
+pub mod polygon_mesh;

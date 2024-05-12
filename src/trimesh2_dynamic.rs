@@ -192,7 +192,7 @@ fn find_edge_point_across_edge<T>(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]]);
-                if area1 > (-1.0e-20_f64).as_() {
+                if area1 > -(1.0e-20_f64.as_()) {
                     assert!(area0 + area1 > 1.0e-20_f64.as_());
                     let ratio = area0 / (area0 + area1);
                     return Some((i_tri_cur, i2_node, i3_node, ratio));

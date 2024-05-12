@@ -90,11 +90,11 @@ pub fn poisson_disk_sampling_from_polyloop2(
     vtxl2xy: &[f32],
     radius: f32,
     num_iteration: usize,
-) -> Vec<nalgebra::Vector2<f32>>
+) -> Vec<f32>
 {
     let (tri2vtx, vtx2xyz)
         = crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(
-        &vtxl2xy, -1., -1.);
+        vtxl2xy, -1., -1.);
     let tri2cumarea = cumulative_area_sum(&tri2vtx, &vtx2xyz, 2);
     let mut rng = rand::thread_rng();
     let mut vtx2vectwo = vec!(nalgebra::Vector2::<f32>::zeros();0);
@@ -113,16 +113,15 @@ pub fn poisson_disk_sampling_from_polyloop2(
         if is_near { continue; }
         vtx2vectwo.push(pos);
     }
-    vtx2vectwo
+    crate::vtx2xyz::from_array_of_nalgebra(&vtx2vectwo)
 }
 
 #[test]
 fn test_poisson_disk_sampling() {
     let vtxl2xy = vec!(0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0);
-    let vtx2vectwo = poisson_disk_sampling_from_polyloop2(
+    let vtx2xy = poisson_disk_sampling_from_polyloop2(
         &vtxl2xy, 0.1, 2000);
     {  // write boundary and
-        let vtx2xy = crate::vtx2xyz::from_array_of_nalgebra(&vtx2vectwo);
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(vtx2xy);
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
