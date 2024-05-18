@@ -41,9 +41,12 @@ pub fn cut_convex2_by_line(
     (vtx2xy_new, vtx2info_new)
 }
 
-pub fn voronoi_cells(
+pub fn voronoi_cells<F>(
     vtxl2xy: &[f32],
-    site2xy: &[f32]) -> (Vec<Vec<nalgebra::Vector2<f32>>>, Vec<Vec<[usize; 4]>>)
+    site2xy: &[f32],
+    site2isalive: F)
+    -> (Vec<Vec<nalgebra::Vector2<f32>>>, Vec<Vec<[usize; 4]>>)
+where F: Fn(usize) -> bool
 {
     let vtxl2xy = crate::vtx2xyz::to_array_of_nalgebra_vector(vtxl2xy);
     let site2xy: Vec<nalgebra::Vector2<f32>> = crate::vtx2xyz::to_array_of_nalgebra_vector(site2xy);
@@ -52,20 +55,22 @@ pub fn voronoi_cells(
         vec!(nalgebra::Vector2::<f32>::zeros(); 0); num_site);
     let mut site2vtxc2info = vec!(
         vec!([usize::MAX; 4]; 0); num_site);
-    for (i_vtxs, pos_i) in site2xy.iter().enumerate() {
+    for (i_site, pos_i) in site2xy.iter().enumerate() {
+        if !site2isalive(i_site) { continue; }
         let mut vtxc2xy = vtxl2xy.clone();
         let mut vtxc2info: Vec<[usize; 4]> = (0..vtxc2xy.len())
             .map(|v| [v, usize::MAX, usize::MAX, usize::MAX]).collect();
-        for (j_vtx, pos_j) in site2xy.iter().enumerate() {
-            if j_vtx == i_vtxs { continue; }
+        for (j_site, pos_j) in site2xy.iter().enumerate() {
+            if !site2isalive(j_site) { continue; }
+            if j_site == i_site { continue; }
             let line_s = (pos_i + pos_j) * 0.5;
             let line_n = (pos_j - pos_i).normalize();
             (vtxc2xy, vtxc2info) = cut_convex2_by_line(
-                &vtxc2xy, &vtxc2info, &line_s, &line_n, i_vtxs, j_vtx);
+                &vtxc2xy, &vtxc2info, &line_s, &line_n, i_site, j_site);
         }
         assert_eq!(vtxc2xy.len(), vtxc2info.len());
-        site2vtxc2xy[i_vtxs] = vtxc2xy;
-        site2vtxc2info[i_vtxs] = vtxc2info;
+        site2vtxc2xy[i_site] = vtxc2xy;
+        site2vtxc2info[i_site] = vtxc2info;
     }
     (site2vtxc2xy, site2vtxc2info)
 }
@@ -163,7 +168,7 @@ fn test_voronoi_concave() {
             &crate::edge2vtx::from_polyloop(num_vtxl), &vtxl2xy, 2);
     }
     let (site2vtxc2xy, _site2vtxc2info)
-        = voronoi_cells(&vtxl2xy, &site2xy);
+        = voronoi_cells(&vtxl2xy, &site2xy, |_isite| true );
     { // write each cell
         let mut edge2vtxo = vec!(0usize; 0);
         let mut vtxo2xy = vec!(0f32; 0);
@@ -195,7 +200,7 @@ fn test_voronoi_convex() {
             &[0, 1, 1, 2, 2, 3, 3, 0], &vtxl2xy, 2);
     }
     let (site2vtxc2xy, site2vtxc2info)
-        = voronoi_cells(&vtxl2xy, &site2xy);
+        = voronoi_cells(&vtxl2xy, &site2xy, |_isite| true );
     assert_eq!(site2vtxc2xy.len(), num_site);
     assert_eq!(site2vtxc2info.len(), num_site);
     { // write each cell

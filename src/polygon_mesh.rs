@@ -18,3 +18,41 @@ pub fn elem2area (
     }
     areas
 }
+
+pub fn vtx2vtx(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    num_vtx: usize,
+    is_bidirectional: bool) -> (Vec<usize>, Vec<usize>)
+{
+    let (vtx2jdx, jdx2elem)
+        = crate::vtx2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx);
+    crate::vtx2vtx::from_polygon_mesh_edges_with_vtx2elem(
+        elem2idx, idx2vtx,
+        &vtx2jdx, &jdx2elem,
+        is_bidirectional)
+}
+
+pub fn vtx2elem(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    num_vtx: usize) -> (Vec<usize>, Vec<usize>)
+{
+    crate::vtx2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx)
+}
+
+pub fn edge2vtx(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    num_vtx: usize) -> Vec<usize>
+{
+    crate::edge2vtx::from_polygon_mesh(elem2idx, idx2vtx, num_vtx)
+}
+
+pub fn elem2elem(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    num_vtx: usize) -> Vec<usize>
+{
+    crate::elem2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx)
+}

@@ -53,3 +53,18 @@ pub fn find_node_tri(
     if tri2vtx[2] == i_vtx { return 2; }
     panic!();
 }
+
+pub fn elem2elem(
+    elem2vtx: &[usize],
+    num_node: usize,
+    num_vtx: usize,
+    is_simplex: bool) -> Vec<usize>
+{
+    let (face2idx, idx2node) =
+        if is_simplex { crate::elem2elem::face2node_of_simplex_element(num_node) }
+        else { crate::elem2elem::face2node_of_polygon_element(num_node)};
+    crate::elem2elem::from_uniform_mesh(
+        elem2vtx, num_node,
+        &face2idx, &idx2node,
+        num_vtx)
+}

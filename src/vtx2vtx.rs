@@ -120,7 +120,7 @@ pub fn from_specific_edges_of_uniform_mesh(
 
 /// make vertex surrounding vertex as edges of polygon mesh.
 /// A polygon mesh is a mixture of elements such as triangle, quadrilateal, pentagon.
-pub fn from_polygon_mesh_edges(
+pub fn from_polygon_mesh_edges_with_vtx2elem(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     vtx2jdx: &[usize],

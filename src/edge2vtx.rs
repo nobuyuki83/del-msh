@@ -51,7 +51,7 @@ pub fn from_polygon_mesh(
     let vtx2elem = crate::vtx2elem::from_polygon_mesh(
         elem2idx, idx2vtx,
         num_vtx);
-    let vtx2vtx = crate::vtx2vtx::from_polygon_mesh_edges(
+    let vtx2vtx = crate::vtx2vtx::from_polygon_mesh_edges_with_vtx2elem(
         elem2idx, idx2vtx,
         &vtx2elem.0, &vtx2elem.1,
         false);

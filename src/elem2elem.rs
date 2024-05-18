@@ -14,7 +14,7 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 }
 
 
-/// # Returs
+/// # Returns
 /// (face2idx, idx2node)
 pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 {
@@ -142,4 +142,52 @@ pub fn from_uniform_mesh(
         elem2vtx, num_node,
         &vtx2elem.0, &vtx2elem.1,
         face2idx, idx2node)
+}
+
+pub fn from_polygon_mesh_with_vtx2elem(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    vtx2jdx: &[usize],
+    jdx2elem: &[usize]) -> Vec<usize>
+{
+    assert!(!vtx2jdx.is_empty());
+    let num_elem = elem2idx.len() - 1;
+    let mut idx2elem = vec!(usize::MAX; idx2vtx.len());
+    for i_elem in 0..num_elem {
+        let num_edge_in_i_elem = elem2idx[i_elem + 1] - elem2idx[i_elem];
+        for i_edge in 0..num_edge_in_i_elem {
+            let i_edge2vtx = [
+                idx2vtx[elem2idx[i_elem] + i_edge],
+                idx2vtx[elem2idx[i_elem] + (i_edge + 1) % num_edge_in_i_elem],
+            ];
+            let i_vtx0 = i_edge2vtx[0];
+            for &j_elem0 in &jdx2elem[vtx2jdx[i_vtx0]..vtx2jdx[i_vtx0 + 1]] {
+                if j_elem0 == i_elem { continue; }
+                let num_edge_in_j_elem0 = elem2idx[j_elem0 + 1] - elem2idx[j_elem0];
+                for j_edge in 0..num_edge_in_j_elem0 {
+                    let j_edge2vtx = [
+                        idx2vtx[elem2idx[j_elem0] + j_edge],
+                        idx2vtx[elem2idx[j_elem0] + (j_edge + 1) % num_edge_in_j_elem0],
+                    ];
+                    if i_edge2vtx[0] != j_edge2vtx[1] || i_edge2vtx[1] != j_edge2vtx[0] { continue; }
+                    idx2elem[elem2idx[i_elem] + i_edge] = j_elem0;
+                    break;
+                }
+                if idx2elem[elem2idx[i_elem] + i_edge] != usize::MAX { break; }
+            }
+        }
+    }
+    idx2elem
+}
+
+pub fn from_polygon_mesh(
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    num_vtx: usize) -> Vec<usize>
+{
+    let vtx2elem = crate::vtx2elem::from_polygon_mesh(
+        elem2idx, idx2vtx, num_vtx);
+    from_polygon_mesh_with_vtx2elem(
+        elem2idx, idx2vtx,
+        &vtx2elem.0, &vtx2elem.1)
 }

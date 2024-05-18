@@ -41,12 +41,13 @@ pub fn from_polygon_mesh_as_points<T>(
     let mut elem2cog = Vec::<T>::with_capacity(num_elem*num_dim);
     for i_elem in 0..num_elem {
         cog.fill(T::zero());
+        let num_vtx_in_elem = elem2idx[i_elem+1]-elem2idx[i_elem];
         for i_vtx0 in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem+1]] {
             for idim in 0..num_dim {
                 cog[idim] += vtx2xyz[i_vtx0 * num_dim + idim];
             }
         }
-        let ratio = T::one() / (elem2idx[i_elem+1]-elem2idx[i_elem]).as_();
+        let ratio = if num_vtx_in_elem == 0 { T::zero() } else { T::one() / num_vtx_in_elem.as_() };
         cog.iter().for_each(|&v| elem2cog.push(v*ratio) );
     }
     elem2cog
