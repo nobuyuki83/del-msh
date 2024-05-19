@@ -625,11 +625,31 @@ fn test_square() {
         Vec2::new(-0.1, 1.0),
         //
         Vec2::new(-1.0, 1.0));
-    for vtx2xy in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3] {
+    let vtx2xy4 = vec!(
+        Vec2::new(0.0, 0.0),
+        Vec2::new(1.0, 0.0),
+        Vec2::new(1.0, 0.2),
+        Vec2::new(0.1, 0.2),
+        Vec2::new(0.2, 0.5), // todo!(0.1, 0.5)
+        Vec2::new(1.0, 0.5),
+        Vec2::new(1.0, 1.0),
+        Vec2::new(0.0, 1.0));
+    for (i_loop, vtx2xy) in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3, vtx2xy4].iter().enumerate() {
         let vtx2xy: Vec<f32> = vtx2xy.iter().flat_map(|v| [v[0], v[1]]).collect();
-        let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
-        let res = crate::io_obj::save_tri2vtx_vtx2xyz("target/b.obj", &tri2vtx, &vtx2xy, 2);
-        assert!(res.is_ok());
+        {
+            let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(
+                &vtx2xy, -1., -1.);
+            let res = crate::io_obj::save_tri2vtx_vtx2xyz(
+                format!("target/a{}.obj", i_loop), &tri2vtx, &vtx2xy, 2);
+            assert!(res.is_ok());
+        }
+        {
+            let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(
+                &vtx2xy, 0.1, 0.1);
+            let res = crate::io_obj::save_tri2vtx_vtx2xyz(
+                format!("target/b{}.obj", i_loop), &tri2vtx, &vtx2xy, 2);
+            assert!(res.is_ok());
+        }
     }
 }
 

@@ -5,8 +5,7 @@ use num_traits::AsPrimitive;
 pub fn is_inside_<Real>(
     vtx2xy: &[Real],
     p: &[Real; 2]) -> bool
-    where Real: num_traits::Float + Copy + 'static + std::ops::AddAssign,
-          f64: AsPrimitive<Real>
+    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
 {
     let num_vtx = vtx2xy.len() / 2;
     let mut wn: Real = Real::zero();
@@ -17,13 +16,15 @@ pub fn is_inside_<Real>(
             (&vtx2xy[j * 2..(j + 1) * 2]).try_into().unwrap(),
             p);
     }
-    if (wn - Real::one()).abs() < 0.1.as_() { return true; }
+    let one = Real::one();
+    let thres = one / (one + one + one + one + one);
+    if (wn - one).abs() < thres { return true; }
     false
 }
 
 
 /// area
-pub fn area<T>(
+pub fn area_<T>(
     vtx2xy: &[T]) -> T
     where T: num_traits::Float + Copy + 'static + std::ops::AddAssign,
           f64: AsPrimitive<T>
@@ -103,24 +104,7 @@ pub fn from_pentagram<Real>(
     xys
 }
 
-// above: independent from nalgebra
-// ------------------------------------
-// below: dependent on nalgebra
-
-
-pub fn from_circle(
-    rad: f32,
-    n: usize) -> nalgebra::Matrix2xX<f32> {
-    let mut vtx2xy = nalgebra::Matrix2xX::<f32>::zeros(n);
-    for i in 0..n {
-        let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
-        vtx2xy.column_mut(i).x = rad * f32::cos(theta);
-        vtx2xy.column_mut(i).y = rad * f32::sin(theta);
-    }
-    vtx2xy
-}
-
-pub fn distance_to_point<Real>(
+pub fn distance_to_point_<Real>(
     vtx2xy: &[Real],
     p: &[Real]) -> Real
     where Real: nalgebra::RealField + Copy,
@@ -142,13 +126,51 @@ pub fn distance_to_point<Real>(
     dist_min
 }
 
+// above: interface is independent from nalgebra
+// ------------------------------------
+// below: interface is dependent on nalgebra
+
+pub fn distance_to_point<Real>(
+    vtx2xy: &[nalgebra::Vector2<Real>],
+    g: &nalgebra::Vector2<Real>) -> Real
+    where Real: nalgebra::RealField + Copy,
+          f64: AsPrimitive<Real>
+{
+    // visit all the boudnary
+    let np = vtx2xy.len() / 2;
+    let mut dist_min = Real::max_value().unwrap();
+    for ip in 0..np {
+        let jp = (ip + 1) % np;
+        let pi = vtx2xy[ip];
+        let pj = vtx2xy[jp];
+        let dist = del_geo::edge::distance_to_point(g, &pi, &pj);
+        if dist < dist_min {
+            dist_min = dist;
+        }
+    }
+    dist_min
+}
+
+
+pub fn from_circle(
+    rad: f32,
+    n: usize) -> nalgebra::Matrix2xX<f32> {
+    let mut vtx2xy = nalgebra::Matrix2xX::<f32>::zeros(n);
+    for i in 0..n {
+        let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
+        vtx2xy.column_mut(i).x = rad * f32::cos(theta);
+        vtx2xy.column_mut(i).y = rad * f32::sin(theta);
+    }
+    vtx2xy
+}
+
+
 pub fn to_uniform_density_random_points<Real>(
     vtx2xy: &[Real],
     cell_len: Real,
     rng: &mut rand::rngs::StdRng) -> Vec<Real>
-    where Real: num_traits::Float + std::ops::AddAssign + Copy + 'static + AsPrimitive<usize>,
+    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + AsPrimitive<usize>,
           rand::distributions::Standard: rand::prelude::Distribution<Real>,
-          f64: AsPrimitive<Real>,
           usize: AsPrimitive<Real>
 {
     let aabb = del_geo::aabb2::from_vtx2xy(vtx2xy);
@@ -194,8 +216,7 @@ pub fn to_svg<Real>(
 pub fn winding_number<Real>(
     vtx2xy: &[nalgebra::Vector2<Real>],
     p: &nalgebra::Vector2<Real>) -> Real
-    where Real: num_traits::Float + Copy + 'static + std::ops::AddAssign + std::fmt::Debug,
-          f64: AsPrimitive<Real>
+    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + std::fmt::Debug,
 {
     let num_vtx = vtx2xy.len();
     let mut wn: Real = Real::zero();
@@ -252,4 +273,21 @@ pub fn meshing_to_trimesh2<Index, Real>(
 {
     crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
         vtxl2xy, edge_length_boundary, edge_length_internal)
+}
+
+pub fn area<T>(
+    vtx2xy: &[nalgebra::Vector2::<T>]) -> T
+    where T: nalgebra::RealField + Copy
+{
+    let num_vtx = vtx2xy.len();
+    let zero = nalgebra::Vector2::<T>::zeros();
+    let mut area = T::zero();
+    for i_edge in 0..num_vtx {
+        let i0 = i_edge;
+        let i1 = (i_edge + 1) % num_vtx;
+        let p0 = &vtx2xy[i0];
+        let p1 = &vtx2xy[i1];
+        area += del_geo::tri2::area(&zero, p0, p1);
+    }
+    area
 }
