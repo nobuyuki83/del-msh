@@ -12,14 +12,16 @@ pub fn from_uniform_mesh_with_vtx2elem(
     num_vtx: usize,
     vtx2idx: &[usize],
     idx2elem: &[usize],
-    is_self: bool) -> (Vec<usize>, Vec<usize>)
-{
+    is_self: bool,
+) -> (Vec<usize>, Vec<usize>) {
     assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);
-    let mut vtx2flg = vec!(usize::MAX; num_vtx);
-    let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
+    let mut vtx2flg = vec![usize::MAX; num_vtx];
+    let mut vtx2jdx = vec![0_usize; num_vtx + 1];
     for i_vtx in 0..num_vtx {
-        if !is_self { vtx2flg[i_vtx] = i_vtx; }
+        if !is_self {
+            vtx2flg[i_vtx] = i_vtx;
+        }
         for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
@@ -34,10 +36,12 @@ pub fn from_uniform_mesh_with_vtx2elem(
         vtx2jdx[i_vtx + 1] += vtx2jdx[i_vtx];
     }
     let num_vtx2vtx = vtx2jdx[num_vtx];
-    let mut jdx2vtx = vec!(0_usize; num_vtx2vtx);
+    let mut jdx2vtx = vec![0_usize; num_vtx2vtx];
     vtx2flg.iter_mut().for_each(|v| *v = usize::MAX);
     for i_vtx in 0..num_vtx {
-        if !is_self { vtx2flg[i_vtx] = i_vtx; }
+        if !is_self {
+            vtx2flg[i_vtx] = i_vtx;
+        }
         for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
             for j_node in 0..num_node {
                 let j_vtx = elem2vtx[j_elem * num_node + j_node];
@@ -62,16 +66,20 @@ pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize,
-    is_self: bool) -> (Vec<usize>, Vec<usize>)
-{  // set pattern to sparse matrix
+    is_self: bool,
+) -> (Vec<usize>, Vec<usize>) {
+    // set pattern to sparse matrix
     assert_eq!(elem2vtx.len() % num_node, 0);
-    let vtx2elem = crate::vtx2elem::from_uniform_mesh(
-        elem2vtx, num_node, num_vtx);
+    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
     assert_eq!(vtx2elem.0.len(), num_vtx + 1);
     let vtx2vtx = from_uniform_mesh_with_vtx2elem(
-        elem2vtx, num_node, num_vtx,
-        &vtx2elem.0, &vtx2elem.1,
-        is_self);
+        elem2vtx,
+        num_node,
+        num_vtx,
+        &vtx2elem.0,
+        &vtx2elem.1,
+        is_self,
+    );
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
     vtx2vtx
 }
@@ -82,12 +90,13 @@ pub fn from_specific_edges_of_uniform_mesh(
     edge2node: &[usize],
     vtx2idx: &[usize],
     idx2elem: &[usize],
-    is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
+    is_bidirectional: bool,
+) -> (Vec<usize>, Vec<usize>) {
     let num_edge = edge2node.len() / 2;
     assert_eq!(edge2node.len(), num_edge * 2);
 
     let num_vtx = vtx2idx.len() - 1;
-    let mut vtx2jdx = vec!(0_usize; num_vtx + 1);
+    let mut vtx2jdx = vec![0_usize; num_vtx + 1];
     vtx2jdx[0] = 0;
     let mut jdx2vtx = Vec::<usize>::new();
     let mut set_vtx = std::collections::BTreeSet::new();
@@ -99,7 +108,9 @@ pub fn from_specific_edges_of_uniform_mesh(
                 let inode1 = edge2node[iedge * 2 + 1];
                 let ivtx0 = elem2vtx[ielem0 * num_node + inode0];
                 let ivtx1 = elem2vtx[ielem0 * num_node + inode1];
-                if ivtx0 != i_vtx && ivtx1 != i_vtx { continue; }
+                if ivtx0 != i_vtx && ivtx1 != i_vtx {
+                    continue;
+                }
                 if ivtx0 == i_vtx {
                     if is_bidirectional || ivtx1 > i_vtx {
                         set_vtx.insert(ivtx1);
@@ -117,7 +128,6 @@ pub fn from_specific_edges_of_uniform_mesh(
     (vtx2jdx, jdx2vtx)
 }
 
-
 /// make vertex surrounding vertex as edges of polygon mesh.
 /// A polygon mesh is a mixture of elements such as triangle, quadrilateal, pentagon.
 pub fn from_polygon_mesh_edges_with_vtx2elem(
@@ -125,7 +135,8 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
     idx2vtx: &[usize],
     vtx2jdx: &[usize],
     jdx2elem: &[usize],
-    is_bidirectional: bool) -> (Vec<usize>, Vec<usize>) {
+    is_bidirectional: bool,
+) -> (Vec<usize>, Vec<usize>) {
     let nvtx = vtx2jdx.len() - 1;
 
     let mut vtx2kdx = vec![0; nvtx + 1];
@@ -141,7 +152,9 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
                 let i_node1 = (i_edge + 1) % num_node;
                 let j_vtx0 = idx2vtx[elem2idx[ielem0] + i_node0];
                 let j_vtx1 = idx2vtx[elem2idx[ielem0] + i_node1];
-                if j_vtx0 != i_vtx && j_vtx1 != i_vtx { continue; }
+                if j_vtx0 != i_vtx && j_vtx1 != i_vtx {
+                    continue;
+                }
                 if j_vtx0 == i_vtx {
                     if is_bidirectional || j_vtx1 > i_vtx {
                         set_vtx_idx.insert(j_vtx1);
@@ -158,4 +171,3 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
     }
     (vtx2kdx, kdx2vtx)
 }
-

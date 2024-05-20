@@ -2,12 +2,11 @@
 
 use num_traits::AsPrimitive;
 #[allow(clippy::identity_op)]
-pub fn from_grid<Real>(
-    nx: usize,
-    ny: usize) -> (Vec<usize>, Vec<Real>)
-    where Real: num_traits::Float + 'static + Default,
-          f32: AsPrimitive<Real>,
-          usize: AsPrimitive<Real>
+pub fn from_grid<Real>(nx: usize, ny: usize) -> (Vec<usize>, Vec<Real>)
+where
+    Real: num_traits::Float + 'static + Default,
+    f32: AsPrimitive<Real>,
+    usize: AsPrimitive<Real>,
 {
     let np = (nx + 1) * (ny + 1);
     let mut vtx2xy: Vec<Real> = vec![Default::default(); np * 2];

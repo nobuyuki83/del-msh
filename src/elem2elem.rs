@@ -1,10 +1,8 @@
 //! methods that generate the elements adjacent to an element
 
-
-pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
-{
-    let mut face2idx = vec!(0; num_node + 1);
-    let mut idx2node = vec!(0; num_node * 2);
+pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
+    let mut face2idx = vec![0; num_node + 1];
+    let mut idx2node = vec![0; num_node * 2];
     for i_edge in 0..num_node {
         face2idx[i_edge + 1] = (i_edge + 1) * 2;
         idx2node[i_edge * 2] = i_edge;
@@ -13,14 +11,12 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
     (face2idx, idx2node)
 }
 
-
 /// # Returns
 /// (face2idx, idx2node)
-pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
-{
+pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     let num_node_face = num_node - 1;
-    let mut face2idx = vec!(0; num_node + 1);
-    let mut idx2node = vec!(0; num_node * num_node_face);
+    let mut face2idx = vec![0; num_node + 1];
+    let mut idx2node = vec![0; num_node * num_node_face];
     for i_edge in 0..num_node {
         face2idx[i_edge + 1] = (i_edge + 1) * num_node_face;
         let mut icnt = 0;
@@ -41,10 +37,10 @@ fn test_face2node_of_simplex_element() {
     // TODO:
     let (face2idx, idx2node) = face2node_of_simplex_element(2);
     assert_eq!(face2idx, [0, 1, 2]);
-    assert_eq!(idx2node, [1, 0] );
+    assert_eq!(idx2node, [1, 0]);
     let (face2idx, idx2node) = face2node_of_simplex_element(3);
     assert_eq!(face2idx, [0, 2, 4, 6]);
-    assert_eq!(idx2node, [1,2, 2,0, 0,1] );
+    assert_eq!(idx2node, [1, 2, 2, 0, 0, 1]);
 }
 
 /// element adjacency of uniform mesh
@@ -60,7 +56,8 @@ pub fn from_uniform_mesh_with_vtx2elem(
     vtx2idx: &[usize],
     idx2elem: &[usize],
     face2jdx: &[usize],
-    jdx2node: &[usize]) -> Vec<usize> {
+    jdx2node: &[usize],
+) -> Vec<usize> {
     assert!(!vtx2idx.is_empty());
     let num_vtx = vtx2idx.len() - 1;
     let num_face_par_elem = face2jdx.len() - 1;
@@ -74,10 +71,10 @@ pub fn from_uniform_mesh_with_vtx2elem(
     };
 
     let num_elem = elem2vtx.len() / num_node;
-    let mut elem2elem = vec!(usize::MAX; num_elem * num_face_par_elem);
+    let mut elem2elem = vec![usize::MAX; num_elem * num_face_par_elem];
 
-    let mut vtx2flag = vec!(0; num_vtx); // vertex index -> flag
-    let mut jdx2vtx = vec!(0; num_max_node_on_face);  // face node index -> vertex index
+    let mut vtx2flag = vec![0; num_vtx]; // vertex index -> flag
+    let mut jdx2vtx = vec![0; num_max_node_on_face]; // face node index -> vertex index
     for i_elem in 0..num_elem {
         for i_face in 0..num_face_par_elem {
             for jdx0 in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
@@ -134,25 +131,28 @@ pub fn from_uniform_mesh(
     num_node: usize,
     face2idx: &[usize],
     idx2node: &[usize],
-    num_vtx: usize) -> Vec<usize> {
-    let vtx2elem = crate::vtx2elem::from_uniform_mesh(
-        elem2vtx, num_node,
-        num_vtx);
+    num_vtx: usize,
+) -> Vec<usize> {
+    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
     from_uniform_mesh_with_vtx2elem(
-        elem2vtx, num_node,
-        &vtx2elem.0, &vtx2elem.1,
-        face2idx, idx2node)
+        elem2vtx,
+        num_node,
+        &vtx2elem.0,
+        &vtx2elem.1,
+        face2idx,
+        idx2node,
+    )
 }
 
 pub fn from_polygon_mesh_with_vtx2elem(
     elem2idx: &[usize],
     idx2vtx: &[usize],
     vtx2jdx: &[usize],
-    jdx2elem: &[usize]) -> Vec<usize>
-{
+    jdx2elem: &[usize],
+) -> Vec<usize> {
     assert!(!vtx2jdx.is_empty());
     let num_elem = elem2idx.len() - 1;
-    let mut idx2elem = vec!(usize::MAX; idx2vtx.len());
+    let mut idx2elem = vec![usize::MAX; idx2vtx.len()];
     for i_elem in 0..num_elem {
         let num_edge_in_i_elem = elem2idx[i_elem + 1] - elem2idx[i_elem];
         for i_edge in 0..num_edge_in_i_elem {
@@ -162,32 +162,31 @@ pub fn from_polygon_mesh_with_vtx2elem(
             ];
             let i_vtx0 = i_edge2vtx[0];
             for &j_elem0 in &jdx2elem[vtx2jdx[i_vtx0]..vtx2jdx[i_vtx0 + 1]] {
-                if j_elem0 == i_elem { continue; }
+                if j_elem0 == i_elem {
+                    continue;
+                }
                 let num_edge_in_j_elem0 = elem2idx[j_elem0 + 1] - elem2idx[j_elem0];
                 for j_edge in 0..num_edge_in_j_elem0 {
                     let j_edge2vtx = [
                         idx2vtx[elem2idx[j_elem0] + j_edge],
                         idx2vtx[elem2idx[j_elem0] + (j_edge + 1) % num_edge_in_j_elem0],
                     ];
-                    if i_edge2vtx[0] != j_edge2vtx[1] || i_edge2vtx[1] != j_edge2vtx[0] { continue; }
+                    if i_edge2vtx[0] != j_edge2vtx[1] || i_edge2vtx[1] != j_edge2vtx[0] {
+                        continue;
+                    }
                     idx2elem[elem2idx[i_elem] + i_edge] = j_elem0;
                     break;
                 }
-                if idx2elem[elem2idx[i_elem] + i_edge] != usize::MAX { break; }
+                if idx2elem[elem2idx[i_elem] + i_edge] != usize::MAX {
+                    break;
+                }
             }
         }
     }
     idx2elem
 }
 
-pub fn from_polygon_mesh(
-    elem2idx: &[usize],
-    idx2vtx: &[usize],
-    num_vtx: usize) -> Vec<usize>
-{
-    let vtx2elem = crate::vtx2elem::from_polygon_mesh(
-        elem2idx, idx2vtx, num_vtx);
-    from_polygon_mesh_with_vtx2elem(
-        elem2idx, idx2vtx,
-        &vtx2elem.0, &vtx2elem.1)
+pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) -> Vec<usize> {
+    let vtx2elem = crate::vtx2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx);
+    from_polygon_mesh_with_vtx2elem(elem2idx, idx2vtx, &vtx2elem.0, &vtx2elem.1)
 }

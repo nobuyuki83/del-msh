@@ -1,10 +1,9 @@
 //! methods for coordinate transformations
 
 #[allow(clippy::identity_op)]
-pub fn normalize_coords3 <Real>(
-    vtx2xyz: &mut [Real],
-    size: Real)
-where Real: num_traits::Float
+pub fn normalize_coords3<Real>(vtx2xyz: &mut [Real], size: Real)
+where
+    Real: num_traits::Float,
 {
     let num_vtx = vtx2xyz.len() / 3;
     let mut mins = [Real::one(); 3];
@@ -33,11 +32,16 @@ where Real: num_traits::Float
     let cntr = [
         (mins[0] + maxs[0]) * half,
         (mins[1] + maxs[1]) * half,
-        (mins[2] + maxs[2]) * half];
+        (mins[2] + maxs[2]) * half,
+    ];
     let scale = {
         let mut size0 = maxs[0] - mins[0];
-        if maxs[1] - mins[1] > size0 { size0 = maxs[1] - mins[1]; }
-        if maxs[2] - mins[2] > size0 { size0 = maxs[2] - mins[2]; }
+        if maxs[1] - mins[1] > size0 {
+            size0 = maxs[1] - mins[1];
+        }
+        if maxs[2] - mins[2] > size0 {
+            size0 = maxs[2] - mins[2];
+        }
         size / size0
     };
     for ivtx in 0..num_vtx {

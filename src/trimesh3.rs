@@ -3,10 +3,8 @@
 use num_traits::AsPrimitive;
 
 #[allow(clippy::identity_op)]
-pub fn vtx2normal(
-    tri2vtx: &[usize],
-    vtx2xyz: &[f64]) -> Vec<f64> {
-    let mut vtx2nrm = vec!(0_f64; vtx2xyz.len());
+pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
+    let mut vtx2nrm = vec![0_f64; vtx2xyz.len()];
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3].try_into().unwrap();
@@ -26,14 +24,13 @@ pub fn vtx2normal(
 }
 
 #[allow(clippy::identity_op)]
-pub fn vtx2area<T>(
-    tri2vtx: &[usize],
-    vtx2xyz: &[T]) -> Vec<T>
-    where T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
-          f64: AsPrimitive<T>
+pub fn vtx2area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
+where
+    T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
+    f64: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / 3;
-    let mut areas = vec!(T::zero(); num_vtx);
+    let mut areas = vec![T::zero(); num_vtx];
     let one_third = T::one() / 3_f64.as_();
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
@@ -48,14 +45,12 @@ pub fn vtx2area<T>(
     areas
 }
 
-
 #[cfg(test)]
 mod tests {
     use num_traits::FloatConst;
     #[test]
     fn test_vtx2area() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(
-            1_f64, 128, 256);
+        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1_f64, 128, 256);
         let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
         let total_area: f64 = vtx2area.iter().sum();
         assert!((total_area - f64::PI() * 4.0).abs() < 1.0e-2);
@@ -66,36 +61,34 @@ mod tests {
 // -------------------------
 
 #[allow(clippy::identity_op)]
-pub fn tri2normal<T, U>(
-    tri2vtx: &[U],
-    vtx2xyz: &[T]) -> Vec<T>
-where T: num_traits::Float,
-      U: num_traits::AsPrimitive<usize>
+pub fn tri2normal<T, U>(tri2vtx: &[U], vtx2xyz: &[T]) -> Vec<T>
+where
+    T: num_traits::Float,
+    U: num_traits::AsPrimitive<usize>,
 {
-    let mut tri2normal = Vec::<T>::with_capacity(tri2vtx.len() );
+    let mut tri2normal = Vec::<T>::with_capacity(tri2vtx.len());
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_());
         let n = del_geo::tri3::normal_(
             &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
             &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap());
+            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
+        );
         tri2normal.extend_from_slice(&n);
     }
     tri2normal
 }
 
 #[allow(clippy::identity_op)]
-pub fn tri2area(
-    tri2vtx: &[usize],
-    vtx2xyz: &[f32]) -> Vec<f32>
-{
+pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
     let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let area = del_geo::tri3::area_(
             &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
             &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap());
+            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
+        );
         tri2area.push(area);
     }
     tri2area
@@ -108,7 +101,8 @@ pub fn extend_avoid_intersection(
     tri2vtx: &[usize],
     vtx2xyz: &[f64],
     q: &[f64],
-    step: f64) -> [f64; 3] {
+    step: f64,
+) -> [f64; 3] {
     let q = nalgebra::Vector3::<f64>::from_row_slice(q);
     let mut dq = nalgebra::Vector3::<f64>::zeros();
     for node2vtx in tri2vtx.chunks(3) {
@@ -123,12 +117,8 @@ pub fn extend_avoid_intersection(
     [q[0], q[1], q[2]]
 }
 
-
-
 #[allow(clippy::identity_op)]
-pub fn mean_edge_length(
-    tri2vtx: &[usize],
-    vtx2xyz: &[f32]) -> f32 {
+pub fn mean_edge_length(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
     let num_tri = tri2vtx.len() / 3;
     let mut sum = 0_f32;
     for node2vtx in tri2vtx.chunks(3) {
@@ -142,7 +132,3 @@ pub fn mean_edge_length(
     }
     sum / (num_tri * 3) as f32
 }
-
-
-
-

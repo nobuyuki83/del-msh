@@ -3,9 +3,10 @@
 pub fn unidex_vertex_attribute_for_triangle_mesh(
     tri2vtx: &[usize],
     vtx2val: &[f32],
-    num_val: usize) -> Vec<f32> {
+    num_val: usize,
+) -> Vec<f32> {
     let num_tri = tri2vtx.len() / 3;
-    let mut tri2node2val = vec!(0_f32; num_tri * 3 * num_val);
+    let mut tri2node2val = vec![0_f32; num_tri * 3 * num_val];
     for i_tri in 0..tri2vtx.len() / 3 {
         for i_node in 0..3 {
             let i_vtx = tri2vtx[i_tri * 3 + i_node];

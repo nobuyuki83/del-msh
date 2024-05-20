@@ -1,9 +1,7 @@
 //! methods related to triangle mesh topology
 
 /// split polygons of polygonal mesh into triangles
-pub fn from_polygon_mesh(
-    elem2idx: &[usize],
-    idx2vtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
+pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
     let mut num_tri = 0_usize;
     for i_elem in 0..elem2idx.len() - 1 {
         assert!(elem2idx[i_elem + 1] >= elem2idx[i_elem]);
@@ -28,9 +26,7 @@ pub fn from_polygon_mesh(
 
 /// split quad element to triangle element
 #[allow(clippy::identity_op)]
-pub fn from_quad_mesh(
-    quad2vtx: &[usize]) -> Vec<usize>
-{
+pub fn from_quad_mesh(quad2vtx: &[usize]) -> Vec<usize> {
     let nquad = quad2vtx.len() / 4;
     let mut tri2vtx = vec![0; nquad * 2 * 3];
     for iquad in 0..nquad {
@@ -45,12 +41,16 @@ pub fn from_quad_mesh(
     tri2vtx
 }
 
-pub fn find_node_tri(
-    tri2vtx: &[usize],
-    i_vtx: usize) -> usize {
-    if tri2vtx[0] == i_vtx { return 0; }
-    if tri2vtx[1] == i_vtx { return 1; }
-    if tri2vtx[2] == i_vtx { return 2; }
+pub fn find_node_tri(tri2vtx: &[usize], i_vtx: usize) -> usize {
+    if tri2vtx[0] == i_vtx {
+        return 0;
+    }
+    if tri2vtx[1] == i_vtx {
+        return 1;
+    }
+    if tri2vtx[2] == i_vtx {
+        return 2;
+    }
     panic!();
 }
 
@@ -58,13 +58,12 @@ pub fn elem2elem(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize,
-    is_simplex: bool) -> Vec<usize>
-{
-    let (face2idx, idx2node) =
-        if is_simplex { crate::elem2elem::face2node_of_simplex_element(num_node) }
-        else { crate::elem2elem::face2node_of_polygon_element(num_node)};
-    crate::elem2elem::from_uniform_mesh(
-        elem2vtx, num_node,
-        &face2idx, &idx2node,
-        num_vtx)
+    is_simplex: bool,
+) -> Vec<usize> {
+    let (face2idx, idx2node) = if is_simplex {
+        crate::elem2elem::face2node_of_simplex_element(num_node)
+    } else {
+        crate::elem2elem::face2node_of_polygon_element(num_node)
+    };
+    crate::elem2elem::from_uniform_mesh(elem2vtx, num_node, &face2idx, &idx2node, num_vtx)
 }

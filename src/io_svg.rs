@@ -1,16 +1,17 @@
-pub fn svg_outline_path_from_shape(
-    s0: &str) -> Vec<String>
-{
+pub fn svg_outline_path_from_shape(s0: &str) -> Vec<String> {
     let s0 = s0.as_bytes();
     let mut imark = 0;
     let mut strs = Vec::<String>::new();
     for i in 0..s0.len() {
-        if s0[i].is_ascii_digit() { continue; }
+        if s0[i].is_ascii_digit() {
+            continue;
+        }
         if s0[i] == b',' {
             strs.push(std::str::from_utf8(&s0[imark..i]).unwrap().to_string());
-            imark = i + 1;  // mark should be the beginning position of the string so move next
+            imark = i + 1; // mark should be the beginning position of the string so move next
         }
-        if s0[i] == b' ' { // sometimes the space act as delimiter in the SVG (inkscape version)
+        if s0[i] == b' ' {
+            // sometimes the space act as delimiter in the SVG (inkscape version)
             if i > imark {
                 strs.push(std::str::from_utf8(&s0[imark..i]).unwrap().to_string());
             }
@@ -30,152 +31,173 @@ pub fn svg_outline_path_from_shape(
             imark = i + 1;
         }
     }
-    if s0.len () > imark {
-        strs.push(std::str::from_utf8(&s0[imark..s0.len()]).unwrap().to_string());
+    if s0.len() > imark {
+        strs.push(
+            std::str::from_utf8(&s0[imark..s0.len()])
+                .unwrap()
+                .to_string(),
+        );
     }
     strs
 }
 
 #[allow(clippy::identity_op)]
 pub fn svg_loops_from_outline_path(
-    strs: &[String]) -> Vec<(Vec<nalgebra::Vector2<f32>>, Vec<usize>, bool)>
-{
+    strs: &[String],
+) -> Vec<(Vec<nalgebra::Vector2<f32>>, Vec<usize>, bool)> {
     type Vec3 = nalgebra::Vector2<f32>;
-    let hoge = | s0: &str, s1: &str | {
-        Vec3::new(
-            s0.parse::<f32>().unwrap(),
-            s1.parse::<f32>().unwrap())
-    };
-    let mut loops: Vec<(Vec<Vec3>, Vec<usize>, bool)> = vec!();
-    let mut vtxl2xy: Vec<Vec3> = vec!();
-    let mut seg2vtxl: Vec<usize> = vec!(0);
+    let hoge =
+        |s0: &str, s1: &str| Vec3::new(s0.parse::<f32>().unwrap(), s1.parse::<f32>().unwrap());
+    let mut loops: Vec<(Vec<Vec3>, Vec<usize>, bool)> = vec![];
+    let mut vtxl2xy: Vec<Vec3> = vec![];
+    let mut seg2vtxl: Vec<usize> = vec![0];
     assert!(strs[0] == "M" || strs[0] == "m");
     // assert!(strs[strs.len() - 1] == "Z" || strs[strs.len() - 1] == "z");
     let mut pos_cur = nalgebra::Vector2::<f32>::zeros();
     let mut is = 0;
     loop {
-        if strs[is] == "M" { // start absolute
+        if strs[is] == "M" {
+            // start absolute
             is += 1;
             pos_cur = hoge(&strs[is + 0], &strs[is + 1]);
-            vtxl2xy.push( pos_cur );
+            vtxl2xy.push(pos_cur);
             is += 2;
-        } else if strs[is] == "m" { // start relative
+        } else if strs[is] == "m" {
+            // start relative
             is += 1;
             pos_cur += hoge(&strs[is + 0], &strs[is + 1]);
-            vtxl2xy.push( pos_cur );
+            vtxl2xy.push(pos_cur);
             is += 2;
-        } else if strs[is] == "l" { // line relative
+        } else if strs[is] == "l" {
+            // line relative
             is += 1;
             loop {
-                seg2vtxl.push( vtxl2xy.len() );
+                seg2vtxl.push(vtxl2xy.len());
                 let p1 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
-                vtxl2xy.push( p1 );
+                vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 2;
-                if strs[is].as_bytes()[0].is_ascii_alphabetic() { break; }
+                if strs[is].as_bytes()[0].is_ascii_alphabetic() {
+                    break;
+                }
             }
-        } else if strs[is] == "L" { // line absolute
+        } else if strs[is] == "L" {
+            // line absolute
             is += 1;
             loop {
-                seg2vtxl.push( vtxl2xy.len() );
+                seg2vtxl.push(vtxl2xy.len());
                 let p1 = hoge(&strs[is + 0], &strs[is + 1]);
-                vtxl2xy.push( p1 );
+                vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 2;
-                if strs[is].as_bytes()[0].is_ascii_alphabetic() { break; }
+                if strs[is].as_bytes()[0].is_ascii_alphabetic() {
+                    break;
+                }
             }
-        } else if strs[is] == "v" { // vertical relative
-            seg2vtxl.push( vtxl2xy.len() );
-            let p1 = pos_cur + nalgebra::Vector2::<f32>::new(
-                0.,
-                strs[is + 1].parse::<f32>().unwrap());
-            vtxl2xy.push( p1 );
+        } else if strs[is] == "v" {
+            // vertical relative
+            seg2vtxl.push(vtxl2xy.len());
+            let p1 =
+                pos_cur + nalgebra::Vector2::<f32>::new(0., strs[is + 1].parse::<f32>().unwrap());
+            vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
-        } else if strs[is] == "V" { // vertical absolute
-            seg2vtxl.push( vtxl2xy.len() );
-            let p1 = nalgebra::Vector2::<f32>::new(
-                pos_cur[0],
-                strs[is + 1].parse::<f32>().unwrap());
-            vtxl2xy.push( p1 );
+        } else if strs[is] == "V" {
+            // vertical absolute
+            seg2vtxl.push(vtxl2xy.len());
+            let p1 =
+                nalgebra::Vector2::<f32>::new(pos_cur[0], strs[is + 1].parse::<f32>().unwrap());
+            vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
-        } else if strs[is] == "H" { // horizontal absolute
-            seg2vtxl.push( vtxl2xy.len() );
-            let p1 = nalgebra::Vector2::new(
-                strs[is + 1].parse::<f32>().unwrap(),
-                pos_cur[1]);
-            vtxl2xy.push( p1 );
+        } else if strs[is] == "H" {
+            // horizontal absolute
+            seg2vtxl.push(vtxl2xy.len());
+            let p1 = nalgebra::Vector2::new(strs[is + 1].parse::<f32>().unwrap(), pos_cur[1]);
+            vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
-        } else if strs[is] == "h" { // horizontal relative
-            seg2vtxl.push( vtxl2xy.len() );
+        } else if strs[is] == "h" {
+            // horizontal relative
+            seg2vtxl.push(vtxl2xy.len());
             let dh = strs[is + 1].parse::<f32>().unwrap();
             let p1 = pos_cur + nalgebra::Vector2::<f32>::new(dh, 0.);
-            vtxl2xy.push( p1 );
+            vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
-        } else if strs[is] == "q" {  // relative
+        } else if strs[is] == "q" {
+            // relative
             is += 1;
-            loop { // loop for poly quadratic Bézeir curve
+            loop {
+                // loop for poly quadratic Bézeir curve
                 let pm0 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
                 let p1 = pos_cur + hoge(&strs[is + 2], &strs[is + 3]);
-                vtxl2xy.push( pm0 );
-                seg2vtxl.push( vtxl2xy.len() );
-                vtxl2xy.push( p1 );
+                vtxl2xy.push(pm0);
+                seg2vtxl.push(vtxl2xy.len());
+                vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 4;
                 if is == strs.len() {
-                    loops.push((vtxl2xy.clone(), seg2vtxl.clone(), false) );
+                    loops.push((vtxl2xy.clone(), seg2vtxl.clone(), false));
                     break;
                 }
-                if strs[is].as_bytes()[0].is_ascii_alphabetic() { break; }
+                if strs[is].as_bytes()[0].is_ascii_alphabetic() {
+                    break;
+                }
             }
-        } else if strs[is] == "Q" { // absolute
+        } else if strs[is] == "Q" {
+            // absolute
             is += 1;
             loop {
                 // loop for poly-Bezeir curve
                 let pm0 = hoge(&strs[is + 0], &strs[is + 1]);
                 let p1 = hoge(&strs[is + 2], &strs[is + 3]);
-                vtxl2xy.push( pm0 );
-                seg2vtxl.push( vtxl2xy.len() );
-                vtxl2xy.push( p1 );
+                vtxl2xy.push(pm0);
+                seg2vtxl.push(vtxl2xy.len());
+                vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 4;
-                if strs[is].as_bytes()[0].is_ascii_alphabetic() { break; }
+                if strs[is].as_bytes()[0].is_ascii_alphabetic() {
+                    break;
+                }
             }
-        }
-        else if strs[is] == "c" {  // relative
+        } else if strs[is] == "c" {
+            // relative
             is += 1;
-            loop { // loop for poly cubic Bézeir curve
+            loop {
+                // loop for poly cubic Bézeir curve
                 let pm0 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
                 let pm1 = pos_cur + hoge(&strs[is + 2], &strs[is + 3]);
                 let p1 = pos_cur + hoge(&strs[is + 4], &strs[is + 5]);
-                vtxl2xy.push( pm0 );
-                vtxl2xy.push( pm1 );
-                seg2vtxl.push( vtxl2xy.len() );
-                vtxl2xy.push( p1 );
+                vtxl2xy.push(pm0);
+                vtxl2xy.push(pm1);
+                seg2vtxl.push(vtxl2xy.len());
+                vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 6;
                 if is == strs.len() {
-                    loops.push((vtxl2xy.clone(), seg2vtxl.clone(), false) );
+                    loops.push((vtxl2xy.clone(), seg2vtxl.clone(), false));
                     break;
                 }
-                if strs[is].as_bytes()[0].is_ascii_alphabetic() { break; }
+                if strs[is].as_bytes()[0].is_ascii_alphabetic() {
+                    break;
+                }
             }
         } else if strs[is] == "z" || strs[is] == "Z" {
             let pe = vtxl2xy[0];
             let ps = vtxl2xy[vtxl2xy.len() - 1];
             let _dist0 = (ps - pe).norm();
-            loops.push((vtxl2xy.clone(), seg2vtxl.clone(), true) );
+            loops.push((vtxl2xy.clone(), seg2vtxl.clone(), true));
             vtxl2xy.clear();
-            seg2vtxl = vec!(0);
+            seg2vtxl = vec![0];
             is += 1;
         } else {
-            dbg!("error!--> ",&strs[is]);
+            dbg!("error!--> ", &strs[is]);
             break;
         }
-        if is == strs.len() { break; }
+        if is == strs.len() {
+            break;
+        }
     }
     loops
 }
@@ -184,20 +206,20 @@ pub fn polybezier2polyloop(
     vtx2xy: &[nalgebra::Vector2<f32>],
     seg2vtx: &[usize],
     is_close: bool,
-    edge_length: f32) -> Vec<nalgebra::Vector2<f32>>
-{
-    let mut ret : Vec<nalgebra::Vector2<f32>> = vec!();
+    edge_length: f32,
+) -> Vec<nalgebra::Vector2<f32>> {
+    let mut ret: Vec<nalgebra::Vector2<f32>> = vec![];
     let num_seg = seg2vtx.len() - 1;
     for i_seg in 0..num_seg {
         let (is_vtx, ie_vtx) = (seg2vtx[i_seg], seg2vtx[i_seg + 1]);
         let ps = &vtx2xy[is_vtx];
         let pe = &vtx2xy[ie_vtx];
         if ie_vtx - is_vtx == 1 {
-            let len = (pe-ps).norm();
+            let len = (pe - ps).norm();
             let ndiv = (len / edge_length) as usize;
             for i in 0..ndiv {
                 let r = i as f32 / ndiv as f32;
-                let p = ps.scale(1f32-r) + pe.scale(r);
+                let p = ps.scale(1f32 - r) + pe.scale(r);
                 ret.push(p);
             }
         } else if ie_vtx - is_vtx == 2 {
@@ -222,17 +244,16 @@ pub fn polybezier2polyloop(
     if is_close {
         let ps = &vtx2xy[vtx2xy.len() - 1];
         let pe = &vtx2xy[0];
-        let len = (pe-ps).norm();
+        let len = (pe - ps).norm();
         let ndiv = (len / edge_length) as usize;
         for i in 0..ndiv {
             let r = i as f32 / ndiv as f32;
-            let p = ps.scale(1f32-r) + pe.scale(r);
+            let p = ps.scale(1f32 - r) + pe.scale(r);
             ret.push(p);
         }
     }
     ret
 }
-
 
 #[test]
 fn hoge() {
@@ -287,9 +308,8 @@ fn hoge2() {
     let strs = svg_outline_path_from_shape(str0);
     let loops = svg_loops_from_outline_path(&strs);
     assert_eq!(loops.len(), 1);
-    let polyline = polybezier2polyloop(
-        &loops[0].0, &loops[0].1, loops[0].2, 10.0);
+    let polyline = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 10.0);
     let polyline = crate::vtx2xyz::from_array_of_nalgebra(&polyline);
-    let polyline = crate::polyloop::resample::<_,2>(&polyline, 100);
+    let polyline = crate::polyloop::resample::<_, 2>(&polyline, 100);
     let _ = crate::io_obj::save_vtx2xyz_as_polyloop("target/svg.obj", &polyline, 2);
 }

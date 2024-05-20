@@ -18,12 +18,10 @@ fn parse(s: &str) -> f32 {
     s.trim().parse::<f32>().ok().unwrap()
 }
 
-pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
-    path: P) -> (Vec<usize>, Vec<f32>)
-{
-    let mut vtx2xyz = vec!(0f32; 0);
-    let mut vtx2idx = vec!(0usize; 0);
-    let mut tri2idx = vec!(0usize; 0);
+pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32>) {
+    let mut vtx2xyz = vec![0f32; 0];
+    let mut vtx2idx = vec![0usize; 0];
+    let mut tri2idx = vec![0usize; 0];
     //
     let file = std::fs::File::open(path).expect("file not found.");
     let reader = std::io::BufReader::new(file);
@@ -63,9 +61,15 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(
     }
     //
     let &num_idx = vtx2idx.iter().max().unwrap();
-    let mut idx2vtx = vec!(usize::MAX; num_idx + 1);
-    vtx2idx.iter().enumerate().for_each(|(vtx, &idx)| idx2vtx[idx] = vtx);
-    let mut tri2vtx = vec!(0usize; tri2idx.len());
-    tri2vtx.iter_mut().zip(tri2idx).for_each(|(vtx, idx)| *vtx = idx2vtx[idx]);
+    let mut idx2vtx = vec![usize::MAX; num_idx + 1];
+    vtx2idx
+        .iter()
+        .enumerate()
+        .for_each(|(vtx, &idx)| idx2vtx[idx] = vtx);
+    let mut tri2vtx = vec![0usize; tri2idx.len()];
+    tri2vtx
+        .iter_mut()
+        .zip(tri2idx)
+        .for_each(|(vtx, idx)| *vtx = idx2vtx[idx]);
     (tri2vtx, vtx2xyz)
 }

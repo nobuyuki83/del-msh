@@ -2,9 +2,9 @@
 
 pub fn from_remove_unreferenced_vertices(
     elem2vtxa: &[usize],
-    num_vtxa: usize) -> (Vec<usize>, usize)
-{
-    let mut vtxa2vtxb = vec!(usize::MAX; num_vtxa);
+    num_vtxa: usize,
+) -> (Vec<usize>, usize) {
+    let mut vtxa2vtxb = vec![usize::MAX; num_vtxa];
     for &i_vtxa in elem2vtxa {
         vtxa2vtxb[i_vtxa] = 0;
     }
@@ -19,16 +19,17 @@ pub fn from_remove_unreferenced_vertices(
     (vtxa2vtxb, i_vtxb)
 }
 
-
 pub fn map_vertex_attibute<T>(
     vtxa2xyz: &[T],
     num_dim: usize,
     vtxa2vtxb: &[usize],
-    num_vtxb: usize) -> Vec<T>
-    where T: Copy + num_traits::Zero
+    num_vtxb: usize,
+) -> Vec<T>
+where
+    T: Copy + num_traits::Zero,
 {
     let num_vtxa = vtxa2xyz.len() / num_dim;
-    let mut vtxb2xyz = vec!(T::zero(); num_vtxb * num_dim);
+    let mut vtxb2xyz = vec![T::zero(); num_vtxb * num_dim];
     for i_vtxa in 0..num_vtxa {
         if vtxa2vtxb[i_vtxa] == usize::MAX {
             continue;
@@ -41,11 +42,8 @@ pub fn map_vertex_attibute<T>(
     vtxb2xyz
 }
 
-pub fn map_elem_index(
-    elem2vtxa: &[usize],
-    vtxa2vtxb: &[usize]) -> Vec<usize>
-{
-    let mut elem2vtxb = vec!(0usize; elem2vtxa.len());
+pub fn map_elem_index(elem2vtxa: &[usize], vtxa2vtxb: &[usize]) -> Vec<usize> {
+    let mut elem2vtxb = vec![0usize; elem2vtxa.len()];
     for it in 0..elem2vtxa.len() {
         let i_vtxa = elem2vtxa[it];
         let i_vtxb = vtxa2vtxb[i_vtxa];

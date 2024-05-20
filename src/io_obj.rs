@@ -21,10 +21,11 @@ pub struct WavefrontObj<Index, Real> {
 }
 
 impl<Index, Real> WavefrontObj<Index, Real>
-    where Real: std::str::FromStr + std::fmt::Display,
-          Index: num_traits::PrimInt + 'static,
-          usize: AsPrimitive<Index>,
-          i32: AsPrimitive<Index>
+where
+    Real: std::str::FromStr + std::fmt::Display,
+    Index: num_traits::PrimInt + 'static,
+    usize: AsPrimitive<Index>,
+    i32: AsPrimitive<Index>,
 {
     pub fn new() -> Self {
         WavefrontObj::<Index, Real> {
@@ -44,33 +45,41 @@ impl<Index, Real> WavefrontObj<Index, Real>
     }
 
     /// load wavefront obj file into the class
-    pub fn load<P: AsRef<std::path::Path>>(
-        &mut self,
-        filename: P) -> Result<(), &'static str> {
-        let mut elem2vtx_xyz0: Vec<i32> = vec!();
-        let mut elem2vtx_uv0: Vec<i32> = vec!();
-        let mut elem2vtx_nrm0: Vec<i32> = vec!();
+    pub fn load<P: AsRef<std::path::Path>>(&mut self, filename: P) -> Result<(), &'static str> {
+        let mut elem2vtx_xyz0: Vec<i32> = vec![];
+        let mut elem2vtx_uv0: Vec<i32> = vec![];
+        let mut elem2vtx_nrm0: Vec<i32> = vec![];
         self.elem2group.clear();
         self.elem2mtl.clear();
-        self.elem2idx = vec!(Index::zero());
+        self.elem2idx = vec![Index::zero()];
         let mut name2group = std::collections::BTreeMap::<String, usize>::new();
         let mut name2mtl = std::collections::BTreeMap::<String, usize>::new();
         name2group.insert("_default".to_string(), 0);
         name2mtl.insert("_default".to_string(), 0);
         let mut i_group = 0_usize;
         let mut i_mtl = 0_usize;
-        let Ok(f) = File::open(filename) else { return Err("file not found"); };
+        let Ok(f) = File::open(filename) else {
+            return Err("file not found");
+        };
         let reader = BufReader::new(f);
         for line in reader.lines() {
             let line = line.unwrap();
-            if line.is_empty() { continue; }
+            if line.is_empty() {
+                continue;
+            }
             let char0 = line.chars().next();
-            if char0.is_none() { continue; }
+            if char0.is_none() {
+                continue;
+            }
             let char0 = char0.unwrap();
             let char1 = line.chars().nth(1);
-            if char1.is_none() { continue; }
+            if char1.is_none() {
+                continue;
+            }
             let char1 = char1.unwrap();
-            if char0 == '#' { continue; }
+            if char0 == '#' {
+                continue;
+            }
             if char0 == 'v' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 let x = v[1].parse::<Real>().ok().unwrap();
@@ -88,7 +97,9 @@ impl<Index, Real> WavefrontObj<Index, Real>
                         i_group = name2group.len();
                         name2group.insert(name, i_group);
                     }
-                    Some(&v) => { i_group = v; }
+                    Some(&v) => {
+                        i_group = v;
+                    }
                 };
             }
             if char0 == 'm' && char1 == 't' {
@@ -103,7 +114,9 @@ impl<Index, Real> WavefrontObj<Index, Real>
                         i_mtl = name2mtl.len();
                         name2mtl.insert(name, i_mtl);
                     }
-                    Some(&v) => { i_mtl = v; }
+                    Some(&v) => {
+                        i_mtl = v;
+                    }
                 };
             }
             if char0 == 'v' && char1 == 'n' {
@@ -124,7 +137,8 @@ impl<Index, Real> WavefrontObj<Index, Real>
             }
             if char0 == 'f' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
-                for v_ in v.iter().skip(1) { // skip first 'f'
+                for v_ in v.iter().skip(1) {
+                    // skip first 'f'
                     let (ipnt, itex, inrm) = parse_vertex(v_);
                     elem2vtx_xyz0.push(ipnt);
                     elem2vtx_uv0.push(itex);
@@ -135,38 +149,66 @@ impl<Index, Real> WavefrontObj<Index, Real>
                 self.elem2mtl.push(i_mtl.as_());
             }
         } // end loop over text
-        self.group2name = vec!("".to_string(); name2group.len());
+        self.group2name = vec!["".to_string(); name2group.len()];
         for (name, &i_group) in name2group.iter() {
             self.group2name[i_group] = name.clone();
         }
-        self.mtl2name = vec!("".to_string(); name2mtl.len());
+        self.mtl2name = vec!["".to_string(); name2mtl.len()];
         for (name, &i_mtl) in name2mtl.iter() {
             self.mtl2name[i_mtl] = name.clone();
         }
-        {  // fix veretx_xyz index
+        {
+            // fix veretx_xyz index
             let nvtx_xyz = self.vtx2xyz.len() / 3;
-            self.idx2vtx_xyz = elem2vtx_xyz0.iter().map(
-                |i| if *i >= 0 { (*i).as_() } else { (nvtx_xyz as i32 + *i).as_() }).collect();
+            self.idx2vtx_xyz = elem2vtx_xyz0
+                .iter()
+                .map(|i| {
+                    if *i >= 0 {
+                        (*i).as_()
+                    } else {
+                        (nvtx_xyz as i32 + *i).as_()
+                    }
+                })
+                .collect();
         }
-        {  // fix veretx_uv index
+        {
+            // fix veretx_uv index
             let nvtx_uv = self.vtx2uv.len() / 3;
-            self.idx2vtx_uv = elem2vtx_uv0.iter().map(
-                |i| if *i >= 0 { (*i).as_() } else { (nvtx_uv as i32 + *i).as_() }).collect();
+            self.idx2vtx_uv = elem2vtx_uv0
+                .iter()
+                .map(|i| {
+                    if *i >= 0 {
+                        (*i).as_()
+                    } else {
+                        (nvtx_uv as i32 + *i).as_()
+                    }
+                })
+                .collect();
         }
-        {  // fix veretx_nrm index
+        {
+            // fix veretx_nrm index
             let nvtx_nrm = self.vtx2nrm.len() / 3;
-            self.idx2vtx_nrm = elem2vtx_nrm0.iter().map(
-                |i| if *i >= 0 { (*i).as_() } else { (nvtx_nrm as i32 + *i).as_() }).collect();
+            self.idx2vtx_nrm = elem2vtx_nrm0
+                .iter()
+                .map(|i| {
+                    if *i >= 0 {
+                        (*i).as_()
+                    } else {
+                        (nvtx_nrm as i32 + *i).as_()
+                    }
+                })
+                .collect();
         }
         Ok(())
     }
 }
 
 impl<Index, Real> Default for WavefrontObj<Index, Real>
-    where Real: std::str::FromStr + std::fmt::Display,
-          Index: num_traits::PrimInt + 'static,
-          usize: AsPrimitive<Index>,
-          i32: AsPrimitive<Index>
+where
+    Real: std::str::FromStr + std::fmt::Display,
+    Index: num_traits::PrimInt + 'static,
+    usize: AsPrimitive<Index>,
+    i32: AsPrimitive<Index>,
 {
     fn default() -> Self {
         Self::new()
@@ -175,17 +217,20 @@ impl<Index, Real> Default for WavefrontObj<Index, Real>
 
 pub fn load_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
     filepath: P,
-    scale: Option<Real>) -> Result<(Vec<Index>, Vec<Real>), &'static str>
-    where Real: std::str::FromStr + std::fmt::Display + num_traits::Float,
-          Index: num_traits::PrimInt + 'static,
-          usize: AsPrimitive<Index>,
-          i32: AsPrimitive<Index>
+    scale: Option<Real>,
+) -> Result<(Vec<Index>, Vec<Real>), &'static str>
+where
+    Real: std::str::FromStr + std::fmt::Display + num_traits::Float,
+    Index: num_traits::PrimInt + 'static,
+    usize: AsPrimitive<Index>,
+    i32: AsPrimitive<Index>,
 {
     let mut obj = WavefrontObj::<Index, Real>::new();
     obj.load(&filepath)?;
     let tri2vtx = obj.idx2vtx_xyz;
     let mut vtx2xyz = obj.vtx2xyz;
-    if let Some(scale_) = scale { // scale the vertex positions if scale is provided
+    if let Some(scale_) = scale {
+        // scale the vertex positions if scale is provided
         crate::transform::normalize_coords3(&mut vtx2xyz, scale_);
     }
     Ok((tri2vtx, vtx2xyz))
@@ -197,28 +242,46 @@ pub fn save_tri_mesh_texture(
     tri2vtx_xyz: &[usize],
     vtx2xyz: &[f32],
     tri2vtx_uv: &[usize],
-    vtx2uv: &[f32]) -> Result<(), &'static str> {
+    vtx2uv: &[f32],
+) -> Result<(), &'static str> {
     assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
-    let Ok(mut file) = File::create(filepath) else { return Err("file not found."); };
+    let Ok(mut file) = File::create(filepath) else {
+        return Err("file not found.");
+    };
     for i_vtx in 0..vtx2xyz.len() / 3 {
         if let Err(_e) = writeln!(
-            file, "v {} {} {}",
+            file,
+            "v {} {} {}",
             vtx2xyz[i_vtx * 3 + 0],
             vtx2xyz[i_vtx * 3 + 1],
-            vtx2xyz[i_vtx * 3 + 2]) { return Err("fail"); }
+            vtx2xyz[i_vtx * 3 + 2]
+        ) {
+            return Err("fail");
+        }
     }
     for i_vtx in 0..vtx2uv.len() / 2 {
         if let Err(_e) = writeln!(
-            file, "vt {} {}",
+            file,
+            "vt {} {}",
             vtx2uv[i_vtx * 2 + 0],
-            vtx2uv[i_vtx * 2 + 1]) { return Err("fail"); }
+            vtx2uv[i_vtx * 2 + 1]
+        ) {
+            return Err("fail");
+        }
     }
     for i_tri in 0..tri2vtx_xyz.len() / 3 {
         if let Err(_e) = writeln!(
-            file, "f {}/{} {}/{} {}/{}",
-            tri2vtx_xyz[i_tri * 3 + 0] + 1, tri2vtx_uv[i_tri * 3 + 0] + 1,
-            tri2vtx_xyz[i_tri * 3 + 1] + 1, tri2vtx_uv[i_tri * 3 + 1] + 1,
-            tri2vtx_xyz[i_tri * 3 + 2] + 1, tri2vtx_uv[i_tri * 3 + 2] + 1) { return Err("fail"); }
+            file,
+            "f {}/{} {}/{} {}/{}",
+            tri2vtx_xyz[i_tri * 3 + 0] + 1,
+            tri2vtx_uv[i_tri * 3 + 0] + 1,
+            tri2vtx_xyz[i_tri * 3 + 1] + 1,
+            tri2vtx_uv[i_tri * 3 + 1] + 1,
+            tri2vtx_xyz[i_tri * 3 + 2] + 1,
+            tri2vtx_uv[i_tri * 3 + 2] + 1
+        ) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -227,54 +290,70 @@ pub fn save_tri_mesh_texture(
 fn write_vtx2xyz<Real>(
     file: &mut std::io::BufWriter<File>,
     vtx2xyz: &[Real],
-    num_dim: usize) -> Result<(), &'static str>
-    where Real: std::fmt::Display
+    num_dim: usize,
+) -> Result<(), &'static str>
+where
+    Real: std::fmt::Display,
 {
     match num_dim {
         3_usize => {
             for i_vtx in 0..vtx2xyz.len() / 3 {
                 if let Err(_e) = writeln!(
-                    file, "v {} {} {}",
+                    file,
+                    "v {} {} {}",
                     vtx2xyz[i_vtx * 3 + 0],
                     vtx2xyz[i_vtx * 3 + 1],
-                    vtx2xyz[i_vtx * 3 + 2]) { return Err("fail"); }
+                    vtx2xyz[i_vtx * 3 + 2]
+                ) {
+                    return Err("fail");
+                }
             }
         }
         2_usize => {
             for i_vtx in 0..vtx2xyz.len() / 2 {
                 if let Err(_e) = writeln!(
-                    file, "v {} {} {}",
+                    file,
+                    "v {} {} {}",
                     vtx2xyz[i_vtx * 2 + 0],
-                    vtx2xyz[i_vtx * 2 + 1], 0.) { return Err("fail"); }
+                    vtx2xyz[i_vtx * 2 + 1],
+                    0.
+                ) {
+                    return Err("fail");
+                }
             }
         }
-        _ => { panic!("dimension should be either 2 or 3"); }
+        _ => {
+            panic!("dimension should be either 2 or 3");
+        }
     }
     Ok(())
 }
 
 fn write_vtx2vecn<Real, const N: usize>(
     file: &mut std::io::BufWriter<File>,
-    vtx2vecn: &[nalgebra::SVector<Real, N>]) -> Result<(), &'static str>
-    where Real: nalgebra::RealField + std::fmt::Display
+    vtx2vecn: &[nalgebra::SVector<Real, N>],
+) -> Result<(), &'static str>
+where
+    Real: nalgebra::RealField + std::fmt::Display,
 {
     match N {
         3_usize => {
             for vtx in vtx2vecn {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}",
-                    vtx[0], vtx[1], vtx[2]) { return Err("fail"); }
+                if let Err(_e) = writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2]) {
+                    return Err("fail");
+                }
             }
         }
         2_usize => {
             for vtx in vtx2vecn {
-                if let Err(_e) = writeln!(
-                    file,
-                    "v {} {} {}", vtx[0], vtx[1], 0.) { return Err("fail"); }
+                if let Err(_e) = writeln!(file, "v {} {} {}", vtx[0], vtx[1], 0.) {
+                    return Err("fail");
+                }
             }
         }
-        _ => { panic!(); }
+        _ => {
+            panic!();
+        }
     }
     Ok(())
 }
@@ -284,20 +363,28 @@ pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
     filepath: Path,
     tri2vtx: &[Index],
     vtx2xyz: &[Real],
-    num_dim: usize) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display,
-          Index: num_traits::PrimInt + std::fmt::Display,
+    num_dim: usize,
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+    Index: num_traits::PrimInt + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     for i_tri in 0..tri2vtx.len() / 3 {
         if let Err(_e) = writeln!(
-            file, "f {} {} {}",
+            file,
+            "f {} {} {}",
             tri2vtx[i_tri * 3 + 0] + Index::one(),
             tri2vtx[i_tri * 3 + 1] + Index::one(),
-            tri2vtx[i_tri * 3 + 2] + Index::one()) { return Err("fail"); }
+            tri2vtx[i_tri * 3 + 2] + Index::one()
+        ) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -306,18 +393,21 @@ pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
 pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
     filepath: Path,
     tri2vtx: &[usize],
-    vtx2vecn: &[nalgebra::SVector<Real, N>]) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: nalgebra::RealField + std::fmt::Display
+    vtx2vecn: &[nalgebra::SVector<Real, N>],
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: nalgebra::RealField + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
     for tri in tri2vtx.chunks(3) {
-        if let Err(_e) = writeln!(
-            file,
-            "f {} {} {}",
-            tri[0] + 1, tri[1] + 1, tri[2] + 1) { return Err("fail"); }
+        if let Err(_e) = writeln!(file, "f {} {} {}", tri[0] + 1, tri[1] + 1, tri[2] + 1) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -326,21 +416,24 @@ pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
 pub fn save_vtx2xyz_as_polyloop<Path, Real>(
     filepath: Path,
     vtx2xyz: &[Real],
-    num_dim: usize) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display
+    num_dim: usize,
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     let num_vtx = vtx2xyz.len() / num_dim;
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
-        if let Err(_e) = writeln!(
-            file,
-            "l {} {}", i0+1, i1+1) { return Err("fail"); }
-
+        if let Err(_e) = writeln!(file, "l {} {}", i0 + 1, i1 + 1) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -348,21 +441,24 @@ pub fn save_vtx2xyz_as_polyloop<Path, Real>(
 #[allow(clippy::identity_op)]
 pub fn save_vtx2vecn_as_polyloop<Path, Real, const N: usize>(
     filepath: Path,
-    vtx2vecn: &[nalgebra::SVector<Real,N>]) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: nalgebra::RealField + std::fmt::Display
+    vtx2vecn: &[nalgebra::SVector<Real, N>],
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: nalgebra::RealField + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
     let num_vtx = vtx2vecn.len();
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
-        if let Err(_e) = writeln!(
-            file,
-            "l {} {}", i0+1, i1+1) { return Err("fail"); }
-
+        if let Err(_e) = writeln!(file, "l {} {}", i0 + 1, i1 + 1) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -374,19 +470,23 @@ pub fn save_edge2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     edge2vtx: &[usize],
     vtx2xyz: &[Real],
-    num_dim: usize) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display
+    num_dim: usize,
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file  not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file  not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     // let num_vtx = vtx2xyz.len() / num_dim;
     for node2vtx in edge2vtx.chunks(2) {
         let (i0, i1) = (node2vtx[0], node2vtx[1]);
-        if let Err(_e) = writeln!(
-            file,
-            "l {} {}", i0+1, i1+1) { return Err("fail"); }
+        if let Err(_e) = writeln!(file, "l {} {}", i0 + 1, i1 + 1) {
+            return Err("fail");
+        }
     }
     Ok(())
 }
@@ -396,22 +496,26 @@ pub fn save_polyline2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     polyline2vtx: &[usize],
     vtx2xyz: &[Real],
-    num_dim: usize) -> Result<(), &'static str>
-    where Path: AsRef<std::path::Path>,
-          Real: num_traits::Float + std::fmt::Display
+    num_dim: usize,
+) -> Result<(), &'static str>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else { return Err("file  not found."); };
+    let Ok(file) = File::create(filepath) else {
+        return Err("file  not found.");
+    };
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     // let num_vtx = vtx2xyz.len() / num_dim;
-    for i_poly in 0..polyline2vtx.len()-1 {
-        let num_vtx_in_polyline = polyline2vtx[i_poly+1]-polyline2vtx[i_poly];
-        for i_vtx in  0..num_vtx_in_polyline - 1 {
+    for i_poly in 0..polyline2vtx.len() - 1 {
+        let num_vtx_in_polyline = polyline2vtx[i_poly + 1] - polyline2vtx[i_poly];
+        for i_vtx in 0..num_vtx_in_polyline - 1 {
             let i0 = polyline2vtx[i_poly] + i_vtx;
             let i1 = polyline2vtx[i_poly] + i_vtx + 1;
-            if let Err(_e) = writeln!(
-                file,
-                "l {} {}", i0 + 1, i1 + 1) { return Err("fail"); }
+            if let Err(_e) = writeln!(file, "l {} {}", i0 + 1, i1 + 1) {
+                return Err("fail");
+            }
         }
     }
     Ok(())

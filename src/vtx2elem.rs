@@ -5,10 +5,10 @@
 pub fn from_polygon_mesh(
     elem2idx: &[usize],
     idx2vtx: &[usize],
-    num_vtx: usize) -> (Vec<usize>, Vec<usize>)
-{
+    num_vtx: usize,
+) -> (Vec<usize>, Vec<usize>) {
     let num_elem = elem2idx.len() - 1;
-    let mut vtx2jdx = vec![0usize;num_vtx + 1];
+    let mut vtx2jdx = vec![0usize; num_vtx + 1];
     for i_elem in 0..num_elem {
         for i0_vtx in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
             vtx2jdx[i0_vtx + 1] += 1;
@@ -18,7 +18,7 @@ pub fn from_polygon_mesh(
         vtx2jdx[i_vtx + 1] += vtx2jdx[i_vtx];
     }
     let num_jdx = vtx2jdx[num_vtx];
-    let mut jdx2elem = vec!(0; num_jdx);
+    let mut jdx2elem = vec![0; num_jdx];
     for i_elem in 0..num_elem {
         for &i_vtx0 in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
             let jdx0 = vtx2jdx[i_vtx0];
@@ -42,15 +42,15 @@ fn test_polygon_mesh() {
     assert_eq!(jdx2elem, vec![0, 2, 3, 0, 1, 1, 3, 0, 1, 1, 2, 3, 2, 2]);
 }
 
-
 /// element surrounding vertex
 pub fn from_uniform_mesh(
     elem2vtx: &[usize],
     num_node: usize,
-    num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
+    num_vtx: usize,
+) -> (Vec<usize>, Vec<usize>) {
     let num_elem = elem2vtx.len() / num_node;
     assert_eq!(elem2vtx.len(), num_elem * num_node);
-    let mut vtx2idx = vec!(0_usize; num_vtx + 1);
+    let mut vtx2idx = vec![0_usize; num_vtx + 1];
     for i_elem in 0..num_elem {
         for i_node in 0..num_node {
             let i_vtx = elem2vtx[i_elem * num_node + i_node];
@@ -62,7 +62,7 @@ pub fn from_uniform_mesh(
         vtx2idx[i_vtx + 1] += vtx2idx[i_vtx];
     }
     let num_vtx2elem = vtx2idx[num_vtx];
-    let mut idx2elem = vec!(0; num_vtx2elem);
+    let mut idx2elem = vec![0; num_vtx2elem];
     for i_elem in 0..num_elem {
         for i_node in 0..num_node {
             let i_vtx0 = elem2vtx[i_elem * num_node + i_node];

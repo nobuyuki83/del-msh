@@ -2,10 +2,9 @@
 
 use num_traits::AsPrimitive;
 
-pub fn is_inside_<Real>(
-    vtx2xy: &[Real],
-    p: &[Real; 2]) -> bool
-    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
+pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
 {
     let num_vtx = vtx2xy.len() / 2;
     let mut wn: Real = Real::zero();
@@ -14,20 +13,22 @@ pub fn is_inside_<Real>(
         wn += del_geo::edge2::winding_number_(
             (&vtx2xy[i * 2..(i + 1) * 2]).try_into().unwrap(),
             (&vtx2xy[j * 2..(j + 1) * 2]).try_into().unwrap(),
-            p);
+            p,
+        );
     }
     let one = Real::one();
     let thres = one / (one + one + one + one + one);
-    if (wn - one).abs() < thres { return true; }
+    if (wn - one).abs() < thres {
+        return true;
+    }
     false
 }
 
-
 /// area
-pub fn area_<T>(
-    vtx2xy: &[T]) -> T
-    where T: num_traits::Float + Copy + 'static + std::ops::AddAssign,
-          f64: AsPrimitive<T>
+pub fn area_<T>(vtx2xy: &[T]) -> T
+where
+    T: num_traits::Float + Copy + 'static + std::ops::AddAssign,
+    f64: AsPrimitive<T>,
 {
     let num_vtx = vtx2xy.len() / 2;
     assert_eq!(vtx2xy.len(), num_vtx * 2);
@@ -44,9 +45,9 @@ pub fn area_<T>(
 }
 
 /// center of the gravity of a area bounded by this polyloop
-pub fn cog_as_face<T>(
-    vtx2xy: &[T]) -> [T; 2]
-    where T: num_traits::Float + std::ops::AddAssign + std::ops::DivAssign,
+pub fn cog_as_face<T>(vtx2xy: &[T]) -> [T; 2]
+where
+    T: num_traits::Float + std::ops::AddAssign + std::ops::DivAssign,
 {
     let frac_three = T::one() / (T::one() + T::one() + T::one());
     let num_vtx = vtx2xy.len() / 2;
@@ -69,28 +70,22 @@ pub fn cog_as_face<T>(
     cog
 }
 
-
 #[test]
 fn test_cog_() {
-    let vtx2xy: Vec<f32> = vec!(
-        -1.0, -5.0,
-        -0.5, -5.0,
-        0.5, -5.0,
-        1.0, -5.0,
-        1.0, 5.0,
-        -1.0, 5.0);
+    let vtx2xy: Vec<f32> = vec![
+        -1.0, -5.0, -0.5, -5.0, 0.5, -5.0, 1.0, -5.0, 1.0, 5.0, -1.0, 5.0,
+    ];
     let cog = cog_as_face(&vtx2xy);
-    assert!(cog[0].abs()<1.0e-8);
-    assert!(cog[1].abs()<1.0e-8);
+    assert!(cog[0].abs() < 1.0e-8);
+    assert!(cog[1].abs() < 1.0e-8);
 }
 
 /// star shape
-pub fn from_pentagram<Real>(
-    center: &[Real],
-    scale: Real) -> Vec<Real>
-    where Real: num_traits::Float + 'static + Copy,
-          f64: AsPrimitive<Real>,
-          usize: AsPrimitive<Real>
+pub fn from_pentagram<Real>(center: &[Real], scale: Real) -> Vec<Real>
+where
+    Real: num_traits::Float + 'static + Copy,
+    f64: AsPrimitive<Real>,
+    usize: AsPrimitive<Real>,
 {
     let dt: Real = (std::f64::consts::PI / 5_f64).as_();
     let hp: Real = (std::f64::consts::FRAC_PI_2).as_();
@@ -104,11 +99,10 @@ pub fn from_pentagram<Real>(
     xys
 }
 
-pub fn distance_to_point_<Real>(
-    vtx2xy: &[Real],
-    p: &[Real]) -> Real
-    where Real: nalgebra::RealField + Copy,
-          f64: AsPrimitive<Real>
+pub fn distance_to_point_<Real>(vtx2xy: &[Real], p: &[Real]) -> Real
+where
+    Real: nalgebra::RealField + Copy,
+    f64: AsPrimitive<Real>,
 {
     let g = nalgebra::Vector2::<Real>::from_row_slice(p);
     // visit all the boudnary
@@ -132,9 +126,11 @@ pub fn distance_to_point_<Real>(
 
 pub fn distance_to_point<Real>(
     vtx2xy: &[nalgebra::Vector2<Real>],
-    g: &nalgebra::Vector2<Real>) -> Real
-    where Real: nalgebra::RealField + Copy,
-          f64: AsPrimitive<Real>
+    g: &nalgebra::Vector2<Real>,
+) -> Real
+where
+    Real: nalgebra::RealField + Copy,
+    f64: AsPrimitive<Real>,
 {
     // visit all the boudnary
     let np = vtx2xy.len() / 2;
@@ -151,10 +147,7 @@ pub fn distance_to_point<Real>(
     dist_min
 }
 
-
-pub fn from_circle(
-    rad: f32,
-    n: usize) -> nalgebra::Matrix2xX<f32> {
+pub fn from_circle(rad: f32, n: usize) -> nalgebra::Matrix2xX<f32> {
     let mut vtx2xy = nalgebra::Matrix2xX::<f32>::zeros(n);
     for i in 0..n {
         let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
@@ -164,27 +157,33 @@ pub fn from_circle(
     vtx2xy
 }
 
-
 pub fn to_uniform_density_random_points<Real>(
     vtx2xy: &[Real],
     cell_len: Real,
-    rng: &mut rand::rngs::StdRng) -> Vec<Real>
-    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + AsPrimitive<usize>,
-          rand::distributions::Standard: rand::prelude::Distribution<Real>,
-          usize: AsPrimitive<Real>
+    rng: &mut rand::rngs::StdRng,
+) -> Vec<Real>
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + AsPrimitive<usize>,
+    rand::distributions::Standard: rand::prelude::Distribution<Real>,
+    usize: AsPrimitive<Real>,
 {
     let aabb = del_geo::aabb2::from_vtx2xy(vtx2xy);
     use rand::Rng;
-    let base_pos = [aabb[0] - cell_len * rng.gen::<Real>(), aabb[1] - cell_len * rng.gen::<Real>()];
+    let base_pos = [
+        aabb[0] - cell_len * rng.gen::<Real>(),
+        aabb[1] - cell_len * rng.gen::<Real>(),
+    ];
     let nx = ((aabb[2] - base_pos[0]) / cell_len).as_() + 1;
     let ny = ((aabb[3] - base_pos[1]) / cell_len).as_() + 1;
-    let mut res = vec!();
+    let mut res = vec![];
     for ix in 0..nx {
         for iy in 0..ny {
             let x = base_pos[0] + (ix.as_() + rng.gen::<Real>()) * cell_len;
             let y = base_pos[1] + (iy.as_() + rng.gen::<Real>()) * cell_len;
             let is_inside = is_inside_(vtx2xy, &[x, y]);
-            if !is_inside { continue; }
+            if !is_inside {
+                continue;
+            }
             res.push(x);
             res.push(y);
         }
@@ -193,10 +192,9 @@ pub fn to_uniform_density_random_points<Real>(
 }
 
 #[allow(clippy::identity_op)]
-pub fn to_svg<Real>(
-    vtx2xy: &[Real],
-    transform: &nalgebra::Matrix3<Real>) -> String
-    where Real: std::fmt::Display + Copy + nalgebra::RealField
+pub fn to_svg<Real>(vtx2xy: &[Real], transform: &nalgebra::Matrix3<Real>) -> String
+where
+    Real: std::fmt::Display + Copy + nalgebra::RealField,
 {
     let mut res = String::new();
     for ivtx in 0..vtx2xy.len() / 2 {
@@ -213,10 +211,9 @@ pub fn to_svg<Real>(
 
 // -----------------------------------------------------
 
-pub fn winding_number<Real>(
-    vtx2xy: &[nalgebra::Vector2<Real>],
-    p: &nalgebra::Vector2<Real>) -> Real
-    where Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + std::fmt::Debug,
+pub fn winding_number<Real>(vtx2xy: &[nalgebra::Vector2<Real>], p: &nalgebra::Vector2<Real>) -> Real
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + std::fmt::Debug,
 {
     let num_vtx = vtx2xy.len();
     let mut wn: Real = Real::zero();
@@ -225,7 +222,8 @@ pub fn winding_number<Real>(
         wn += del_geo::edge2::winding_number_(
             &vtx2xy[i].as_slice().try_into().unwrap(),
             &vtx2xy[j].as_slice().try_into().unwrap(),
-            p.as_slice().try_into().unwrap());
+            p.as_slice().try_into().unwrap(),
+        );
     }
     wn
 }
@@ -245,8 +243,10 @@ fn test_circle() {
         let arclen1 = crate::polyloop::arclength::<f32, 2>(vtx2xy1.as_slice());
         assert!((arclen0 - arclen1).abs() < 1.0e-3);
         let edge2length1 = crate::polyloop::edge2length::<f32, 2>(vtx2xy1.as_slice());
-        let min_edge_len1 = edge2length1.iter()
-            .min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+        let min_edge_len1 = edge2length1
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
         assert!((min_edge_len1 - arclen1 / ndiv1 as f32).abs() < 1.0e-3);
     }
     {
@@ -256,8 +256,10 @@ fn test_circle() {
         let arclen2 = crate::polyloop::arclength::<f32, 2>(vtx2xy2.as_slice());
         assert!((arclen0 - arclen2).abs() < 1.0e-3);
         let edge2length2 = crate::polyloop::edge2length::<f32, 2>(vtx2xy2.as_slice());
-        let min_edge_len2 = edge2length2.iter()
-            .min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+        let min_edge_len2 = edge2length2
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
         assert!((min_edge_len2 - arclen2 / ndiv2 as f32).abs() < 1.0e-3);
     }
 }
@@ -265,19 +267,24 @@ fn test_circle() {
 pub fn meshing_to_trimesh2<Index, Real>(
     vtxl2xy: &[Real],
     edge_length_boundary: Real,
-    edge_length_internal: Real) -> (Vec<Index>, Vec<Real>)
-    where Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
-          Index: Copy + 'static,
-          f64: AsPrimitive<Real>,
-          usize: AsPrimitive<Real> + AsPrimitive<Index>
+    edge_length_internal: Real,
+) -> (Vec<Index>, Vec<Real>)
+where
+    Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
+    Index: Copy + 'static,
+    f64: AsPrimitive<Real>,
+    usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
     crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
-        vtxl2xy, edge_length_boundary, edge_length_internal)
+        vtxl2xy,
+        edge_length_boundary,
+        edge_length_internal,
+    )
 }
 
-pub fn area<T>(
-    vtx2xy: &[nalgebra::Vector2::<T>]) -> T
-    where T: nalgebra::RealField + Copy
+pub fn area<T>(vtx2xy: &[nalgebra::Vector2<T>]) -> T
+where
+    T: nalgebra::RealField + Copy,
 {
     let num_vtx = vtx2xy.len();
     let zero = nalgebra::Vector2::<T>::zeros();

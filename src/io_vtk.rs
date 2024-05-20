@@ -13,8 +13,10 @@ pub fn write_vtk_points<T>(
     file: &mut std::fs::File,
     name: &str,
     vtx2xyz: &[T],
-    ndim: usize) -> std::io::Result<()>
-where T: std::fmt::Display
+    ndim: usize,
+) -> std::io::Result<()>
+where
+    T: std::fmt::Display,
 {
     use std::io::Write;
     let np = vtx2xyz.len() / ndim;
@@ -40,14 +42,16 @@ where T: std::fmt::Display
 pub fn write_vtk_cells(
     file: &mut std::fs::File,
     vtk_elem_type: VtkElementType,
-    elem2vtx: &[usize]) -> std::io::Result<()>
-{
+    elem2vtx: &[usize],
+) -> std::io::Result<()> {
     let num_node = match vtk_elem_type {
         VtkElementType::TRIANGLE => 3,
         VtkElementType::QUAD => 4,
         VtkElementType::TETRA => 4,
         VtkElementType::HEXAHEDRON => 8,
-        _ => { panic!(); }
+        _ => {
+            panic!();
+        }
     };
     let nelem = elem2vtx.len() / num_node;
     use std::io::Write;
@@ -62,7 +66,9 @@ pub fn write_vtk_cells(
     writeln!(file, "CELL_TYPES {}", nelem)?;
     {
         let id_elem = vtk_elem_type as usize;
-        for _ in 0..nelem { writeln!(file, "{}", id_elem)?; }
+        for _ in 0..nelem {
+            writeln!(file, "{}", id_elem)?;
+        }
     }
     Ok(())
 }
@@ -71,8 +77,10 @@ pub fn write_vtk_data_point_scalar<T>(
     file: &mut std::fs::File,
     vtx2data: &[T],
     num_vtx: usize,
-    num_stride: usize) -> std::io::Result<()>
-where T: std::fmt::Display
+    num_stride: usize,
+) -> std::io::Result<()>
+where
+    T: std::fmt::Display,
 {
     use std::io::Write;
     writeln!(file, "SCALARS pointvalue float 1")?;
@@ -89,8 +97,7 @@ mod test {
 
     #[test]
     fn trimesh3_scalardata() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::hemisphere_zup::<f64>(
-            1., 16, 32);
+        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::hemisphere_zup::<f64>(1., 16, 32);
         let mut file = std::fs::File::create("target/trimesh3.vtk").expect("file not found.");
         let _ = crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3);
         let _ = crate::io_vtk::write_vtk_cells(&mut file, VtkElementType::TRIANGLE, &tri2vtx);
@@ -103,8 +110,8 @@ mod test {
             vtx2data
         };
         use std::io::Write;
-        let _ = writeln!(file, "POINT_DATA {}", vtx2xyz.len()/3);
-        let _ = crate::io_vtk::write_vtk_data_point_scalar(
-            &mut file, &vtx2data, vtx2xyz.len() / 3, 1);
+        let _ = writeln!(file, "POINT_DATA {}", vtx2xyz.len() / 3);
+        let _ =
+            crate::io_vtk::write_vtk_data_point_scalar(&mut file, &vtx2data, vtx2xyz.len() / 3, 1);
     }
 }
