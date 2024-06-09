@@ -111,7 +111,7 @@ pub fn cut_polygon_by_line(
                 is_inside = true;
             }
             let d1 = depth(p1);
-            assert_ne!(d0 * d0, 0.);
+            assert_ne!(d0 * d0, 0., "{} {}", d0, d1);
             if d0 * d1 > 0. {
                 continue;
             }
@@ -305,11 +305,13 @@ pub fn position_of_voronoi_vertex(
 
 #[test]
 fn test_voronoi_concave() {
-    let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0];
+    let mut reng = rand::thread_rng();
+    // let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0];
     let vtxl2xy = vec![
         0.0, 0.0, 1.0, 0.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.5, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0,
     ];
-    let site2xy = crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30);
+    let site2xy =
+        crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         // save boundary loop and input points
@@ -344,8 +346,10 @@ fn test_voronoi_concave() {
 
 #[test]
 fn test_voronoi_convex() {
+    let mut reng = rand::thread_rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    let site2xy = crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30);
+    let site2xy =
+        crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         let mut vtxl2xy = vtxl2xy.clone();

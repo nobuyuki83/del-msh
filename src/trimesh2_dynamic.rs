@@ -1,3 +1,4 @@
+
 use num_traits::AsPrimitive;
 
 #[allow(clippy::identity_op)]
@@ -83,7 +84,7 @@ pub fn add_points_to_mesh<T>(
             ),
         ];
         let area_sum: T = areas[0] + areas[1] + areas[2];
-        assert!(area_sum > T::zero());
+        assert!(area_sum > T::zero(), "area_sum={}", area_sum);
         let (&area_min, iedge) = areas
             .iter()
             .zip(0..)
@@ -136,8 +137,8 @@ where
     let pi2 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 2) % 3]];
     let a_i0_i1_i2 = del_geo::tri2::area(&pi0, &pi1, &pi2);
     let a_j0_i2_i1 = del_geo::tri2::area(&pj0, &pi2, &pi1);
-    assert!(a_i0_i1_i2 > T::zero());
-    assert!(a_j0_i2_i1 > T::zero());
+    assert!(a_i0_i1_i2 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
+    assert!(a_j0_i2_i1 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
     let area_diamond = a_i0_i1_i2 + a_j0_i2_i1;
     let a_i0_i1_j0 = del_geo::tri2::area(&pi0, &pi1, &pj0);
     let a_i0_j0_i2 = del_geo::tri2::area(&pi0, &pj0, &pi2);

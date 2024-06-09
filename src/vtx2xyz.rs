@@ -61,3 +61,20 @@ where
         .collect();
     res
 }
+
+pub fn translate_and_scale(
+    vtx2xyz_out: &mut [f32],
+    vtx2xyz_in: &[f32],
+    transl: &[f32; 3],
+    scale: f32,
+) {
+    assert_eq!(vtx2xyz_in.len(), vtx2xyz_out.len());
+    let num_vtx = vtx2xyz_in.len() / 3;
+    for i_vtx in 0..num_vtx {
+        let p = &vtx2xyz_in[i_vtx * 3..(i_vtx + 1) * 3];
+        let q = &mut vtx2xyz_out[i_vtx * 3..(i_vtx + 1) * 3];
+        q[0] = (p[0] + transl[0]) * scale;
+        q[1] = (p[1] + transl[1]) * scale;
+        q[2] = (p[2] + transl[2]) * scale;
+    }
+}

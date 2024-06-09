@@ -36,6 +36,7 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32
             let v0 = line.get(24..32).unwrap();
             let v1 = line.get(32..40).unwrap();
             let v2 = line.get(40..48).unwrap();
+            // dbg!(v0, v1, v2);
             let v0 = parse(v0);
             let v1 = parse(v1);
             let v2 = parse(v2);

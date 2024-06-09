@@ -1,7 +1,5 @@
 //! stochastic sampling on mesh
 
-use rand::Rng;
-
 #[allow(clippy::identity_op)]
 pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, Real>(
     tri2vtx: &[usize],
@@ -91,18 +89,21 @@ where
     (i_tri_l, r0, val01_b)
 }
 
-pub fn poisson_disk_sampling_from_polyloop2(
+pub fn poisson_disk_sampling_from_polyloop2<RNG>(
     vtxl2xy: &[f32],
     radius: f32,
     num_iteration: usize,
-) -> Vec<f32> {
+    reng: &mut RNG,
+) -> Vec<f32>
+where
+    RNG: rand::Rng,
+{
     let (tri2vtx, vtx2xyz) =
         crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(vtxl2xy, -1., -1.);
     let tri2cumarea = cumulative_area_sum(&tri2vtx, &vtx2xyz, 2);
-    let mut rng = rand::thread_rng();
     let mut vtx2vectwo = vec![nalgebra::Vector2::<f32>::zeros(); 0];
     for _iter in 0..num_iteration {
-        let (i_tri, r0, r1) = sample_uniformly_trimesh(&tri2cumarea, rng.gen(), rng.gen());
+        let (i_tri, r0, r1) = sample_uniformly_trimesh(&tri2cumarea, reng.gen(), reng.gen());
         let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(
             &tri2vtx, &vtx2xyz, i_tri, r0, r1,
         );
@@ -126,8 +127,9 @@ pub fn poisson_disk_sampling_from_polyloop2(
 
 #[test]
 fn test_poisson_disk_sampling() {
+    let mut reng = rand::thread_rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    let vtx2xy = poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.1, 2000);
+    let vtx2xy = poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.1, 2000, &mut reng);
     {
         // write boundary and
         let mut vtxl2xy = vtxl2xy.clone();

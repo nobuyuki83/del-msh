@@ -1,5 +1,7 @@
 //! method for 3D Bounding Volume Hierarchy
 
+// todo vtx2xyz1: Option<&[Real]>
+
 /// build aabb for uniform mesh
 /// if 'elem2vtx' is empty, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is not empty, compute AABB for Continuous-Collision Detection (CCD)

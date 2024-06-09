@@ -1,5 +1,8 @@
 //! compute the centers of elements in the mesh used mainly for constructing spatial hash
 
+// TODO: implement from_polygon_mesh_as_edges
+// TODO: implement from_polygon_mesh_as_faces
+
 pub fn from_uniform_mesh_as_points<T>(
     elem2vtx: &[usize],
     num_node: usize,
