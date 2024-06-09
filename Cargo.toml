@@ -15,5 +15,5 @@ num-traits = "0.2.19"
 nalgebra = "0.32.5"
 ordered-float = "4.2.0"
 
-# del-geo = {path="../del-geo"}
-del-geo = "0.1.25"
+del-geo = {path="../del-geo"}
+# del-geo = "0.1.26"
