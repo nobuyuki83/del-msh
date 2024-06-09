@@ -85,7 +85,7 @@ fn test_cog() {
         .view_mut((1, 0), (1, vtx2xy.ncols()))
         .add_scalar_mut(y0);
     let cog = cog_as_edges::<f32, 2>(vtx2xy.as_slice());
-    dbg!(cog);
+    assert!(del_geo::edge::length_::<f32,2>(&[x0,y0], cog.as_slice().try_into().unwrap())<1.0e-5);
 }
 
 /// the center of gravity for polyloop.
