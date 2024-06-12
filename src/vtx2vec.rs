@@ -1,5 +1,3 @@
-
-
 pub fn normalize2<Real>(
     vtx2xyz: &[nalgebra::Vector2<Real>],
     center_pos: &nalgebra::Vector2<Real>,

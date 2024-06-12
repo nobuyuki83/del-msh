@@ -72,6 +72,7 @@ where
     stroke
 }
 
+/// covariance matrix
 pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SMatrix<T, N, N>
 where
     T: nalgebra::RealField + Copy + 'static,

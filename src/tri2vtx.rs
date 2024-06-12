@@ -41,6 +41,7 @@ pub fn from_quad_mesh(quad2vtx: &[usize]) -> Vec<usize> {
     tri2vtx
 }
 
+/// find node index of a triangle from the vertex index
 pub fn find_node_tri(tri2vtx: &[usize], i_vtx: usize) -> usize {
     if tri2vtx[0] == i_vtx {
         return 0;
@@ -54,6 +55,7 @@ pub fn find_node_tri(tri2vtx: &[usize], i_vtx: usize) -> usize {
     panic!();
 }
 
+/// triangle surrounding triangle
 pub fn elem2elem(
     elem2vtx: &[usize],
     num_node: usize,

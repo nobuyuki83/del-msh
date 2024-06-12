@@ -1,8 +1,7 @@
-
 use num_traits::AsPrimitive;
 
-#[allow(clippy::identity_op)]
 /// Returns tri2vtx, tri2tri, vtx2tri
+#[allow(clippy::identity_op)]
 pub fn make_super_triangle<T>(
     vtx2xy: &mut Vec<nalgebra::Vector2<T>>,
     min_xy: &[T; 2],

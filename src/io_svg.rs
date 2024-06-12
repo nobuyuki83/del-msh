@@ -1,4 +1,3 @@
-
 pub fn svg_outline_path_from_shape(s0: &str) -> Vec<String> {
     let s0 = s0.as_bytes();
     let mut imark = 0;
@@ -244,7 +243,7 @@ pub fn polybezier2polyloop(
                 edge_length,
                 true,
                 false,
-                30
+                30,
             );
             ret.extend(samples);
         }

@@ -1,7 +1,7 @@
 #[derive(Clone)]
 pub struct Cell {
-    vtx2xy: Vec<nalgebra::Vector2<f32>>,
-    vtx2info: Vec<[usize; 4]>,
+    pub vtx2xy: Vec<nalgebra::Vector2<f32>>,
+    pub vtx2info: Vec<[usize; 4]>,
 }
 
 impl Cell {

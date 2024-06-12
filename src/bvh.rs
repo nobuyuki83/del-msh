@@ -1,3 +1,5 @@
+/// mark child of bvh nodes for assertion purpose
+/// `vtx2flag` will be incremented
 pub fn mark_child(vtx2flag: &mut [usize], inode0: usize, bvhnodes: &[usize]) {
     assert!(inode0 < bvhnodes.len() / 3);
     if bvhnodes[inode0 * 3 + 2] == usize::MAX {

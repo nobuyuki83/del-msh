@@ -106,3 +106,56 @@ pub fn build_geometry_aabb_for_uniform_mesh<Real>(
         aabbs[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
     }
 }
+
+pub fn intersection_ray(
+    hits: &mut Vec<(f32, usize)>,
+    tri2vtx: &[usize],
+    vtx2xyz: &[f32],
+    ray_org: &[f32; 3],
+    ray_dir: &[f32; 3],
+    i_bvhnode: usize,
+    bvhnodes: &[usize],
+    aabbs: &[f32],
+) {
+    if !del_geo::aabb::is_intersect_ray::<3, 6>(
+        aabbs[i_bvhnode * 6..i_bvhnode * 6 + 6].try_into().unwrap(),
+        ray_org,
+        ray_dir,
+    ) {
+        return;
+    }
+    assert_eq!(bvhnodes.len() / 3, aabbs.len() / 6);
+    if bvhnodes[i_bvhnode * 3 + 2] == usize::MAX {
+        // leaf node
+        let i_tri = bvhnodes[i_bvhnode * 3 + 1];
+        let p0 = del_geo::vec3::to_array_from_vtx2xyz(vtx2xyz, tri2vtx[i_tri * 3 + 0]);
+        let p1 = del_geo::vec3::to_array_from_vtx2xyz(vtx2xyz, tri2vtx[i_tri * 3 + 1]);
+        let p2 = del_geo::vec3::to_array_from_vtx2xyz(vtx2xyz, tri2vtx[i_tri * 3 + 2]);
+        let Some(t) = del_geo::tri3::ray_triangle_intersection_(ray_org, ray_dir, &p0, &p1, &p2)
+        else {
+            return;
+        };
+        hits.push((t, i_tri));
+        return;
+    }
+    intersection_ray(
+        hits,
+        tri2vtx,
+        vtx2xyz,
+        ray_org,
+        ray_dir,
+        bvhnodes[i_bvhnode * 3 + 1],
+        bvhnodes,
+        aabbs,
+    );
+    intersection_ray(
+        hits,
+        tri2vtx,
+        vtx2xyz,
+        ray_org,
+        ray_dir,
+        bvhnodes[i_bvhnode * 3 + 2],
+        bvhnodes,
+        aabbs,
+    );
+}

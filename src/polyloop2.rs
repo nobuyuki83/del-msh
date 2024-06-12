@@ -2,7 +2,7 @@
 
 use num_traits::AsPrimitive;
 
-pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+pub fn winding_number_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
 where
     Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
 {
@@ -16,6 +16,14 @@ where
             p,
         );
     }
+    return wn;
+}
+
+pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
+{
+    let wn = winding_number_(vtx2xy, p);
     let one = Real::one();
     let thres = one / (one + one + one + one + one);
     if (wn - one).abs() < thres {
