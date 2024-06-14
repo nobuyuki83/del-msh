@@ -16,7 +16,7 @@ where
             p,
         );
     }
-    return wn;
+    wn
 }
 
 pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool

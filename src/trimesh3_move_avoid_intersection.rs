@@ -1,12 +1,16 @@
+struct Mesh<'a, T>{
+    tri2vtx: &'a [usize],
+    edge2vtx: &'a [usize],
+    vtx2xyz: &'a [T],
+}
+
 #[allow(clippy::identity_op)]
 fn wdw_proximity<T>(
     sum_eng: &mut T,
     grad: &mut [T],
     prox_idx: &[usize],
     prox_param: &[T],
-    tri2vtx: &[usize],
-    edge2vtx: &[usize],
-    vtx2xyz: &[T],
+    mesh: Mesh<T>,
     dist0: T,
     stiff: T,
 ) where
@@ -24,14 +28,14 @@ fn wdw_proximity<T>(
             // edge edge
             let ie0 = idxs[0];
             let ie1 = idxs[1];
-            let ip0 = edge2vtx[ie0 * 2 + 0];
-            let ip1 = edge2vtx[ie0 * 2 + 1];
-            let iq0 = edge2vtx[ie1 * 2 + 0];
-            let iq1 = edge2vtx[ie1 * 2 + 1];
-            let p0 = to_na(vtx2xyz, ip0);
-            let p1 = to_na(vtx2xyz, ip1);
-            let q0 = to_na(vtx2xyz, iq0);
-            let q1 = to_na(vtx2xyz, iq1);
+            let ip0 = mesh.edge2vtx[ie0 * 2 + 0];
+            let ip1 = mesh.edge2vtx[ie0 * 2 + 1];
+            let iq0 = mesh.edge2vtx[ie1 * 2 + 0];
+            let iq1 = mesh.edge2vtx[ie1 * 2 + 1];
+            let p0 = to_na(mesh.vtx2xyz, ip0);
+            let p1 = to_na(mesh.vtx2xyz, ip1);
+            let q0 = to_na(mesh.vtx2xyz, iq0);
+            let q1 = to_na(mesh.vtx2xyz, iq1);
             let pc = p0.scale(prox_param[iprox * 4 + 0]) + p1.scale(prox_param[iprox * 4 + 1]);
             let qc = q0.scale(prox_param[iprox * 4 + 2]) + q1.scale(prox_param[iprox * 4 + 3]);
             let dist1 = (pc - qc).norm();
@@ -50,13 +54,13 @@ fn wdw_proximity<T>(
         } else {
             let it = idxs[0];
             let iv = idxs[1];
-            let ip0 = tri2vtx[it * 3 + 0];
-            let ip1 = tri2vtx[it * 3 + 1];
-            let ip2 = tri2vtx[it * 3 + 2];
-            let p0 = to_na(vtx2xyz, ip0);
-            let p1 = to_na(vtx2xyz, ip1);
-            let p2 = to_na(vtx2xyz, ip2);
-            let q0 = to_na(vtx2xyz, iv);
+            let ip0 = mesh.tri2vtx[it * 3 + 0];
+            let ip1 = mesh.tri2vtx[it * 3 + 1];
+            let ip2 = mesh.tri2vtx[it * 3 + 2];
+            let p0 = to_na(mesh.vtx2xyz, ip0);
+            let p1 = to_na(mesh.vtx2xyz, ip1);
+            let p2 = to_na(mesh.vtx2xyz, ip2);
+            let q0 = to_na(mesh.vtx2xyz, iv);
             let pc = p0.scale(prox_param[iprox * 4 + 0])
                 + p1.scale(prox_param[iprox * 4 + 1])
                 + p2.scale(prox_param[iprox * 4 + 2]);
@@ -95,9 +99,11 @@ fn wdw(
         &mut res,
         &prox_idx,
         &prox_param,
-        tri2vtx,
-        edge2vtx,
-        vtx2xyz,
+        Mesh {
+            tri2vtx,
+            edge2vtx,
+            vtx2xyz,
+        },
         dist0,
         k_contact,
     );
@@ -109,16 +115,19 @@ fn wdw(
     (sum_eng, res)
 }
 
+pub struct Params {
+    pub k_diff: f64,
+    pub k_contact: f64,
+    pub dist0: f64,
+    pub alpha: f64,
+    pub num_iter: usize,
+}
+
 pub fn match_vtx2xyz_while_avoid_collision(
     tri2vtx: &[usize],
     vtx2xyz_start: &[f64],
     vtx2xyz_goal: &[f64],
-    k_diff: f64,
-    k_contact: f64,
-    dist0: f64,
-    alpha: f64,
-    num_iter: usize,
-) -> Vec<f64> {
+    params: Params) -> Vec<f64> {
     {
         // there should be no self-intersection in the vtx2xyz_start mesh
         let tripairs = crate::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz_start);
@@ -129,18 +138,18 @@ pub fn match_vtx2xyz_while_avoid_collision(
     assert_eq!(vtx2xyz_start.len(), vtx2xyz_goal.len());
     //
     let mut vtx2xyz = Vec::<f64>::from(vtx2xyz_start);
-    for _itr_outer in 0..num_iter {
+    for _itr_outer in 0..params.num_iter {
         // crate::io_obj::save_tri_mesh(format!("target/frame_{}.obj",_itr_outer), &tri2vtx, &vtx2xyz);
         let (w0, dw0) = wdw(
             &edge2vtx,
             tri2vtx,
             &vtx2xyz,
             vtx2xyz_goal,
-            dist0,
-            k_contact,
-            k_diff,
+            params.dist0,
+            params.k_contact,
+            params.k_diff,
         );
-        let step: Vec<_> = dw0.iter().map(|r| r * -alpha).collect();
+        let step: Vec<_> = dw0.iter().map(|r| r * -params.alpha).collect();
         let vtx2xyz_dist: Vec<f64> = vtx2xyz
             .iter()
             .zip(step.iter())
@@ -188,9 +197,9 @@ pub fn match_vtx2xyz_while_avoid_collision(
                 tri2vtx,
                 &vtx2xyz_cand,
                 vtx2xyz_goal,
-                dist0,
-                k_contact,
-                k_diff,
+                params.dist0,
+                params.k_contact,
+                params.k_diff,
             );
             dbg!(w0, w);
             if w < w0 {

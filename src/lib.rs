@@ -37,9 +37,10 @@ pub mod io_vtk;
 
 // search
 pub mod bvh;
+pub mod bvh2;
 pub mod bvh3;
-pub mod bvh3_topology_morton;
 pub mod bvh3_topology_topdown;
+pub mod bvh_topology_morton;
 pub mod kdtree2;
 
 // self intersection

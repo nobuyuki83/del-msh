@@ -246,7 +246,7 @@ mod tests {
             &tri2vtx,
             3,
             &vtx2xyz,
-            &[],
+            None,
         );
         let mut pairs = Vec::<IntersectingPair<f32>>::new();
         crate::trimesh3_intersection::search_with_bvh_inside_branch(

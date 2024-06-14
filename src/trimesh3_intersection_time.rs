@@ -1,3 +1,4 @@
+use del_geo::ccd::FaceVertex;
 use num_traits::AsPrimitive;
 
 #[allow(clippy::identity_op)]
@@ -128,14 +129,18 @@ pub fn edge_edge_between_bvh_branches<T>(
         let b0e = to_na(vtx2xyz1, j0);
         let b1e = to_na(vtx2xyz1, j1);
         let t = del_geo::ccd::intersecting_time_ee(
-            &a0s,
-            &a1s,
-            &b0s,
-            &b1s,
-            &a0e,
-            &a1e,
-            &b0e,
-            &b1e,
+            del_geo::ccd::EdgeEdge {
+                a0: &a0s,
+                a1: &a1s,
+                b0: &b0s,
+                b1: &b1s,
+            },
+            del_geo::ccd::EdgeEdge {
+                a0: &a0e,
+                a1: &a1e,
+                b0: &b0e,
+                b1: &b1e,
+            },
             1.0e-5f64.as_(),
         );
         if let Some(t) = t {
@@ -239,7 +244,8 @@ where
             let b0e = to_na(vtx2xyz1, j0);
             let b1e = to_na(vtx2xyz1, j1);
             let t = del_geo::ccd::intersecting_time_ee(
-                &a0s, &a1s, &b0s, &b1s, &a0e, &a1e, &b0e, &b1e, epsilon,
+                del_geo::ccd::EdgeEdge{a0: &a0s, a1: &a1s, b0: &b0s, b1: &b1s},
+                del_geo::ccd::EdgeEdge{a0: &a0e, a1: &a1e, b0: &b0e, b1: &b1e}, epsilon,
             );
             if let Some(t) = t {
                 intersection_pair.extend([i_edge, j_edge, 0]);
@@ -268,7 +274,9 @@ where
             let f2e = to_na(vtx2xyz1, i2);
             let v0e = to_na(vtx2xyz1, j_vtx);
             let t = del_geo::ccd::intersecting_time_fv(
-                &f0s, &f1s, &f2s, &v0s, &f0e, &f1e, &f2e, &v0e, epsilon,
+                FaceVertex{ f0: &f0s, f1: &f1s, f2: &f2s, v: &v0s},
+                FaceVertex{ f0: &f0e, f1: &f1e, f2: &f2e, v: &v0e},
+                epsilon,
             );
             if let Some(t) = t {
                 intersection_pair.extend([i_tri, j_vtx, 1]);

@@ -223,14 +223,16 @@ where
     site2cell
 }
 
+pub struct VoronoiMesh {
+    pub site2idx: Vec<usize>,
+    pub idx2vtxv: Vec<usize>,
+    pub vtxv2xy: Vec<nalgebra::Vector2<f32>>,
+    pub vtxv2info: Vec<[usize; 4]>
+}
+
 pub fn indexing(
     site2cell: &[Cell],
-) -> (
-    Vec<usize>,
-    Vec<usize>,
-    Vec<nalgebra::Vector2<f32>>,
-    Vec<[usize; 4]>,
-) {
+) -> VoronoiMesh {
     let num_site = site2cell.len();
     let sort_info = |info: &[usize; 4]| {
         let mut tmp = [info[1], info[2], info[3]];
@@ -265,7 +267,7 @@ pub fn indexing(
         site2idx.push(idx2vtxc.len());
     }
     assert_eq!(site2idx.len(), num_site + 1);
-    (site2idx, idx2vtxc, vtxv2xy, vtxv2info)
+    VoronoiMesh{ site2idx, idx2vtxv: idx2vtxc, vtxv2xy, vtxv2info}
 }
 
 pub fn position_of_voronoi_vertex(
@@ -389,16 +391,16 @@ fn test_voronoi_convex() {
             assert!((cc0 - cc1).norm() < 1.0e-5);
         }
     }
-    let (site2idx, idx2vtxc, vtxc2xy, vtxc2info) = indexing(&site2cell);
-    for (i_vtxc, info) in vtxc2info.iter().enumerate() {
+    let voronoi_mesh = indexing(&site2cell);
+    for (i_vtxc, info) in voronoi_mesh.vtxv2info.iter().enumerate() {
         let cc0 = position_of_voronoi_vertex(info, &vtxl2xy, &site2xy);
-        let cc1 = vtxc2xy[i_vtxc];
+        let cc1 = voronoi_mesh.vtxv2xy[i_vtxc];
         assert!((cc0 - cc1).norm() < 1.0e-5);
     }
     {
         // write edges to file
-        let edge2vtxc = crate::edge2vtx::from_polygon_mesh(&site2idx, &idx2vtxc, vtxc2xy.len());
-        let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&vtxc2xy);
+        let edge2vtxc = crate::edge2vtx::from_polygon_mesh(&voronoi_mesh.site2idx, &voronoi_mesh.idx2vtxv, voronoi_mesh.vtxv2xy.len());
+        let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_indexed.obj",
             &edge2vtxc,

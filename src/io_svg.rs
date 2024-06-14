@@ -236,10 +236,12 @@ pub fn polybezier2polyloop(
             let pc0 = &vtx2xy[is_vtx + 1];
             let pc1 = &vtx2xy[is_vtx + 2];
             let samples = del_geo::bezier_cubic::sample_uniform_length(
-                ps,
-                pc0,
-                pc1,
-                pe,
+                del_geo::bezier_cubic::ControlPoints {
+                    p0: ps,
+                    p1: pc0,
+                    p2: pc1,
+                    p3: pe,
+                },
                 edge_length,
                 true,
                 false,

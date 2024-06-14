@@ -73,20 +73,10 @@ where
         let p0 = vtx2xy[i0 * 2..i0 * 2 + 2].try_into().unwrap();
         let p1 = vtx2xy[i1 * 2..i1 * 2 + 2].try_into().unwrap();
         let p2 = vtx2xy[i2 * 2..i2 * 2 + 2].try_into().unwrap();
-        let a0 = del_geo::tri2::area_(q, p1, p2);
-        if a0 < Real::zero() {
+        let Some((r0, r1)) = del_geo::tri2::is_inside(p0, p1, p2, q, Real::one()) else {
             continue;
-        }
-        let a1 = del_geo::tri2::area_(q, p2, p0);
-        if a1 < Real::zero() {
-            continue;
-        }
-        let a2 = del_geo::tri2::area_(q, p0, p1);
-        if a2 < Real::zero() {
-            continue;
-        }
-        let sum_area_inv = Real::one() / (a0 + a1 + a2);
-        return Some((i_tri, a0 * sum_area_inv, a1 * sum_area_inv));
+        };
+        return Some((i_tri, r0, r1));
     }
     None
 }

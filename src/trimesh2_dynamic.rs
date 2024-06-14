@@ -612,12 +612,16 @@ where
     true
 }
 
+pub struct MeshForTopologicalChange<'a, T> {
+    pub tri2vtx: &'a mut Vec<usize>,
+    pub tri2tri: &'a mut Vec<usize>,
+    pub vtx2tri: &'a mut Vec<usize>,
+    pub vtx2xy: &'a mut Vec<nalgebra::Vector2<T>>,
+}
+
 #[allow(clippy::identity_op)]
 pub fn add_points_uniformly<T>(
-    tri2vtx: &mut Vec<usize>,
-    tri2tri: &mut Vec<usize>,
-    vtx2tri: &mut Vec<usize>,
-    vtx2xy: &mut Vec<nalgebra::Vector2<T>>,
+    dm: MeshForTopologicalChange<T>,
     vtx2flag: &mut Vec<usize>,
     tri2flag: &mut Vec<usize>,
     num_vtx_fix: usize,
@@ -628,38 +632,38 @@ pub fn add_points_uniformly<T>(
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
-    assert_eq!(vtx2xy.len(), vtx2tri.len());
-    assert_eq!(vtx2flag.len(), vtx2tri.len());
-    assert_eq!(tri2flag.len(), tri2vtx.len() / 3);
+    assert_eq!(dm.vtx2xy.len(), dm.vtx2tri.len());
+    assert_eq!(vtx2flag.len(), dm.vtx2tri.len());
+    assert_eq!(tri2flag.len(), dm.tri2vtx.len() / 3);
 
     let mut ratio: T = 3_f64.as_();
     loop {
         let mut nadd = 0;
-        for i_tri in 0..tri2vtx.len() / 3 {
-            let area = crate::trimesh2::area_of_a_triangle(tri2vtx, vtx2xy, i_tri);
+        for i_tri in 0..dm.tri2vtx.len() / 3 {
+            let area = crate::trimesh2::area_of_a_triangle(dm.tri2vtx, dm.vtx2xy, i_tri);
             let len2 = target_len; // len * mesh_density.edgeLengthRatio(pcnt[0], pcnt[1]); //
             if area < len2 * len2 * ratio {
                 continue;
             }
-            let ipo0 = vtx2tri.len();
-            vtx2tri.resize(vtx2tri.len() + 1, usize::MAX);
-            vtx2xy.resize(vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
-            vtx2xy[ipo0] = (vtx2xy[tri2vtx[i_tri * 3 + 0]]
-                + vtx2xy[tri2vtx[i_tri * 3 + 1]]
-                + vtx2xy[tri2vtx[i_tri * 3 + 2]])
+            let ipo0 = dm.vtx2tri.len();
+            dm.vtx2tri.resize(dm.vtx2tri.len() + 1, usize::MAX);
+            dm.vtx2xy.resize(dm.vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
+            dm.vtx2xy[ipo0] = (dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 0]]
+                + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]]
+                + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]])
                 / 3_f64.as_();
             crate::trimesh_topology::insert_a_point_inside_an_element(
-                ipo0, i_tri, tri2vtx, tri2tri, vtx2tri,
+                ipo0, i_tri, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
             );
             let flag_i_tri = tri2flag[i_tri];
             tri2flag.push(flag_i_tri);
             tri2flag.push(flag_i_tri);
             vtx2flag.push(flag_i_tri + nflgpnt_offset);
-            delaunay_around_point(ipo0, tri2vtx, tri2tri, vtx2tri, vtx2xy);
+            delaunay_around_point(ipo0, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
             nadd += 1;
         }
-        for i_vtx in num_vtx_fix..vtx2xy.len() {
-            laplacian_mesh_smoothing_around_point(vtx2xy, i_vtx, tri2vtx, tri2tri, vtx2tri);
+        for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
+            laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
         }
         if nadd != 0 {
             ratio *= 0.8_f64.as_();
@@ -671,9 +675,9 @@ pub fn add_points_uniformly<T>(
         }
     }
 
-    for i_vtx in num_vtx_fix..vtx2xy.len() {
-        laplacian_mesh_smoothing_around_point(vtx2xy, i_vtx, tri2vtx, tri2tri, vtx2tri);
-        delaunay_around_point(i_vtx, tri2vtx, tri2tri, vtx2tri, vtx2xy);
+    for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
+        laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
+        delaunay_around_point(i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
     }
 }
 
@@ -712,10 +716,12 @@ where
     let mut tri2flag = vec![0; tri2vtx.len() / 3];
     let num_vtx_fix = vtx2xy.len();
     add_points_uniformly(
-        &mut tri2vtx,
-        &mut tri2tri,
-        &mut vtx2tri,
-        &mut vtx2xy,
+        MeshForTopologicalChange {
+            tri2vtx: &mut tri2vtx,
+            tri2tri: &mut tri2tri,
+            vtx2tri: &mut vtx2tri,
+            vtx2xy: &mut vtx2xy,
+        },
         &mut vtx2flag,
         &mut tri2flag,
         num_vtx_fix,
