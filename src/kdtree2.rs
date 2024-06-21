@@ -143,7 +143,7 @@ pub fn find_edges<Real>(
     }
 }
 
-pub struct TreeBranch<'a, Real>{
+pub struct TreeBranch<'a, Real> {
     pub vtx2xy: &'a [Real],
     pub nodes: &'a Vec<usize>,
     pub idx_node: usize,
@@ -156,7 +156,8 @@ pub struct TreeBranch<'a, Real>{
 pub fn nearest<Real>(
     pos_near: &mut (nalgebra::Vector2<Real>, usize),
     pos_in: nalgebra::Vector2<Real>,
-    branch: TreeBranch<Real>) where
+    branch: TreeBranch<Real>,
+) where
     Real: nalgebra::RealField + Copy,
     f64: AsPrimitive<Real>,
 {
@@ -186,9 +187,9 @@ pub fn nearest<Real>(
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 1],
                     min: branch.min,
-                    max: nalgebra::Vector2:: < Real>::new(pos.x, branch.max.y),
+                    max: nalgebra::Vector2::<Real>::new(pos.x, branch.max.y),
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
             nearest(
                 pos_near,
@@ -197,10 +198,10 @@ pub fn nearest<Real>(
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                    min: nalgebra::Vector2:: < Real>::new(pos.x, branch.min.y),
+                    min: nalgebra::Vector2::<Real>::new(pos.x, branch.min.y),
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
         } else {
             nearest(
@@ -210,10 +211,10 @@ pub fn nearest<Real>(
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                    min: nalgebra::Vector2:: < Real>::new(pos.x, branch.min.y),
+                    min: nalgebra::Vector2::<Real>::new(pos.x, branch.min.y),
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
             nearest(
                 pos_near,
@@ -223,9 +224,9 @@ pub fn nearest<Real>(
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 1],
                     min: branch.min,
-                    max: nalgebra::Vector2:: < Real>::new(pos.x, branch.max.y),
-                    i_depth: branch.i_depth + 1
-                }
+                    max: nalgebra::Vector2::<Real>::new(pos.x, branch.max.y),
+                    i_depth: branch.i_depth + 1,
+                },
             );
         }
     } else {
@@ -239,9 +240,9 @@ pub fn nearest<Real>(
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 1],
                     min: branch.min,
-                    max: nalgebra::Vector2:: < Real>::new(branch.max.x, pos.y),
+                    max: nalgebra::Vector2::<Real>::new(branch.max.x, pos.y),
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
             nearest(
                 pos_near,
@@ -250,10 +251,10 @@ pub fn nearest<Real>(
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                    min: nalgebra::Vector2:: < Real>::new(branch.min.x, pos.y),
+                    min: nalgebra::Vector2::<Real>::new(branch.min.x, pos.y),
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
         } else {
             nearest(
@@ -263,10 +264,10 @@ pub fn nearest<Real>(
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                    min: nalgebra::Vector2:: < Real>::new(branch.min.x, pos.y),
+                    min: nalgebra::Vector2::<Real>::new(branch.min.x, pos.y),
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
             nearest(
                 pos_near,
@@ -276,9 +277,9 @@ pub fn nearest<Real>(
                     nodes: branch.nodes,
                     idx_node: branch.nodes[branch.idx_node * 3 + 1],
                     min: branch.min,
-                    max: nalgebra::Vector2:: < Real>::new(branch.max.x, pos.y),
+                    max: nalgebra::Vector2::<Real>::new(branch.max.x, pos.y),
                     i_depth: branch.i_depth + 1,
-                }
+                },
             );
         }
     }
@@ -289,8 +290,8 @@ pub fn inside_square<Real>(
     pos_near: &mut Vec<usize>,
     pos_in: nalgebra::Vector2<Real>,
     rad: Real,
-    branch: TreeBranch<Real>)
-    where
+    branch: TreeBranch<Real>,
+) where
     Real: nalgebra::RealField + Copy,
     f64: AsPrimitive<Real>,
 {
@@ -303,7 +304,8 @@ pub fn inside_square<Real>(
     }
 
     let ivtx = branch.nodes[branch.idx_node * 3 + 0];
-    let pos = nalgebra::Vector2::<Real>::new(branch.vtx2xy[ivtx * 2 + 0], branch.vtx2xy[ivtx * 2 + 1]);
+    let pos =
+        nalgebra::Vector2::<Real>::new(branch.vtx2xy[ivtx * 2 + 0], branch.vtx2xy[ivtx * 2 + 1]);
     if (pos.x - pos_in.x).abs() < rad && (pos.y - pos_in.y).abs() < rad {
         pos_near.push(ivtx); // update the nearest position
     }
@@ -318,10 +320,10 @@ pub fn inside_square<Real>(
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
                 idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                min: nalgebra::Vector2:: < Real>::new(pos.x, branch.min.y),
+                min: nalgebra::Vector2::<Real>::new(pos.x, branch.min.y),
                 max: branch.max,
                 i_depth: branch.i_depth + 1,
-            }
+            },
         );
         inside_square(
             pos_near,
@@ -332,9 +334,9 @@ pub fn inside_square<Real>(
                 nodes: branch.nodes,
                 idx_node: branch.nodes[branch.idx_node * 3 + 1],
                 min: branch.min,
-                max: nalgebra::Vector2:: < Real>::new(pos.x, branch.max.y),
+                max: nalgebra::Vector2::<Real>::new(pos.x, branch.max.y),
                 i_depth: branch.i_depth + 1,
-            }
+            },
         );
     } else {
         // division in y-direction
@@ -347,9 +349,9 @@ pub fn inside_square<Real>(
                 nodes: branch.nodes,
                 idx_node: branch.nodes[branch.idx_node * 3 + 1],
                 min: branch.min,
-                max: nalgebra::Vector2:: < Real>::new(branch.max.x, pos.y),
+                max: nalgebra::Vector2::<Real>::new(branch.max.x, pos.y),
                 i_depth: branch.i_depth + 1,
-            }
+            },
         );
         inside_square(
             pos_near,
@@ -359,20 +361,20 @@ pub fn inside_square<Real>(
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
                 idx_node: branch.nodes[branch.idx_node * 3 + 2],
-                min: nalgebra::Vector2:: < Real>::new(branch.min.x, pos.y),
+                min: nalgebra::Vector2::<Real>::new(branch.min.x, pos.y),
                 max: branch.max,
                 i_depth: branch.i_depth + 1,
-            }
+            },
         );
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::kdtree2::TreeBranch;
     use num_traits::AsPrimitive;
     use rand::distributions::Standard;
     use rand::Rng;
-    use crate::kdtree2::TreeBranch;
 
     fn test_data<Real>(num_xy: usize) -> (Vec<Real>, Vec<usize>)
     where
@@ -427,7 +429,8 @@ mod tests {
                     idx_node: 0,
                     min: Vector::new(0., 0.),
                     max: Vector::new(1., 1.),
-                    i_depth: 0, }
+                    i_depth: 0,
+                },
             );
         }
         dbg!(time_nearest.elapsed());
@@ -438,13 +441,13 @@ mod tests {
                 &mut pos_near,
                 p0,
                 TreeBranch {
-                    vtx2xy: & vtx2xy,
+                    vtx2xy: &vtx2xy,
                     nodes: &nodes,
                     idx_node: 0,
                     min: Vector::new(0., 0.),
                     max: Vector::new(1., 1.),
                     i_depth: 0,
-                }
+                },
             );
             let dist_min = (pos_near.0 - p0).norm();
             for xy in vtx2xy.chunks(2) {
@@ -477,7 +480,7 @@ mod tests {
                     min: Vector::new(0., 0.),
                     max: Vector::new(1., 1.),
                     i_depth: 0,
-                }
+                },
             );
         }
         dbg!(time_inside_square.elapsed());
@@ -490,13 +493,13 @@ mod tests {
                 p0,
                 rad,
                 TreeBranch {
-                    vtx2xy: & vtx2xy,
+                    vtx2xy: &vtx2xy,
                     nodes: &nodes,
                     idx_node: 0,
                     min: Vector::new(0., 0.),
                     max: Vector::new(1., 1.),
                     i_depth: 0,
-                }
+                },
             );
             let idxs1: Vec<usize> = vtx2xy
                 .chunks(2)

@@ -1,20 +1,20 @@
 use num_traits::AsPrimitive;
 
 /// build aabb for uniform mesh
-/// if 'elem2vtx' is empty, bvh stores the vertex index directly
-/// if 'vtx2xyz1' is not empty, compute AABB for Continuous-Collision Detection (CCD)
+/// if 'elem2vtx' is None, bvh stores the vertex index directly
+/// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
 #[allow(clippy::identity_op)]
 pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     aabbs: &mut [Real],
     i_bvhnode: usize,
     bvhnodes: &[Index],
-    elem2vtx: &[Index],
+    elem2vtx: Option<&[Index]>,
     num_noel: usize,
     vtx2xyz0: &[Real],
     vtx2xyz1: Option<&[Real]>,
 ) where
     Real: num_traits::Float,
-    Index: num_traits::PrimInt + AsPrimitive<usize>
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
     assert_eq!(aabbs.len() / 4, bvhnodes.len() / 3);
     assert!(i_bvhnode < bvhnodes.len() / 3);
@@ -28,7 +28,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     if i_bvhnode_child1 == Index::max_value() {
         // leaf node
         let i_elem: usize = i_bvhnode_child0.as_();
-        let aabb = if !elem2vtx.is_empty() {
+        let aabb = if let Some(elem2vtx) = elem2vtx {
             // element index is provided
             let aabb0 = del_geo::aabb2::from_list_of_vertices(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
@@ -107,23 +107,25 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
 pub fn aabbs_from_uniform_mesh<Index, Real>(
     i_bvhnode: usize,
     bvhnodes: &[Index],
-    elem2vtx: &[Index],
+    elem2vtx: Option<&[Index]>,
     num_noel: usize,
     vtx2xyz0: &[Real],
-    vtx2xyz1: Option<&[Real]>) -> Vec<Real>
-    where
+    vtx2xyz1: Option<&[Real]>,
+) -> Vec<Real>
+where
     Real: num_traits::Float,
-    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
 {
     let num_bvhnode = bvhnodes.len() / 3;
-    let mut aabbs = vec!(Real::zero(); num_bvhnode*4);
+    let mut aabbs = vec![Real::zero(); num_bvhnode * 4];
     update_aabbs_for_uniform_mesh::<Index, Real>(
-        &mut aabbs, i_bvhnode, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1);
+        &mut aabbs, i_bvhnode, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1,
+    );
     aabbs
 }
 
 pub fn search_including_point<Real, Index>(
-    hits: &mut Vec<(usize, Real, Real)>,
+    hits: &mut Vec<(Index, Real, Real)>,
     tri2vtx: &[Index],
     vtx2xy: &[Real],
     point: &[Real; 2],
@@ -132,7 +134,8 @@ pub fn search_including_point<Real, Index>(
     aabbs: &[Real],
 ) where
     Real: num_traits::Float,
-    Index: AsPrimitive<usize> + num_traits::PrimInt
+    Index: AsPrimitive<usize> + num_traits::PrimInt,
+    usize: AsPrimitive<Index>
 {
     if !del_geo::aabb::is_include_point::<Real, 2, 4>(
         aabbs[i_bvhnode * 4..(i_bvhnode + 1) * 4]
@@ -146,13 +149,13 @@ pub fn search_including_point<Real, Index>(
     if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let p0 = del_geo::vec2::to_array_from_vtx2xy(vtx2xy, tri2vtx[i_tri * 3]);
-        let p1 = del_geo::vec2::to_array_from_vtx2xy(vtx2xy, tri2vtx[i_tri * 3 + 1]);
-        let p2 = del_geo::vec2::to_array_from_vtx2xy(vtx2xy, tri2vtx[i_tri * 3 + 2]);
+        let p0 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3]);
+        let p1 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3 + 1]);
+        let p2 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3 + 2]);
         let Some((r0, r1)) = del_geo::tri2::is_inside(&p0, &p1, &p2, point, Real::one()) else {
             return;
         };
-        hits.push((i_tri, r0, r1));
+        hits.push((i_tri.as_(), r0, r1));
         return;
     }
     crate::bvh2::search_including_point(

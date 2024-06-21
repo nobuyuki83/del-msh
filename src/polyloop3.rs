@@ -7,12 +7,12 @@ where
     T: nalgebra::RealField + 'static + Copy,
     f64: AsPrimitive<T>,
 {
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
     {
         // first segment
-        let v01 = (to_na(vtx2xyz, 1) - to_na(vtx2xyz, 0)).into_owned();
+        let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).into_owned();
         let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
         vtx2bin.column_mut(0).copy_from(&x);
     }
@@ -22,8 +22,8 @@ where
         let iv1 = iseg1;
         let iv2 = (iseg1 + 1) % num_vtx;
         let iseg0 = iseg1 - 1;
-        let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
-        let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
+        let v01 = to_navec3(vtx2xyz, iv1) - to_navec3(vtx2xyz, iv0);
+        let v12 = to_navec3(vtx2xyz, iv2) - to_navec3(vtx2xyz, iv1);
         let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
         let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
         let b12: nalgebra::Vector3<T> = rot * b01;
@@ -41,8 +41,8 @@ where
     let i0_vtx = (i_vtx + num_vtx - 1) % num_vtx;
     // let i1_vtx = i_vtx;
     let i2_vtx = (i_vtx + 1) % num_vtx;
-    let p0 = del_geo::vec3::to_na(vtx2xyz, i0_vtx);
-    let p2 = del_geo::vec3::to_na(vtx2xyz, i2_vtx);
+    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, i0_vtx);
+    let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, i2_vtx);
     (p2 - p0).normalize()
 }
 
@@ -55,14 +55,14 @@ where
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     let num_vtx = vtx2xyz.len() / 3;
     let theta = {
         let x0 = vtx2bin0.column(0);
-        let v01 = (to_na(vtx2xyz, 1) - to_na(vtx2xyz, 0)).normalize();
+        let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).normalize();
         assert!(x0.dot(&v01).abs() < 1.0e-6_f64.as_());
         let xn = vtx2bin0.column(num_vtx - 1);
-        let vn0 = (to_na(vtx2xyz, 0) - to_na(vtx2xyz, num_vtx - 1)).normalize();
+        let vn0 = (to_navec3(vtx2xyz, 0) - to_navec3(vtx2xyz, num_vtx - 1)).normalize();
         let rot = del_geo::mat3::minimum_rotation_matrix(vn0, v01);
         let x1a = rot * xn;
         let y0 = v01.cross(&x0);
@@ -83,7 +83,7 @@ where
         let x0 = vtx2bin0.column(iseg);
         let ivtx0 = iseg;
         let ivtx1 = (iseg + 1) % num_vtx;
-        let v01 = (to_na(vtx2xyz, ivtx1) - to_na(vtx2xyz, ivtx0)).normalize();
+        let v01 = (to_navec3(vtx2xyz, ivtx1) - to_navec3(vtx2xyz, ivtx0)).normalize();
         let y0 = v01.cross(&x0);
         assert!(
             (x0.cross(&y0).dot(&v01) - 1.as_()).abs() < 1.0e-3_f64.as_(),
@@ -117,9 +117,9 @@ where
     for ivtx1 in 0..num_vtx {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
-        let v0 = del_geo::vec3::to_na(vtx2xyz, ivtx0);
-        let v1 = del_geo::vec3::to_na(vtx2xyz, ivtx1);
-        let v2 = del_geo::vec3::to_na(vtx2xyz, ivtx2);
+        let v0 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx0);
+        let v1 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx1);
+        let v2 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx2);
         let v01 = v1 - v0;
         let v12 = v2 - v1;
         let binormal = v12.cross(&v01);
@@ -176,7 +176,7 @@ pub fn smooth_gradient_of_distance(
     vtx2xyz: &[f64],
     q: &nalgebra::Vector3<f64>,
 ) -> nalgebra::Vector3<f64> {
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     let n = vtx2xyz.len() / 3;
     let mut dd = nalgebra::Vector3::<f64>::zeros();
     for i_seg in 0..n {
@@ -184,8 +184,8 @@ pub fn smooth_gradient_of_distance(
         let ip1 = (i_seg + 1) % n;
         let (_, dd0) = del_geo::edge3::wdw_integral_of_inverse_distance_cubic(
             q,
-            &to_na(vtx2xyz, ip0),
-            &to_na(vtx2xyz, ip1),
+            &to_navec3(vtx2xyz, ip0),
+            &to_navec3(vtx2xyz, ip1),
         );
         dd += dd0;
     }
@@ -213,14 +213,14 @@ pub fn tube_mesh_avoid_intersection(
     eps: f64,
     niter: usize,
 ) -> (Vec<usize>, Vec<f64>) {
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     let n = 8;
     let dtheta = std::f64::consts::PI * 2. / n as f64;
     let num_vtx = vtx2xyz.len() / 3;
     let mut pnt2xyz = Vec::<f64>::new();
     for ipnt in 0..num_vtx {
-        let p0 = to_na(vtx2xyz, ipnt);
-        let p1 = to_na(vtx2xyz, (ipnt + 1) % num_vtx);
+        let p0 = to_navec3(vtx2xyz, ipnt);
+        let p1 = to_navec3(vtx2xyz, (ipnt + 1) % num_vtx);
         let z0 = (p1 - p0).normalize();
         let x0 = vtx2bin.column(ipnt);
         let y0 = z0.cross(&x0);
@@ -310,8 +310,8 @@ where
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = del_geo::vec3::to_na(vtx2xyz, iv0);
-        let q1 = del_geo::vec3::to_na(vtx2xyz, iv1);
+        let q0 = crate::vtx2xyz::to_navec3(vtx2xyz, iv0);
+        let q1 = crate::vtx2xyz::to_navec3(vtx2xyz, iv1);
         let (dist, rq) = del_geo::edge3::nearest_to_point3(&q0, &q1, p0);
         if dist < res.0 {
             //dbg!((p0+(p1-p0)*r0));
@@ -356,11 +356,11 @@ where
     let ned = vtx2xyz.len() / 3;
     if r.as_() == ned {
         assert_eq!(ied.as_(), r);
-        return del_geo::vec3::to_na(vtx2xyz, 0);
+        return crate::vtx2xyz::to_navec3(vtx2xyz, 0);
     }
     assert!(ied < ned, "{}, {}, {}", r, ied, ned);
-    let p0 = del_geo::vec3::to_na(vtx2xyz, ied);
-    let p1 = del_geo::vec3::to_na(vtx2xyz, (ied + 1) % ned);
+    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ied);
+    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, (ied + 1) % ned);
     let r0 = r - ied.as_();
     p0 + (p1 - p0).scale(r0)
 }
@@ -377,9 +377,9 @@ where
         for ip1 in 0..num_vtx {
             let ip0 = (ip1 + num_vtx - 1) % num_vtx;
             let ip2 = (ip1 + 1) % num_vtx;
-            let p0 = del_geo::vec3::to_na(&vtx2xyz1, ip0);
-            let p1 = del_geo::vec3::to_na(&vtx2xyz1, ip1);
-            let p2 = del_geo::vec3::to_na(&vtx2xyz1, ip2);
+            let p0 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip0);
+            let p1 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip1);
+            let p2 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip2);
             let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
             vtx2xyz1[ip1 * 3 + 0] = p1n.x;
             vtx2xyz1[ip1 * 3 + 1] = p1n.y;

@@ -1,4 +1,4 @@
-struct Mesh<'a, T>{
+struct Mesh<'a, T> {
     tri2vtx: &'a [usize],
     edge2vtx: &'a [usize],
     vtx2xyz: &'a [T],
@@ -22,7 +22,7 @@ fn wdw_proximity<T>(
     let diff_barrier = |x: T| {
         -stiff * (x - dist0) * (x - dist0) / x - stiff * 2f64.as_() * (x - dist0) * (x / dist0).ln()
     };
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     for (iprox, idxs) in prox_idx.chunks(3).enumerate() {
         if idxs[2] == 0 {
             // edge edge
@@ -32,10 +32,10 @@ fn wdw_proximity<T>(
             let ip1 = mesh.edge2vtx[ie0 * 2 + 1];
             let iq0 = mesh.edge2vtx[ie1 * 2 + 0];
             let iq1 = mesh.edge2vtx[ie1 * 2 + 1];
-            let p0 = to_na(mesh.vtx2xyz, ip0);
-            let p1 = to_na(mesh.vtx2xyz, ip1);
-            let q0 = to_na(mesh.vtx2xyz, iq0);
-            let q1 = to_na(mesh.vtx2xyz, iq1);
+            let p0 = to_navec3(mesh.vtx2xyz, ip0);
+            let p1 = to_navec3(mesh.vtx2xyz, ip1);
+            let q0 = to_navec3(mesh.vtx2xyz, iq0);
+            let q1 = to_navec3(mesh.vtx2xyz, iq1);
             let pc = p0.scale(prox_param[iprox * 4 + 0]) + p1.scale(prox_param[iprox * 4 + 1]);
             let qc = q0.scale(prox_param[iprox * 4 + 2]) + q1.scale(prox_param[iprox * 4 + 3]);
             let dist1 = (pc - qc).norm();
@@ -57,10 +57,10 @@ fn wdw_proximity<T>(
             let ip0 = mesh.tri2vtx[it * 3 + 0];
             let ip1 = mesh.tri2vtx[it * 3 + 1];
             let ip2 = mesh.tri2vtx[it * 3 + 2];
-            let p0 = to_na(mesh.vtx2xyz, ip0);
-            let p1 = to_na(mesh.vtx2xyz, ip1);
-            let p2 = to_na(mesh.vtx2xyz, ip2);
-            let q0 = to_na(mesh.vtx2xyz, iv);
+            let p0 = to_navec3(mesh.vtx2xyz, ip0);
+            let p1 = to_navec3(mesh.vtx2xyz, ip1);
+            let p2 = to_navec3(mesh.vtx2xyz, ip2);
+            let q0 = to_navec3(mesh.vtx2xyz, iv);
             let pc = p0.scale(prox_param[iprox * 4 + 0])
                 + p1.scale(prox_param[iprox * 4 + 1])
                 + p2.scale(prox_param[iprox * 4 + 2]);
@@ -127,7 +127,8 @@ pub fn match_vtx2xyz_while_avoid_collision(
     tri2vtx: &[usize],
     vtx2xyz_start: &[f64],
     vtx2xyz_goal: &[f64],
-    params: Params) -> Vec<f64> {
+    params: Params,
+) -> Vec<f64> {
     {
         // there should be no self-intersection in the vtx2xyz_start mesh
         let tripairs = crate::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz_start);

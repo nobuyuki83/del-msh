@@ -11,8 +11,8 @@ where
     for iseg in 0..num_vtx - 1 {
         let ip0 = iseg;
         let ip1 = iseg + 1;
-        let p0 = del_geo::vec3::to_na(vtx2xyz, ip0);
-        let p1 = del_geo::vec3::to_na(vtx2xyz, ip1);
+        let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ip0);
+        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, ip1);
         let len = (p0 - p1).norm();
         cg += (p0 + p1).scale(0.5f64.as_() * len);
         w += len;
@@ -25,12 +25,12 @@ where
     T: nalgebra::RealField + 'static + Copy,
     f64: AsPrimitive<T>,
 {
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
     {
         // first segment
-        let v01 = (to_na(vtx2xyz, 1) - to_na(vtx2xyz, 0)).into_owned();
+        let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).into_owned();
         let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
         vtx2bin.column_mut(0).copy_from(&x);
     }
@@ -39,8 +39,8 @@ where
         let iv1 = iseg1;
         let iv2 = iseg1 + 1;
         let iseg0 = iseg1 - 1;
-        let v01 = to_na(vtx2xyz, iv1) - to_na(vtx2xyz, iv0);
-        let v12 = to_na(vtx2xyz, iv2) - to_na(vtx2xyz, iv1);
+        let v01 = to_navec3(vtx2xyz, iv1) - to_navec3(vtx2xyz, iv0);
+        let v12 = to_navec3(vtx2xyz, iv2) - to_navec3(vtx2xyz, iv1);
         let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
         let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
         let b12: nalgebra::Vector3<T> = rot * b01;
@@ -60,18 +60,18 @@ where
     let num_vtx = vtx2xyz.len() / 3;
     assert!(i_vtx < num_vtx);
     if i_vtx == 0 {
-        let p1 = del_geo::vec3::to_na(vtx2xyz, 0);
-        let p2 = del_geo::vec3::to_na(vtx2xyz, 1);
+        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, 0);
+        let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, 1);
         return (p2 - p1).normalize();
     }
     if i_vtx == num_vtx - 1 {
-        let p0 = del_geo::vec3::to_na(vtx2xyz, num_vtx - 2);
-        let p1 = del_geo::vec3::to_na(vtx2xyz, num_vtx - 1);
+        let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, num_vtx - 2);
+        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, num_vtx - 1);
         return (p1 - p0).normalize();
     }
-    let p0 = del_geo::vec3::to_na(vtx2xyz, i_vtx - 1);
-    let p1 = del_geo::vec3::to_na(vtx2xyz, i_vtx);
-    let p2 = del_geo::vec3::to_na(vtx2xyz, i_vtx + 1);
+    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx - 1);
+    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx);
+    let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx + 1);
     ((p1 - p0).normalize() + (p2 - p1).normalize()).normalize()
 }
 
@@ -103,9 +103,9 @@ where
     for ivtx1 in 1..num_vtx - 1 {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
-        let v0 = del_geo::vec3::to_na(vtx2xyz, ivtx0);
-        let v1 = del_geo::vec3::to_na(vtx2xyz, ivtx1);
-        let v2 = del_geo::vec3::to_na(vtx2xyz, ivtx2);
+        let v0 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx0);
+        let v1 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx1);
+        let v2 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx2);
         let v01 = v1 - v0;
         let v12 = v2 - v1;
         let binormal = v12.cross(&v01);
@@ -168,7 +168,7 @@ where
     let half: T = 0.5.as_();
     {
         // south pole
-        let p0 = del_geo::vec3::to_na(vtxl2xyz, 0);
+        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, 0);
         let ez = framez(vtxl2xyz, 0);
         let q = p0 - ez * r;
         vtx2xyz[0] = q.x;
@@ -176,7 +176,7 @@ where
         vtx2xyz[2] = q.z;
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = del_geo::vec3::to_na(vtxl2xyz, 0);
+        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, 0);
         let ex = vtxl2framex.column(0);
         let ey = vtxl2framey.column(0);
         let ez = framez(vtxl2xyz, 0);
@@ -194,7 +194,7 @@ where
         }
     }
     for il in 0..ndiv_length - 1 {
-        let p0 = del_geo::vec3::to_na(vtxl2xyz, il + 1);
+        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, il + 1);
         let ex = vtxl2framex.column(il + 1);
         let ey = vtxl2framey.column(il + 1);
         for ic in 0..ndiv_circum {
@@ -208,7 +208,7 @@ where
         }
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = del_geo::vec3::to_na(vtxl2xyz, num_vtxl - 1);
+        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, num_vtxl - 1);
         let ex = vtxl2framex.column(num_vtxl - 1);
         let ey = vtxl2framey.column(num_vtxl - 1);
         let ez = framez(vtxl2xyz, num_vtxl - 1);
@@ -230,7 +230,7 @@ where
     }
     {
         // north pole
-        let p0 = del_geo::vec3::to_na(vtxl2xyz, num_vtxl - 1);
+        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, num_vtxl - 1);
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let q = p0 + ez * r;
         let np = vtx2xyz.len() / 3;
@@ -275,11 +275,11 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
     for i_poly in 0..num_poly {
         for j_poly in i_poly + 1..num_poly {
             for i_seg in poly2vtx[i_poly]..poly2vtx[i_poly + 1] - 1 {
-                let pi = del_geo::vec3::to_na(vtx2xyz, i_seg);
-                let qi = del_geo::vec3::to_na(vtx2xyz, i_seg + 1);
+                let pi = crate::vtx2xyz::to_navec3(vtx2xyz, i_seg);
+                let qi = crate::vtx2xyz::to_navec3(vtx2xyz, i_seg + 1);
                 for j_seg in poly2vtx[j_poly]..poly2vtx[j_poly + 1] - 1 {
-                    let pj = del_geo::vec3::to_na(vtx2xyz, j_seg);
-                    let qj = del_geo::vec3::to_na(vtx2xyz, j_seg + 1);
+                    let pj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg);
+                    let qj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg + 1);
                     let (dist, ri, rj) = del_geo::edge3::nearest_to_edge3(&pi, &qi, &pj, &qj);
                     if dist > dist0 {
                         continue;
@@ -304,8 +304,8 @@ where
     let ned = vtx2xyz.len() / 3 - 1;
     dbg!(r, ied, ned);
     assert!(ied < ned);
-    let p0 = del_geo::vec3::to_na(vtx2xyz, ied);
-    let p1 = del_geo::vec3::to_na(vtx2xyz, ied + 1);
+    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ied);
+    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, ied + 1);
     let r0 = r - ied.as_();
     p0 + (p1 - p0).scale(r0)
 }
@@ -322,9 +322,9 @@ where
         for ip1 in 1..num_vtx - 1 {
             let ip0 = (ip1 + num_vtx - 1) % num_vtx;
             let ip2 = (ip1 + 1) % num_vtx;
-            let p0 = del_geo::vec3::to_na(&vtx2xyz1, ip0);
-            let p1 = del_geo::vec3::to_na(&vtx2xyz1, ip1);
-            let p2 = del_geo::vec3::to_na(&vtx2xyz1, ip2);
+            let p0 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip0);
+            let p1 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip1);
+            let p2 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip2);
             let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
             vtx2xyz1[ip1 * 3 + 0] = p1n.x;
             vtx2xyz1[ip1 * 3 + 1] = p1n.y;

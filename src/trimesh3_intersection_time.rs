@@ -119,15 +119,15 @@ pub fn edge_edge_between_bvh_branches<T>(
         if i1 == j0 || i1 == j1 {
             return;
         };
-        use del_geo::vec3::to_na;
-        let a0s = to_na(vtx2xyz0, i0);
-        let a1s = to_na(vtx2xyz0, i1);
-        let b0s = to_na(vtx2xyz0, j0);
-        let b1s = to_na(vtx2xyz0, j1);
-        let a0e = to_na(vtx2xyz1, i0);
-        let a1e = to_na(vtx2xyz1, i1);
-        let b0e = to_na(vtx2xyz1, j0);
-        let b1e = to_na(vtx2xyz1, j1);
+        use crate::vtx2xyz::to_navec3;
+        let a0s = to_navec3(vtx2xyz0, i0);
+        let a1s = to_navec3(vtx2xyz0, i1);
+        let b0s = to_navec3(vtx2xyz0, j0);
+        let b1s = to_navec3(vtx2xyz0, j1);
+        let a0e = to_navec3(vtx2xyz1, i0);
+        let a1e = to_navec3(vtx2xyz1, i1);
+        let b0e = to_navec3(vtx2xyz1, j0);
+        let b1e = to_navec3(vtx2xyz1, j1);
         let t = del_geo::ccd::intersecting_time_ee(
             del_geo::ccd::EdgeEdge {
                 a0: &a0s,
@@ -234,18 +234,29 @@ where
             if i0 == j0 || i0 == j1 || i1 == j0 || i1 == j1 {
                 continue;
             };
-            use del_geo::vec3::to_na;
-            let a0s = to_na(vtx2xyz0, i0);
-            let a1s = to_na(vtx2xyz0, i1);
-            let b0s = to_na(vtx2xyz0, j0);
-            let b1s = to_na(vtx2xyz0, j1);
-            let a0e = to_na(vtx2xyz1, i0);
-            let a1e = to_na(vtx2xyz1, i1);
-            let b0e = to_na(vtx2xyz1, j0);
-            let b1e = to_na(vtx2xyz1, j1);
+            use crate::vtx2xyz::to_navec3;
+            let a0s = to_navec3(vtx2xyz0, i0);
+            let a1s = to_navec3(vtx2xyz0, i1);
+            let b0s = to_navec3(vtx2xyz0, j0);
+            let b1s = to_navec3(vtx2xyz0, j1);
+            let a0e = to_navec3(vtx2xyz1, i0);
+            let a1e = to_navec3(vtx2xyz1, i1);
+            let b0e = to_navec3(vtx2xyz1, j0);
+            let b1e = to_navec3(vtx2xyz1, j1);
             let t = del_geo::ccd::intersecting_time_ee(
-                del_geo::ccd::EdgeEdge{a0: &a0s, a1: &a1s, b0: &b0s, b1: &b1s},
-                del_geo::ccd::EdgeEdge{a0: &a0e, a1: &a1e, b0: &b0e, b1: &b1e}, epsilon,
+                del_geo::ccd::EdgeEdge {
+                    a0: &a0s,
+                    a1: &a1s,
+                    b0: &b0s,
+                    b1: &b1s,
+                },
+                del_geo::ccd::EdgeEdge {
+                    a0: &a0e,
+                    a1: &a1e,
+                    b0: &b0e,
+                    b1: &b1e,
+                },
+                epsilon,
             );
             if let Some(t) = t {
                 intersection_pair.extend([i_edge, j_edge, 0]);
@@ -264,18 +275,28 @@ where
             if i0 == j_vtx || i1 == j_vtx || i2 == j_vtx {
                 continue;
             };
-            use del_geo::vec3::to_na;
-            let f0s = to_na(vtx2xyz0, i0);
-            let f1s = to_na(vtx2xyz0, i1);
-            let f2s = to_na(vtx2xyz0, i2);
-            let v0s = to_na(vtx2xyz0, j_vtx);
-            let f0e = to_na(vtx2xyz1, i0);
-            let f1e = to_na(vtx2xyz1, i1);
-            let f2e = to_na(vtx2xyz1, i2);
-            let v0e = to_na(vtx2xyz1, j_vtx);
+            use crate::vtx2xyz::to_navec3;
+            let f0s = to_navec3(vtx2xyz0, i0);
+            let f1s = to_navec3(vtx2xyz0, i1);
+            let f2s = to_navec3(vtx2xyz0, i2);
+            let v0s = to_navec3(vtx2xyz0, j_vtx);
+            let f0e = to_navec3(vtx2xyz1, i0);
+            let f1e = to_navec3(vtx2xyz1, i1);
+            let f2e = to_navec3(vtx2xyz1, i2);
+            let v0e = to_navec3(vtx2xyz1, j_vtx);
             let t = del_geo::ccd::intersecting_time_fv(
-                FaceVertex{ f0: &f0s, f1: &f1s, f2: &f2s, v: &v0s},
-                FaceVertex{ f0: &f0e, f1: &f1e, f2: &f2e, v: &v0e},
+                FaceVertex {
+                    f0: &f0s,
+                    f1: &f1s,
+                    f2: &f2s,
+                    v: &v0s,
+                },
+                FaceVertex {
+                    f0: &f0e,
+                    f1: &f1e,
+                    f2: &f2e,
+                    v: &v0e,
+                },
                 epsilon,
             );
             if let Some(t) = t {

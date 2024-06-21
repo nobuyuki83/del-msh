@@ -1,5 +1,47 @@
 use num_traits::AsPrimitive;
 
+pub fn to_array2<T, Index>(vtx2xyz: &[T], i_vtx: Index) -> [T; 2]
+    where
+        T: Copy,
+        Index: AsPrimitive<usize>,
+{
+    let i_vtx: usize = i_vtx.as_();
+    [vtx2xyz[i_vtx * 2], vtx2xyz[i_vtx * 2 + 1]]
+}
+
+pub fn to_array3<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
+    where
+        T: Copy,
+{
+    [
+        vtx2xyz[i_vtx * 3],
+        vtx2xyz[i_vtx * 3 + 1],
+        vtx2xyz[i_vtx * 3 + 2],
+    ]
+}
+
+pub fn from_2d_to_3d<Real>(vtx2xy: &[Real]) -> Vec<Real>
+    where
+        Real: num_traits::Zero + Copy,
+{
+    let res: Vec<Real> = vtx2xy
+        .chunks(2)
+        .flat_map(|v| [v[0], v[1], Real::zero()])
+        .collect();
+    res
+}
+
+pub fn cast<T, U>(vtx2xyz0: &[U]) -> Vec<T>
+    where
+        T: Copy + 'static,
+        U: AsPrimitive<T>,
+{
+    let res: Vec<T> = vtx2xyz0.iter().map(|v| v.as_()).collect();
+    res
+}
+
+// ---------------------
+
 pub fn from_array_of_nalgebra<T, const N: usize>(vtx2vecn: &Vec<nalgebra::SVector<T, N>>) -> Vec<T>
 where
     T: nalgebra::RealField + Copy,
@@ -21,25 +63,8 @@ where
         .collect()
 }
 
-pub fn cast<T, U>(vtx2xyz0: &[U]) -> Vec<T>
-where
-    T: Copy + 'static,
-    U: AsPrimitive<T>,
-{
-    let res: Vec<T> = vtx2xyz0.iter().map(|v| v.as_()).collect();
-    res
-}
 
-pub fn from_2d_to_3d<Real>(vtx2xy: &[Real]) -> Vec<Real>
-where
-    Real: num_traits::Zero + Copy,
-{
-    let res: Vec<Real> = vtx2xy
-        .chunks(2)
-        .flat_map(|v| [v[0], v[1], Real::zero()])
-        .collect();
-    res
-}
+
 
 pub fn translate_and_scale<Real>(
     vtx2xyz_out: &mut [Real],
@@ -83,4 +108,18 @@ where
     let mut vtx2xyz_out = Vec::from(vtx2xyz);
     translate_and_scale(&mut vtx2xyz_out, vtx2xyz, &transl, scale);
     vtx2xyz_out
+}
+
+pub fn to_navec3<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector3<T>
+    where
+        T: Copy + nalgebra::RealField,
+{
+    nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i_vtx * 3..(i_vtx + 1) * 3])
+}
+
+pub fn to_navec2<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector2<T>
+    where
+        T: Copy + nalgebra::RealField,
+{
+    nalgebra::Vector2::<T>::from_row_slice(&vtx2xyz[i_vtx * 2..(i_vtx + 1) * 2])
 }

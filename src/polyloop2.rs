@@ -118,8 +118,8 @@ where
     let mut dist_min = Real::max_value().unwrap();
     for ip in 0..np {
         let jp = (ip + 1) % np;
-        let pi = del_geo::vec2::to_na(vtx2xy, ip);
-        let pj = del_geo::vec2::to_na(vtx2xy, jp);
+        let pi = crate::vtx2xyz::to_navec2(vtx2xy, ip);
+        let pj = crate::vtx2xyz::to_navec2(vtx2xy, jp);
         let dist = del_geo::edge::distance_to_point(&g, &pi, &pj);
         if dist < dist_min {
             dist_min = dist;

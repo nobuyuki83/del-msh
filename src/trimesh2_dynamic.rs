@@ -1,7 +1,6 @@
 use num_traits::AsPrimitive;
 
 /// Returns tri2vtx, tri2tri, vtx2tri
-#[allow(clippy::identity_op)]
 pub fn make_super_triangle<T>(
     vtx2xy: &mut Vec<nalgebra::Vector2<T>>,
     min_xy: &[T; 2],
@@ -35,7 +34,7 @@ where
     let npo = vtx2xy.len();
     //
     vtx2xy.resize(npo + 3, nalgebra::Vector2::<T>::zeros());
-    vtx2xy[npo + 0] = nalgebra::Vector2::<T>::new(center[0], center[1] + 2_f64.as_() * tmp_len);
+    vtx2xy[npo] = nalgebra::Vector2::<T>::new(center[0], center[1] + 2_f64.as_() * tmp_len);
     vtx2xy[npo + 1] =
         nalgebra::Vector2::<T>::new(center[0] - 0.5_f64.as_() * tri_len, center[1] - tmp_len);
     vtx2xy[npo + 2] =
@@ -43,12 +42,11 @@ where
     //
     vtx2tri.resize(npo + 3, 0);
     //
-    let tri2vtx = vec![npo + 0, npo + 1, npo + 2];
+    let tri2vtx = vec![npo, npo + 1, npo + 2];
     let tri2tri = vec![usize::MAX; 3];
     (tri2vtx, tri2tri, vtx2tri)
 }
 
-#[allow(clippy::identity_op)]
 pub fn add_points_to_mesh<T>(
     tri2vtx: &mut Vec<usize>,
     tri2tri: &mut Vec<usize>,
@@ -74,11 +72,11 @@ pub fn add_points_to_mesh<T>(
             del_geo::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3 + 2]],
-                &vtx2xy[tri2vtx[i_tri * 3 + 0]],
+                &vtx2xy[tri2vtx[i_tri * 3]],
             ),
             del_geo::tri2::area(
                 &po_add,
-                &vtx2xy[tri2vtx[i_tri * 3 + 0]],
+                &vtx2xy[tri2vtx[i_tri * 3]],
                 &vtx2xy[tri2vtx[i_tri * 3 + 1]],
             ),
         ];
@@ -476,7 +474,6 @@ where
 
 ///
 /// Returns tri2vtx, tri2tri, vtx2tri
-#[allow(clippy::identity_op)]
 pub fn triangulate_single_connected_shape<Real>(
     vtx2xy: &mut Vec<nalgebra::Vector2<Real>>,
     loop2idx: &[usize],
@@ -489,7 +486,7 @@ where
     let point_idx_to_delete = {
         // vertices of the super triangle are to be deleted
         let npo = vtx2xy.len();
-        vec![npo + 0, npo + 1, npo + 2]
+        vec![npo, npo + 1, npo + 2]
     };
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) = {
         let aabb = del_geo::aabb2::from_vtx2vec(vtx2xy);
@@ -509,7 +506,7 @@ where
     for i_loop in 0..loop2idx.len() - 1 {
         let num_vtx_in_loop = loop2idx[i_loop + 1] - loop2idx[i_loop];
         for idx in loop2idx[i_loop]..loop2idx[i_loop + 1] {
-            let i0_vtx = idx2vtx[loop2idx[i_loop] + (idx + 0) % num_vtx_in_loop];
+            let i0_vtx = idx2vtx[loop2idx[i_loop] + idx % num_vtx_in_loop];
             let i1_vtx = idx2vtx[loop2idx[i_loop] + (idx + 1) % num_vtx_in_loop];
             enforce_edge(
                 &mut tri2vtx,
@@ -619,7 +616,7 @@ pub struct MeshForTopologicalChange<'a, T> {
     pub vtx2xy: &'a mut Vec<nalgebra::Vector2<T>>,
 }
 
-#[allow(clippy::identity_op)]
+
 pub fn add_points_uniformly<T>(
     dm: MeshForTopologicalChange<T>,
     vtx2flag: &mut Vec<usize>,
@@ -647,8 +644,9 @@ pub fn add_points_uniformly<T>(
             }
             let ipo0 = dm.vtx2tri.len();
             dm.vtx2tri.resize(dm.vtx2tri.len() + 1, usize::MAX);
-            dm.vtx2xy.resize(dm.vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
-            dm.vtx2xy[ipo0] = (dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 0]]
+            dm.vtx2xy
+                .resize(dm.vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
+            dm.vtx2xy[ipo0] = (dm.vtx2xy[dm.tri2vtx[i_tri * 3]]
                 + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]]
                 + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]])
                 / 3_f64.as_();
@@ -663,7 +661,9 @@ pub fn add_points_uniformly<T>(
             nadd += 1;
         }
         for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
-            laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
+            laplacian_mesh_smoothing_around_point(
+                dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
+            );
         }
         if nadd != 0 {
             ratio *= 0.8_f64.as_();

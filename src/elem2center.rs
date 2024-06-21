@@ -14,9 +14,9 @@ pub fn from_uniform_mesh_as_points<Index, T>(
 where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     usize: num_traits::AsPrimitive<T>,
-    Index: num_traits::AsPrimitive<usize>
+    Index: num_traits::AsPrimitive<usize>,
 {
-    assert_eq!(vtx2xyz.len()%num_dim, 0);
+    assert_eq!(vtx2xyz.len() % num_dim, 0);
     let num_elem = elem2vtx.len() / num_node;
     assert_eq!(elem2vtx.len(), num_elem * num_node);
     let mut elem2cog = Vec::<T>::with_capacity(num_elem * num_dim);

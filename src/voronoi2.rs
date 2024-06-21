@@ -227,12 +227,10 @@ pub struct VoronoiMesh {
     pub site2idx: Vec<usize>,
     pub idx2vtxv: Vec<usize>,
     pub vtxv2xy: Vec<nalgebra::Vector2<f32>>,
-    pub vtxv2info: Vec<[usize; 4]>
+    pub vtxv2info: Vec<[usize; 4]>,
 }
 
-pub fn indexing(
-    site2cell: &[Cell],
-) -> VoronoiMesh {
+pub fn indexing(site2cell: &[Cell]) -> VoronoiMesh {
     let num_site = site2cell.len();
     let sort_info = |info: &[usize; 4]| {
         let mut tmp = [info[1], info[2], info[3]];
@@ -267,7 +265,12 @@ pub fn indexing(
         site2idx.push(idx2vtxc.len());
     }
     assert_eq!(site2idx.len(), num_site + 1);
-    VoronoiMesh{ site2idx, idx2vtxv: idx2vtxc, vtxv2xy, vtxv2info}
+    VoronoiMesh {
+        site2idx,
+        idx2vtxv: idx2vtxc,
+        vtxv2xy,
+        vtxv2info,
+    }
 }
 
 pub fn position_of_voronoi_vertex(
@@ -277,17 +280,17 @@ pub fn position_of_voronoi_vertex(
 ) -> nalgebra::Vector2<f32> {
     if info[1] == usize::MAX {
         // original point
-        del_geo::vec2::to_na(vtxl2xy, info[0])
+        crate::vtx2xyz::to_navec2(vtxl2xy, info[0])
     } else if info[3] == usize::MAX {
         // two points against edge
         let num_vtxl = vtxl2xy.len() / 2;
         assert!(info[0] < num_vtxl);
         let i1_loop = info[0];
         let i2_loop = (i1_loop + 1) % num_vtxl;
-        let l1 = del_geo::vec2::to_na(vtxl2xy, i1_loop);
-        let l2 = del_geo::vec2::to_na(vtxl2xy, i2_loop);
-        let s1 = &del_geo::vec2::to_na(site2xy, info[1]);
-        let s2 = &del_geo::vec2::to_na(site2xy, info[2]);
+        let l1 = crate::vtx2xyz::to_navec2(vtxl2xy, i1_loop);
+        let l2 = crate::vtx2xyz::to_navec2(vtxl2xy, i2_loop);
+        let s1 = &crate::vtx2xyz::to_navec2(site2xy, info[1]);
+        let s2 = &crate::vtx2xyz::to_navec2(site2xy, info[2]);
         return del_geo::line2::intersection(
             &l1,
             &(l2 - l1),
@@ -298,9 +301,9 @@ pub fn position_of_voronoi_vertex(
         // three points
         assert_eq!(info[0], usize::MAX);
         return del_geo::tri2::circumcenter(
-            &del_geo::vec2::to_na(site2xy, info[1]),
-            &del_geo::vec2::to_na(site2xy, info[2]),
-            &del_geo::vec2::to_na(site2xy, info[3]),
+            &crate::vtx2xyz::to_navec2(site2xy, info[1]),
+            &crate::vtx2xyz::to_navec2(site2xy, info[2]),
+            &crate::vtx2xyz::to_navec2(site2xy, info[3]),
         );
     }
 }
@@ -399,7 +402,11 @@ fn test_voronoi_convex() {
     }
     {
         // write edges to file
-        let edge2vtxc = crate::edge2vtx::from_polygon_mesh(&voronoi_mesh.site2idx, &voronoi_mesh.idx2vtxv, voronoi_mesh.vtxv2xy.len());
+        let edge2vtxc = crate::edge2vtx::from_polygon_mesh(
+            &voronoi_mesh.site2idx,
+            &voronoi_mesh.idx2vtxv,
+            voronoi_mesh.vtxv2xy.len(),
+        );
         let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_indexed.obj",

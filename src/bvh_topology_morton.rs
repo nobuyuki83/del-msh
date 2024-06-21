@@ -110,6 +110,7 @@ pub fn sorted_morten_code3(
     idx2morton: &mut [u32],
     vtx2morton: &mut [u32],
     vtx2xyz: &[f32],
+    transform_xy2uni: &[f32; 16],
 ) {
     assert_eq!(idx2vtx.len(), idx2morton.len());
     assert_eq!(idx2vtx.len(), vtx2morton.len());
@@ -117,7 +118,12 @@ pub fn sorted_morten_code3(
     vtx2xyz
         .chunks(3)
         .zip(vtx2morton.iter_mut())
-        .for_each(|(xyz, m)| *m = morton_code3(xyz[0], xyz[1], xyz[2]));
+        .for_each(|(xyz, m)| {
+            let xyz =
+                del_geo::mat4::transform_homogeneous(transform_xy2uni, &[xyz[0], xyz[1], xyz[2]])
+                    .unwrap();
+            *m = morton_code3(xyz[0], xyz[1], xyz[2])
+        });
     idx2vtx
         .iter_mut()
         .enumerate()
@@ -135,7 +141,13 @@ fn test_sorted_morten_code() {
     let mut vtx2morton = vec![0u32; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
     let mut idx2vtx = vec![0usize; num_vtx];
-    sorted_morten_code3(&mut idx2vtx, &mut idx2morton, &mut vtx2morton, &vtx2xyz);
+    sorted_morten_code3(
+        &mut idx2vtx,
+        &mut idx2morton,
+        &mut vtx2morton,
+        &vtx2xyz,
+        &del_geo::mat4::identity(),
+    );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
         assert!(idx2morton[idx] <= idx2morton[jdx]);
@@ -148,7 +160,7 @@ fn delta(idx0: usize, idx1: usize, idx2morton: &[u32]) -> i64 {
     (idx2morton[idx0] ^ idx2morton[idx1]).leading_zeros().into()
 }
 
-#[allow(clippy::identity_op)]
+
 fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize) {
     let num_mc = idx2morton.len();
     assert!(!idx2morton.is_empty());
@@ -160,7 +172,7 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
     }
     // ----------------------
     let mc0: u32 = idx2morton[idx1 - 1];
-    let mc1: u32 = idx2morton[idx1 + 0];
+    let mc1: u32 = idx2morton[idx1];
     let mc2: u32 = idx2morton[idx1 + 1];
     if mc0 == mc1 && mc1 == mc2 {
         // for hash value collision
@@ -272,13 +284,10 @@ fn morton_code_find_split(idx2morton: &[u32], i_mc_start: usize, i_mc_end: usize
     i_mc_split
 }
 
-#[allow(clippy::identity_op)]
-pub fn bvhnodes_morton<Index>(
-    nodes: &mut [Index],
-    idx2vtx: &[usize],
-    idx2morton: &[u32])
-where Index: num_traits::PrimInt + 'static + Copy,
-    usize: num_traits::AsPrimitive<Index>
+pub fn bvhnodes_morton<Index>(nodes: &mut [Index], idx2vtx: &[usize], idx2morton: &[u32])
+where
+    Index: num_traits::PrimInt + 'static + Copy,
+    usize: num_traits::AsPrimitive<Index>,
 {
     assert_eq!(idx2vtx.len(), idx2morton.len());
     assert!(!idx2morton.is_empty());
@@ -293,26 +302,26 @@ where Index: num_traits::PrimInt + 'static + Copy,
         if range.0 == isplit {
             let i_bvhnode_a = num_branch + isplit; // leaf node
             nodes[i_branch * 3 + 1] = i_bvhnode_a.as_();
-            nodes[i_bvhnode_a * 3 + 0] = i_branch.as_();
+            nodes[i_bvhnode_a * 3] = i_branch.as_();
             nodes[i_bvhnode_a * 3 + 1] = idx2vtx[isplit].as_();
             nodes[i_bvhnode_a * 3 + 2] = Index::max_value();
         } else {
             let i_bvhnode_a = isplit;
             nodes[i_branch * 3 + 1] = i_bvhnode_a.as_();
-            nodes[i_bvhnode_a * 3 + 0] = i_branch.as_();
+            nodes[i_bvhnode_a * 3] = i_branch.as_();
         }
         // ----
         if range.1 == isplit + 1 {
             // leaf node
             let i_bvhnode_b = num_branch + isplit + 1;
             nodes[i_branch * 3 + 2] = i_bvhnode_b.as_();
-            nodes[i_bvhnode_b * 3 + 0] = i_branch.as_();
+            nodes[i_bvhnode_b * 3] = i_branch.as_();
             nodes[i_bvhnode_b * 3 + 1] = idx2vtx[isplit + 1].as_();
             nodes[i_bvhnode_b * 3 + 2] = Index::max_value();
         } else {
             let i_bvhnode_b = isplit + 1;
             nodes[i_branch * 3 + 2] = i_bvhnode_b.as_();
-            nodes[i_bvhnode_b * 3 + 0] = i_branch.as_();
+            nodes[i_bvhnode_b * 3] = i_branch.as_();
         }
     }
 }
@@ -328,7 +337,13 @@ fn test_3d() {
     let mut idx2vtx = vec![0usize; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
-    sorted_morten_code3(&mut idx2vtx, &mut idx2morton, &mut vtx2morton, &vtx2xyz);
+    sorted_morten_code3(
+        &mut idx2vtx,
+        &mut idx2morton,
+        &mut vtx2morton,
+        &vtx2xyz,
+        &del_geo::mat4::identity(),
+    );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
         assert!(idx2morton[idx] <= idx2morton[jdx]);
@@ -367,30 +382,44 @@ fn test_2d() {
     crate::bvh::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
-// TODO: make_num_dim for 3D
-pub fn from_triangle_mesh<Index>(
-    tri2vtx: &[Index],
-    vtx2xy: &[f32],
-    num_dim: usize) -> Vec<Index>
-where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
-    usize: num_traits::AsPrimitive<Index>
+pub fn from_triangle_mesh<Index>(tri2vtx: &[Index], vtx2xy: &[f32], num_dim: usize) -> Vec<Index>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
 {
-    assert_eq!(num_dim, 2);
-    let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(
-        tri2vtx, 3, vtx2xy, num_dim);
-    let aabb = del_geo::aabb2::from_vtx2xy(&tri2cntr);
-    let transform_xy2uni = del_geo::aabb2::transform_world2unit_ortho_preserve_asp(&aabb);
+    let tri2cntr =
+        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
     let num_tri = tri2vtx.len() / 3;
     let mut idx2tri = vec![0usize; num_tri];
     let mut idx2morton = vec![0u32; num_tri];
     let mut tri2morton = vec![0u32; num_tri];
-    crate::bvh_topology_morton::sorted_morten_code2(
-        &mut idx2tri,
-        &mut idx2morton,
-        &mut tri2morton,
-        &tri2cntr,
-        &transform_xy2uni,
-    );
+    match num_dim {
+        2 => {
+            let aabb = del_geo::aabb2::from_vtx2xy(&tri2cntr);
+            let transform_xy2uni = del_geo::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+            crate::bvh_topology_morton::sorted_morten_code2(
+                &mut idx2tri,
+                &mut idx2morton,
+                &mut tri2morton,
+                &tri2cntr,
+                &transform_xy2uni,
+            );
+        }
+        3 => {
+            let aabb = del_geo::aabb3::from_vtx2xyz(&tri2cntr, 0f32);
+            let transform_xy2uni = del_geo::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+            crate::bvh_topology_morton::sorted_morten_code3(
+                &mut idx2tri,
+                &mut idx2morton,
+                &mut tri2morton,
+                &tri2cntr,
+                &transform_xy2uni,
+            );
+        }
+        _ => {
+            panic!();
+        }
+    }
     let mut bvhnodes = vec![Index::zero(); (num_tri * 2 - 1) * 3];
     bvhnodes_morton(&mut bvhnodes, &idx2tri, &idx2morton);
     bvhnodes

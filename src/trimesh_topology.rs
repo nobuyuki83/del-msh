@@ -1,4 +1,4 @@
-#[allow(clippy::identity_op)]
+
 pub fn find_adjacent_edge_index(
     tv: &[usize; 3],
     ts: &[usize; 3],
@@ -13,10 +13,10 @@ pub fn find_adjacent_edge_index(
     if tri2vtx[it1 * 3 + 1] == iv1 && tri2vtx[it1 * 3 + 2] == iv0 {
         return 0;
     }
-    if tri2vtx[it1 * 3 + 2] == iv1 && tri2vtx[it1 * 3 + 0] == iv0 {
+    if tri2vtx[it1 * 3 + 2] == iv1 && tri2vtx[it1 * 3] == iv0 {
         return 1;
     }
-    if tri2vtx[it1 * 3 + 0] == iv1 && tri2vtx[it1 * 3 + 1] == iv0 {
+    if tri2vtx[it1 * 3] == iv1 && tri2vtx[it1 * 3 + 1] == iv0 {
         return 2;
     }
     panic!();
@@ -196,9 +196,9 @@ pub fn insert_point_on_elem_edge(
     true
 }
 
-#[allow(clippy::identity_op)]
+
 pub fn find_node(i_vtx: usize, tri2vtx: &[usize], i_tri: usize) -> usize {
-    if tri2vtx[i_tri * 3 + 0] == i_vtx {
+    if tri2vtx[i_tri * 3] == i_vtx {
         return 0;
     }
     if tri2vtx[i_tri * 3 + 1] == i_vtx {
@@ -408,7 +408,7 @@ pub fn find_edge_by_looking_around_point(
     None
 }
 
-#[allow(clippy::identity_op)]
+
 pub fn find_edge_by_looking_all_triangles(
     ipo0: usize,
     ipo1: usize,
@@ -416,7 +416,7 @@ pub fn find_edge_by_looking_all_triangles(
 ) -> Option<(usize, usize)> {
     for (itri, tri) in tri2vtx.chunks(3).enumerate() {
         for iedtri in 0..3 {
-            let jpo0 = tri[(iedtri + 0) % 3];
+            let jpo0 = tri[iedtri % 3];
             let jpo1 = tri[(iedtri + 1) % 3];
             if jpo0 == ipo0 && jpo1 == ipo1 {
                 return Some((itri, iedtri));

@@ -41,15 +41,15 @@ where
     if icnt0 + icnt1 + icnt2 > 1 {
         return None;
     } // return  if sharing edge, identical triangle
-    use del_geo::vec3::to_na;
+    use crate::vtx2xyz::to_navec3;
     if icnt0 + icnt1 + icnt2 == 0 {
         del_geo::tri3::is_intersection_tri3(
-            &to_na(vtx2xyz, i0),
-            &to_na(vtx2xyz, i1),
-            &to_na(vtx2xyz, i2),
-            &to_na(vtx2xyz, j0),
-            &to_na(vtx2xyz, j1),
-            &to_na(vtx2xyz, j2),
+            &to_navec3(vtx2xyz, i0),
+            &to_navec3(vtx2xyz, i1),
+            &to_navec3(vtx2xyz, i2),
+            &to_navec3(vtx2xyz, j0),
+            &to_navec3(vtx2xyz, j1),
+            &to_navec3(vtx2xyz, j2),
         )
     } else {
         // sharing one point
@@ -88,12 +88,12 @@ where
         let node2vtx_j = [j0, j1, j2];
         assert_eq!(node2vtx_i[is], node2vtx_j[js]);
         del_geo::tri3::is_intersection_tri3(
-            &to_na(vtx2xyz, node2vtx_i[(is + 0) % 3]),
-            &to_na(vtx2xyz, node2vtx_i[(is + 1) % 3]),
-            &to_na(vtx2xyz, node2vtx_i[(is + 2) % 3]),
-            &to_na(vtx2xyz, node2vtx_j[(js + 0) % 3]),
-            &to_na(vtx2xyz, node2vtx_j[(js + 1) % 3]),
-            &to_na(vtx2xyz, node2vtx_j[(js + 2) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
+            &to_navec3(vtx2xyz, node2vtx_j[(js + 2) % 3]),
         )
     }
 }
@@ -239,11 +239,11 @@ mod tests {
         );
         let mut aabb = Vec::<f32>::new();
         aabb.resize(bvhnodes.len() / 3 * 6, 0.);
-        crate::bvh3::build_geometry_aabb_for_uniform_mesh(
+        crate::bvh3::update_aabbs_for_uniform_mesh(
             &mut aabb,
             0,
             &bvhnodes,
-            &tri2vtx,
+            Some(&tri2vtx),
             3,
             &vtx2xyz,
             None,

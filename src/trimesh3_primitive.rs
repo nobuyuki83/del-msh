@@ -90,14 +90,17 @@ where
 // -------------------------------------
 
 #[allow(clippy::identity_op)]
-fn cylinder_like_topology(ndiv_side: usize, ndiv_circumference: usize) -> Vec<usize> {
+fn cylinder_like_topology<Index>(ndiv_side: usize, ndiv_circumference: usize) -> Vec<Index>
+where Index: num_traits::PrimInt + 'static + Copy,
+    usize: AsPrimitive<Index>
+{
     let ndiv_longtitude = ndiv_side + 2;
     let num_tri = ndiv_circumference * (ndiv_longtitude - 1) * 2 + ndiv_circumference * 2;
-    let mut tri2vtx = Vec::<usize>::with_capacity(num_tri * 3);
+    let mut tri2vtx = Vec::<Index>::with_capacity(num_tri * 3);
     for ic in 0..ndiv_circumference {
-        tri2vtx.push(0);
-        tri2vtx.push((ic + 0) % ndiv_circumference + 1);
-        tri2vtx.push((ic + 1) % ndiv_circumference + 1);
+        tri2vtx.push(Index::zero());
+        tri2vtx.push((ic + 1).as_());
+        tri2vtx.push(((ic + 1) % ndiv_circumference + 1).as_());
     }
     for ih in 0..ndiv_longtitude - 2 {
         for ic in 0..ndiv_circumference {
@@ -105,20 +108,21 @@ fn cylinder_like_topology(ndiv_side: usize, ndiv_circumference: usize) -> Vec<us
             let i2 = (ih + 0) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference;
             let i3 = (ih + 1) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference;
             let i4 = (ih + 1) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference;
-            tri2vtx.push(i3);
-            tri2vtx.push(i2);
-            tri2vtx.push(i1);
-            tri2vtx.push(i4);
-            tri2vtx.push(i3);
-            tri2vtx.push(i1);
+            tri2vtx.push(i3.as_());
+            tri2vtx.push(i2.as_());
+            tri2vtx.push(i1.as_());
+            tri2vtx.push(i4.as_());
+            tri2vtx.push(i3.as_());
+            tri2vtx.push(i1.as_());
         }
     }
     for ic in 0..ndiv_circumference {
-        tri2vtx.push(ndiv_circumference * (ndiv_longtitude - 1) + 1);
-        tri2vtx
-            .push((ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference);
-        tri2vtx
-            .push((ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference);
+        let i0 = ndiv_circumference * (ndiv_longtitude - 1) + 1;
+        let i1 = (ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 1) % ndiv_circumference;
+        let i2 = (ndiv_longtitude - 2) * ndiv_circumference + 1 + (ic + 0) % ndiv_circumference;
+        tri2vtx.push(i0.as_());
+        tri2vtx.push(i1.as_());
+        tri2vtx.push(i2.as_());
     }
     tri2vtx
 }
@@ -165,7 +169,7 @@ where
         .column_mut(num_vtx - 1)
         .copy_from_slice(&[zero, y_min + length, zero]);
     // ------------------------------------
-    let tri2vtx = cylinder_like_topology(ndiv_length, ndiv_circumference);
+    let tri2vtx = cylinder_like_topology::<usize>(ndiv_length, ndiv_circumference);
     let tri2vtx = nalgebra::Matrix3xX::<usize>::from_column_slice(&tri2vtx);
     (tri2vtx, vtx2xyz)
 }
@@ -342,21 +346,23 @@ fn test_torus_tri3() {
 
 /// the spherical coordinate around y-axis
 #[allow(clippy::identity_op)]
-pub fn sphere_yup<T>(radius: T, n_longitude: usize, n_latitude: usize) -> (Vec<usize>, Vec<T>)
+pub fn sphere_yup<Index, Real>(radius: Real, n_longitude: usize, n_latitude: usize) -> (Vec<Index>, Vec<Real>)
 where
-    T: num_traits::Float + 'static,
-    f32: AsPrimitive<T>,
-    usize: AsPrimitive<T>,
+    Real: num_traits::Float + 'static,
+    Index: num_traits::PrimInt + 'static,
+    f32: AsPrimitive<Real>,
+    usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
-    let mut vtx2xyz = Vec::<T>::new();
-    let mut tri2vtx = Vec::<usize>::new();
+    let mut vtx2xyz = Vec::<Real>::new();
+    let mut tri2vtx = Vec::<Index>::new();
     vtx2xyz.clear();
     if n_longitude <= 1 || n_latitude <= 2 {
         return (tri2vtx, vtx2xyz);
     }
-    let pi: T = std::f32::consts::PI.as_();
-    let dl: T = pi / n_longitude.as_();
-    let dr: T = 2.as_() * pi / n_latitude.as_();
+    let pi: Real = std::f32::consts::PI.as_();
+    let dl: Real = pi / n_longitude.as_();
+    let two = Real::one() + Real::one();
+    let dr: Real = two * pi / n_latitude.as_();
     vtx2xyz.reserve((n_latitude * (n_longitude - 1) + 2) * 3);
     for ila in 0..n_longitude + 1 {
         let y0 = (dl * ila.as_()).cos();
@@ -376,13 +382,13 @@ where
     let ntri = n_latitude * (n_longitude - 1) * 2 + n_latitude * 2;
     tri2vtx.reserve(ntri * 3);
 
-    let tri2vtx = cylinder_like_topology(n_longitude - 2, n_latitude);
+    let tri2vtx = cylinder_like_topology::<Index>(n_longitude - 2, n_latitude);
     (tri2vtx, vtx2xyz)
 }
 
 #[test]
 fn test_sphere_yup() {
-    let (tri2vtx, vtx2xyz) = sphere_yup::<f64>(1.0, 16, 8);
+    let (tri2vtx, vtx2xyz) = sphere_yup::<usize, f64>(1.0, 16, 8);
     crate::io_obj::save_tri2vtx_vtx2xyz("target/sphere_yup.obj", &tri2vtx, &vtx2xyz, 3).unwrap();
 }
 

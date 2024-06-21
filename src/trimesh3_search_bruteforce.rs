@@ -51,7 +51,8 @@ fn triangles_in_sphere(
     tri2vtx: &[usize],
     tri2adjtri: &[usize],
 ) -> Vec<usize> {
-    use del_geo::{tri3, vec3, vec3::to_na};
+    use del_geo::{tri3, vec3};
+    use crate::vtx2xyz::to_navec3;
     let mut res = Vec::<usize>::new();
     let mut searched = std::collections::BTreeSet::<usize>::new();
     let mut next0 = Vec::<usize>::new();
@@ -66,9 +67,9 @@ fn triangles_in_sphere(
             let i1 = tri2vtx[iel0 * 3 + 1];
             let i2 = tri2vtx[iel0 * 3 + 2];
             let (pn, _r0, _r1) = tri3::nearest_to_point3(
-                &to_na(vtx2xyz, i0),
-                &to_na(vtx2xyz, i1),
-                &to_na(vtx2xyz, i2),
+                &to_navec3(vtx2xyz, i0),
+                &to_navec3(vtx2xyz, i1),
+                &to_navec3(vtx2xyz, i2),
                 &nalgebra::Vector3::<f32>::from_row_slice(&pos),
             );
             vec3::distance_(pn.as_ref(), &pos)
