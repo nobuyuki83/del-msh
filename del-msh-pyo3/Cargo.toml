@@ -16,6 +16,6 @@ num-traits = "0.2.18"
 
 
 del-msh = {path=".."}
-del-geo = {path="../../del-geo"}
+del-geo = { workspace = true }
 # del-msh = "0.1.26"
 # del-geo = "0.1.20"

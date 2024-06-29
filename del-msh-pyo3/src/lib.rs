@@ -1,27 +1,24 @@
-use numpy::{
-    IntoPyArray,
-    PyReadonlyArray2,
-    PyArray1, PyArray2};
 use numpy::PyUntypedArrayMethods;
-use pyo3::{types::PyModule, PyResult, Python, Bound};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
+use pyo3::{types::PyModule, Bound, PyResult, Python};
 
-mod topology;
-mod primitive;
-mod io;
-mod unify_index;
-mod unindex;
+mod bvh;
 mod dijkstra;
-mod sampling;
-mod extract;
-mod trimesh3_search;
+mod dtri;
 mod edge2vtx;
 mod elem2elem;
-mod dtri;
-mod polyloop;
-mod bvh;
+mod extract;
+mod gradient_distance_extension;
+mod io;
 mod kdtree;
 mod mesh_intersection;
-mod gradient_distance_extension;
+mod polyloop;
+mod primitive;
+mod sampling;
+mod topology;
+mod trimesh3_search;
+mod unify_index;
+mod unindex;
 mod vtx2area;
 
 /* ------------------------ */
@@ -57,20 +54,21 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         assert!(tri2vtx.is_c_contiguous());
         assert!(vtx2xyz.is_c_contiguous());
         let tri2area = match vtx2xyz.shape()[1] {
-            2 => {
-                del_msh::trimesh2::tri2area(
-                    tri2vtx.as_slice().unwrap(),
-                    vtx2xyz.as_slice().unwrap())
+            2 => del_msh::trimesh2::tri2area(
+                tri2vtx.as_slice().unwrap(),
+                vtx2xyz.as_slice().unwrap(),
+            ),
+            3 => del_msh::trimesh3::tri2area(
+                tri2vtx.as_slice().unwrap(),
+                vtx2xyz.as_slice().unwrap(),
+            ),
+            _ => {
+                panic!();
             }
-            3 => {
-                del_msh::trimesh3::tri2area(
-                    tri2vtx.as_slice().unwrap(),
-                    vtx2xyz.as_slice().unwrap())
-            }
-            _ => { panic!(); }
         };
-        numpy::ndarray::Array1::from_shape_vec(
-            tri2vtx.shape()[0], tri2area).unwrap().into_pyarray_bound(py)
+        numpy::ndarray::Array1::from_shape_vec(tri2vtx.shape()[0], tri2area)
+            .unwrap()
+            .into_pyarray_bound(py)
     }
 
     #[pyfn(m)]
@@ -83,15 +81,17 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         assert!(vtx2xyz.is_c_contiguous());
         let num_dim = vtx2xyz.shape()[1];
         let tri2cc = match num_dim {
-            2 => {
-                del_msh::trimesh2::tri2circumcenter(
-                    tri2vtx.as_slice().unwrap(),
-                    vtx2xyz.as_slice().unwrap())
+            2 => del_msh::trimesh2::tri2circumcenter(
+                tri2vtx.as_slice().unwrap(),
+                vtx2xyz.as_slice().unwrap(),
+            ),
+            _ => {
+                panic!();
             }
-            _ => { panic!(); }
         };
-        numpy::ndarray::Array2::from_shape_vec(
-            (tri2vtx.shape()[0],num_dim), tri2cc).unwrap().into_pyarray_bound(py)
+        numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc)
+            .unwrap()
+            .into_pyarray_bound(py)
     }
 
     Ok(())

@@ -1,4 +1,3 @@
-
 pub fn find_adjacent_edge_index(
     tv: &[usize; 3],
     ts: &[usize; 3],
@@ -195,7 +194,6 @@ pub fn insert_point_on_elem_edge(
     }
     true
 }
-
 
 pub fn find_node(i_vtx: usize, tri2vtx: &[usize], i_tri: usize) -> usize {
     if tri2vtx[i_tri * 3] == i_vtx {
@@ -407,7 +405,6 @@ pub fn find_edge_by_looking_around_point(
     }
     None
 }
-
 
 pub fn find_edge_by_looking_all_triangles(
     ipo0: usize,

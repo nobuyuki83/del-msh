@@ -6,8 +6,9 @@ use num_traits::AsPrimitive;
 /// * `vtx2idx` - vertex to index list
 /// * `idx2vtx` - index to vertex list
 pub fn from_vtx2vtx<Index>(vtx2idx: &[Index], idx2vtx: &[Index]) -> Vec<Index>
-where Index: AsPrimitive<usize>,
-    usize: AsPrimitive<Index>
+where
+    Index: AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let mut line2vtx = Vec::<Index>::with_capacity(idx2vtx.len() * 2);
     for i_vtx in 0..vtx2idx.len() - 1 {
@@ -27,8 +28,9 @@ pub fn from_uniform_mesh_with_specific_edges<Index>(
     edge2node: &[usize],
     num_vtx: usize,
 ) -> Vec<Index>
-where Index: num_traits::PrimInt + std::ops::AddAssign + AsPrimitive<usize>,
-    usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + std::ops::AddAssign + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let vtx2elem = crate::vtx2elem::from_uniform_mesh::<Index>(elem2vtx, num_node, num_vtx);
     let vtx2vtx = crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index>(

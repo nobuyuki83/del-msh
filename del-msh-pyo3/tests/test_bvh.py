@@ -9,7 +9,7 @@ def test_tri_self_intersection():
     tri2vtx, vtx2xyz = TriMesh.sphere(1., 8, 4)
     bvhnodes = TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
     assert bvhnodes.shape[1] == 3
-    aabbs = BVH.aabb_uniform_mesh(tri2vtx, vtx2xyz, bvhnodes)
+    aabbs = BVH.aabb_uniform_mesh(tri2vtx, vtx2xyz, bvhnodes, aabbs=None, vtx2xyz1=None)
     assert bvhnodes.shape[0] == aabbs.shape[0]
     assert aabbs.shape[1] == 6
     assert numpy.linalg.norm(aabbs[0] - numpy.array([-1., -1., -1., 1., 1., 1])) < 1.0e-5

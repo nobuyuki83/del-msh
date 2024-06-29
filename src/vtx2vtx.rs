@@ -16,7 +16,8 @@ pub fn from_uniform_mesh_with_vtx2elem<Index>(
     idx2elem: &[Index],
     is_self: bool,
 ) -> (Vec<usize>, Vec<usize>)
-where Index: num_traits::AsPrimitive<usize>
+where
+    Index: num_traits::AsPrimitive<usize>,
 {
     assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);
@@ -78,8 +79,9 @@ pub fn from_uniform_mesh<Index>(
     num_vtx: usize,
     is_self: bool,
 ) -> (Vec<usize>, Vec<usize>)
-where Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
-    usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     // set pattern to sparse matrix
     assert_eq!(elem2vtx.len() % num_node, 0);
@@ -105,8 +107,9 @@ pub fn from_specific_edges_of_uniform_mesh<Index>(
     idx2elem: &[Index],
     is_bidirectional: bool,
 ) -> (Vec<Index>, Vec<Index>)
-where Index: num_traits::PrimInt + AsPrimitive<usize>,
-    usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let num_edge = edge2node.len() / 2;
     assert_eq!(edge2node.len(), num_edge * 2);

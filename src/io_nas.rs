@@ -21,10 +21,11 @@ fn parse(s: &str) -> f32 {
 }
 
 pub fn load_tri_mesh<P, Index>(path: P) -> (Vec<Index>, Vec<f32>)
-where P: AsRef<std::path::Path>,
+where
+    P: AsRef<std::path::Path>,
     Index: num_traits::PrimInt + std::str::FromStr + 'static + AsPrimitive<usize>,
-      <Index as std::str::FromStr>::Err: std::fmt::Debug,
-    usize: AsPrimitive<Index>
+    <Index as std::str::FromStr>::Err: std::fmt::Debug,
+    usize: AsPrimitive<Index>,
 {
     let mut vtx2xyz = vec![0f32; 0];
     let mut vtx2idx = vec![Index::zero(); 0];

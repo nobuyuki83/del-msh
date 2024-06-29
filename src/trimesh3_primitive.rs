@@ -91,8 +91,9 @@ where
 
 #[allow(clippy::identity_op)]
 fn cylinder_like_topology<Index>(ndiv_side: usize, ndiv_circumference: usize) -> Vec<Index>
-where Index: num_traits::PrimInt + 'static + Copy,
-    usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + 'static + Copy,
+    usize: AsPrimitive<Index>,
 {
     let ndiv_longtitude = ndiv_side + 2;
     let num_tri = ndiv_circumference * (ndiv_longtitude - 1) * 2 + ndiv_circumference * 2;
@@ -346,7 +347,11 @@ fn test_torus_tri3() {
 
 /// the spherical coordinate around y-axis
 #[allow(clippy::identity_op)]
-pub fn sphere_yup<Index, Real>(radius: Real, n_longitude: usize, n_latitude: usize) -> (Vec<Index>, Vec<Real>)
+pub fn sphere_yup<Index, Real>(
+    radius: Real,
+    n_longitude: usize,
+    n_latitude: usize,
+) -> (Vec<Index>, Vec<Real>)
 where
     Real: num_traits::Float + 'static,
     Index: num_traits::PrimInt + 'static,

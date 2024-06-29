@@ -16,7 +16,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     vtx2xyz1: Option<&[Real]>,
 ) where
     Real: num_traits::Float,
-    Index: PrimInt + num_traits::AsPrimitive<usize>
+    Index: PrimInt + num_traits::AsPrimitive<usize>,
 {
     // aabbs.resize();
     assert_eq!(aabbs.len() / 6, bvhnodes.len() / 3);
@@ -116,9 +116,9 @@ pub fn aabbs_from_uniform_mesh<Index, Real>(
     vtx2xyz0: &[Real],
     vtx2xyz1: Option<&[Real]>,
 ) -> Vec<Real>
-    where
-        Real: num_traits::Float,
-        Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+where
+    Real: num_traits::Float,
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
 {
     let num_bvhnode = bvhnodes.len() / 3;
     let mut aabbs = vec![Real::zero(); num_bvhnode * 6];
@@ -141,8 +141,8 @@ pub fn search_intersection_ray<Index>(
     ray_dir: &[f32; 3],
     trimesh3: &TriMeshWithBvh<Index>,
     i_bvhnode: usize,
-)
-where Index: num_traits::PrimInt + AsPrimitive<usize>
+) where
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
     if !del_geo::aabb::is_intersect_ray::<3, 6>(
         trimesh3.aabbs[i_bvhnode * 6..i_bvhnode * 6 + 6]
@@ -154,7 +154,8 @@ where Index: num_traits::PrimInt + AsPrimitive<usize>
         return;
     }
     assert_eq!(trimesh3.bvhnodes.len() / 3, trimesh3.aabbs.len() / 6);
-    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() { // leaf node
+    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+        // leaf node
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
         let i0 = trimesh3.tri2vtx[i_tri * 3].as_();

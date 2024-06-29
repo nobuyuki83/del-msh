@@ -50,8 +50,9 @@ pub fn from_uniform_mesh<Index>(
     num_node: usize,
     num_vtx: usize,
 ) -> (Vec<Index>, Vec<Index>)
-where Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive::<usize>,
-    usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let num_elem = elem2vtx.len() / num_node;
     assert_eq!(elem2vtx.len(), num_elem * num_node);

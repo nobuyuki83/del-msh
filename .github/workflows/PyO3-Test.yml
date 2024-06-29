@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Crate
+        uses: actions/checkout@v3
+      - name: Set Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+      - name: Run check
+        run: |
+          cd del-msh-pyo3
+          cargo check
+      - name: Run test
+        run: |
+          cd del-msh-pyo3          
+          cargo test
+      - name: Setup Python
+        uses: actions/setup-python@v2
+      - name: test
+        run: |
+          cd del-msh-pyo3
+          python3 -m venv venv
+          source venv/bin/activate
+          echo "VIRTUAL ENV:" $VIRTUAL_ENV
+          echo "install maturin"
+          pip3 install maturin
+          maturin build --release
+          echo "install library using maturin"
+          maturin develop --release
+          pip3 list
+          echo "test library using pytest"
+          pip3 install pytest
+          python3 -m pytest

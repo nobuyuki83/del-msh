@@ -160,7 +160,6 @@ fn delta(idx0: usize, idx1: usize, idx2morton: &[u32]) -> i64 {
     (idx2morton[idx0] ^ idx2morton[idx1]).leading_zeros().into()
 }
 
-
 fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize) {
     let num_mc = idx2morton.len();
     assert!(!idx2morton.is_empty());
@@ -396,7 +395,8 @@ where
     match num_dim {
         2 => {
             let aabb = del_geo::aabb2::from_vtx2xy(&tri2cntr);
-            let transform_xy2uni = del_geo::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+            let transform_xy2uni =
+                del_geo::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
             crate::bvh_topology_morton::sorted_morten_code2(
                 &mut idx2tri,
                 &mut idx2morton,
@@ -407,7 +407,8 @@ where
         }
         3 => {
             let aabb = del_geo::aabb3::from_vtx2xyz(&tri2cntr, 0f32);
-            let transform_xy2uni = del_geo::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+            let transform_xy2uni =
+                del_geo::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
             crate::bvh_topology_morton::sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,

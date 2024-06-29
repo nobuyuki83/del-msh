@@ -57,21 +57,23 @@ mod tests {
     }
 }
 
-
 pub fn to_corner_points<Index, Real>(
     tri2vtx: &[Index],
     vtx2xyz: &[Real],
-    i_tri: usize) -> ([Real;3], [Real;3], [Real;3])
-    where Real: Copy,
-          Index: num_traits::PrimInt + AsPrimitive<usize>
+    i_tri: usize,
+) -> ([Real; 3], [Real; 3], [Real; 3])
+where
+    Real: Copy,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
-    let i0: usize = tri2vtx[i_tri*3].as_();
-    let i1: usize = tri2vtx[i_tri*3+1].as_();
-    let i2: usize = tri2vtx[i_tri*3+2].as_();
+    let i0: usize = tri2vtx[i_tri * 3].as_();
+    let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
+    let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
     (
-        [ vtx2xyz[i0*3],  vtx2xyz[i0*3+1], vtx2xyz[i0*3+2] ],
-        [ vtx2xyz[i1*3],  vtx2xyz[i1*3+1], vtx2xyz[i1*3+2] ],
-        [ vtx2xyz[i2*3],  vtx2xyz[i2*3+1], vtx2xyz[i2*3+2] ] )
+        [vtx2xyz[i0 * 3], vtx2xyz[i0 * 3 + 1], vtx2xyz[i0 * 3 + 2]],
+        [vtx2xyz[i1 * 3], vtx2xyz[i1 * 3 + 1], vtx2xyz[i1 * 3 + 2]],
+        [vtx2xyz[i2 * 3], vtx2xyz[i2 * 3 + 1], vtx2xyz[i2 * 3 + 2]],
+    )
 }
 
 // above: vtx2*** method

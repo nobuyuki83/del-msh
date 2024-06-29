@@ -1,4 +1,3 @@
-
 pub fn position_from_barycentric_coordinate<Real, const N: usize>(
     tri2vtx: &[usize],
     vtx2xyz: &[Real],

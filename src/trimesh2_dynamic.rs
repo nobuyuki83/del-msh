@@ -616,7 +616,6 @@ pub struct MeshForTopologicalChange<'a, T> {
     pub vtx2xy: &'a mut Vec<nalgebra::Vector2<T>>,
 }
 
-
 pub fn add_points_uniformly<T>(
     dm: MeshForTopologicalChange<T>,
     vtx2flag: &mut Vec<usize>,

@@ -135,7 +135,7 @@ pub fn search_including_point<Real, Index>(
 ) where
     Real: num_traits::Float,
     Index: AsPrimitive<usize> + num_traits::PrimInt,
-    usize: AsPrimitive<Index>
+    usize: AsPrimitive<Index>,
 {
     if !del_geo::aabb::is_include_point::<Real, 2, 4>(
         aabbs[i_bvhnode * 4..(i_bvhnode + 1) * 4]

@@ -29,7 +29,6 @@ where
 // ---------------
 // below: tri2***
 
-
 pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
     let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
     for node2vtx in tri2vtx.chunks(3) {
@@ -82,18 +81,21 @@ where
 pub fn to_corner_points<Index, Real>(
     tri2vtx: &[Index],
     vtx2xy: &[Real],
-    i_tri: usize) -> ([Real;2], [Real;2], [Real;2])
-    where Real: Copy,
-          Index: num_traits::PrimInt + AsPrimitive<usize>
+    i_tri: usize,
+) -> ([Real; 2], [Real; 2], [Real; 2])
+where
+    Real: Copy,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
     let i_tri: usize = i_tri.as_();
-    let i0: usize = tri2vtx[i_tri*3].as_();
-    let i1: usize = tri2vtx[i_tri*3+1].as_();
-    let i2: usize = tri2vtx[i_tri*3+2].as_();
+    let i0: usize = tri2vtx[i_tri * 3].as_();
+    let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
+    let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
     (
-        [ vtx2xy[i0*2],  vtx2xy[i0*2+1] ],
-        [ vtx2xy[i1*2],  vtx2xy[i1*2+1] ],
-        [ vtx2xy[i2*2],  vtx2xy[i2*2+1] ] )
+        [vtx2xy[i0 * 2], vtx2xy[i0 * 2 + 1]],
+        [vtx2xy[i1 * 2], vtx2xy[i1 * 2 + 1]],
+        [vtx2xy[i2 * 2], vtx2xy[i2 * 2 + 1]],
+    )
 }
 
 // ------------------------------

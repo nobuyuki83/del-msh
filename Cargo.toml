@@ -22,3 +22,6 @@ ordered-float = "4.2.0"
 
 del-geo = {path="../del-geo"}
 # del-geo = "0.1.28"
+
+[workspace.dependencies]
+del-geo = {path="../del-geo"}

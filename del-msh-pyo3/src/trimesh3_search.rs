@@ -1,7 +1,5 @@
-use numpy::{
-    PyReadonlyArray1, PyReadonlyArray2,
-    PyArray1};
-use pyo3::{types::PyModule, PyResult, Python, Bound};
+use numpy::{PyArray1, PyReadonlyArray1, PyReadonlyArray2};
+use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
@@ -22,13 +20,14 @@ fn first_intersection_ray_meshtri3<'a>(
     src: PyReadonlyArray1<'a, f32>,
     dir: PyReadonlyArray1<'a, f32>,
     vtx2xyz: PyReadonlyArray2<'a, f32>,
-    tri2vtx: PyReadonlyArray2<'a, usize>) -> (Bound<'a, PyArray1<f32>>, i64)
-{
+    tri2vtx: PyReadonlyArray2<'a, usize>,
+) -> (Bound<'a, PyArray1<f32>>, i64) {
     let res = del_msh::trimesh3_search_bruteforce::first_intersection_ray(
         src.as_slice().unwrap().try_into().unwrap(),
         dir.as_slice().unwrap().try_into().unwrap(),
         vtx2xyz.as_slice().unwrap(),
-        tri2vtx.as_slice().unwrap());
+        tri2vtx.as_slice().unwrap(),
+    );
     match res {
         None => {
             let a = PyArray1::<f32>::zeros_bound(py, 3, true);
@@ -46,17 +45,16 @@ fn pick_vertex_meshtri3<'a>(
     tri2vtx: PyReadonlyArray2<'a, usize>,
     vtx2xyz: PyReadonlyArray2<'a, f32>,
     src: PyReadonlyArray1<'a, f32>,
-    dir: PyReadonlyArray1<'a, f32>) -> i64
-{
+    dir: PyReadonlyArray1<'a, f32>,
+) -> i64 {
     let res = del_msh::trimesh3_search_bruteforce::first_intersection_ray(
         src.as_slice().unwrap().try_into().unwrap(),
         dir.as_slice().unwrap().try_into().unwrap(),
         vtx2xyz.as_slice().unwrap(),
-        tri2vtx.as_slice().unwrap());
+        tri2vtx.as_slice().unwrap(),
+    );
     match res {
-        None => {
-            -1
-        }
+        None => -1,
         Some(postri) => {
             let pos = postri.0;
             let idx_tri = postri.1;
@@ -69,11 +67,16 @@ fn pick_vertex_meshtri3<'a>(
             let d0 = squared_dist(&pos, q0);
             let d1 = squared_dist(&pos, q1);
             let d2 = squared_dist(&pos, q2);
-            if d0 <= d1 && d0 <= d2 { return *i0 as i64; }
-            if d1 <= d2 && d1 <= d0 { return *i1 as i64; }
-            if d2 <= d0 && d2 <= d1 { return *i2 as i64; }
+            if d0 <= d1 && d0 <= d2 {
+                return *i0 as i64;
+            }
+            if d1 <= d2 && d1 <= d0 {
+                return *i1 as i64;
+            }
+            if d2 <= d0 && d2 <= d1 {
+                return *i2 as i64;
+            }
             -1
         }
     }
 }
-

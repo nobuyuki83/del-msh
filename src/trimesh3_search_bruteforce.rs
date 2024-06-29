@@ -51,8 +51,8 @@ fn triangles_in_sphere(
     tri2vtx: &[usize],
     tri2adjtri: &[usize],
 ) -> Vec<usize> {
-    use del_geo::{tri3, vec3};
     use crate::vtx2xyz::to_navec3;
+    use del_geo::{tri3, vec3};
     let mut res = Vec::<usize>::new();
     let mut searched = std::collections::BTreeSet::<usize>::new();
     let mut next0 = Vec::<usize>::new();

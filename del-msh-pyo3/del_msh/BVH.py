@@ -22,19 +22,19 @@ def edges_of_aabb(aabb: numpy.typing.NDArray) \
 
 
 def aabb_uniform_mesh(
-        elem2vtx: numpy.typing.NDArray,
+        elem2vtx: numpy.typing.NDArray | None,
         vtx2xyz0: numpy.typing.NDArray,
         bvhnodes: numpy.typing.NDArray,
-        aabbs=None,
-        root=0,
-        vtx2xyz1=None):
+        aabbs: numpy.typing.NDArray | None,
+        vtx2xyz1: numpy.typing.NDArray | None,
+        root=0):
     """ compute Axis-Aligned Bounding Box (AABB) for elements of an uniform mesh
     :param elem2vtx: if `None` is provided, build aabb for vertices
     :param vtx2xyz0: list of vertex coordinate
     :param bvhnodes: BVH tree structure
     :param aabbs: (optional) provide numpy array if you want to update values
-    :param root: (optional) default is zero
     :param vtx2xyz1: (optional) for Continuous Collision Detection (CCD)
+    :param root: (optional) default is zero
     :return:
     """
     if aabbs is None:
