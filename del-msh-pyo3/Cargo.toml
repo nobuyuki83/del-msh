@@ -1,0 +1,21 @@
+[package]
+name = "del-msh-pyo3"
+version = "0.1.22"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "del_msh"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21.1", features = ["extension-module"] }
+nalgebra = "0.32.5"
+numpy = "0.21.0"
+num-traits = "0.2.18"
+
+
+del-msh = {path=".."}
+del-geo = {path="../../del-geo"}
+# del-msh = "0.1.26"
+# del-geo = "0.1.20"

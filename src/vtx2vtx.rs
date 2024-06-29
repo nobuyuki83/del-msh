@@ -1,19 +1,23 @@
 //! methods that generate vertices connected to a vertex
 
+use num_traits::AsPrimitive;
+
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
 /// * `num_node` - number of vertex par elemnent (e.g., 3 for tri, 4 for quad)
 /// * `num_vtx` - number of vertex
 /// * `vtx2idx` - map vertex to element index: cumulative sum
 /// * `idx2elem` - map vertex to element value: list of value
-pub fn from_uniform_mesh_with_vtx2elem(
-    elem2vtx: &[usize],
+pub fn from_uniform_mesh_with_vtx2elem<Index>(
+    elem2vtx: &[Index],
     num_node: usize,
     num_vtx: usize,
-    vtx2idx: &[usize],
-    idx2elem: &[usize],
+    vtx2idx: &[Index],
+    idx2elem: &[Index],
     is_self: bool,
-) -> (Vec<usize>, Vec<usize>) {
+) -> (Vec<usize>, Vec<usize>)
+where Index: num_traits::AsPrimitive<usize>
+{
     assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);
     let mut vtx2flg = vec![usize::MAX; num_vtx];
@@ -22,9 +26,12 @@ pub fn from_uniform_mesh_with_vtx2elem(
         if !is_self {
             vtx2flg[i_vtx] = i_vtx;
         }
-        for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+        let idx0: usize = vtx2idx[i_vtx].as_();
+        let idx1: usize = vtx2idx[i_vtx + 1].as_();
+        for j_elem in &idx2elem[idx0..idx1] {
+            let j_elem: usize = j_elem.as_();
             for j_node in 0..num_node {
-                let j_vtx = elem2vtx[j_elem * num_node + j_node];
+                let j_vtx: usize = elem2vtx[j_elem * num_node + j_node].as_();
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
                     vtx2jdx[i_vtx + 1] += 1;
@@ -42,9 +49,12 @@ pub fn from_uniform_mesh_with_vtx2elem(
         if !is_self {
             vtx2flg[i_vtx] = i_vtx;
         }
-        for j_elem in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+        let idx0: usize = vtx2idx[i_vtx].as_();
+        let idx1: usize = vtx2idx[i_vtx + 1].as_();
+        for j_elem in &idx2elem[idx0..idx1] {
+            let j_elem: usize = j_elem.as_();
             for j_node in 0..num_node {
-                let j_vtx = elem2vtx[j_elem * num_node + j_node];
+                let j_vtx: usize = elem2vtx[j_elem * num_node + j_node].as_();
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
                     let iv2v = vtx2jdx[i_vtx];
@@ -62,12 +72,15 @@ pub fn from_uniform_mesh_with_vtx2elem(
 }
 
 /// compute index of vertices adjacent to vertices for uniform mesh.
-pub fn from_uniform_mesh(
-    elem2vtx: &[usize],
+pub fn from_uniform_mesh<Index>(
+    elem2vtx: &[Index],
     num_node: usize,
     num_vtx: usize,
     is_self: bool,
-) -> (Vec<usize>, Vec<usize>) {
+) -> (Vec<usize>, Vec<usize>)
+where Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<Index>
+{
     // set pattern to sparse matrix
     assert_eq!(elem2vtx.len() % num_node, 0);
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
@@ -84,25 +97,32 @@ pub fn from_uniform_mesh(
     vtx2vtx
 }
 
-pub fn from_specific_edges_of_uniform_mesh(
-    elem2vtx: &[usize],
+pub fn from_specific_edges_of_uniform_mesh<Index>(
+    elem2vtx: &[Index],
     num_node: usize,
     edge2node: &[usize],
-    vtx2idx: &[usize],
-    idx2elem: &[usize],
+    vtx2idx: &[Index],
+    idx2elem: &[Index],
     is_bidirectional: bool,
-) -> (Vec<usize>, Vec<usize>) {
+) -> (Vec<Index>, Vec<Index>)
+where Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>
+{
     let num_edge = edge2node.len() / 2;
     assert_eq!(edge2node.len(), num_edge * 2);
 
     let num_vtx = vtx2idx.len() - 1;
-    let mut vtx2jdx = vec![0_usize; num_vtx + 1];
-    vtx2jdx[0] = 0;
-    let mut jdx2vtx = Vec::<usize>::new();
-    let mut set_vtx = std::collections::BTreeSet::new();
+    let mut vtx2jdx = vec![Index::zero(); num_vtx + 1];
+    vtx2jdx[0] = Index::zero();
+    let mut jdx2vtx = Vec::<Index>::new();
+    let mut set_vtx: std::collections::BTreeSet<Index> = std::collections::BTreeSet::new();
     for i_vtx in 0..num_vtx {
         set_vtx.clear();
-        for &ielem0 in &idx2elem[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+        let idx0: usize = vtx2idx[i_vtx].as_();
+        let idx1: usize = vtx2idx[i_vtx + 1].as_();
+        for &ielem0 in &idx2elem[idx0..idx1] {
+            let i_vtx: Index = i_vtx.as_();
+            let ielem0 = ielem0.as_();
             for iedge in 0..num_edge {
                 let inode0 = edge2node[iedge * 2];
                 let inode1 = edge2node[iedge * 2 + 1];
@@ -123,7 +143,7 @@ pub fn from_specific_edges_of_uniform_mesh(
         for vtx in &set_vtx {
             jdx2vtx.push(*vtx);
         }
-        vtx2jdx[i_vtx + 1] = vtx2jdx[i_vtx] + set_vtx.len();
+        vtx2jdx[i_vtx + 1] = vtx2jdx[i_vtx] + set_vtx.len().as_();
     }
     (vtx2jdx, jdx2vtx)
 }

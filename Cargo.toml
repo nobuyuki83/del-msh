@@ -1,3 +1,8 @@
+[workspace]
+members = [
+    "del-msh-pyo3",
+]
+
 [package]
 name = "del-msh"
 version = "0.1.32"

@@ -423,7 +423,7 @@ mod tests {
             nearest(
                 &mut pos_near,
                 p0,
-                crate::kdtree2::TreeBranch {
+                TreeBranch {
                     vtx2xy: &vtx2xy,
                     nodes: &nodes,
                     idx_node: 0,

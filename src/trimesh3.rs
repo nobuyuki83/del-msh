@@ -81,7 +81,7 @@ pub fn to_corner_points<Index, Real>(
 pub fn tri2normal<T, U>(tri2vtx: &[U], vtx2xyz: &[T]) -> Vec<T>
 where
     T: num_traits::Float,
-    U: num_traits::AsPrimitive<usize>,
+    U: AsPrimitive<usize>,
 {
     let mut tri2normal = Vec::<T>::with_capacity(tri2vtx.len());
     for node2vtx in tri2vtx.chunks(3) {

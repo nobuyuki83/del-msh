@@ -1,3 +1,5 @@
+use num_traits::AsPrimitive;
+
 fn parse(s: &str) -> f32 {
     if let Some(i) = s.rfind('-') {
         if i != 0 {
@@ -18,10 +20,15 @@ fn parse(s: &str) -> f32 {
     s.trim().parse::<f32>().ok().unwrap()
 }
 
-pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32>) {
+pub fn load_tri_mesh<P, Index>(path: P) -> (Vec<Index>, Vec<f32>)
+where P: AsRef<std::path::Path>,
+    Index: num_traits::PrimInt + std::str::FromStr + 'static + AsPrimitive<usize>,
+      <Index as std::str::FromStr>::Err: std::fmt::Debug,
+    usize: AsPrimitive<Index>
+{
     let mut vtx2xyz = vec![0f32; 0];
-    let mut vtx2idx = vec![0usize; 0];
-    let mut tri2idx = vec![0usize; 0];
+    let mut vtx2idx = vec![Index::zero(); 0];
+    let mut tri2idx = vec![Index::zero(); 0];
     //
     let file = std::fs::File::open(path).expect("file not found.");
     let reader = std::io::BufReader::new(file);
@@ -32,7 +39,7 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32
             assert_eq!(line.len(), 48);
             let _ = line.get(0..9);
             let idx = line.get(9..24);
-            let idx = idx.unwrap().trim().parse::<usize>().unwrap();
+            let idx = idx.unwrap().trim().parse::<Index>().unwrap();
             let v0 = line.get(24..32).unwrap();
             let v1 = line.get(32..40).unwrap();
             let v2 = line.get(40..48).unwrap();
@@ -52,9 +59,9 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32
             let v0 = line.get(24..32).unwrap().trim();
             let v1 = line.get(32..40).unwrap().trim();
             let v2 = line.get(40..48).unwrap().trim();
-            let v0 = v0.parse::<usize>().unwrap();
-            let v1 = v1.parse::<usize>().unwrap();
-            let v2 = v2.parse::<usize>().unwrap();
+            let v0 = v0.parse::<Index>().unwrap();
+            let v1 = v1.parse::<Index>().unwrap();
+            let v2 = v2.parse::<Index>().unwrap();
             tri2idx.push(v0);
             tri2idx.push(v1);
             tri2idx.push(v2);
@@ -62,15 +69,15 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>>(path: P) -> (Vec<usize>, Vec<f32
     }
     //
     let &num_idx = vtx2idx.iter().max().unwrap();
-    let mut idx2vtx = vec![usize::MAX; num_idx + 1];
+    let mut idx2vtx = vec![Index::max_value(); num_idx.as_() + 1];
     vtx2idx
         .iter()
         .enumerate()
-        .for_each(|(vtx, &idx)| idx2vtx[idx] = vtx);
-    let mut tri2vtx = vec![0usize; tri2idx.len()];
+        .for_each(|(vtx, &idx)| idx2vtx[idx.as_()] = vtx.as_());
+    let mut tri2vtx = vec![Index::zero(); tri2idx.len()];
     tri2vtx
         .iter_mut()
         .zip(tri2idx)
-        .for_each(|(vtx, idx)| *vtx = idx2vtx[idx]);
+        .for_each(|(vtx, idx)| *vtx = idx2vtx[idx.as_()]);
     (tri2vtx, vtx2xyz)
 }

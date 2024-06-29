@@ -339,10 +339,10 @@ fn hoge3() {
     27 167 24 487 -6 660 -33 189 -64 249 -150 289 -46 21 -51 21 -846 21 -440 0 \
     -828 -3 -861 -7 l-62 -7 -32 86 c-54 143 -194 412 -289 554 -479 720 -1201 \
     1178 -2040 1295 -101 14 -496 27 -571 18z";
-    let outline_path = crate::io_svg::svg_outline_path_from_shape(str_path);
+    let outline_path = svg_outline_path_from_shape(str_path);
     // dbg!(&outline_path);
-    let loops = crate::io_svg::svg_loops_from_outline_path(&outline_path);
-    let vtxl2xy = crate::io_svg::polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
+    let loops = svg_loops_from_outline_path(&outline_path);
+    let vtxl2xy = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
     let vtxl2xy =
         crate::vtx2vec::normalize2(&vtxl2xy, &nalgebra::Vector2::<f32>::new(0.5, 0.5), 1.0);
     dbg!(vtxl2xy.len());

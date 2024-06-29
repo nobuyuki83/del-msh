@@ -13,8 +13,8 @@ pub fn from_uniform_mesh_as_points<Index, T>(
 ) -> Vec<T>
 where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
-    usize: num_traits::AsPrimitive<T>,
-    Index: num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<T>,
+    Index: AsPrimitive<usize>,
 {
     assert_eq!(vtx2xyz.len() % num_dim, 0);
     let num_elem = elem2vtx.len() / num_node;
@@ -44,7 +44,7 @@ pub fn from_polygon_mesh_as_points<T>(
 ) -> Vec<T>
 where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
-    usize: num_traits::AsPrimitive<T>,
+    usize: AsPrimitive<T>,
 {
     let mut cog = vec![T::zero(); num_dim];
     let num_elem = elem2idx.len() - 1;

@@ -154,15 +154,15 @@ where Index: num_traits::PrimInt + AsPrimitive<usize>
         return;
     }
     assert_eq!(trimesh3.bvhnodes.len() / 3, trimesh3.aabbs.len() / 6);
-    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() { // leaf node
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        let p0 =
-            crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, trimesh3.tri2vtx[i_tri * 3].as_());
-        let p1 =
-            crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, trimesh3.tri2vtx[i_tri * 3 + 1].as_());
-        let p2 =
-            crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, trimesh3.tri2vtx[i_tri * 3 + 2].as_());
+        let i0 = trimesh3.tri2vtx[i_tri * 3].as_();
+        let i1 = trimesh3.tri2vtx[i_tri * 3 + 1].as_();
+        let i2 = trimesh3.tri2vtx[i_tri * 3 + 2].as_();
+        let p0 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i0);
+        let p1 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i1);
+        let p2 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i2);
         let Some(t) = del_geo::tri3::ray_triangle_intersection_(ray_org, ray_dir, &p0, &p1, &p2)
         else {
             return;
