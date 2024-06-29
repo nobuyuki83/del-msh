@@ -24,5 +24,7 @@ ordered-float = "4.2.1"
 del-geo = "0.1.29"
 
 [workspace.dependencies]
+num-traits = "0.2.19"
+nalgebra = "0.33.0"
 # del-geo = {path="../del-geo"}
 del-geo = "0.1.29"
