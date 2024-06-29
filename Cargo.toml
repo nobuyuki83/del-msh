@@ -17,11 +17,12 @@ description = "mesh utility library for computer graphics research and prototypi
 [dependencies]
 rand = "0.8.5"
 num-traits = "0.2.19"
-nalgebra = "0.32.6"
-ordered-float = "4.2.0"
+nalgebra = "0.33.0"
+ordered-float = "4.2.1"
 
-del-geo = {path="../del-geo"}
-# del-geo = "0.1.28"
+# del-geo = {path="../del-geo"}
+del-geo = "0.1.29"
 
 [workspace.dependencies]
-del-geo = {path="../del-geo"}
+# del-geo = {path="../del-geo"}
+del-geo = "0.1.29"
