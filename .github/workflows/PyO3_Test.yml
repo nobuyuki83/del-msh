@@ -1,4 +1,4 @@
-name: Test
+name: PyO3_Test
 
 on:
   push:

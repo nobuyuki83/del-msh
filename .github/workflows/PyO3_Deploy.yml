@@ -1,4 +1,4 @@
-name: Deploy
+name: PyO3_Deploy
 
 on:
   push:
