@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: |
+        cd del-msh-pyo3
     - uses: messense/maturin-action@v1
       with:
         manylinux: auto
@@ -25,6 +27,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
+    - run: |
+        cd del-msh-pyo3
     - uses: messense/maturin-action@v1
       with:
         command: build
@@ -38,7 +42,9 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3]
+    - run: |
+        cd del-msh-pyo3
     - uses: messense/maturin-action@v1
       with:
         command: build
