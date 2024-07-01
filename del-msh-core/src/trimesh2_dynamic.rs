@@ -803,7 +803,7 @@ fn test_square() {
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, -1., -1.);
             let res = crate::io_obj::save_tri2vtx_vtx2xyz(
-                format!("target/a{}.obj", i_loop),
+                format!("../target/a{}.obj", i_loop),
                 &tri2vtx,
                 &vtx2xy,
                 2,
@@ -813,7 +813,7 @@ fn test_square() {
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
             let res = crate::io_obj::save_tri2vtx_vtx2xyz(
-                format!("target/b{}.obj", i_loop),
+                format!("../target/b{}.obj", i_loop),
                 &tri2vtx,
                 &vtx2xy,
                 2,

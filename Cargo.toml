@@ -1,10 +1,11 @@
 [workspace]
 members = [
     "del-msh-pyo3",
+    "del-msh-core"
 ]
+resolver = "2"
 
-[package]
-name = "del-msh"
+[workspace.package]
 version = "0.1.33"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
@@ -14,16 +15,11 @@ description = "mesh utility library for computer graphics research and prototypi
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-rand = "0.8.5"
-num-traits = "0.2.19"
-nalgebra = "0.33.0"
-ordered-float = "4.2.1"
-# del-geo = {path="../del-geo"}
-del-geo = "0.1.29"
-
 [workspace.dependencies]
+rand = "0.8.5"
+ordered-float = "4.2.1"
 num-traits = "0.2.19"
 nalgebra = "0.33.0"
-del-geo = "0.1.29"
-del-msh = { path = "."}
+del-geo = {path="../del-geo"}
+# del-geo = "0.1.29"
+del-msh = { path = "./del-msh-core", package = "del-msh-core" }
