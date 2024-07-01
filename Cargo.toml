@@ -20,6 +20,6 @@ rand = "0.8.5"
 ordered-float = "4.2.1"
 num-traits = "0.2.19"
 nalgebra = "0.33.0"
-del-geo = {path="../del-geo"}
-# del-geo = "0.1.29"
+# del-geo = {path="../del-geo"}
+del-geo = "0.1.29"
 del-msh = { path = "./del-msh-core", package = "del-msh-core" }
