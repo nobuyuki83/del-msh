@@ -28,9 +28,9 @@ fn vtx2area_from_uniformmesh<'a>(
     let vtx2area = if num_node == 3 {
         // triangle mesh
         if num_dim == 2 {
-            del_msh::trimesh2::vtx2area(elem2vtx, vtx2xyz)
+            del_msh_core::trimesh2::vtx2area(elem2vtx, vtx2xyz)
         } else if num_dim == 3 {
-            del_msh::trimesh3::vtx2area(elem2vtx, vtx2xyz)
+            del_msh_core::trimesh3::vtx2area(elem2vtx, vtx2xyz)
         } else {
             panic!();
         }

@@ -20,7 +20,7 @@ fn edge2vtx_uniform_mesh<'a>(
     num_vtx: usize,
 ) -> Bound<'a, numpy::PyArray2<usize>> {
     // TODO: make this function general to uniform mesh (currently only triangle mesh)
-    let mshline = del_msh::edge2vtx::from_uniform_mesh_with_specific_edges(
+    let mshline = del_msh_core::edge2vtx::from_uniform_mesh_with_specific_edges(
         elem2vtx.as_slice().unwrap(),
         3,
         &[0, 1, 1, 2, 2, 0],
@@ -38,7 +38,7 @@ fn edge2vtx_polygon_mesh<'a>(
     idx2vtx: numpy::PyReadonlyArray1<'a, usize>,
     num_vtx: usize,
 ) -> Bound<'a, numpy::PyArray2<usize>> {
-    let mshline = del_msh::edge2vtx::from_polygon_mesh(
+    let mshline = del_msh_core::edge2vtx::from_polygon_mesh(
         elem2idx.as_slice().unwrap(),
         idx2vtx.as_slice().unwrap(),
         num_vtx,
@@ -60,7 +60,7 @@ fn boundaryedge2vtx_triangle_mesh<'a>(
     // let num_node = tri2vtx.shape()[1];
     // let num_tri = tri2vtx.shape()[0];
     let tri2vtx = tri2vtx.as_slice().unwrap();
-    let (bedge2vtx, tri2tri) = del_msh::trimesh_topology::boundaryedge2vtx(tri2vtx, num_vtx);
+    let (bedge2vtx, tri2tri) = del_msh_core::trimesh_topology::boundaryedge2vtx(tri2vtx, num_vtx);
     (
         numpy::ndarray::Array2::from_shape_vec((bedge2vtx.len() / 2, 2), bedge2vtx)
             .unwrap()

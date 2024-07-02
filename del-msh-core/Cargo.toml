@@ -10,6 +10,9 @@ description.workspace = true
 [dependencies]
 rand = { workspace = true }
 num-traits = { workspace = true }
+anyhow = { workspace = true }
 nalgebra = { workspace = true }
 ordered-float = { workspace =true }
-del-geo = {workspace = true}
+#
+del-geo-core = {workspace = true}
+del-geo-nalgebra = {workspace = true}

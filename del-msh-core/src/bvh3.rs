@@ -10,8 +10,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     aabbs: &mut [Real],
     i_bvhnode: usize,
     bvhnodes: &[Index],
-    elem2vtx: Option<&[Index]>,
-    num_noel: usize,
+    elem2vtx: Option<(&[Index], usize)>,
     vtx2xyz0: &[Real],
     vtx2xyz1: Option<&[Real]>,
 ) where
@@ -29,20 +28,20 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let aabb = if let Some(elem2vtx) = elem2vtx {
+        let aabb = if let Some((elem2vtx, num_noel)) = elem2vtx {
             // element index is provided
-            let aabb0 = del_geo::aabb3::from_list_of_vertices(
+            let aabb0 = del_geo_core::aabb3::from_list_of_vertices(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                 vtx2xyz0,
                 Real::zero(),
             );
             if let Some(vtx2xyz1) = vtx2xyz1 {
-                let aabb1 = del_geo::aabb3::from_list_of_vertices(
+                let aabb1 = del_geo_core::aabb3::from_list_of_vertices(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                     vtx2xyz1,
                     Real::zero(),
                 );
-                del_geo::aabb3::from_two_aabbs(&aabb0, &aabb1)
+                del_geo_core::aabb3::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0
             }
@@ -64,7 +63,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
                     vtx2xyz1[i_elem * 3 + 1],
                     vtx2xyz1[i_elem * 3 + 2],
                 ];
-                del_geo::aabb3::from_two_aabbs(&aabb0, &aabb1)
+                del_geo_core::aabb3::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0
             }
@@ -82,7 +81,6 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
             i_bvhnode_child0,
             bvhnodes,
             elem2vtx,
-            num_noel,
             vtx2xyz0,
             vtx2xyz1,
         );
@@ -92,11 +90,10 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
             i_bvhnode_child1,
             bvhnodes,
             elem2vtx,
-            num_noel,
             vtx2xyz0,
             vtx2xyz1,
         );
-        let aabb = del_geo::aabb3::from_two_aabbs(
+        let aabb = del_geo_core::aabb3::from_two_aabbs(
             (&aabbs[i_bvhnode_child0 * 6..(i_bvhnode_child0 + 1) * 6])
                 .try_into()
                 .unwrap(),
@@ -111,8 +108,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
 pub fn aabbs_from_uniform_mesh<Index, Real>(
     i_bvhnode: usize,
     bvhnodes: &[Index],
-    elem2vtx: Option<&[Index]>,
-    num_noel: usize,
+    elem2vtx: Option<(&[Index], usize)>,
     vtx2xyz0: &[Real],
     vtx2xyz1: Option<&[Real]>,
 ) -> Vec<Real>
@@ -123,7 +119,7 @@ where
     let num_bvhnode = bvhnodes.len() / 3;
     let mut aabbs = vec![Real::zero(); num_bvhnode * 6];
     update_aabbs_for_uniform_mesh::<Index, Real>(
-        &mut aabbs, i_bvhnode, bvhnodes, elem2vtx, num_noel, vtx2xyz0, vtx2xyz1,
+        &mut aabbs, i_bvhnode, bvhnodes, elem2vtx, vtx2xyz0, vtx2xyz1,
     );
     aabbs
 }
@@ -144,7 +140,7 @@ pub fn search_intersection_ray<Index>(
 ) where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
-    if !del_geo::aabb::is_intersect_ray::<3, 6>(
+    if !del_geo_core::aabb::is_intersect_ray::<3, 6>(
         trimesh3.aabbs[i_bvhnode * 6..i_bvhnode * 6 + 6]
             .try_into()
             .unwrap(),
@@ -164,7 +160,8 @@ pub fn search_intersection_ray<Index>(
         let p0 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i0);
         let p1 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i1);
         let p2 = crate::vtx2xyz::to_array3(trimesh3.vtx2xyz, i2);
-        let Some(t) = del_geo::tri3::ray_triangle_intersection_(ray_org, ray_dir, &p0, &p1, &p2)
+        let Some(t) =
+            del_geo_core::tri3::ray_triangle_intersection_(ray_org, ray_dir, &p0, &p1, &p2)
         else {
             return;
         };

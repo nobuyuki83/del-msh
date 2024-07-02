@@ -22,7 +22,7 @@ fn first_intersection_ray_meshtri3<'a>(
     vtx2xyz: PyReadonlyArray2<'a, f32>,
     tri2vtx: PyReadonlyArray2<'a, usize>,
 ) -> (Bound<'a, PyArray1<f32>>, i64) {
-    let res = del_msh::trimesh3_search_bruteforce::first_intersection_ray(
+    let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
         src.as_slice().unwrap().try_into().unwrap(),
         dir.as_slice().unwrap().try_into().unwrap(),
         vtx2xyz.as_slice().unwrap(),
@@ -47,7 +47,7 @@ fn pick_vertex_meshtri3<'a>(
     src: PyReadonlyArray1<'a, f32>,
     dir: PyReadonlyArray1<'a, f32>,
 ) -> i64 {
-    let res = del_msh::trimesh3_search_bruteforce::first_intersection_ray(
+    let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
         src.as_slice().unwrap().try_into().unwrap(),
         dir.as_slice().unwrap().try_into().unwrap(),
         vtx2xyz.as_slice().unwrap(),

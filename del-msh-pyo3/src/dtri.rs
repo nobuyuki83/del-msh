@@ -25,7 +25,7 @@ pub fn tesselation2d<'a>(
     //
     if resolution_edge > 0. {
         // resample edge edge
-        del_msh::polyloop::resample_multiple_loops_remain_original_vtxs(
+        del_msh_core::polyloop::resample_multiple_loops_remain_original_vtxs(
             &mut loop2idx,
             &mut idx2vtx,
             &mut vtx2xy,
@@ -34,7 +34,7 @@ pub fn tesselation2d<'a>(
     }
     //
     let (mut tri2pnt, mut tri2tri, mut pnt2tri) =
-        del_msh::trimesh2_dynamic::triangulate_single_connected_shape(
+        del_msh_core::trimesh2_dynamic::triangulate_single_connected_shape(
             &mut vtx2xy,
             &loop2idx,
             &idx2vtx,
@@ -44,8 +44,8 @@ pub fn tesselation2d<'a>(
         let nvtx = vtx2xy.len();
         let mut vtx2flag = vec![0; nvtx];
         let mut tri2flag = vec![0; tri2pnt.len() / 3];
-        del_msh::trimesh2_dynamic::add_points_uniformly(
-            del_msh::trimesh2_dynamic::MeshForTopologicalChange {
+        del_msh_core::trimesh2_dynamic::add_points_uniformly(
+            del_msh_core::trimesh2_dynamic::MeshForTopologicalChange {
                 tri2vtx: &mut tri2pnt,
                 tri2tri: &mut tri2tri,
                 vtx2tri: &mut pnt2tri,

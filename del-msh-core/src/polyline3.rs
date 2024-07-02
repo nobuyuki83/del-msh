@@ -31,7 +31,7 @@ where
     {
         // first segment
         let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).into_owned();
-        let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
+        let (x, _) = del_geo_nalgebra::vec3::frame_from_z_vector(v01);
         vtx2bin.column_mut(0).copy_from(&x);
     }
     for iseg1 in 1..num_vtx - 1 {
@@ -41,7 +41,7 @@ where
         let iseg0 = iseg1 - 1;
         let v01 = to_navec3(vtx2xyz, iv1) - to_navec3(vtx2xyz, iv0);
         let v12 = to_navec3(vtx2xyz, iv2) - to_navec3(vtx2xyz, iv1);
-        let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
+        let rot = del_geo_nalgebra::mat3::minimum_rotation_matrix(v01, v12);
         let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
         let b12: nalgebra::Vector3<T> = rot * b01;
         vtx2bin.column_mut(iseg1).copy_from(&b12);
@@ -280,7 +280,8 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
                 for j_seg in poly2vtx[j_poly]..poly2vtx[j_poly + 1] - 1 {
                     let pj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg);
                     let qj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg + 1);
-                    let (dist, ri, rj) = del_geo::edge3::nearest_to_edge3(&pi, &qi, &pj, &qj);
+                    let (dist, ri, rj) =
+                        del_geo_nalgebra::edge3::nearest_to_edge3(&pi, &qi, &pj, &qj);
                     if dist > dist0 {
                         continue;
                     }
@@ -332,4 +333,21 @@ where
         }
     }
     vtx2xyz1
+}
+
+pub fn length<T>(vtx2xyz: &[T]) -> T
+where
+    T: num_traits::Float + std::ops::AddAssign + std::fmt::Debug,
+{
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut len = T::zero();
+    for i_vtx in 0..num_vtx - 1 {
+        let j_vtx = i_vtx + 1;
+        let elen = del_geo_core::edge3::length(
+            vtx2xyz[i_vtx * 3..i_vtx * 3 + 3].try_into().unwrap(),
+            vtx2xyz[j_vtx * 3..j_vtx * 3 + 3].try_into().unwrap(),
+        );
+        len += elen;
+    }
+    len
 }

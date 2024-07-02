@@ -31,7 +31,7 @@ where
         let ip1 = (ip0 + 1) % np;
         let p0 = &vtx2xyz[ip0 * N..ip0 * N + N];
         let p1 = &vtx2xyz[ip1 * N..ip1 * N + N];
-        len += del_geo::edge::length_::<T, N>(p0, p1);
+        len += del_geo_core::edge::length::<T, N>(p0, p1);
     }
     len
 }
@@ -46,7 +46,7 @@ where
         let ip1 = (ip0 + 1) % np;
         let p0 = &vtx2xyz[ip0 * N..ip0 * N + N];
         let p1 = &vtx2xyz[ip1 * N..ip1 * N + N];
-        edge2length.push(del_geo::edge::length_::<T, N>(p0, p1));
+        edge2length.push(del_geo_core::edge::length::<T, N>(p0, p1));
     }
     edge2length
 }
@@ -86,7 +86,8 @@ fn test_cog() {
         .add_scalar_mut(y0);
     let cog = cog_as_edges::<f32, 2>(vtx2xy.as_slice());
     assert!(
-        del_geo::edge::length_::<f32, 2>(&[x0, y0], cog.as_slice().try_into().unwrap()) < 1.0e-5
+        del_geo_core::edge::length::<f32, 2>(&[x0, y0], cog.as_slice().try_into().unwrap())
+            < 1.0e-5
     );
 }
 

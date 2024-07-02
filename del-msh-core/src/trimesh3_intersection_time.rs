@@ -1,4 +1,4 @@
-use del_geo::ccd::FaceVertex;
+use del_geo_nalgebra::ccd::FaceVertex;
 use num_traits::AsPrimitive;
 
 #[allow(clippy::identity_op)]
@@ -18,7 +18,7 @@ pub fn edge_edge_between_bvh_branches<T>(
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
     // trim branch
-    if !del_geo::aabb3::is_intersect(
+    if !del_geo_core::aabb3::is_intersect(
         (&aabbs[ibvh0 * 6..(ibvh0 + 1) * 6]).try_into().unwrap(),
         (&aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]).try_into().unwrap(),
     ) {
@@ -128,14 +128,14 @@ pub fn edge_edge_between_bvh_branches<T>(
         let a1e = to_navec3(vtx2xyz1, i1);
         let b0e = to_navec3(vtx2xyz1, j0);
         let b1e = to_navec3(vtx2xyz1, j1);
-        let t = del_geo::ccd::intersecting_time_ee(
-            del_geo::ccd::EdgeEdge {
+        let t = del_geo_nalgebra::ccd::intersecting_time_ee(
+            del_geo_nalgebra::ccd::EdgeEdge {
                 a0: &a0s,
                 a1: &a1s,
                 b0: &b0s,
                 b1: &b1s,
             },
-            del_geo::ccd::EdgeEdge {
+            del_geo_nalgebra::ccd::EdgeEdge {
                 a0: &a0e,
                 a1: &a1e,
                 b0: &b0e,
@@ -243,14 +243,14 @@ where
             let a1e = to_navec3(vtx2xyz1, i1);
             let b0e = to_navec3(vtx2xyz1, j0);
             let b1e = to_navec3(vtx2xyz1, j1);
-            let t = del_geo::ccd::intersecting_time_ee(
-                del_geo::ccd::EdgeEdge {
+            let t = del_geo_nalgebra::ccd::intersecting_time_ee(
+                del_geo_nalgebra::ccd::EdgeEdge {
                     a0: &a0s,
                     a1: &a1s,
                     b0: &b0s,
                     b1: &b1s,
                 },
-                del_geo::ccd::EdgeEdge {
+                del_geo_nalgebra::ccd::EdgeEdge {
                     a0: &a0e,
                     a1: &a1e,
                     b0: &b0e,
@@ -284,7 +284,7 @@ where
             let f1e = to_navec3(vtx2xyz1, i1);
             let f2e = to_navec3(vtx2xyz1, i2);
             let v0e = to_navec3(vtx2xyz1, j_vtx);
-            let t = del_geo::ccd::intersecting_time_fv(
+            let t = del_geo_nalgebra::ccd::intersecting_time_fv(
                 FaceVertex {
                     f0: &f0s,
                     f1: &f1s,

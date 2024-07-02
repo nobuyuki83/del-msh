@@ -23,13 +23,13 @@ where
             let i1 = tri2vtx[idx_tri * 3 + 1];
             let i2 = tri2vtx[idx_tri * 3 + 2];
             if num_dim == 2 {
-                del_geo::tri2::area_(
+                del_geo_core::tri2::area(
                     &vtx2xyz[i0 * 2 + 0..i0 * 2 + 2].try_into().unwrap(),
                     &vtx2xyz[i1 * 2 + 0..i1 * 2 + 2].try_into().unwrap(),
                     &vtx2xyz[i2 * 2 + 0..i2 * 2 + 2].try_into().unwrap(),
                 )
             } else {
-                del_geo::tri3::area_(
+                del_geo_core::tri3::area(
                     &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
                     &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
                     &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),

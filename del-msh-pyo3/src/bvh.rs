@@ -35,7 +35,7 @@ fn build_bvh_topology_topdown<'a>(
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     // change this to uniform mesh
-    let bvhnodes = del_msh::bvh3_topology_topdown::from_triangle_mesh(tri2vtx, vtx2xyz);
+    let bvhnodes = del_msh_core::bvh3_topology_topdown::from_triangle_mesh(tri2vtx, vtx2xyz);
     let bvhnodes = numpy::PyArray1::<usize>::from_slice_bound(_py, &bvhnodes);
     bvhnodes.reshape((bvhnodes.len() / 3, 3)).unwrap()
 }
@@ -54,26 +54,26 @@ fn build_bvh_topology_morton<'a>(
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
     if num_dim == 3 {
-        del_msh::bvh_topology_morton::sorted_morten_code3(
+        del_msh_core::bvh_topology_morton::sorted_morten_code3(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
             vtx2xyz,
-            &del_geo::mat4::identity(),
+            &del_geo_core::mat4::identity(),
         );
     } else if num_dim == 2 {
-        del_msh::bvh_topology_morton::sorted_morten_code2(
+        del_msh_core::bvh_topology_morton::sorted_morten_code2(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
             vtx2xyz,
-            &del_geo::mat3::identity(),
+            &del_geo_core::mat3::identity(),
         );
     }
     let bvhnodes = numpy::PyArray2::<usize>::zeros_bound(_py, (num_vtx * 2 - 1, 3), false);
     {
         let bvhnodes_slice = unsafe { bvhnodes.as_slice_mut().unwrap() };
-        del_msh::bvh_topology_morton::bvhnodes_morton(bvhnodes_slice, &idx2vtx, &idx2morton);
+        del_msh_core::bvh_topology_morton::bvhnodes_morton(bvhnodes_slice, &idx2vtx, &idx2morton);
     }
     bvhnodes
 }
@@ -123,11 +123,11 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     assert_eq!(bvhnodes.shape()[0], aabbs.shape()[0]);
     assert_eq!(bvhnodes.shape()[1], 3);
     assert_eq!(aabbs.shape()[1], 6);
-    let num_noel = elem2vtx.shape()[1];
     let aabbs = aabbs.as_slice_mut().unwrap();
     let bvhnodes = bvhnodes.as_slice().unwrap();
     let elem2vtx = if elem2vtx.len() != 0 {
-        Some(elem2vtx.as_slice().unwrap())
+        let num_noel = elem2vtx.shape()[1];
+        Some((elem2vtx.as_slice().unwrap(), num_noel))
     } else {
         None
     };
@@ -137,12 +137,11 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
         None
     };
     let vtx2xyz0 = vtx2xyz0.as_slice().unwrap();
-    del_msh::bvh3::update_aabbs_for_uniform_mesh(
+    del_msh_core::bvh3::update_aabbs_for_uniform_mesh(
         aabbs,
         i_bvhnode_root,
         bvhnodes,
         elem2vtx,
-        num_noel,
         vtx2xyz0,
         vtx2xyz1,
     );

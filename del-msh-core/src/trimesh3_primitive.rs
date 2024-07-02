@@ -76,7 +76,7 @@ where
 {
     let len = (p1 - p0).norm();
     let (tri2vtx, vtx2xyz0) = cylinder_open_end_yup(ndiv_circumference, 1, r, len, false);
-    let rot = del_geo::mat3::minimum_rotation_matrix(
+    let rot = del_geo_nalgebra::mat3::minimum_rotation_matrix(
         nalgebra::Vector3::<Real>::new(Real::zero(), Real::one(), Real::zero()),
         (p1 - p0).normalize(),
     );
@@ -282,7 +282,7 @@ where
     let len = (p1 - p0).norm();
     let (tri2vtx, mut vtx2xyz) = capsule_yup(rad, len, ndiv_circum, ndiv_longtitude, ndiv_length);
     let q2 = nalgebra::Vector3::<T>::new(T::zero(), len * 0.5_f64.as_(), T::zero());
-    let mat = del_geo::mat3::minimum_rotation_matrix(
+    let mat = del_geo_nalgebra::mat3::minimum_rotation_matrix(
         nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
         (p1 - p0).normalize(),
     );
@@ -577,7 +577,7 @@ where
     let p1 = nalgebra::Vector3::<T>::from_column_slice(p1);
     let len = (p1 - p0).norm();
     let (tri2vtx, mut vtx2xyz) = arrow_yup(num_division_circumference);
-    let mat = del_geo::mat3::minimum_rotation_matrix(
+    let mat = del_geo_nalgebra::mat3::minimum_rotation_matrix(
         nalgebra::Vector3::<T>::new(T::zero(), T::one(), T::zero()),
         (p1 - p0).normalize(),
     )

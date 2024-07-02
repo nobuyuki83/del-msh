@@ -23,7 +23,7 @@ pub fn extend_trimesh3<'a>(
 ) -> Bound<'a, PyArray2<f64>> {
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let vtx2nrm = del_msh::trimesh3::vtx2normal(tri2vtx, vtx2xyz);
+    let vtx2nrm = del_msh_core::trimesh3::vtx2normal(tri2vtx, vtx2xyz);
     let num_vtx = vtx2xyz.len() / 3;
     let mut a = vec![0_f64; num_vtx * 3];
     for i_vtx in 0..num_vtx {
@@ -33,7 +33,7 @@ pub fn extend_trimesh3<'a>(
             vtx2xyz[i_vtx * 3 + 2] + step * vtx2nrm[i_vtx * 3 + 2],
         ];
         for _ in 1..niter {
-            p0 = del_msh::trimesh3::extend_avoid_intersection(tri2vtx, vtx2xyz, &p0, step);
+            p0 = del_msh_core::trimesh3::extend_avoid_intersection(tri2vtx, vtx2xyz, &p0, step);
         }
         a[i_vtx * 3 + 0] = p0[0];
         a[i_vtx * 3 + 1] = p0[1];
@@ -52,8 +52,8 @@ pub fn extend_polyloop3<'a>(
     niter: usize,
 ) -> (Bound<'a, PyArray2<usize>>, Bound<'a, PyArray2<f64>>) {
     assert_eq!(lpvtx2xyz.shape()[1], 3);
-    let lpvtx2bin = del_msh::polyloop3::smooth_frame(lpvtx2xyz.as_slice().unwrap());
-    let (tri2vtx, vtx2xyz) = del_msh::polyloop3::tube_mesh_avoid_intersection(
+    let lpvtx2bin = del_msh_core::polyloop3::smooth_frame(lpvtx2xyz.as_slice().unwrap());
+    let (tri2vtx, vtx2xyz) = del_msh_core::polyloop3::tube_mesh_avoid_intersection(
         lpvtx2xyz.as_slice().unwrap(),
         &lpvtx2bin,
         step,

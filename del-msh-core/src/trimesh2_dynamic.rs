@@ -64,17 +64,17 @@ pub fn add_points_to_mesh<T>(
     let po_add = vtx2xy[i_vtx];
     for i_tri in 0..tri2vtx.len() {
         let areas = [
-            del_geo::tri2::area(
+            del_geo_nalgebra::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3 + 1]],
                 &vtx2xy[tri2vtx[i_tri * 3 + 2]],
             ),
-            del_geo::tri2::area(
+            del_geo_nalgebra::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3 + 2]],
                 &vtx2xy[tri2vtx[i_tri * 3]],
             ),
-            del_geo::tri2::area(
+            del_geo_nalgebra::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3]],
                 &vtx2xy[tri2vtx[i_tri * 3 + 1]],
@@ -132,22 +132,22 @@ where
     let pi0 = vtx2xy[tri2vtx[i_tri0 * 3 + i_node0]];
     let pi1 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]];
     let pi2 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 2) % 3]];
-    let a_i0_i1_i2 = del_geo::tri2::area(&pi0, &pi1, &pi2);
-    let a_j0_i2_i1 = del_geo::tri2::area(&pj0, &pi2, &pi1);
+    let a_i0_i1_i2 = del_geo_nalgebra::tri2::area(&pi0, &pi1, &pi2);
+    let a_j0_i2_i1 = del_geo_nalgebra::tri2::area(&pj0, &pi2, &pi1);
     assert!(a_i0_i1_i2 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
     assert!(a_j0_i2_i1 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
     let area_diamond = a_i0_i1_i2 + a_j0_i2_i1;
-    let a_i0_i1_j0 = del_geo::tri2::area(&pi0, &pi1, &pj0);
-    let a_i0_j0_i2 = del_geo::tri2::area(&pi0, &pj0, &pi2);
+    let a_i0_i1_j0 = del_geo_nalgebra::tri2::area(&pi0, &pi1, &pj0);
+    let a_i0_j0_i2 = del_geo_nalgebra::tri2::area(&pi0, &pj0, &pi2);
     if a_i0_i1_j0 < area_diamond * 1.0e-3f64.as_() {
         return false;
     }
     if a_i0_j0_i2 < area_diamond * 1.0e-3f64.as_() {
         return false;
     }
-    let cc = del_geo::tri2::circumcenter(&pi0, &pi1, &pi2);
-    let rad = del_geo::edge2::length_squared(&cc, &pi0);
-    let dist = del_geo::edge2::length_squared(&cc, &pj0);
+    let cc = del_geo_nalgebra::tri2::circumcenter(&pi0, &pi1, &pi2);
+    let rad = del_geo_nalgebra::edge2::length_squared(&cc, &pi0);
+    let dist = del_geo_nalgebra::edge2::length_squared(&cc, &pj0);
     if dist >= rad {
         return false;
     }
@@ -249,13 +249,13 @@ where
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
-            let area0 = del_geo::tri2::area(
+            let area0 = del_geo_nalgebra::tri2::area(
                 &vtx2xy[ipo0],
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > -(1.0e-20_f64.as_()) {
-                let area1 = del_geo::tri2::area(
+                let area1 = del_geo_nalgebra::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
@@ -301,13 +301,13 @@ where
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
-            let area0 = del_geo::tri2::area(
+            let area0 = del_geo_nalgebra::tri2::area(
                 &vtx2xy[ipo0],
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > (-1.0e-20_f64).as_() {
-                let area1 = del_geo::tri2::area(
+                let area1 = del_geo_nalgebra::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
@@ -393,14 +393,14 @@ pub fn enforce_edge<T>(
             assert!(ratio > (-1.0e-20_f64).as_());
             // assert!( ratio < 1_f64.as_() + 1.0e-20_f64.as_());
             assert!(
-                del_geo::tri2::area(
+                del_geo_nalgebra::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i0_node]],
                     &vtx2xy[i1_vtx]
                 ) > 1.0e-20_f64.as_()
             );
             assert!(
-                del_geo::tri2::area(
+                del_geo_nalgebra::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[i1_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]
@@ -489,7 +489,7 @@ where
         vec![npo, npo + 1, npo + 2]
     };
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) = {
-        let aabb = del_geo::aabb2::from_vtx2vec(vtx2xy);
+        let aabb = del_geo_nalgebra::aabb2::from_vtx2vec(vtx2xy);
         make_super_triangle(
             vtx2xy,
             aabb[0..2].try_into().unwrap(),

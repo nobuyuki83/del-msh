@@ -43,7 +43,7 @@ where
     } // return  if sharing edge, identical triangle
     use crate::vtx2xyz::to_navec3;
     if icnt0 + icnt1 + icnt2 == 0 {
-        del_geo::tri3::is_intersection_tri3(
+        del_geo_nalgebra::tri3::is_intersection_tri3(
             &to_navec3(vtx2xyz, i0),
             &to_navec3(vtx2xyz, i1),
             &to_navec3(vtx2xyz, i2),
@@ -87,7 +87,7 @@ where
         let node2vtx_i = [i0, i1, i2];
         let node2vtx_j = [j0, j1, j2];
         assert_eq!(node2vtx_i[is], node2vtx_j[js]);
-        del_geo::tri3::is_intersection_tri3(
+        del_geo_nalgebra::tri3::is_intersection_tri3(
             &to_navec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
             &to_navec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
             &to_navec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
@@ -112,7 +112,7 @@ pub fn search_with_bvh_between_branches<T>(
 {
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
-    if !del_geo::aabb3::is_intersect(
+    if !del_geo_core::aabb3::is_intersect(
         (&aabbs[ibvh0 * 6..(ibvh0 + 1) * 6]).try_into().unwrap(),
         (&aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]).try_into().unwrap(),
     ) {
@@ -243,8 +243,7 @@ mod tests {
             &mut aabb,
             0,
             &bvhnodes,
-            Some(&tri2vtx),
-            3,
+            Some((&tri2vtx, 3)),
             &vtx2xyz,
             None,
         );

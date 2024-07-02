@@ -33,7 +33,7 @@ pub fn load_wavefront_obj(
     PyObject,
     PyObject,
 ) {
-    let mut obj = del_msh::io_obj::WavefrontObj::<usize, f32>::new();
+    let mut obj = del_msh_core::io_obj::WavefrontObj::<usize, f32>::new();
     if let Err(str) = obj.load(&path_file) {
         dbg!(str);
         panic!();
@@ -65,7 +65,7 @@ pub fn load_wavefront_obj_as_triangle_mesh(
     py: Python,
     path_file: String,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
-    let Ok((tri2vtx, vtx2xyz)) = del_msh::io_obj::load_tri_mesh(path_file, None) else {
+    let Ok((tri2vtx, vtx2xyz)) = del_msh_core::io_obj::load_tri_mesh(path_file, None) else {
         todo!()
     };
     (
@@ -83,7 +83,7 @@ pub fn load_nastran_as_triangle_mesh(
     py: Python,
     path_file: String,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
-    let (tri2vtx, vtx2xyz) = del_msh::io_nas::load_tri_mesh(path_file);
+    let (tri2vtx, vtx2xyz) = del_msh_core::io_nas::load_tri_mesh(path_file);
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
@@ -99,7 +99,7 @@ pub fn load_off_as_triangle_mesh(
     py: Python,
     path_file: String,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
-    let (tri2vtx, vtx2xyz) = del_msh::io_off::load_as_tri_mesh(path_file);
+    let (tri2vtx, vtx2xyz) = del_msh_core::io_off::load_as_tri_mesh(path_file);
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
@@ -120,5 +120,5 @@ pub fn save_wavefront_obj_for_uniform_mesh<'a>(
     let num_dim = vtx2xyz.shape()[1];
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let _ = del_msh::io_obj::save_tri2vtx_vtx2xyz(path_file, tri2vtx, vtx2xyz, num_dim);
+    let _ = del_msh_core::io_obj::save_tri2vtx_vtx2xyz(path_file, tri2vtx, vtx2xyz, num_dim);
 }

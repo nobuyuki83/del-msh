@@ -54,11 +54,11 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         assert!(tri2vtx.is_c_contiguous());
         assert!(vtx2xyz.is_c_contiguous());
         let tri2area = match vtx2xyz.shape()[1] {
-            2 => del_msh::trimesh2::tri2area(
+            2 => del_msh_core::trimesh2::tri2area(
                 tri2vtx.as_slice().unwrap(),
                 vtx2xyz.as_slice().unwrap(),
             ),
-            3 => del_msh::trimesh3::tri2area(
+            3 => del_msh_core::trimesh3::tri2area(
                 tri2vtx.as_slice().unwrap(),
                 vtx2xyz.as_slice().unwrap(),
             ),
@@ -81,7 +81,7 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         assert!(vtx2xyz.is_c_contiguous());
         let num_dim = vtx2xyz.shape()[1];
         let tri2cc = match num_dim {
-            2 => del_msh::trimesh2::tri2circumcenter(
+            2 => del_msh_core::trimesh2::tri2circumcenter(
                 tri2vtx.as_slice().unwrap(),
                 vtx2xyz.as_slice().unwrap(),
             ),

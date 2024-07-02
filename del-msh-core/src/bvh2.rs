@@ -30,18 +30,18 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
         let i_elem: usize = i_bvhnode_child0.as_();
         let aabb = if let Some(elem2vtx) = elem2vtx {
             // element index is provided
-            let aabb0 = del_geo::aabb2::from_list_of_vertices(
+            let aabb0 = del_geo_core::aabb2::from_list_of_vertices(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                 vtx2xyz0,
                 Real::zero(),
             );
             if let Some(vtx2xyz1) = vtx2xyz1 {
-                let aabb1 = del_geo::aabb2::from_list_of_vertices(
+                let aabb1 = del_geo_core::aabb2::from_list_of_vertices(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                     vtx2xyz1,
                     Real::zero(),
                 );
-                del_geo::aabb2::from_two_aabbs(&aabb0, &aabb1)
+                del_geo_core::aabb2::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0
             }
@@ -60,7 +60,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
                     vtx2xyz1[i_elem * 2 + 0],
                     vtx2xyz1[i_elem * 2 + 1],
                 ];
-                del_geo::aabb2::from_two_aabbs(&aabb0, &aabb1)
+                del_geo_core::aabb2::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0
             }
@@ -92,7 +92,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
             vtx2xyz0,
             vtx2xyz1,
         );
-        let aabb = del_geo::aabb2::from_two_aabbs(
+        let aabb = del_geo_core::aabb2::from_two_aabbs(
             (&aabbs[i_bvhnode_child0 * 4..(i_bvhnode_child0 + 1) * 4])
                 .try_into()
                 .unwrap(),
@@ -137,7 +137,7 @@ pub fn search_including_point<Real, Index>(
     Index: AsPrimitive<usize> + num_traits::PrimInt,
     usize: AsPrimitive<Index>,
 {
-    if !del_geo::aabb::is_include_point::<Real, 2, 4>(
+    if !del_geo_core::aabb::is_include_point::<Real, 2, 4>(
         aabbs[i_bvhnode * 4..(i_bvhnode + 1) * 4]
             .try_into()
             .unwrap(),
@@ -152,7 +152,8 @@ pub fn search_including_point<Real, Index>(
         let p0 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3]);
         let p1 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3 + 1]);
         let p2 = crate::vtx2xyz::to_array2(vtx2xy, tri2vtx[i_tri * 3 + 2]);
-        let Some((r0, r1)) = del_geo::tri2::is_inside(&p0, &p1, &p2, point, Real::one()) else {
+        let Some((r0, r1)) = del_geo_core::tri2::is_inside(&p0, &p1, &p2, point, Real::one())
+        else {
             return;
         };
         hits.push((i_tri.as_(), r0, r1));

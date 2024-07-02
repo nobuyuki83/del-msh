@@ -16,10 +16,14 @@ description = "mesh utility library for computer graphics research and prototypi
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
+anyhow = "1.0.86"
 rand = "0.8.5"
 ordered-float = "4.2.1"
 num-traits = "0.2.19"
 nalgebra = "0.33.0"
-# del-geo = { path="../del-geo"}
-del-geo = "0.1.29"
-del-msh = { path = "./del-msh-core", package = "del-msh-core" }
+#
+# del-geo-core = { version = "0.1.29", path="../del-geo/del-geo-core"}
+# del-geo-nalgebra = { version = "0.1.29", path="../del-geo/del-geo-nalgebra"}
+#
+del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git" }
+del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git" }

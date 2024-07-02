@@ -33,7 +33,7 @@ fn dominant_direction_aabb(
     remaining_elems: &[usize],
     elem2center: &[f32],
 ) -> (nalgebra::Vector3<f32>, nalgebra::Vector3<f32>) {
-    let aabb = del_geo::aabb3::from_list_of_vertices(remaining_elems, elem2center, 1.0e-6);
+    let aabb = del_geo_core::aabb3::from_list_of_vertices(remaining_elems, elem2center, 1.0e-6);
     let lenx = aabb[3] - aabb[0];
     let leny = aabb[4] - aabb[1];
     let lenz = aabb[5] - aabb[2];

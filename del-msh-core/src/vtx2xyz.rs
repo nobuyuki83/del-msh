@@ -97,10 +97,10 @@ where
     Real: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<Real>,
 {
-    let aabb = del_geo::aabb3::from_vtx2xyz(vtx2xyz, Real::zero());
-    let cnt = del_geo::aabb3::center(&aabb);
+    let aabb = del_geo_core::aabb3::from_vtx2xyz(vtx2xyz, Real::zero());
+    let cnt = del_geo_core::aabb3::center(&aabb);
     let transl = [-cnt[0], -cnt[1], -cnt[2]];
-    let max_edge_size = del_geo::aabb3::max_edge_size(&aabb);
+    let max_edge_size = del_geo_core::aabb3::max_edge_size(&aabb);
     let scale = Real::one() / max_edge_size;
     let mut vtx2xyz_out = Vec::from(vtx2xyz);
     translate_and_scale(&mut vtx2xyz_out, vtx2xyz, &transl, scale);

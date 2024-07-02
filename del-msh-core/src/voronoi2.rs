@@ -99,7 +99,7 @@ pub fn cut_polygon_by_line(
     // negative->inside
     let depth = |p: &nalgebra::Vector2<f32>| (p - line_s).dot(line_n);
     let (vtxnews, is_inside) = {
-        let line_t = del_geo::vec2::rotate90(line_n);
+        let line_t = del_geo_nalgebra::vec2::rotate90(line_n);
         let mut is_inside = false;
         let mut vtxnews: Vec<(f32, usize, nalgebra::Vector2<f32>, [usize; 4])> = vec![];
         for i0_vtx in 0..cell.vtx2xy.len() {
@@ -291,16 +291,16 @@ pub fn position_of_voronoi_vertex(
         let l2 = crate::vtx2xyz::to_navec2(vtxl2xy, i2_loop);
         let s1 = &crate::vtx2xyz::to_navec2(site2xy, info[1]);
         let s2 = &crate::vtx2xyz::to_navec2(site2xy, info[2]);
-        return del_geo::line2::intersection(
+        return del_geo_nalgebra::line2::intersection(
             &l1,
             &(l2 - l1),
             &((s1 + s2) * 0.5),
-            &del_geo::vec2::rotate90(&(s2 - s1)),
+            &del_geo_nalgebra::vec2::rotate90(&(s2 - s1)),
         );
     } else {
         // three points
         assert_eq!(info[0], usize::MAX);
-        return del_geo::tri2::circumcenter(
+        return del_geo_nalgebra::tri2::circumcenter(
             &crate::vtx2xyz::to_navec2(site2xy, info[1]),
             &crate::vtx2xyz::to_navec2(site2xy, info[2]),
             &crate::vtx2xyz::to_navec2(site2xy, info[3]),

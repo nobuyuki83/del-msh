@@ -18,7 +18,7 @@ where
         let p0 = &vtx2xy[i0 * 2..i0 * 2 + 2].try_into().unwrap();
         let p1 = &vtx2xy[i1 * 2..i1 * 2 + 2].try_into().unwrap();
         let p2 = &vtx2xy[i2 * 2..i2 * 2 + 2].try_into().unwrap();
-        let a0 = del_geo::tri2::area_(p0, p1, p2) * one_third;
+        let a0 = del_geo_core::tri2::area(p0, p1, p2) * one_third;
         vtx2area[i0] += a0;
         vtx2area[i1] += a0;
         vtx2area[i2] += a0;
@@ -36,7 +36,7 @@ pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
         let p0 = vtx2xyz[i0 * 2..i0 * 2 + 2].try_into().unwrap();
         let p1 = vtx2xyz[i1 * 2..i1 * 2 + 2].try_into().unwrap();
         let p2 = vtx2xyz[i2 * 2..i2 * 2 + 2].try_into().unwrap();
-        let area = del_geo::tri2::area_(p0, p1, p2);
+        let area = del_geo_core::tri2::area(p0, p1, p2);
         tri2area.push(area);
     }
     tri2area
@@ -49,7 +49,7 @@ pub fn tri2circumcenter(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
         let p0 = nalgebra::Vector2::<f32>::from_row_slice(&vtx2xyz[i0 * 2..i0 * 2 + 2]);
         let p1 = nalgebra::Vector2::<f32>::from_row_slice(&vtx2xyz[i1 * 2..i1 * 2 + 2]);
         let p2 = nalgebra::Vector2::<f32>::from_row_slice(&vtx2xyz[i2 * 2..i2 * 2 + 2]);
-        let cc = del_geo::tri2::circumcenter(&p0, &p1, &p2);
+        let cc = del_geo_nalgebra::tri2::circumcenter(&p0, &p1, &p2);
         tri2cc.push(cc[0]);
         tri2cc.push(cc[1]);
     }
@@ -70,7 +70,7 @@ where
         let p0 = vtx2xy[i0 * 2..i0 * 2 + 2].try_into().unwrap();
         let p1 = vtx2xy[i1 * 2..i1 * 2 + 2].try_into().unwrap();
         let p2 = vtx2xy[i2 * 2..i2 * 2 + 2].try_into().unwrap();
-        let Some((r0, r1)) = del_geo::tri2::is_inside(p0, p1, p2, q, Real::one()) else {
+        let Some((r0, r1)) = del_geo_core::tri2::is_inside(p0, p1, p2, q, Real::one()) else {
             continue;
         };
         return Some((i_tri, r0, r1));
@@ -112,7 +112,7 @@ where
     let i0 = tri2vtx[i_tri * 3];
     let i1 = tri2vtx[i_tri * 3 + 1];
     let i2 = tri2vtx[i_tri * 3 + 2];
-    del_geo::tri2::area(&vtx2vectwo[i0], &vtx2vectwo[i1], &vtx2vectwo[i2])
+    del_geo_nalgebra::tri2::area(&vtx2vectwo[i0], &vtx2vectwo[i1], &vtx2vectwo[i2])
 }
 
 // -----------------------------

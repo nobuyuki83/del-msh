@@ -18,7 +18,7 @@ pub fn unidex_vertex_attribute_for_triangle_mesh<'a>(
     vtx2xyz: PyReadonlyArray2<'a, f32>,
 ) -> Bound<'a, PyArray3<f32>> {
     let num_val = vtx2xyz.shape()[1];
-    let tri2xyz = del_msh::unindex::unidex_vertex_attribute_for_triangle_mesh(
+    let tri2xyz = del_msh_core::unindex::unidex_vertex_attribute_for_triangle_mesh(
         tri2vtx.as_slice().unwrap(),
         vtx2xyz.as_slice().unwrap(),
         num_val,

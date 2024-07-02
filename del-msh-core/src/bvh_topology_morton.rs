@@ -45,8 +45,8 @@ pub fn sorted_morten_code2(
         .chunks(2)
         .zip(vtx2morton.iter_mut())
         .for_each(|(xy, m)| {
-            let xy =
-                del_geo::mat3::transform_homogeneous(transform_xy2uni, &[xy[0], xy[1]]).unwrap();
+            let xy = del_geo_core::mat3::transform_homogeneous(transform_xy2uni, &[xy[0], xy[1]])
+                .unwrap();
             *m = morton_code2(xy[0], xy[1]);
         });
     idx2vtx
@@ -119,9 +119,11 @@ pub fn sorted_morten_code3(
         .chunks(3)
         .zip(vtx2morton.iter_mut())
         .for_each(|(xyz, m)| {
-            let xyz =
-                del_geo::mat4::transform_homogeneous(transform_xy2uni, &[xyz[0], xyz[1], xyz[2]])
-                    .unwrap();
+            let xyz = del_geo_core::mat4::transform_homogeneous(
+                transform_xy2uni,
+                &[xyz[0], xyz[1], xyz[2]],
+            )
+            .unwrap();
             *m = morton_code3(xyz[0], xyz[1], xyz[2])
         });
     idx2vtx
@@ -146,7 +148,7 @@ fn test_sorted_morten_code() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo::mat4::identity(),
+        &del_geo_core::mat4::identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -341,7 +343,7 @@ fn test_3d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo::mat4::identity(),
+        &del_geo_core::mat4::identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -369,7 +371,7 @@ fn test_2d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xy,
-        &del_geo::mat3::identity::<f32>(),
+        &del_geo_core::mat3::identity::<f32>(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -381,39 +383,37 @@ fn test_2d() {
     crate::bvh::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
-pub fn from_triangle_mesh<Index>(tri2vtx: &[Index], vtx2xy: &[f32], num_dim: usize) -> Vec<Index>
+pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>
 where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<Index>,
 {
-    let tri2cntr =
-        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
-    let num_tri = tri2vtx.len() / 3;
+    let num_tri = vtx2xyz.len() / num_dim;
     let mut idx2tri = vec![0usize; num_tri];
     let mut idx2morton = vec![0u32; num_tri];
     let mut tri2morton = vec![0u32; num_tri];
     match num_dim {
         2 => {
-            let aabb = del_geo::aabb2::from_vtx2xy(&tri2cntr);
+            let aabb = del_geo_core::aabb2::from_vtx2xy(&vtx2xyz);
             let transform_xy2uni =
-                del_geo::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+                del_geo_core::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
             crate::bvh_topology_morton::sorted_morten_code2(
                 &mut idx2tri,
                 &mut idx2morton,
                 &mut tri2morton,
-                &tri2cntr,
+                &vtx2xyz,
                 &transform_xy2uni,
             );
         }
         3 => {
-            let aabb = del_geo::aabb3::from_vtx2xyz(&tri2cntr, 0f32);
+            let aabb = del_geo_core::aabb3::from_vtx2xyz(&vtx2xyz, 0f32);
             let transform_xy2uni =
-                del_geo::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+                del_geo_core::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
             crate::bvh_topology_morton::sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,
                 &mut tri2morton,
-                &tri2cntr,
+                &vtx2xyz,
                 &transform_xy2uni,
             );
         }
@@ -424,4 +424,14 @@ where
     let mut bvhnodes = vec![Index::zero(); (num_tri * 2 - 1) * 3];
     bvhnodes_morton(&mut bvhnodes, &idx2tri, &idx2morton);
     bvhnodes
+}
+
+pub fn from_triangle_mesh<Index>(tri2vtx: &[Index], vtx2xy: &[f32], num_dim: usize) -> Vec<Index>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
+{
+    let tri2cntr =
+        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
+    from_vtx2xyz(&tri2cntr, num_dim)
 }

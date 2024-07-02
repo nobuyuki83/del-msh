@@ -7,7 +7,7 @@ pub fn first_intersection_ray(
     vtx2xyz: &[f32],
     tri2vtx: &[usize],
 ) -> Option<([f32; 3], usize)> {
-    use del_geo::tri3;
+    use del_geo_core::tri3;
     let mut hit_pos = Vec::<(f32, usize)>::new();
     for itri in 0..tri2vtx.len() / 3 {
         let i0 = tri2vtx[itri * 3 + 0];
@@ -52,7 +52,7 @@ fn triangles_in_sphere(
     tri2adjtri: &[usize],
 ) -> Vec<usize> {
     use crate::vtx2xyz::to_navec3;
-    use del_geo::{tri3, vec3};
+    use del_geo_core::vec3;
     let mut res = Vec::<usize>::new();
     let mut searched = std::collections::BTreeSet::<usize>::new();
     let mut next0 = Vec::<usize>::new();
@@ -66,13 +66,13 @@ fn triangles_in_sphere(
             let i0 = tri2vtx[iel0 * 3 + 0];
             let i1 = tri2vtx[iel0 * 3 + 1];
             let i2 = tri2vtx[iel0 * 3 + 2];
-            let (pn, _r0, _r1) = tri3::nearest_to_point3(
+            let (pn, _r0, _r1) = del_geo_nalgebra::tri3::nearest_to_point3(
                 &to_navec3(vtx2xyz, i0),
                 &to_navec3(vtx2xyz, i1),
                 &to_navec3(vtx2xyz, i2),
                 &nalgebra::Vector3::<f32>::from_row_slice(&pos),
             );
-            vec3::distance_(pn.as_ref(), &pos)
+            vec3::distance(pn.as_ref(), &pos)
         };
         if dist_min > rad {
             continue;
@@ -98,7 +98,7 @@ pub fn is_point_inside_sphere(
     tri2vtx: &[usize],
     tri2adjtri: &[usize],
 ) -> bool {
-    use del_geo::vec3;
+    use del_geo_core::vec3;
     let pos_i = crate::trimesh::position_from_barycentric_coordinate(
         tri2vtx, vtx2xyz, smpli.0, smpli.1, smpli.2,
     );
@@ -112,7 +112,7 @@ pub fn is_point_inside_sphere(
             let pos_j = crate::trimesh::position_from_barycentric_coordinate(
                 tri2vtx, vtx2xyz, smpl_j.0, smpl_j.1, smpl_j.2,
             );
-            let dist = vec3::distance_(&pos_i, &pos_j);
+            let dist = vec3::distance(&pos_i, &pos_j);
             if dist < rad {
                 return true;
             }

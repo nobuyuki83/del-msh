@@ -13,7 +13,7 @@ where
     {
         // first segment
         let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).into_owned();
-        let (x, _) = del_geo::vec3::frame_from_z_vector(v01);
+        let (x, _) = del_geo_nalgebra::vec3::frame_from_z_vector(v01);
         vtx2bin.column_mut(0).copy_from(&x);
     }
     for iseg1 in 1..num_vtx {
@@ -24,7 +24,7 @@ where
         let iseg0 = iseg1 - 1;
         let v01 = to_navec3(vtx2xyz, iv1) - to_navec3(vtx2xyz, iv0);
         let v12 = to_navec3(vtx2xyz, iv2) - to_navec3(vtx2xyz, iv1);
-        let rot = del_geo::mat3::minimum_rotation_matrix(v01, v12);
+        let rot = del_geo_nalgebra::mat3::minimum_rotation_matrix(v01, v12);
         let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
         let b12: nalgebra::Vector3<T> = rot * b01;
         vtx2bin.column_mut(iseg1).copy_from(&b12);
@@ -63,7 +63,7 @@ where
         assert!(x0.dot(&v01).abs() < 1.0e-6_f64.as_());
         let xn = vtx2bin0.column(num_vtx - 1);
         let vn0 = (to_navec3(vtx2xyz, 0) - to_navec3(vtx2xyz, num_vtx - 1)).normalize();
-        let rot = del_geo::mat3::minimum_rotation_matrix(vn0, v01);
+        let rot = del_geo_nalgebra::mat3::minimum_rotation_matrix(vn0, v01);
         let x1a = rot * xn;
         let y0 = v01.cross(&x0);
         assert!(
@@ -182,7 +182,7 @@ pub fn smooth_gradient_of_distance(
     for i_seg in 0..n {
         let ip0 = i_seg;
         let ip1 = (i_seg + 1) % n;
-        let (_, dd0) = del_geo::edge3::wdw_integral_of_inverse_distance_cubic(
+        let (_, dd0) = del_geo_nalgebra::edge3::wdw_integral_of_inverse_distance_cubic(
             q,
             &to_navec3(vtx2xyz, ip0),
             &to_navec3(vtx2xyz, ip1),
@@ -284,7 +284,7 @@ where
         let iv1 = (i_edge + 1) % num_vtx;
         let q0 = nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[iv0 * 3..iv0 * 3 + 3]);
         let q1 = nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[iv1 * 3..iv1 * 3 + 3]);
-        let (dist, r0, r1) = del_geo::edge3::nearest_to_edge3(p0, p1, &q0, &q1);
+        let (dist, r0, r1) = del_geo_nalgebra::edge3::nearest_to_edge3(p0, p1, &q0, &q1);
         if dist > res.0 {
             continue;
         }
@@ -312,7 +312,7 @@ where
         let iv1 = (i_edge + 1) % num_vtx;
         let q0 = crate::vtx2xyz::to_navec3(vtx2xyz, iv0);
         let q1 = crate::vtx2xyz::to_navec3(vtx2xyz, iv1);
-        let (dist, rq) = del_geo::edge3::nearest_to_point3(&q0, &q1, p0);
+        let (dist, rq) = del_geo_nalgebra::edge3::nearest_to_point3(&q0, &q1, p0);
         if dist < res.0 {
             //dbg!((p0+(p1-p0)*r0));
             //dbg!((q0+(q1-q0)*r1));

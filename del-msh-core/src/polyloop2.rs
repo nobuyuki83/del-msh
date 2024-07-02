@@ -10,7 +10,7 @@ where
     let mut wn: Real = Real::zero();
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
-        wn += del_geo::edge2::winding_number_(
+        wn += del_geo_core::edge2::winding_number(
             (&vtx2xy[i * 2..(i + 1) * 2]).try_into().unwrap(),
             (&vtx2xy[j * 2..(j + 1) * 2]).try_into().unwrap(),
             p,
@@ -47,7 +47,7 @@ where
         let i1 = (i_edge + 1) % num_vtx;
         let p0 = (&vtx2xy[i0 * 2..i0 * 2 + 2]).try_into().unwrap();
         let p1 = (&vtx2xy[i1 * 2..i1 * 2 + 2]).try_into().unwrap();
-        area += del_geo::tri2::area_(&zero, p0, p1);
+        area += del_geo_core::tri2::area(&zero, p0, p1);
     }
     area
 }
@@ -68,7 +68,7 @@ where
         let i1 = (i_edge + 1) % num_vtx;
         let p0 = (&vtx2xy[i0 * 2..i0 * 2 + 2]).try_into().unwrap();
         let p1 = (&vtx2xy[i1 * 2..i1 * 2 + 2]).try_into().unwrap();
-        let area0 = del_geo::tri2::area_(&zero, p0, p1);
+        let area0 = del_geo_core::tri2::area(&zero, p0, p1);
         area += area0;
         cog[0] += (p0[0] + p1[0]) * frac_three * area0;
         cog[1] += (p0[1] + p1[1]) * frac_three * area0;
@@ -120,7 +120,7 @@ where
         let jp = (ip + 1) % np;
         let pi = crate::vtx2xyz::to_navec2(vtx2xy, ip);
         let pj = crate::vtx2xyz::to_navec2(vtx2xy, jp);
-        let dist = del_geo::edge::distance_to_point(&g, &pi, &pj);
+        let dist = del_geo_nalgebra::edge::distance_to_point(&g, &pi, &pj);
         if dist < dist_min {
             dist_min = dist;
         }
@@ -147,7 +147,7 @@ where
         let jp = (ip + 1) % np;
         let pi = vtx2xy[ip];
         let pj = vtx2xy[jp];
-        let dist = del_geo::edge::distance_to_point(g, &pi, &pj);
+        let dist = del_geo_nalgebra::edge::distance_to_point(g, &pi, &pj);
         if dist < dist_min {
             dist_min = dist;
         }
@@ -175,7 +175,7 @@ where
     rand::distributions::Standard: rand::prelude::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
-    let aabb = del_geo::aabb2::from_vtx2xy(vtx2xy);
+    let aabb = del_geo_core::aabb2::from_vtx2xy(vtx2xy);
     use rand::Rng;
     let base_pos = [
         aabb[0] - cell_len * rng.gen::<Real>(),
@@ -227,7 +227,7 @@ where
     let mut wn: Real = Real::zero();
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
-        wn += del_geo::edge2::winding_number_(
+        wn += del_geo_core::edge2::winding_number(
             &vtx2xy[i].as_slice().try_into().unwrap(),
             &vtx2xy[j].as_slice().try_into().unwrap(),
             p.as_slice().try_into().unwrap(),
@@ -302,7 +302,7 @@ where
         let i1 = (i_edge + 1) % num_vtx;
         let p0 = &vtx2xy[i0];
         let p1 = &vtx2xy[i1];
-        area += del_geo::tri2::area(&zero, p0, p1);
+        area += del_geo_nalgebra::tri2::area(&zero, p0, p1);
     }
     area
 }

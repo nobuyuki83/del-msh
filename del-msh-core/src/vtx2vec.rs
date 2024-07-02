@@ -6,9 +6,9 @@ pub fn normalize2<Real>(
 where
     Real: nalgebra::RealField + num_traits::Float,
 {
-    let aabb = del_geo::aabb2::from_vtx2vec(vtx2xyz);
-    let cnt = del_geo::aabb2::center(&aabb);
-    let max_edge_size = del_geo::aabb2::max_edge_size(&aabb);
+    let aabb = del_geo_nalgebra::aabb2::from_vtx2vec(vtx2xyz);
+    let cnt = del_geo_core::aabb2::center(&aabb);
+    let max_edge_size = del_geo_core::aabb2::max_edge_size(&aabb);
     let tmp = size / max_edge_size;
     let mut vtx2xyz_out = Vec::from(vtx2xyz);
     vtx2xyz_out
