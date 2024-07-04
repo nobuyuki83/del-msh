@@ -411,12 +411,12 @@ mod tests {
     #[test]
     fn check_nearest_raw() {
         use crate::kdtree2::nearest;
-        use std::time;
+        // use std::time;
         type Real = f64;
         type Vector = nalgebra::Vector2<Real>;
         let (vtx2xy, nodes) = test_data::<Real>(10000);
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
-        let time_nearest = time::Instant::now();
+        // let time_nearest = time::Instant::now();
         for _ in 0..10000 {
             let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
             let mut pos_near = (Vector::new(Real::MAX, Real::MAX), usize::MAX);
@@ -433,7 +433,7 @@ mod tests {
                 },
             );
         }
-        dbg!(time_nearest.elapsed());
+        // dbg!(time_nearest.elapsed());
         for _ in 0..10000 {
             let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
             let mut pos_near = (Vector::new(Real::MAX, Real::MAX), usize::MAX);
@@ -459,13 +459,13 @@ mod tests {
     #[test]
     fn check_inside_square_raw() {
         use crate::kdtree2::inside_square;
-        use std::time;
+        // use std::time;
         type Real = f64;
         type Vector = nalgebra::Vector2<Real>;
         let (vtx2xy, nodes) = test_data::<Real>(10000);
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
         let rad: Real = 0.03;
-        let time_inside_square = time::Instant::now();
+        // let time_inside_square = time::Instant::now();
         for _ in 0..10000 {
             let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
             let mut pos_near = Vec::<usize>::new();
@@ -483,7 +483,7 @@ mod tests {
                 },
             );
         }
-        dbg!(time_inside_square.elapsed());
+        // dbg!(time_inside_square.elapsed());
         //
         for _ in 0..10000 {
             let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());

@@ -179,7 +179,6 @@ where
     v2x_out
 }
 
-#[allow(clippy::identity_op)]
 pub fn resample_multiple_loops_remain_original_vtxs<T>(
     loop2idx_inout: &mut Vec<usize>,
     idx2vtx_inout: &mut Vec<usize>,
@@ -200,7 +199,7 @@ pub fn resample_multiple_loops_remain_original_vtxs<T>(
             assert!(loop2idx_in[i_loop + 1] > loop2idx_in[i_loop]);
             let np = loop2idx_in[i_loop + 1] - loop2idx_in[i_loop];
             for ip in 0..np {
-                let iipo0 = loop2idx_in[i_loop] + (ip + 0) % np;
+                let iipo0 = loop2idx_in[i_loop] + ip;
                 let iipo1 = loop2idx_in[i_loop] + (ip + 1) % np;
                 assert!(iipo0 < idx2vtx_in.len());
                 assert!(iipo1 < idx2vtx_in.len());

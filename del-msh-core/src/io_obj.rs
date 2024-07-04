@@ -1,9 +1,9 @@
 //! methods for Wavefront Obj files
 
+use anyhow::Context;
+use num_traits::AsPrimitive;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
-
-use num_traits::AsPrimitive;
 
 pub struct WavefrontObj<Index, Real> {
     pub vtx2xyz: Vec<Real>,
@@ -45,7 +45,7 @@ where
     }
 
     /// load wavefront obj file into the class
-    pub fn load<P: AsRef<std::path::Path>>(&mut self, filename: P) -> Result<(), &'static str> {
+    pub fn load<P: AsRef<std::path::Path>>(&mut self, filename: P) -> anyhow::Result<()> {
         let mut elem2vtx_xyz0: Vec<i32> = vec![];
         let mut elem2vtx_uv0: Vec<i32> = vec![];
         let mut elem2vtx_nrm0: Vec<i32> = vec![];
@@ -58,9 +58,7 @@ where
         name2mtl.insert("_default".to_string(), 0);
         let mut i_group = 0_usize;
         let mut i_mtl = 0_usize;
-        let Ok(f) = File::open(filename) else {
-            return Err("file not found");
-        };
+        let f = File::open(filename).context("file not found")?;
         let reader = BufReader::new(f);
         for line in reader.lines() {
             let line = line.unwrap();
@@ -218,7 +216,7 @@ where
 pub fn load_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
     filepath: P,
     scale: Option<Real>,
-) -> Result<(Vec<Index>, Vec<Real>), &'static str>
+) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
 where
     Real: std::str::FromStr + std::fmt::Display + num_traits::Float,
     Index: num_traits::PrimInt + 'static,
@@ -236,57 +234,42 @@ where
     Ok((tri2vtx, vtx2xyz))
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_tri_mesh_texture(
     filepath: &str,
     tri2vtx_xyz: &[usize],
     vtx2xyz: &[f32],
     tri2vtx_uv: &[usize],
     vtx2uv: &[f32],
-) -> Result<(), &'static str> {
+) -> anyhow::Result<()> {
     assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
-    let Ok(mut file) = File::create(filepath) else {
-        return Err("file not found.");
-    };
+    let mut file = File::create(filepath).context("file not found.")?;
     for i_vtx in 0..vtx2xyz.len() / 3 {
-        if let Err(_e) = writeln!(
+        writeln!(
             file,
             "v {} {} {}",
-            vtx2xyz[i_vtx * 3 + 0],
+            vtx2xyz[i_vtx * 3],
             vtx2xyz[i_vtx * 3 + 1],
             vtx2xyz[i_vtx * 3 + 2]
-        ) {
-            return Err("fail");
-        }
+        )?;
     }
     for i_vtx in 0..vtx2uv.len() / 2 {
-        if let Err(_e) = writeln!(
-            file,
-            "vt {} {}",
-            vtx2uv[i_vtx * 2 + 0],
-            vtx2uv[i_vtx * 2 + 1]
-        ) {
-            return Err("fail");
-        }
+        writeln!(file, "vt {} {}", vtx2uv[i_vtx * 2], vtx2uv[i_vtx * 2 + 1])?;
     }
     for i_tri in 0..tri2vtx_xyz.len() / 3 {
-        if let Err(_e) = writeln!(
+        writeln!(
             file,
             "f {}/{} {}/{} {}/{}",
-            tri2vtx_xyz[i_tri * 3 + 0] + 1,
-            tri2vtx_uv[i_tri * 3 + 0] + 1,
+            tri2vtx_xyz[i_tri * 3] + 1,
+            tri2vtx_uv[i_tri * 3] + 1,
             tri2vtx_xyz[i_tri * 3 + 1] + 1,
             tri2vtx_uv[i_tri * 3 + 1] + 1,
             tri2vtx_xyz[i_tri * 3 + 2] + 1,
             tri2vtx_uv[i_tri * 3 + 2] + 1
-        ) {
-            return Err("fail");
-        }
+        )?;
     }
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 fn write_vtx2xyz<Real>(
     file: &mut std::io::BufWriter<File>,
     vtx2xyz: &[Real],
@@ -298,8 +281,10 @@ where
     match num_dim {
         3_usize => {
             for i_vtx in 0..vtx2xyz.len() / 3 {
-                 writeln!(file, "v {} {} {}",
-                    vtx2xyz[i_vtx * 3 + 0],
+                writeln!(
+                    file,
+                    "v {} {} {}",
+                    vtx2xyz[i_vtx * 3],
                     vtx2xyz[i_vtx * 3 + 1],
                     vtx2xyz[i_vtx * 3 + 2]
                 )?;
@@ -307,8 +292,10 @@ where
         }
         2_usize => {
             for i_vtx in 0..vtx2xyz.len() / 2 {
-                writeln!(file, "v {} {} {}",
-                    vtx2xyz[i_vtx * 2 + 0],
+                writeln!(
+                    file,
+                    "v {} {} {}",
+                    vtx2xyz[i_vtx * 2],
                     vtx2xyz[i_vtx * 2 + 1],
                     0.
                 )?;
@@ -324,23 +311,19 @@ where
 fn write_vtx2vecn<Real, const N: usize>(
     file: &mut std::io::BufWriter<File>,
     vtx2vecn: &[nalgebra::SVector<Real, N>],
-) -> Result<(), &'static str>
+) -> anyhow::Result<()>
 where
     Real: nalgebra::RealField + std::fmt::Display,
 {
     match N {
         3_usize => {
             for vtx in vtx2vecn {
-                if let Err(_e) = writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2]) {
-                    return Err("fail");
-                }
+                writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2])?;
             }
         }
         2_usize => {
             for vtx in vtx2vecn {
-                if let Err(_e) = writeln!(file, "v {} {} {}", vtx[0], vtx[1], 0.) {
-                    return Err("fail");
-                }
+                writeln!(file, "v {} {} {}", vtx[0], vtx[1], 0.)?;
             }
         }
         _ => {
@@ -350,7 +333,6 @@ where
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
     filepath: Path,
     tri2vtx: &[Index],
@@ -362,13 +344,14 @@ where
     Real: num_traits::Float + std::fmt::Display,
     Index: num_traits::PrimInt + std::fmt::Display,
 {
-    use anyhow::Context;
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     for i_tri in 0..tri2vtx.len() / 3 {
-        writeln!(file, "f {} {} {}",
-            tri2vtx[i_tri * 3 + 0] + Index::one(),
+        writeln!(
+            file,
+            "f {} {} {}",
+            tri2vtx[i_tri * 3] + Index::one(),
             tri2vtx[i_tri * 3 + 1] + Index::one(),
             tri2vtx[i_tri * 3 + 2] + Index::one()
         )?;
@@ -376,25 +359,20 @@ where
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
     filepath: Path,
     tri2vtx: &[usize],
     vtx2vecn: &[nalgebra::SVector<Real, N>],
-) -> Result<(), &'static str>
+) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
     Real: nalgebra::RealField + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else {
-        return Err("file not found.");
-    };
+    let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
     for tri in tri2vtx.chunks(3) {
-        if let Err(_e) = writeln!(file, "f {} {} {}", tri[0] + 1, tri[1] + 1, tri[2] + 1) {
-            return Err("fail");
-        }
+        writeln!(file, "f {} {} {}", tri[0] + 1, tri[1] + 1, tri[2] + 1)?;
     }
     Ok(())
 }
@@ -409,7 +387,6 @@ where
     Path: AsRef<std::path::Path>,
     Real: num_traits::Float + std::fmt::Display,
 {
-    use anyhow::Context;
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
@@ -422,34 +399,28 @@ where
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_vtx2vecn_as_polyloop<Path, Real, const N: usize>(
     filepath: Path,
     vtx2vecn: &[nalgebra::SVector<Real, N>],
-) -> Result<(), &'static str>
+) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
     Real: nalgebra::RealField + std::fmt::Display,
 {
-    let Ok(file) = File::create(filepath) else {
-        return Err("file not found.");
-    };
+    let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
     let num_vtx = vtx2vecn.len();
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
-        if let Err(_e) = writeln!(file, "l {} {}", i0 + 1, i1 + 1) {
-            return Err("fail");
-        }
+        writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
     }
     Ok(())
 }
 
 // ------------------------
 
-#[allow(clippy::identity_op)]
 pub fn save_edge2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     edge2vtx: &[usize],
@@ -460,7 +431,6 @@ where
     Path: AsRef<std::path::Path>,
     Real: num_traits::Float + std::fmt::Display,
 {
-    use anyhow::Context;
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
@@ -472,7 +442,6 @@ where
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_polyline2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     polyline2vtx: &[usize],
@@ -483,7 +452,6 @@ where
     Path: AsRef<std::path::Path>,
     Real: num_traits::Float + std::fmt::Display,
 {
-    use anyhow::Context;
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
@@ -493,7 +461,7 @@ where
         for i_vtx in 0..num_vtx_in_polyline - 1 {
             let i0 = polyline2vtx[i_poly] + i_vtx;
             let i1 = polyline2vtx[i_poly] + i_vtx + 1;
-             writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
+            writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
         }
     }
     Ok(())

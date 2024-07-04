@@ -176,8 +176,8 @@ pub fn voronoi_cells<F>(vtxl2xy: &[f32], site2xy: &[f32], site2isalive: F) -> Ve
 where
     F: Fn(usize) -> bool,
 {
-    let vtxl2xy = crate::vtx2xyz::to_array_of_nalgebra_vector(vtxl2xy);
-    let site2xy: Vec<nalgebra::Vector2<f32>> = crate::vtx2xyz::to_array_of_nalgebra_vector(site2xy);
+    let vtxl2xy = crate::vtx2pos::to_array_of_nalgebra_vector(vtxl2xy);
+    let site2xy: Vec<nalgebra::Vector2<f32>> = crate::vtx2pos::to_array_of_nalgebra_vector(site2xy);
     let num_site = site2xy.len();
     let mut site2cell = vec![Cell::new_empty(); num_site];
     for (i_site, pos_i) in site2xy.iter().enumerate() {
@@ -280,17 +280,17 @@ pub fn position_of_voronoi_vertex(
 ) -> nalgebra::Vector2<f32> {
     if info[1] == usize::MAX {
         // original point
-        crate::vtx2xyz::to_navec2(vtxl2xy, info[0])
+        crate::vtx2xy::to_navec2(vtxl2xy, info[0])
     } else if info[3] == usize::MAX {
         // two points against edge
         let num_vtxl = vtxl2xy.len() / 2;
         assert!(info[0] < num_vtxl);
         let i1_loop = info[0];
         let i2_loop = (i1_loop + 1) % num_vtxl;
-        let l1 = crate::vtx2xyz::to_navec2(vtxl2xy, i1_loop);
-        let l2 = crate::vtx2xyz::to_navec2(vtxl2xy, i2_loop);
-        let s1 = &crate::vtx2xyz::to_navec2(site2xy, info[1]);
-        let s2 = &crate::vtx2xyz::to_navec2(site2xy, info[2]);
+        let l1 = crate::vtx2xy::to_navec2(vtxl2xy, i1_loop);
+        let l2 = crate::vtx2xy::to_navec2(vtxl2xy, i2_loop);
+        let s1 = &crate::vtx2xy::to_navec2(site2xy, info[1]);
+        let s2 = &crate::vtx2xy::to_navec2(site2xy, info[2]);
         return del_geo_nalgebra::line2::intersection(
             &l1,
             &(l2 - l1),
@@ -301,9 +301,9 @@ pub fn position_of_voronoi_vertex(
         // three points
         assert_eq!(info[0], usize::MAX);
         return del_geo_nalgebra::tri2::circumcenter(
-            &crate::vtx2xyz::to_navec2(site2xy, info[1]),
-            &crate::vtx2xyz::to_navec2(site2xy, info[2]),
-            &crate::vtx2xyz::to_navec2(site2xy, info[3]),
+            &crate::vtx2xy::to_navec2(site2xy, info[1]),
+            &crate::vtx2xy::to_navec2(site2xy, info[2]),
+            &crate::vtx2xy::to_navec2(site2xy, info[3]),
         );
     }
 }
@@ -336,7 +336,7 @@ fn test_voronoi_concave() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
@@ -373,7 +373,7 @@ fn test_voronoi_convex() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
@@ -407,7 +407,7 @@ fn test_voronoi_convex() {
             &voronoi_mesh.idx2vtxv,
             voronoi_mesh.vtxv2xy.len(),
         );
-        let vtxc2xy = crate::vtx2xyz::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
+        let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_indexed.obj",
             &edge2vtxc,

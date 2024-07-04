@@ -288,7 +288,7 @@ fn morton_code_find_split(idx2morton: &[u32], i_mc_start: usize, i_mc_end: usize
 pub fn bvhnodes_morton<Index>(nodes: &mut [Index], idx2vtx: &[usize], idx2morton: &[u32])
 where
     Index: num_traits::PrimInt + 'static + Copy,
-    usize: num_traits::AsPrimitive<Index>,
+    usize: AsPrimitive<Index>,
 {
     assert_eq!(idx2vtx.len(), idx2morton.len());
     assert!(!idx2morton.is_empty());
@@ -385,8 +385,8 @@ fn test_2d() {
 
 pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>
 where
-    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
-    usize: num_traits::AsPrimitive<Index>,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let num_tri = vtx2xyz.len() / num_dim;
     let mut idx2tri = vec![0usize; num_tri];
@@ -394,26 +394,26 @@ where
     let mut tri2morton = vec![0u32; num_tri];
     match num_dim {
         2 => {
-            let aabb = del_geo_core::aabb2::from_vtx2xy(&vtx2xyz);
+            let aabb = crate::vtx2xy::aabb2(vtx2xyz);
             let transform_xy2uni =
                 del_geo_core::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
-            crate::bvh_topology_morton::sorted_morten_code2(
+            sorted_morten_code2(
                 &mut idx2tri,
                 &mut idx2morton,
                 &mut tri2morton,
-                &vtx2xyz,
+                vtx2xyz,
                 &transform_xy2uni,
             );
         }
         3 => {
-            let aabb = del_geo_core::aabb3::from_vtx2xyz(&vtx2xyz, 0f32);
+            let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
             let transform_xy2uni =
                 del_geo_core::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
-            crate::bvh_topology_morton::sorted_morten_code3(
+            sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,
                 &mut tri2morton,
-                &vtx2xyz,
+                vtx2xyz,
                 &transform_xy2uni,
             );
         }
@@ -428,8 +428,8 @@ where
 
 pub fn from_triangle_mesh<Index>(tri2vtx: &[Index], vtx2xy: &[f32], num_dim: usize) -> Vec<Index>
 where
-    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
-    usize: num_traits::AsPrimitive<Index>,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let tri2cntr =
         crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);

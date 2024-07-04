@@ -18,6 +18,9 @@ pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_primitive;
 pub mod trimesh3_search_bruteforce;
+pub mod vtx2pos;
+pub mod vtx2vec;
+pub mod vtx2xy;
 pub mod vtx2xyz;
 
 // misc functions general to mesh type
@@ -39,8 +42,8 @@ pub mod io_vtk;
 pub mod bvh;
 pub mod bvh2;
 pub mod bvh3;
-pub mod bvh3_topology_topdown;
-pub mod bvh_topology_morton;
+pub mod bvhnodes_morton;
+pub mod bvhnodes_topdown_trimesh3;
 pub mod kdtree2;
 
 // self intersection
@@ -55,4 +58,3 @@ pub mod trimesh3_proximity;
 pub mod trimesh_topology;
 pub mod uniform_mesh;
 pub mod voronoi2;
-pub mod vtx2vec;

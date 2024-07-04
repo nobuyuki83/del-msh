@@ -4,7 +4,7 @@ use num_traits::AsPrimitive;
 
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
-/// * `num_node` - number of vertex par elemnent (e.g., 3 for tri, 4 for quad)
+/// * `num_node` - number of vertex par element (e.g., 3 for tri, 4 for quad)
 /// * `num_vtx` - number of vertex
 /// * `vtx2idx` - map vertex to element index: cumulative sum
 /// * `idx2elem` - map vertex to element value: list of value

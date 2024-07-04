@@ -5,7 +5,6 @@ use num_traits::{AsPrimitive, PrimInt};
 /// build aabb for uniform mesh
 /// if 'elem2vtx' is None, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
-#[allow(clippy::identity_op)]
 pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     aabbs: &mut [Real],
     i_bvhnode: usize,
@@ -15,7 +14,7 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
     vtx2xyz1: Option<&[Real]>,
 ) where
     Real: num_traits::Float,
-    Index: PrimInt + num_traits::AsPrimitive<usize>,
+    Index: PrimInt + AsPrimitive<usize>,
 {
     // aabbs.resize();
     assert_eq!(aabbs.len() / 6, bvhnodes.len() / 3);
@@ -30,13 +29,13 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
         let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
         let aabb = if let Some((elem2vtx, num_noel)) = elem2vtx {
             // element index is provided
-            let aabb0 = del_geo_core::aabb3::from_list_of_vertices(
+            let aabb0 = crate::vtx2xyz::aabb3_indexed(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                 vtx2xyz0,
                 Real::zero(),
             );
             if let Some(vtx2xyz1) = vtx2xyz1 {
-                let aabb1 = del_geo_core::aabb3::from_list_of_vertices(
+                let aabb1 = crate::vtx2xyz::aabb3_indexed(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
                     vtx2xyz1,
                     Real::zero(),
@@ -47,19 +46,19 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
             }
         } else {
             let aabb0 = [
-                vtx2xyz0[i_elem * 3 + 0],
+                vtx2xyz0[i_elem * 3],
                 vtx2xyz0[i_elem * 3 + 1],
                 vtx2xyz0[i_elem * 3 + 2],
-                vtx2xyz0[i_elem * 3 + 0],
+                vtx2xyz0[i_elem * 3],
                 vtx2xyz0[i_elem * 3 + 1],
                 vtx2xyz0[i_elem * 3 + 2],
             ];
             if let Some(vtx2xyz1) = vtx2xyz1 {
                 let aabb1 = [
-                    vtx2xyz1[i_elem * 3 + 0],
+                    vtx2xyz1[i_elem * 3],
                     vtx2xyz1[i_elem * 3 + 1],
                     vtx2xyz1[i_elem * 3 + 2],
-                    vtx2xyz1[i_elem * 3 + 0],
+                    vtx2xyz1[i_elem * 3],
                     vtx2xyz1[i_elem * 3 + 1],
                     vtx2xyz1[i_elem * 3 + 2],
                 ];
@@ -68,13 +67,13 @@ pub fn update_aabbs_for_uniform_mesh<Index, Real>(
                 aabb0
             }
         };
-        aabbs[i_bvhnode * 6 + 0..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
+        aabbs[i_bvhnode * 6..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
     } else {
         let i_bvhnode_child0: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
         let i_bvhnode_child1: usize = bvhnodes[i_bvhnode * 3 + 2].as_();
         // branch node
-        assert_eq!(bvhnodes[i_bvhnode_child0 * 3 + 0].as_(), i_bvhnode);
-        assert_eq!(bvhnodes[i_bvhnode_child1 * 3 + 0].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child0 * 3].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child1 * 3].as_(), i_bvhnode);
         // build right tree
         update_aabbs_for_uniform_mesh::<Index, Real>(
             aabbs,

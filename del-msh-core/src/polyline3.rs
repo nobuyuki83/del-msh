@@ -1,5 +1,6 @@
 use num_traits::AsPrimitive;
 
+/// the center of gravity
 pub fn cg<T>(vtx2xyz: &[T]) -> nalgebra::Vector3<T>
 where
     T: nalgebra::RealField + Copy,
@@ -20,6 +21,7 @@ where
     cg / w
 }
 
+/// bi-normal vector on each vertex
 pub fn vtx2framex<T>(vtx2xyz: &[T]) -> nalgebra::Matrix3xX<T>
 where
     T: nalgebra::RealField + 'static + Copy,
@@ -229,7 +231,7 @@ where
         }
     }
     {
-        // north pole
+        // North Pole
         let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, num_vtxl - 1);
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let q = p0 + ez * r;
@@ -295,7 +297,6 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
     (pair_idx, pair_prm)
 }
 
-#[allow(clippy::identity_op)]
 pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> nalgebra::Vector3<T>
 where
     T: num_traits::Float + nalgebra::RealField + AsPrimitive<usize>,
@@ -311,7 +312,6 @@ where
     p0 + (p1 - p0).scale(r0)
 }
 
-#[allow(clippy::identity_op)]
 pub fn smooth<T>(vtx2xyz: &[T], r: T, num_iter: usize) -> Vec<T>
 where
     T: nalgebra::RealField + Copy,
@@ -327,7 +327,7 @@ where
             let p1 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip1);
             let p2 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip2);
             let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
-            vtx2xyz1[ip1 * 3 + 0] = p1n.x;
+            vtx2xyz1[ip1 * 3] = p1n.x;
             vtx2xyz1[ip1 * 3 + 1] = p1n.y;
             vtx2xyz1[ip1 * 3 + 2] = p1n.z;
         }

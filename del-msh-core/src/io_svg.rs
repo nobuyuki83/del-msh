@@ -318,7 +318,7 @@ fn hoge2() {
     let loops = svg_loops_from_outline_path(&strs);
     assert_eq!(loops.len(), 1);
     let polyline = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 10.0);
-    let polyline = crate::vtx2xyz::from_array_of_nalgebra(&polyline);
+    let polyline = crate::vtx2pos::from_array_of_nalgebra(&polyline);
     let polyline = crate::polyloop::resample::<_, 2>(&polyline, 100);
     crate::io_obj::save_vtx2xyz_as_polyloop("../target/svg.obj", &polyline, 2).unwrap();
 }
@@ -346,5 +346,5 @@ fn hoge3() {
     let vtxl2xy =
         crate::vtx2vec::normalize2(&vtxl2xy, &nalgebra::Vector2::<f32>::new(0.5, 0.5), 1.0);
     crate::io_obj::save_vtx2vecn_as_polyloop("../target/duck_curve.obj", &vtxl2xy).unwrap();
-    crate::vtx2xyz::from_array_of_nalgebra(&vtxl2xy);
+    crate::vtx2pos::from_array_of_nalgebra(&vtxl2xy);
 }

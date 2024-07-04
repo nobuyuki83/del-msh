@@ -118,8 +118,8 @@ where
     let mut dist_min = Real::max_value().unwrap();
     for ip in 0..np {
         let jp = (ip + 1) % np;
-        let pi = crate::vtx2xyz::to_navec2(vtx2xy, ip);
-        let pj = crate::vtx2xyz::to_navec2(vtx2xy, jp);
+        let pi = crate::vtx2xy::to_navec2(vtx2xy, ip);
+        let pj = crate::vtx2xy::to_navec2(vtx2xy, jp);
         let dist = del_geo_nalgebra::edge::distance_to_point(&g, &pi, &pj);
         if dist < dist_min {
             dist_min = dist;
@@ -175,7 +175,7 @@ where
     rand::distributions::Standard: rand::prelude::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
-    let aabb = del_geo_core::aabb2::from_vtx2xy(vtx2xy);
+    let aabb = crate::vtx2xy::aabb2(vtx2xy);
     use rand::Rng;
     let base_pos = [
         aabb[0] - cell_len * rng.gen::<Real>(),
