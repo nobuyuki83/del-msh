@@ -1,4 +1,4 @@
-//! functions for contiguous c-style array of 2D coordinates
+//! functions related to c-style contiguous array of 2D coordinates
 
 use num_traits::AsPrimitive;
 

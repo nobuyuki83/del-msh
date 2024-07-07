@@ -18,7 +18,7 @@ pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
         }
     }
     for v in vtx2nrm.chunks_mut(3) {
-        del_geo_core::vec3::normalize_(v.try_into().unwrap());
+        del_geo_core::vec3::normalize(v.try_into().unwrap());
     }
     vtx2nrm
 }

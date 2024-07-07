@@ -1,3 +1,5 @@
+//! functions related to c-style contiguous array of N dimensional coordinates
+
 use num_traits::AsPrimitive;
 
 pub fn cast<T, U>(vtx2xyz0: &[U]) -> Vec<T>
@@ -31,9 +33,9 @@ where
 }
 
 pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
-    where
-        T: nalgebra::RealField + Copy,
-        usize: AsPrimitive<T>
+where
+    T: nalgebra::RealField + Copy,
+    usize: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
@@ -47,18 +49,21 @@ pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
     cog
 }
 
-pub fn cov_cog<T, const N: usize>(vtx2xyz: &[T]) -> (nalgebra::SMatrix<T, N, N>, nalgebra::SVector<T, N>)
-    where
-        T: nalgebra::RealField + Copy,
-        usize: AsPrimitive<T>
+pub fn cov_cog<T, const N: usize>(
+    vtx2xyz: &[T],
+) -> (nalgebra::SMatrix<T, N, N>, nalgebra::SVector<T, N>)
+where
+    T: nalgebra::RealField + Copy,
+    usize: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
     let cog = cog::<T, N>(vtx2xyz);
     let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
     for i_vtx in 0..num_vtx {
-        let q0 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[i_vtx * N..i_vtx * N + N]) - cog;
-        cov += q0 * q0.transpose();
+        let q = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[i_vtx * N..i_vtx * N + N]);
+        let d = q - cog;
+        cov += d * d.transpose();
     }
-    (cov,cog)
+    (cov, cog)
 }

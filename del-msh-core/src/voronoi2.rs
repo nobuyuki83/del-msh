@@ -176,8 +176,9 @@ pub fn voronoi_cells<F>(vtxl2xy: &[f32], site2xy: &[f32], site2isalive: F) -> Ve
 where
     F: Fn(usize) -> bool,
 {
-    let vtxl2xy = crate::vtx2pos::to_array_of_nalgebra_vector(vtxl2xy);
-    let site2xy: Vec<nalgebra::Vector2<f32>> = crate::vtx2pos::to_array_of_nalgebra_vector(site2xy);
+    let vtxl2xy = crate::vtx2xdim::to_array_of_nalgebra_vector(vtxl2xy);
+    let site2xy: Vec<nalgebra::Vector2<f32>> =
+        crate::vtx2xdim::to_array_of_nalgebra_vector(site2xy);
     let num_site = site2xy.len();
     let mut site2cell = vec![Cell::new_empty(); num_site];
     for (i_site, pos_i) in site2xy.iter().enumerate() {
@@ -336,7 +337,7 @@ fn test_voronoi_concave() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
@@ -373,7 +374,7 @@ fn test_voronoi_convex() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
@@ -407,7 +408,7 @@ fn test_voronoi_convex() {
             &voronoi_mesh.idx2vtxv,
             voronoi_mesh.vtxv2xy.len(),
         );
-        let vtxc2xy = crate::vtx2pos::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
+        let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_indexed.obj",
             &edge2vtxc,
