@@ -2,17 +2,16 @@
 
 use num_traits::AsPrimitive;
 
-#[allow(clippy::identity_op)]
 pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
     let mut vtx2nrm = vec![0_f64; vtx2xyz.len()];
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3].try_into().unwrap();
-        let p1 = &vtx2xyz[i1 * 3..i1 * 3 + 3].try_into().unwrap();
-        let p2 = &vtx2xyz[i2 * 3..i2 * 3 + 3].try_into().unwrap();
-        let (un, _area) = del_geo_core::tri3::unit_normal_area_(p0, p1, p2);
+        let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);
+        let p1 = arrayref::array_ref!(vtx2xyz, i1 * 3, 3);
+        let p2 = arrayref::array_ref!(vtx2xyz, i2 * 3, 3);
+        let (un, _area) = del_geo_core::tri3::unit_normal_area(p0, p1, p2);
         for &i_vtx in &node2vtx[0..3] {
-            vtx2nrm[i_vtx * 3 + 0] += un[0];
+            vtx2nrm[i_vtx * 3] += un[0];
             vtx2nrm[i_vtx * 3 + 1] += un[1];
             vtx2nrm[i_vtx * 3 + 2] += un[2];
         }
@@ -23,7 +22,6 @@ pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
     vtx2nrm
 }
 
-#[allow(clippy::identity_op)]
 pub fn vtx2area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
 where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
@@ -34,9 +32,9 @@ where
     let one_third = T::one() / 3_f64.as_();
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3].try_into().unwrap();
-        let p1 = &vtx2xyz[i1 * 3..i1 * 3 + 3].try_into().unwrap();
-        let p2 = &vtx2xyz[i2 * 3..i2 * 3 + 3].try_into().unwrap();
+        let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);
+        let p1 = arrayref::array_ref!(vtx2xyz, i1 * 3, 3);
+        let p2 = arrayref::array_ref!(vtx2xyz, i2 * 3, 3);
         let a0 = del_geo_core::tri3::area(p0, p1, p2) * one_third;
         areas[i0] += a0;
         areas[i1] += a0;
@@ -45,16 +43,12 @@ where
     areas
 }
 
-#[cfg(test)]
-mod tests {
-    use num_traits::FloatConst;
-    #[test]
-    fn test_vtx2area() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1_f64, 128, 256);
-        let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
-        let total_area: f64 = vtx2area.iter().sum();
-        assert!((total_area - f64::PI() * 4.0).abs() < 1.0e-2);
-    }
+#[test]
+fn test_vtx2area() {
+    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1_f64, 128, 256);
+    let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
+    let total_area: f64 = vtx2area.iter().sum();
+    assert!((total_area - std::f64::consts::PI * 4.0).abs() < 1.0e-2);
 }
 
 pub fn to_corner_points<Index, Real>(
@@ -79,7 +73,6 @@ where
 // above: vtx2*** method
 // -------------------------
 
-#[allow(clippy::identity_op)]
 pub fn tri2normal<T, U>(tri2vtx: &[U], vtx2xyz: &[T]) -> Vec<T>
 where
     T: num_traits::Float,
@@ -89,25 +82,20 @@ where
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_());
         let n = del_geo_core::tri3::normal(
-            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
+            arrayref::array_ref!(vtx2xyz, i0 * 3, 3),
+            arrayref::array_ref!(vtx2xyz, i1 * 3, 3),
+            arrayref::array_ref!(vtx2xyz, i2 * 3, 3),
         );
         tri2normal.extend_from_slice(&n);
     }
     tri2normal
 }
 
-#[allow(clippy::identity_op)]
 pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
-    let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
-    for node2vtx in tri2vtx.chunks(3) {
-        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let area = del_geo_core::tri3::area(
-            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
-        );
+    let num_tri = tri2vtx.len() / 3;
+    let mut tri2area = Vec::<f32>::with_capacity(num_tri);
+    for i_tri in 0..num_tri {
+        let area = to_tri3(i_tri, tri2vtx, vtx2xyz).area();
         tri2area.push(area);
     }
     tri2area
@@ -137,15 +125,14 @@ pub fn extend_avoid_intersection(
     [q[0], q[1], q[2]]
 }
 
-#[allow(clippy::identity_op)]
 pub fn mean_edge_length(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
     let num_tri = tri2vtx.len() / 3;
     let mut sum = 0_f32;
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xyz[i0 * 3..i0 * 3 + 3].try_into().unwrap();
-        let p1 = &vtx2xyz[i1 * 3..i1 * 3 + 3].try_into().unwrap();
-        let p2 = &vtx2xyz[i2 * 3..i2 * 3 + 3].try_into().unwrap();
+        let p0 = arrayref::array_ref![vtx2xyz, i0 * 3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, i1 * 3, 3];
+        let p2 = arrayref::array_ref![vtx2xyz, i2 * 3, 3];
         sum += del_geo_core::vec3::distance(p0, p1);
         sum += del_geo_core::vec3::distance(p1, p2);
         sum += del_geo_core::vec3::distance(p2, p0);
@@ -190,13 +177,28 @@ pub fn distance_to_points3(tri2vtx: &[usize], vtx2xyz: &[f32], hv2xyz: &[f32]) -
 
 pub fn area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
     let mut sum_area = 0f32;
-    for node2vtx in tri2vtx.chunks(3) {
-        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        sum_area += del_geo_core::tri3::area(
-            vtx2xyz[i0 * 3..i0 * 3 + 3].try_into().unwrap(),
-            vtx2xyz[i1 * 3..i1 * 3 + 3].try_into().unwrap(),
-            vtx2xyz[i2 * 3..i2 * 3 + 3].try_into().unwrap(),
-        );
+    for i_tri in 0..tri2vtx.len() / 3 {
+        sum_area += to_tri3(i_tri, tri2vtx, vtx2xyz).area();
     }
     sum_area
+}
+
+// ---------------------
+
+pub fn to_tri3<'a, Index, Real>(
+    i_tri: usize,
+    tri2vtx: &'a [Index],
+    vtx2xyz: &'a [Real],
+) -> del_geo_core::tri3::Tri3<'a, Real>
+where
+    Index: AsPrimitive<usize>,
+{
+    let i0: usize = tri2vtx[i_tri * 3].as_();
+    let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
+    let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
+    del_geo_core::tri3::Tri3 {
+        p0: arrayref::array_ref!(vtx2xyz, i0 * 3, 3),
+        p1: arrayref::array_ref!(vtx2xyz, i1 * 3, 3),
+        p2: arrayref::array_ref!(vtx2xyz, i2 * 3, 3),
+    }
 }

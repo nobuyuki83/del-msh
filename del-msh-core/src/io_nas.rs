@@ -28,8 +28,8 @@ where
     usize: AsPrimitive<Index>,
 {
     let mut vtx2xyz = vec![0f32; 0];
-    let mut vtx2idx = vec![Index::zero(); 0];
-    let mut tri2idx = vec![Index::zero(); 0];
+    let mut vtx2idx: Vec<Index> = vec![];
+    let mut tri2idx: Vec<Index> = vec![];
     //
     let file = std::fs::File::open(path).expect("file not found.");
     let reader = std::io::BufReader::new(file);

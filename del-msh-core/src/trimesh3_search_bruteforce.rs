@@ -1,33 +1,16 @@
 //! methods for query computation on 3D triangle mesh
 
-#[allow(clippy::identity_op)]
 pub fn first_intersection_ray(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
     vtx2xyz: &[f32],
     tri2vtx: &[usize],
 ) -> Option<([f32; 3], usize)> {
-    use del_geo_core::tri3;
     let mut hit_pos = Vec::<(f32, usize)>::new();
-    for itri in 0..tri2vtx.len() / 3 {
-        let i0 = tri2vtx[itri * 3 + 0];
-        let i1 = tri2vtx[itri * 3 + 1];
-        let i2 = tri2vtx[itri * 3 + 2];
-        let res = tri3::ray_triangle_intersection_(
-            ray_org,
-            ray_dir,
-            &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-            &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
-        );
-        match res {
-            None => {
-                continue;
-            }
-            Some(t) => {
-                hit_pos.push((t, itri));
-            }
-        }
+    for i_tri in 0..tri2vtx.len() / 3 {
+        let Some(t) = crate::trimesh3::to_tri3(i_tri, tri2vtx, vtx2xyz)
+            .intersection_against_ray(ray_org, ray_dir) else { continue; };
+        hit_pos.push((t, i_tri));
     }
     if hit_pos.is_empty() {
         return None;

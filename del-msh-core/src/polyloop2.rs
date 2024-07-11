@@ -1,5 +1,6 @@
 //! methods for 2D poly loop
 
+use arrayref::array_ref;
 use num_traits::AsPrimitive;
 
 pub fn winding_number_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
@@ -11,8 +12,8 @@ where
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
         wn += del_geo_core::edge2::winding_number(
-            (&vtx2xy[i * 2..(i + 1) * 2]).try_into().unwrap(),
-            (&vtx2xy[j * 2..(j + 1) * 2]).try_into().unwrap(),
+            array_ref![vtx2xy, i * 2, 2],
+            array_ref![vtx2xy, j * 2, 2],
             p,
         );
     }
@@ -45,8 +46,8 @@ where
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = (&vtx2xy[i0 * 2..i0 * 2 + 2]).try_into().unwrap();
-        let p1 = (&vtx2xy[i1 * 2..i1 * 2 + 2]).try_into().unwrap();
+        let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
+        let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
         area += del_geo_core::tri2::area(&zero, p0, p1);
     }
     area
@@ -66,8 +67,8 @@ where
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = (&vtx2xy[i0 * 2..i0 * 2 + 2]).try_into().unwrap();
-        let p1 = (&vtx2xy[i1 * 2..i1 * 2 + 2]).try_into().unwrap();
+        let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
+        let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
         let area0 = del_geo_core::tri2::area(&zero, p0, p1);
         area += area0;
         cog[0] += (p0[0] + p1[0]) * frac_three * area0;

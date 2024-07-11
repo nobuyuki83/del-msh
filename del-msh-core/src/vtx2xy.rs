@@ -96,3 +96,9 @@ where
     assert!(aabb[1] <= aabb[3]);
     aabb
 }
+
+pub fn to_xy<Real>(vtx2xy: &[Real], i_vtx: usize) -> del_geo_core::vec2::XY<Real> {
+    del_geo_core::vec2::XY {
+        p: arrayref::array_ref![vtx2xy, i_vtx * 2, 2],
+    }
+}

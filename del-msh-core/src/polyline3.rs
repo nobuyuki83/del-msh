@@ -1,3 +1,5 @@
+//! methods related to 3D polyline
+
 use num_traits::AsPrimitive;
 
 /// the center of gravity
@@ -344,8 +346,8 @@ where
     for i_vtx in 0..num_vtx - 1 {
         let j_vtx = i_vtx + 1;
         let elen = del_geo_core::edge3::length(
-            vtx2xyz[i_vtx * 3..i_vtx * 3 + 3].try_into().unwrap(),
-            vtx2xyz[j_vtx * 3..j_vtx * 3 + 3].try_into().unwrap(),
+            arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3),
+            arrayref::array_ref!(vtx2xyz, j_vtx * 3, 3),
         );
         len += elen;
     }

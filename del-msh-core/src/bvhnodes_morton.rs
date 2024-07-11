@@ -18,8 +18,8 @@ fn test_expand_bits2() {
 /// * `x` - float number between 0 and 1
 /// * `y` - float number between 0 and 1
 fn morton_code2(x: f32, y: f32) -> u32 {
-    let ix = (x * 1024_f32).max(0_f32).min(1023_f32) as u32;
-    let iy = (y * 1024_f32).max(0_f32).min(1023_f32) as u32;
+    let ix = (x * 1024_f32).clamp(0_f32, 1023_f32) as u32;
+    let iy = (y * 1024_f32).clamp(0_f32, 1023_f32) as u32;
     let ix = expand_bits2(ix);
     let iy = expand_bits2(iy);
     ix * 2 + iy
@@ -85,9 +85,9 @@ fn test_expand_bits3() {
 /// * `y` - float number between 0 and 1
 /// * `z` - float number between 0 and 1
 fn morton_code3(x: f32, y: f32, z: f32) -> u32 {
-    let ix = (x * 1024_f32).max(0_f32).min(1023_f32) as u32;
-    let iy = (y * 1024_f32).max(0_f32).min(1023_f32) as u32;
-    let iz = (z * 1024_f32).max(0_f32).min(1023_f32) as u32;
+    let ix = (x * 1024_f32).clamp(0_f32, 1023_f32) as u32;
+    let iy = (y * 1024_f32).clamp(0_f32, 1023_f32) as u32;
+    let iz = (z * 1024_f32).clamp(0_f32, 1023_f32) as u32;
     let ix = expand_bits3(ix);
     let iy = expand_bits3(iy);
     let iz = expand_bits3(iz);

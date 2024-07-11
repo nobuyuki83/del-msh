@@ -310,3 +310,11 @@ where
     translate_and_scale(&mut vtx2xyz_out, vtx2xyz, &transl, scale);
     vtx2xyz_out
 }
+
+// ------------------------------------------------
+
+pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<Real> {
+    del_geo_core::vec3::XYZ {
+        p: arrayref::array_ref![vtx2xyz, i_vtx * 3, 3],
+    }
+}

@@ -13,9 +13,15 @@ num-traits = { workspace = true }
 anyhow = { workspace = true }
 nalgebra = { workspace = true }
 ordered-float = { workspace =true }
+arrayref = {workspace = true }
 #
 del-geo-core = {workspace = true}
 del-geo-nalgebra = {workspace = true}
 
 [dev-dependencies]
 rand_chacha = {workspace = true}
+criterion = "0.5.1"
+
+[[bench]]
+name = "bvh"
+harness = false

@@ -122,8 +122,8 @@ where
     } // there is adjacent triangle
     let j_tri0 = tri2tri[i_tri0 * 3 + i_node0];
     let j_node0 = crate::trimesh_topology::find_adjacent_edge_index(
-        &tri2vtx[i_tri0 * 3..i_tri0 * 3 + 3].try_into().unwrap(),
-        &tri2tri[i_tri0 * 3..i_tri0 * 3 + 3].try_into().unwrap(),
+        arrayref::array_ref!(tri2vtx, i_tri0 * 3, 3),
+        arrayref::array_ref!(tri2tri, i_tri0 * 3, 3),
         i_node0,
         tri2vtx,
     );
@@ -373,8 +373,8 @@ pub fn enforce_edge<T>(
             {
                 let itri1 = tri2tri[i0_tri * 3 + ied0];
                 let ied1 = crate::trimesh_topology::find_adjacent_edge_index(
-                    &tri2vtx[i0_tri * 3..i0_tri * 3 + 3].try_into().unwrap(),
-                    &tri2tri[i0_tri * 3..i0_tri * 3 + 3].try_into().unwrap(),
+                    arrayref::array_ref![tri2vtx, i0_tri * 3, 3],
+                    arrayref::array_ref![tri2tri, i0_tri * 3, 3],
                     ied0,
                     tri2vtx,
                 );

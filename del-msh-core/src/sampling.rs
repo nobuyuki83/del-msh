@@ -8,7 +8,7 @@ pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, Real>(
     tri2isvalid: F,
 ) -> Vec<Real>
 where
-    Real: num_traits::Float,
+    Real: num_traits::Float + std::fmt::Debug,
 {
     assert!(num_dim == 2 || num_dim == 3);
     let num_tri = tri2vtx.len() / 3;
@@ -18,23 +18,10 @@ where
     for idx_tri in 0..num_tri {
         let a0 = if !tri2isvalid(idx_tri) {
             Real::zero()
+        } else if num_dim == 2 {
+            crate::trimesh2::to_tri2(idx_tri, tri2vtx, vtx2xyz).area()
         } else {
-            let i0 = tri2vtx[idx_tri * 3 + 0];
-            let i1 = tri2vtx[idx_tri * 3 + 1];
-            let i2 = tri2vtx[idx_tri * 3 + 2];
-            if num_dim == 2 {
-                del_geo_core::tri2::area(
-                    &vtx2xyz[i0 * 2 + 0..i0 * 2 + 2].try_into().unwrap(),
-                    &vtx2xyz[i1 * 2 + 0..i1 * 2 + 2].try_into().unwrap(),
-                    &vtx2xyz[i2 * 2 + 0..i2 * 2 + 2].try_into().unwrap(),
-                )
-            } else {
-                del_geo_core::tri3::area(
-                    &vtx2xyz[i0 * 3 + 0..i0 * 3 + 3].try_into().unwrap(),
-                    &vtx2xyz[i1 * 3 + 0..i1 * 3 + 3].try_into().unwrap(),
-                    &vtx2xyz[i2 * 3 + 0..i2 * 3 + 3].try_into().unwrap(),
-                )
-            }
+            crate::trimesh3::to_tri3(idx_tri, tri2vtx, vtx2xyz).area()
         };
         let t0 = cumulative_area_sum[cumulative_area_sum.len() - 1];
         cumulative_area_sum.push(a0 + t0);
@@ -44,7 +31,7 @@ where
 
 pub fn cumulative_area_sum<Real>(tri2vtx: &[usize], vtx2xyz: &[Real], num_dim: usize) -> Vec<Real>
 where
-    Real: num_traits::Float,
+    Real: num_traits::Float + std::fmt::Debug,
 {
     cumulative_areas_trimesh3_condition(tri2vtx, vtx2xyz, num_dim, |_itri| true)
 }
@@ -57,7 +44,7 @@ pub fn sample_uniformly_trimesh<Real>(
     val01_b: Real,
 ) -> (usize, Real, Real)
 where
-    Real: num_traits::Float,
+    Real: num_traits::Float + std::fmt::Debug,
 {
     let num_tri = cumulative_area_sum.len() - 1;
     let a0 = val01_a * cumulative_area_sum[num_tri];
@@ -101,7 +88,7 @@ where
     let (tri2vtx, vtx2xyz) =
         crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(vtxl2xy, -1., -1.);
     let tri2cumarea = cumulative_area_sum(&tri2vtx, &vtx2xyz, 2);
-    let mut vtx2vectwo = vec![nalgebra::Vector2::<f32>::zeros(); 0];
+    let mut vtx2vectwo: Vec<nalgebra::Vector2<f32>> = vec![];
     for _iter in 0..num_iteration {
         let (i_tri, r0, r1) = sample_uniformly_trimesh(&tri2cumarea, reng.gen(), reng.gen());
         let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(

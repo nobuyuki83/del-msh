@@ -149,11 +149,11 @@ where
         } // end loop over text
         self.group2name = vec!["".to_string(); name2group.len()];
         for (name, &i_group) in name2group.iter() {
-            self.group2name[i_group] = name.clone();
+            self.group2name[i_group].clone_from(name);
         }
         self.mtl2name = vec!["".to_string(); name2mtl.len()];
         for (name, &i_mtl) in name2mtl.iter() {
-            self.mtl2name[i_mtl] = name.clone();
+            self.mtl2name[i_mtl].clone_from(name);
         }
         {
             // fix veretx_xyz index

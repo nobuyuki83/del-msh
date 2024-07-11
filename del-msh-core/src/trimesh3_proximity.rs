@@ -12,7 +12,7 @@ where
     f64: AsPrimitive<T>,
 {
     let mut contacting_pair = vec![0usize; 0];
-    let mut contacting_coord = vec![T::zero(); 0];
+    let mut contacting_coord: Vec<T> = vec![];
     // edge-edge
     let num_edge = edge2vtx.len() / 2;
     for i_edge in 0..num_edge {

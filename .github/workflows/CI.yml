@@ -26,6 +26,7 @@ jobs:
         cargo build --release
         cargo test --release
         cargo doc --release
+        cargo bench
 
     - run: |
         echo ${{ github.ref }}

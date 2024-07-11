@@ -22,6 +22,7 @@ rand_chacha = "0.3.1"
 ordered-float = "4.2.1"
 num-traits = "0.2.19"
 nalgebra = "0.33.0"
+arrayref = "0.3.7"
 #
 # del-geo-core = { version = "0.1.29", path="../del-geo/del-geo-core"}
 # del-geo-nalgebra = { version = "0.1.29", path="../del-geo/del-geo-nalgebra"}

@@ -15,9 +15,9 @@ where
     let one_third = Real::one() / (Real::one() + Real::one() + Real::one());
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xy[i0 * 2..i0 * 2 + 2].try_into().unwrap();
-        let p1 = &vtx2xy[i1 * 2..i1 * 2 + 2].try_into().unwrap();
-        let p2 = &vtx2xy[i2 * 2..i2 * 2 + 2].try_into().unwrap();
+        let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
+        let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
+        let p2 = arrayref::array_ref![vtx2xy, i2 * 2, 2];
         let a0 = del_geo_core::tri2::area(p0, p1, p2) * one_third;
         vtx2area[i0] += a0;
         vtx2area[i1] += a0;
@@ -30,13 +30,10 @@ where
 // below: tri2***
 
 pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
-    let mut tri2area = Vec::<f32>::with_capacity(tri2vtx.len() / 3);
-    for node2vtx in tri2vtx.chunks(3) {
-        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = vtx2xyz[i0 * 2..i0 * 2 + 2].try_into().unwrap();
-        let p1 = vtx2xyz[i1 * 2..i1 * 2 + 2].try_into().unwrap();
-        let p2 = vtx2xyz[i2 * 2..i2 * 2 + 2].try_into().unwrap();
-        let area = del_geo_core::tri2::area(p0, p1, p2);
+    let num_tri = tri2vtx.len() / 3;
+    let mut tri2area = Vec::<f32>::with_capacity(num_tri);
+    for i_tri in 0..num_tri {
+        let area = to_tri2(i_tri, tri2vtx, vtx2xyz).area();
         tri2area.push(area);
     }
     tri2area
@@ -116,3 +113,21 @@ where
 }
 
 // -----------------------------
+
+pub fn to_tri2<'a, Index, Real>(
+    i_tri: usize,
+    tri2vtx: &'a [Index],
+    vtx2xy: &'a [Real],
+) -> del_geo_core::tri2::Tri2<'a, Real>
+where
+    Index: AsPrimitive<usize>,
+{
+    let i0: usize = tri2vtx[i_tri * 3].as_();
+    let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
+    let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
+    del_geo_core::tri2::Tri2 {
+        p0: arrayref::array_ref!(vtx2xy, i0 * 2, 2),
+        p1: arrayref::array_ref!(vtx2xy, i1 * 2, 2),
+        p2: arrayref::array_ref!(vtx2xy, i2 * 2, 2),
+    }
+}

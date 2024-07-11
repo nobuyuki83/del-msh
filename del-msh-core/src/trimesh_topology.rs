@@ -1,3 +1,5 @@
+use arrayref::array_ref;
+
 pub fn find_adjacent_edge_index(
     tv: &[usize; 3],
     ts: &[usize; 3],
@@ -113,14 +115,10 @@ pub fn insert_point_on_elem_edge(
     tri2vtx.resize(tri2vtx.len() + 6, 0);
     tri2tri.resize(tri2tri.len() + 6, 0);
 
-    let old_a_v: [usize; 3] = tri2vtx[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
-        .try_into()
-        .unwrap();
-    let old_a_s: [usize; 3] = tri2tri[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
-        .try_into()
-        .unwrap();
-    let old_b_v: [usize; 3] = tri2vtx[itri_adj * 3..itri_adj * 3 + 3].try_into().unwrap();
-    let old_b_s: [usize; 3] = tri2tri[itri_adj * 3..itri_adj * 3 + 3].try_into().unwrap();
+    let old_a_v: [usize; 3] = array_ref!(tri2vtx, idx_tri_insert * 3, 3).to_owned();
+    let old_a_s: [usize; 3] = array_ref!(tri2tri, idx_tri_insert * 3, 3).to_owned();
+    let old_b_v: [usize; 3] = array_ref!(tri2vtx, itri_adj * 3, 3).to_owned();
+    let old_b_s: [usize; 3] = array_ref!(tri2tri, itri_adj * 3, 3).to_owned();
 
     let ino_a0 = idx_triedge_insert;
     let ino_a1 = (idx_triedge_insert + 1) % 3;
@@ -231,10 +229,10 @@ pub fn flip_edge(
     assert!(ied1 < 3);
     assert_eq!(tri2tri[itri_b * 3 + ied1], itri_a);
 
-    let old_a_v: [usize; 3] = tri2vtx[itri_a * 3..itri_a * 3 + 3].try_into().unwrap();
-    let old_a_s: [usize; 3] = tri2tri[itri_a * 3..itri_a * 3 + 3].try_into().unwrap();
-    let old_b_v: [usize; 3] = tri2vtx[itri_b * 3..itri_b * 3 + 3].try_into().unwrap();
-    let old_b_s: [usize; 3] = tri2tri[itri_b * 3..itri_b * 3 + 3].try_into().unwrap();
+    let old_a_v: [usize; 3] = array_ref![tri2vtx, itri_a * 3, 3].to_owned();
+    let old_a_s: [usize; 3] = array_ref![tri2tri, itri_a * 3, 3].to_owned();
+    let old_b_v: [usize; 3] = array_ref![tri2vtx, itri_b * 3, 3].to_owned();
+    let old_b_s: [usize; 3] = array_ref![tri2tri, itri_b * 3, 3].to_owned();
 
     let no_a0 = ied0;
     let no_a1 = (ied0 + 1) % 3;

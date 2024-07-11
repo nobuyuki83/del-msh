@@ -240,7 +240,7 @@ mod tests {
             );
         let mut aabb = Vec::<f32>::new();
         aabb.resize(bvhnodes.len() / 3 * 6, 0.);
-        crate::bvh3::update_aabbs_for_uniform_mesh(
+        crate::aabbs3::update_for_uniform_mesh_with_bvh(
             &mut aabb,
             0,
             &bvhnodes,

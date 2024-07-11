@@ -25,7 +25,7 @@ impl Cell {
     }
 
     fn new_empty() -> Self {
-        let vtx2xy = vec![nalgebra::Vector2::<f32>::zeros(); 0];
+        let vtx2xy: Vec<nalgebra::Vector2<f32>> = vec![];
         let vtx2info = vec![[usize::MAX; 4]; 0];
         Cell { vtx2xy, vtx2info }
     }
@@ -38,13 +38,12 @@ fn hoge(
     vtx2vtxnew: &[usize],
     vtxnew2isvisisted: &mut [bool],
 ) -> Option<Cell> {
-    let mut vtx2xy_new = vec![nalgebra::Vector2::<f32>::zeros(); 0];
+    let mut vtx2xy_new: Vec<nalgebra::Vector2<f32>> = vec![];
     let mut vtx2info_new = vec![[usize::MAX; 4]; 0];
     let (i_vtx0, is_new0) = {
-        let Some(i_vtxnew_start) = vtxnew2isvisisted.iter().position(|is_visited| !is_visited)
-        else {
-            return None;
-        };
+        let i_vtxnew_start = vtxnew2isvisisted
+            .iter()
+            .position(|is_visited| !is_visited)?;
         (i_vtxnew_start, true)
     };
     let (mut i_vtx, mut is_new) = (i_vtx0, is_new0);

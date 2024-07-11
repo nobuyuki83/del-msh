@@ -218,7 +218,7 @@ where
     f64: AsPrimitive<T>,
 {
     let mut intersection_pair = vec![0usize; 0];
-    let mut intersection_times = vec![T::zero(); 0];
+    let mut intersection_times: Vec<T> = vec![];
     assert_eq!(vtx2xyz0.len(), vtx2xyz1.len());
     intersection_pair.clear();
     intersection_times.clear();
