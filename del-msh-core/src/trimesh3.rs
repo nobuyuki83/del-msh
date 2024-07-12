@@ -24,12 +24,11 @@ pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
 
 pub fn vtx2area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
 where
-    T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + std::ops::AddAssign
 {
     let num_vtx = vtx2xyz.len() / 3;
     let mut areas = vec![T::zero(); num_vtx];
-    let one_third = T::one() / 3_f64.as_();
+    let one_third = T::one() / (T::one() + T::one() + T::one());
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);

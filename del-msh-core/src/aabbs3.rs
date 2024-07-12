@@ -77,13 +77,8 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             vtx2xyz1,
         );
         let aabb = del_geo_core::aabb3::from_two_aabbs(
-            (&aabbs[i_bvhnode_child0 * 6..(i_bvhnode_child0 + 1) * 6])
-                .try_into()
-                .unwrap(),
-            (&aabbs[i_bvhnode_child1 * 6..(i_bvhnode_child1 + 1) * 6])
-                .try_into()
-                .unwrap(),
-        );
+            arrayref::array_ref!(aabbs, i_bvhnode_child0 * 6, 6),
+            arrayref::array_ref!(aabbs, i_bvhnode_child1 * 6, 6));
         aabbs[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
     }
 }

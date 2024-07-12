@@ -221,8 +221,8 @@ pub fn flip_edge(
     let itri_b = tri2tri[itri_a * 3 + ied0];
     assert!(itri_b < tri2vtx.len());
     let ied1 = find_adjacent_edge_index(
-        &tri2vtx[itri_a * 3..itri_a * 3 + 3].try_into().unwrap(),
-        &tri2tri[itri_a * 3..itri_a * 3 + 3].try_into().unwrap(),
+        arrayref::array_ref!(tri2vtx, itri_a * 3, 3),
+        arrayref::array_ref!(tri2tri, itri_a * 3, 3),
         ied0,
         tri2vtx,
     );

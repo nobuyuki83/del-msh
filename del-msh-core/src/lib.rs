@@ -41,7 +41,7 @@ pub mod io_vtk;
 // search
 pub mod aabbs2;
 pub mod aabbs3;
-pub mod bvh;
+pub mod bvhnodes;
 pub mod bvh2;
 pub mod bvh3;
 pub mod bvhnodes_morton;

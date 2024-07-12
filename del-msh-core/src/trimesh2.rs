@@ -64,9 +64,9 @@ where
 {
     for (i_tri, node2vtx) in tri2vtx.chunks(3).enumerate() {
         let (i0, i1, i2) = (node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_());
-        let p0 = vtx2xy[i0 * 2..i0 * 2 + 2].try_into().unwrap();
-        let p1 = vtx2xy[i1 * 2..i1 * 2 + 2].try_into().unwrap();
-        let p2 = vtx2xy[i2 * 2..i2 * 2 + 2].try_into().unwrap();
+        let p0 = arrayref::array_ref!(vtx2xy, i0 * 2, 2);
+        let p1 = arrayref::array_ref!(vtx2xy, i1 * 2, 2);
+        let p2 = arrayref::array_ref!(vtx2xy, i2 * 2, 2);
         let Some((r0, r1)) = del_geo_core::tri2::is_inside(p0, p1, p2, q, Real::one()) else {
             continue;
         };

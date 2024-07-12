@@ -290,8 +290,7 @@ where
     vtx2xyz
         .chunks(3)
         .flat_map(|v| {
-            let v: [Real; 3] = v.try_into().unwrap();
-            del_geo_core::mat4::transform_homogeneous(m, &v).unwrap()
+            del_geo_core::mat4::transform_homogeneous(m, arrayref::array_ref![v,0,3]).unwrap()
         })
         .collect()
 }
@@ -301,7 +300,7 @@ where
     Real: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<Real>,
 {
-    let aabb = crate::vtx2xyz::aabb3(vtx2xyz, Real::zero());
+    let aabb = aabb3(vtx2xyz, Real::zero());
     let cnt = del_geo_core::aabb3::center(&aabb);
     let transl = [-cnt[0], -cnt[1], -cnt[2]];
     let max_edge_size = del_geo_core::aabb3::max_edge_size(&aabb);

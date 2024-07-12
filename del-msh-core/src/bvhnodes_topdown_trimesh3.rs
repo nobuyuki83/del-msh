@@ -55,7 +55,6 @@ fn dominant_direction_aabb(
     (org, dir)
 }
 
-#[allow(clippy::identity_op)]
 fn divide_list_of_elements<T>(
     i_node_root: usize,
     elem2node: &mut [usize],
@@ -72,8 +71,8 @@ fn divide_list_of_elements<T>(
     let inode_ch0 = nodes.len() / 3;
     let inode_ch1 = inode_ch0 + 1;
     nodes.resize(nodes.len() + 6, usize::MAX);
-    nodes[inode_ch0 * 3 + 0] = i_node_root;
-    nodes[inode_ch1 * 3 + 0] = i_node_root;
+    nodes[inode_ch0 * 3] = i_node_root;
+    nodes[inode_ch1 * 3] = i_node_root;
     nodes[i_node_root * 3 + 1] = inode_ch0;
     nodes[i_node_root * 3 + 2] = inode_ch1;
     let list_ch0 = {

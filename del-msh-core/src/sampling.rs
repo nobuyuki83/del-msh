@@ -1,6 +1,5 @@
 //! stochastic sampling on mesh
 
-#[allow(clippy::identity_op)]
 pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, Real>(
     tri2vtx: &[usize],
     vtx2xyz: &[Real],

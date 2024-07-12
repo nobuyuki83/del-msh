@@ -352,7 +352,7 @@ fn test_3d() {
     check_morton_code_range_split(&idx2morton);
     let mut bvhnodes = vec![0usize; (num_vtx * 2 - 1) * 3];
     bvhnodes_morton(&mut bvhnodes, &idx2vtx, &idx2morton);
-    crate::bvh::check_bvh_topology(&bvhnodes, num_vtx);
+    crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
 #[test]
@@ -380,7 +380,7 @@ fn test_2d() {
     check_morton_code_range_split(&idx2morton);
     let mut bvhnodes = vec![0usize; (num_vtx * 2 - 1) * 3];
     bvhnodes_morton(&mut bvhnodes, &idx2vtx, &idx2morton);
-    crate::bvh::check_bvh_topology(&bvhnodes, num_vtx);
+    crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
 pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>

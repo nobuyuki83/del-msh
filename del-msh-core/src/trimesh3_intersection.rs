@@ -113,8 +113,8 @@ pub fn search_with_bvh_between_branches<T>(
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
     if !del_geo_core::aabb3::is_intersect(
-        (&aabbs[ibvh0 * 6..(ibvh0 + 1) * 6]).try_into().unwrap(),
-        (&aabbs[ibvh1 * 6..(ibvh1 + 1) * 6]).try_into().unwrap(),
+        arrayref::array_ref![&aabbs, ibvh0 * 6, 6],
+        arrayref::array_ref![&aabbs, ibvh1 * 6, 6],
     ) {
         return;
     }
