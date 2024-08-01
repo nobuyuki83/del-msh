@@ -4,6 +4,7 @@ use anyhow::Context;
 use num_traits::AsPrimitive;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
+use std::ops::AddAssign;
 
 pub struct WavefrontObj<Index, Real> {
     pub vtx2xyz: Vec<Real>,
@@ -22,8 +23,8 @@ pub struct WavefrontObj<Index, Real> {
 
 impl<Index, Real> WavefrontObj<Index, Real>
 where
-    Real: std::str::FromStr + std::fmt::Display,
-    Index: num_traits::PrimInt + 'static,
+    Real: std::str::FromStr + std::fmt::Display + Copy + num_traits::Zero,
+    Index: num_traits::PrimInt + 'static + AddAssign + AsPrimitive<usize> + Copy,
     usize: AsPrimitive<Index>,
     i32: AsPrimitive<Index>,
 {
@@ -199,12 +200,26 @@ where
         }
         Ok(())
     }
+
+    pub fn unified_xyz_uv_as_trimesh(&self) -> (Vec<Index>, Vec<Real>, Vec<Real>)
+    {
+        let (tri2uni, uni2vtx_xyz, uni2vtx_uv) =
+            crate::unify_index::unify_two_indices_of_triangle_mesh(
+                &self.idx2vtx_xyz,
+                &self.idx2vtx_uv,
+            );
+        assert_eq!(uni2vtx_xyz.len(), uni2vtx_uv.len());
+        let uni2xyz =
+            crate::map_idx::map_vertex_attibute_from(&self.vtx2xyz, 3, &uni2vtx_xyz);
+        let uni2uv = crate::map_idx::map_vertex_attibute_from(&self.vtx2uv, 2, &uni2vtx_uv);
+        (tri2uni, uni2xyz, uni2uv)
+    }
 }
 
 impl<Index, Real> Default for WavefrontObj<Index, Real>
 where
-    Real: std::str::FromStr + std::fmt::Display,
-    Index: num_traits::PrimInt + 'static,
+    Real: std::str::FromStr + std::fmt::Display + Copy + num_traits::Zero,
+    Index: num_traits::PrimInt + 'static + AddAssign + AsPrimitive<usize> + Copy,
     usize: AsPrimitive<Index>,
     i32: AsPrimitive<Index>,
 {
@@ -219,7 +234,7 @@ pub fn load_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
 ) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
 where
     Real: std::str::FromStr + std::fmt::Display + num_traits::Float,
-    Index: num_traits::PrimInt + 'static,
+    Index: num_traits::PrimInt + 'static + AddAssign + AsPrimitive<usize> + Copy,
     usize: AsPrimitive<Index>,
     i32: AsPrimitive<Index>,
 {

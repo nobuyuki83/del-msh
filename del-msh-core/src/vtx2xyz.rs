@@ -254,7 +254,7 @@ fn test_obb3() {
 // above: to_****
 // ---------------------
 
-pub fn translate_and_scale<Real>(
+pub fn translate_then_scale<Real>(
     vtx2xyz_out: &mut [Real],
     vtx2xyz_in: &[Real],
     transl: &[Real; 3],
@@ -290,7 +290,7 @@ where
     vtx2xyz
         .chunks(3)
         .flat_map(|v| {
-            del_geo_core::mat4::transform_homogeneous(m, arrayref::array_ref![v,0,3]).unwrap()
+            del_geo_core::mat4_col_major::transform_homogeneous(m, arrayref::array_ref![v,0,3]).unwrap()
         })
         .collect()
 }
@@ -306,7 +306,7 @@ where
     let max_edge_size = del_geo_core::aabb3::max_edge_size(&aabb);
     let scale = Real::one() / max_edge_size;
     let mut vtx2xyz_out = Vec::from(vtx2xyz);
-    translate_and_scale(&mut vtx2xyz_out, vtx2xyz, &transl, scale);
+    translate_then_scale(&mut vtx2xyz_out, vtx2xyz, &transl, scale);
     vtx2xyz_out
 }
 

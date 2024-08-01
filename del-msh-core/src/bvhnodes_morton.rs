@@ -45,7 +45,7 @@ pub fn sorted_morten_code2(
         .chunks(2)
         .zip(vtx2morton.iter_mut())
         .for_each(|(xy, m)| {
-            let xy = del_geo_core::mat3::transform_homogeneous(transform_xy2uni, &[xy[0], xy[1]])
+            let xy = del_geo_core::mat3_col_major::transform_homogeneous(transform_xy2uni, &[xy[0], xy[1]])
                 .unwrap();
             *m = morton_code2(xy[0], xy[1]);
         });
@@ -119,7 +119,7 @@ pub fn sorted_morten_code3(
         .chunks(3)
         .zip(vtx2morton.iter_mut())
         .for_each(|(xyz, m)| {
-            let xyz = del_geo_core::mat4::transform_homogeneous(
+            let xyz = del_geo_core::mat4_col_major::transform_homogeneous(
                 transform_xy2uni,
                 &[xyz[0], xyz[1], xyz[2]],
             )
@@ -148,7 +148,7 @@ fn test_sorted_morten_code() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat4::identity(),
+        &del_geo_core::mat4_col_major::identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -343,7 +343,7 @@ fn test_3d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat4::identity(),
+        &del_geo_core::mat4_col_major::identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -371,7 +371,7 @@ fn test_2d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xy,
-        &del_geo_core::mat3::identity::<f32>(),
+        &del_geo_core::mat3_col_major::identity::<f32>(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
