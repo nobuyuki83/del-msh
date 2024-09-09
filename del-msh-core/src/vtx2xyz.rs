@@ -27,62 +27,12 @@ where
     assert!(!vtx2xyz.is_empty());
     let mut aabb = [T::zero(); 6];
     {
-        {
-            let cgx = vtx2xyz[0];
-            aabb[0] = cgx - eps;
-            aabb[3] = cgx + eps;
-        }
-        {
-            let cgy = vtx2xyz[1];
-            aabb[1] = cgy - eps;
-            aabb[4] = cgy + eps;
-        }
-        {
-            let cgz = vtx2xyz[2];
-            aabb[2] = cgz - eps;
-            aabb[5] = cgz + eps;
-        }
+        let xyz = arrayref::array_ref!(vtx2xyz, 0, 3);
+        del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, eps);
     }
     for i_vtx in 1..vtx2xyz.len() / 3 {
-        {
-            let cgx = vtx2xyz[i_vtx * 3];
-            aabb[0] = if cgx - eps < aabb[0] {
-                cgx - eps
-            } else {
-                aabb[0]
-            };
-            aabb[3] = if cgx + eps > aabb[3] {
-                cgx + eps
-            } else {
-                aabb[3]
-            };
-        }
-        {
-            let cgy = vtx2xyz[i_vtx * 3 + 1];
-            aabb[1] = if cgy - eps < aabb[1] {
-                cgy - eps
-            } else {
-                aabb[1]
-            };
-            aabb[4] = if cgy + eps > aabb[4] {
-                cgy + eps
-            } else {
-                aabb[4]
-            };
-        }
-        {
-            let cgz = vtx2xyz[i_vtx * 3 + 2];
-            aabb[2] = if cgz - eps < aabb[2] {
-                cgz - eps
-            } else {
-                aabb[2]
-            };
-            aabb[5] = if cgz + eps > aabb[5] {
-                cgz + eps
-            } else {
-                aabb[5]
-            };
-        }
+        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
+        del_geo_core::aabb3::update(&mut aabb, xyz, eps);
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);
@@ -99,63 +49,35 @@ where
     let mut aabb = [Real::zero(); 6];
     {
         let i_vtx: usize = idx2vtx[0].as_();
-        {
-            let cgx = vtx2xyz[i_vtx * 3];
-            aabb[0] = cgx - eps;
-            aabb[3] = cgx + eps;
-        }
-        {
-            let cgy = vtx2xyz[i_vtx * 3 + 1];
-            aabb[1] = cgy - eps;
-            aabb[4] = cgy + eps;
-        }
-        {
-            let cgz = vtx2xyz[i_vtx * 3 + 2];
-            aabb[2] = cgz - eps;
-            aabb[5] = cgz + eps;
-        }
+        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
+        del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, eps);
     }
     for &i_vtx in idx2vtx.iter().skip(1) {
         let i_vtx: usize = i_vtx.as_();
-        {
-            let cgx = vtx2xyz[i_vtx * 3];
-            aabb[0] = if cgx - eps < aabb[0] {
-                cgx - eps
-            } else {
-                aabb[0]
-            };
-            aabb[3] = if cgx + eps > aabb[3] {
-                cgx + eps
-            } else {
-                aabb[3]
-            };
-        }
-        {
-            let cgy = vtx2xyz[i_vtx * 3 + 1];
-            aabb[1] = if cgy - eps < aabb[1] {
-                cgy - eps
-            } else {
-                aabb[1]
-            };
-            aabb[4] = if cgy + eps > aabb[4] {
-                cgy + eps
-            } else {
-                aabb[4]
-            };
-        }
-        {
-            let cgz = vtx2xyz[i_vtx * 3 + 2];
-            aabb[2] = if cgz - eps < aabb[2] {
-                cgz - eps
-            } else {
-                aabb[2]
-            };
-            aabb[5] = if cgz + eps > aabb[5] {
-                cgz + eps
-            } else {
-                aabb[5]
-            };
-        }
+        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
+        del_geo_core::aabb3::update(&mut aabb, xyz, eps);
+    }
+    assert!(aabb[0] <= aabb[3]);
+    assert!(aabb[1] <= aabb[4]);
+    assert!(aabb[2] <= aabb[5]);
+    aabb
+}
+
+pub trait HasXyz<Real> {
+    fn xyz(&self) -> [Real;3];
+}
+
+pub fn aabb3_from_points<Real,Point: HasXyz<Real>>(points: &[Point]) -> [Real;6]
+where Real: num_traits::Float
+{
+    let mut aabb = [Real::zero(); 6];
+    {
+        let xyz = points[0].xyz();
+        del_geo_core::aabb3::set_as_cube(&mut aabb, &xyz, Real::zero());
+    }
+    for i_vtx in 1..points.len() {
+        let xyz = points[i_vtx].xyz();
+        del_geo_core::aabb3::update(&mut aabb, &xyz, Real::zero());
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);
