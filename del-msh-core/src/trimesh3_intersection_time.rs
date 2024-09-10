@@ -20,7 +20,8 @@ pub fn edge_edge_between_bvh_branches<T>(
     // trim branch
     if !del_geo_core::aabb3::is_intersect(
         arrayref::array_ref![aabbs, ibvh0 * 6, 6],
-        arrayref::array_ref![aabbs, ibvh1 * 6, 6]) {
+        arrayref::array_ref![aabbs, ibvh1 * 6, 6],
+    ) {
         return;
     }
     let ichild0_left = bvhnodes[ibvh0 * 3 + 1];

@@ -18,7 +18,7 @@ pub fn from_uniform_mesh_with_vtx2elem<Index>(
 ) -> (Vec<Index>, Vec<Index>)
 where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::ops::AddAssign<Index>,
-    usize: AsPrimitive<Index>
+    usize: AsPrimitive<Index>,
 {
     assert_eq!(vtx2idx.len(), num_vtx + 1);
     assert_eq!(elem2vtx.len() % num_node, 0);

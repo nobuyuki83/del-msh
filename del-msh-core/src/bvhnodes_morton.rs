@@ -45,8 +45,11 @@ pub fn sorted_morten_code2(
         .chunks(2)
         .zip(vtx2morton.iter_mut())
         .for_each(|(xy, m)| {
-            let xy = del_geo_core::mat3_col_major::transform_homogeneous(transform_xy2uni, &[xy[0], xy[1]])
-                .unwrap();
+            let xy = del_geo_core::mat3_col_major::transform_homogeneous(
+                transform_xy2uni,
+                &[xy[0], xy[1]],
+            )
+            .unwrap();
             *m = morton_code2(xy[0], xy[1]);
         });
     idx2vtx

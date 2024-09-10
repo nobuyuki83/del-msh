@@ -304,9 +304,9 @@ pub fn edge2vtx(num_vtx: usize) -> Vec<usize> {
     edge2vtx
 }
 
-pub fn flip<Real>(vtx2xy: &[Real],
-                  num_dim: usize) -> Vec<Real>
-where Real: num_traits::Float
+pub fn flip<Real>(vtx2xy: &[Real], num_dim: usize) -> Vec<Real>
+where
+    Real: num_traits::Float,
 {
     let mut vtx2xy_out = Vec::<Real>::with_capacity(vtx2xy.len());
     for xy in vtx2xy.chunks(num_dim).rev() {

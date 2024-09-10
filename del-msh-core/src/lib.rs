@@ -41,14 +41,15 @@ pub mod io_vtk;
 // search
 pub mod aabbs2;
 pub mod aabbs3;
-pub mod bvhnodes;
 pub mod bvh2;
 pub mod bvh3;
+pub mod bvhnodes;
 pub mod bvhnodes_morton;
 pub mod bvhnodes_topdown_trimesh3;
 pub mod kdtree2;
 
 // self intersection
+pub mod io_ply;
 pub mod io_svg;
 pub mod polygon_mesh;
 pub mod trimesh;

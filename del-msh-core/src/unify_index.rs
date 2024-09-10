@@ -8,8 +8,9 @@ pub fn unify_two_indices_of_triangle_mesh<Index>(
     tri2vtxa: &[Index],
     tri2vtxb: &[Index],
 ) -> (Vec<Index>, Vec<Index>, Vec<Index>)
-where Index: num_traits::PrimInt + std::ops::AddAssign + 'static + AsPrimitive<usize>,
-      usize: AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + std::ops::AddAssign + 'static + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
 {
     let num_vtxa = *tri2vtxa.iter().max().unwrap() + Index::one();
     let num_vtxb = *tri2vtxb.iter().max().unwrap() + Index::one();
@@ -28,8 +29,10 @@ where Index: num_traits::PrimInt + std::ops::AddAssign + 'static + AsPrimitive<u
             }
             let i_vtxa = tri2vtxa[i_tri * 3 + i_node];
             let i_vtxb = tri2vtxb[i_tri * 3 + i_node];
-            let s0 = &vtxa2tri.1[vtxa2tri.0[i_vtxa.as_()].as_()..vtxa2tri.0[i_vtxa.as_() + 1].as_()];
-            let s1 = &vtxb2tri.1[vtxb2tri.0[i_vtxb.as_()].as_()..vtxb2tri.0[i_vtxb.as_() + 1].as_()];
+            let s0 =
+                &vtxa2tri.1[vtxa2tri.0[i_vtxa.as_()].as_()..vtxa2tri.0[i_vtxa.as_() + 1].as_()];
+            let s1 =
+                &vtxb2tri.1[vtxb2tri.0[i_vtxb.as_()].as_()..vtxb2tri.0[i_vtxb.as_() + 1].as_()];
             let s0 = std::collections::BTreeSet::<&Index>::from_iter(s0.iter());
             let s1 = std::collections::BTreeSet::<&Index>::from_iter(s1.iter());
             let intersection: Vec<_> = s0.intersection(&s1).collect();

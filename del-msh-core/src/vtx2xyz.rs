@@ -64,11 +64,12 @@ where
 }
 
 pub trait HasXyz<Real> {
-    fn xyz(&self) -> [Real;3];
+    fn xyz(&self) -> [Real; 3];
 }
 
-pub fn aabb3_from_points<Real,Point: HasXyz<Real>>(points: &[Point]) -> [Real;6]
-where Real: num_traits::Float
+pub fn aabb3_from_points<Real, Point: HasXyz<Real>>(points: &[Point]) -> [Real; 6]
+where
+    Real: num_traits::Float + std::fmt::Debug,
 {
     let mut aabb = [Real::zero(); 6];
     {
@@ -212,7 +213,8 @@ where
     vtx2xyz
         .chunks(3)
         .flat_map(|v| {
-            del_geo_core::mat4_col_major::transform_homogeneous(m, arrayref::array_ref![v,0,3]).unwrap()
+            del_geo_core::mat4_col_major::transform_homogeneous(m, arrayref::array_ref![v, 0, 3])
+                .unwrap()
         })
         .collect()
 }
