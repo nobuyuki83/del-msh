@@ -22,6 +22,7 @@ pub mod vtx2vec;
 pub mod vtx2xdim;
 pub mod vtx2xy;
 pub mod vtx2xyz;
+pub mod vtx2point;
 
 // misc functions general to mesh type
 pub mod dijkstra;

@@ -63,29 +63,6 @@ where
     aabb
 }
 
-pub trait HasXyz<Real> {
-    fn xyz(&self) -> [Real; 3];
-}
-
-pub fn aabb3_from_points<Real, Point: HasXyz<Real>>(points: &[Point]) -> [Real; 6]
-where
-    Real: num_traits::Float + std::fmt::Debug,
-{
-    let mut aabb = [Real::zero(); 6];
-    {
-        let xyz = points[0].xyz();
-        del_geo_core::aabb3::set_as_cube(&mut aabb, &xyz, Real::zero());
-    }
-    for i_vtx in 1..points.len() {
-        let xyz = points[i_vtx].xyz();
-        del_geo_core::aabb3::update(&mut aabb, &xyz, Real::zero());
-    }
-    assert!(aabb[0] <= aabb[3]);
-    assert!(aabb[1] <= aabb[4]);
-    assert!(aabb[2] <= aabb[5]);
-    aabb
-}
-
 /// Oriented Bounding Box (OBB)
 pub fn obb3<Real>(vtx2xyz: &[Real]) -> [Real; 12]
 where
