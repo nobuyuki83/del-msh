@@ -190,7 +190,7 @@ pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(pa
             (rgb[2] + 0.5) * sh_c0,
         ];
         let quaternion = [quaternion[1], quaternion[2],quaternion[3],quaternion[0]];
-        let quaternion = del_geo_core::quat::normalized(&quaternion);
+        let quaternion = del_geo_core::quaternion::normalized(&quaternion);
         let scale = [scale[0].exp(), scale[1].exp(), scale[2].exp()];
         pnt2gs3.push(Splat::new(xyz, rgb, sh, op[0], scale, quaternion));
     }
