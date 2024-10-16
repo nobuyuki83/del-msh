@@ -129,6 +129,24 @@ where
     dist_min
 }
 
+pub fn RotationalMomentPolar_Polygon2(
+    aVec2: &[f32],
+    pivot: &[f32; 2]) -> f32
+{
+    use del_geo_core::vec2;
+    let ne = aVec2.len() / 2;
+    let mut sum_I = 0.0;
+    for ie in 0..ne {
+        let ip0 = ie;
+        let ip1 = (ie + 1) % ne;
+        let p0 = [aVec2[ip0*2+0] - pivot[0], aVec2[ip0*2+1] - pivot[1]];
+        let p1 = [aVec2[ip1*2+0] - pivot[0], aVec2[ip1*2+1] - pivot[1]];
+        let a0 = vec2::area_quadrilateral(&p0, &p1) * 0.5;
+        sum_I += a0 * (vec2::dot(&p0, &p0) + vec2::dot(&p0, &p1) + vec2::dot(&p1, &p1));
+    }
+    sum_I *  (1.0 / 6.0)
+}
+
 // above: interface is independent from nalgebra
 // ------------------------------------
 // below: interface is dependent on nalgebra

@@ -191,8 +191,17 @@ pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(pa
         ];
         let quaternion = [quaternion[1], quaternion[2],quaternion[3],quaternion[0]];
         let quaternion = del_geo_core::quaternion::normalized(&quaternion);
+        {
+            // rotation in x direction to make the scene y-up?
+            // let quat_x= del_geo_core::quaternion::from_axisangle(&[std::f32::consts::FRAC_PI_2,0.,0.]);
+            // let quaternion = del_geo_core::quaternion::mult_quaternion(&quat_x, &quaternion);
+            // let xyz = [xyz[0], -xyz[2], xyz[1]];
+            // let quaternion = del_geo_core::quaternion::mult_quaternion(&quaternion, &quat_x);
+        }
         let scale = [scale[0].exp(), scale[1].exp(), scale[2].exp()];
-        pnt2gs3.push(Splat::new(xyz, rgb, sh, op[0], scale, quaternion));
+        let op = op[0];
+        let op = 1f32 / (1f32 + (-op).exp());
+        pnt2gs3.push(Splat::new(xyz, rgb, sh, op, scale, quaternion));
     }
     Ok(pnt2gs3)
 }
