@@ -151,7 +151,7 @@ fn test_sorted_morten_code() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat4_col_major::identity(),
+        &del_geo_core::mat4_col_major::from_identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -346,7 +346,7 @@ fn test_3d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat4_col_major::identity(),
+        &del_geo_core::mat4_col_major::from_identity(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;
@@ -374,7 +374,7 @@ fn test_2d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xy,
-        &del_geo_core::mat3_col_major::identity::<f32>(),
+        &del_geo_core::mat3_col_major::from_identity::<f32>(),
     );
     for idx in 0..num_vtx - 1 {
         let jdx = idx + 1;

@@ -59,7 +59,7 @@ fn build_bvh_topology_morton<'a>(
             &mut idx2morton,
             &mut vtx2morton,
             vtx2xyz,
-            &del_geo_core::mat4_col_major::identity(),
+            &del_geo_core::mat4_col_major::from_identity(),
         );
     } else if num_dim == 2 {
         del_msh_core::bvhnodes_morton::sorted_morten_code2(
@@ -67,7 +67,7 @@ fn build_bvh_topology_morton<'a>(
             &mut idx2morton,
             &mut vtx2morton,
             vtx2xyz,
-            &del_geo_core::mat3_col_major::identity(),
+            &del_geo_core::mat3_col_major::from_identity(),
         );
     }
     let bvhnodes = numpy::PyArray2::<usize>::zeros_bound(_py, (num_vtx * 2 - 1, 3), false);
