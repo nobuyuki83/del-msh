@@ -1,6 +1,7 @@
 use num_traits::AsPrimitive;
 
 fn parse(s: &str) -> f32 {
+    let s = s.trim_start();
     if let Some(i) = s.rfind('-') {
         if i != 0 {
             let mut s = String::from(s);

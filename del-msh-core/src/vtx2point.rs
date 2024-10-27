@@ -10,11 +10,10 @@ where
     let mut aabb = [Real::zero(); 6];
     {
         let xyz = points[0].xyz();
-        del_geo_core::aabb3::set_as_cube(&mut aabb, &xyz, Real::zero());
+        del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, Real::zero());
     }
-    for i_vtx in 1..points.len() {
-        let xyz = points[i_vtx].xyz();
-        del_geo_core::aabb3::update(&mut aabb, &xyz, Real::zero());
+    for point in points.iter().skip(1) {
+        del_geo_core::aabb3::update(&mut aabb, point.xyz(), Real::zero());
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);

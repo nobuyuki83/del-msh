@@ -341,6 +341,7 @@ pub fn length<T>(vtx2xyz: &[T]) -> T
 where
     T: num_traits::Float + std::ops::AddAssign + std::fmt::Debug,
 {
+    assert_eq!(vtx2xyz.len()%3,0);
     let num_vtx = vtx2xyz.len() / 3;
     let mut len = T::zero();
     for i_vtx in 0..num_vtx - 1 {

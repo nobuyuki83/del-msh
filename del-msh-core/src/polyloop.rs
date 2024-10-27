@@ -29,8 +29,8 @@ where
     let mut len: T = T::zero();
     for ip0 in 0..np {
         let ip1 = (ip0 + 1) % np;
-        let p0 = &vtx2xyz[ip0 * N..ip0 * N + N];
-        let p1 = &vtx2xyz[ip1 * N..ip1 * N + N];
+        let p0: &[T;N] = &vtx2xyz[ip0 * N..ip0 * N + N].try_into().unwrap();
+        let p1: &[T;N] = &vtx2xyz[ip1 * N..ip1 * N + N].try_into().unwrap();
         len += del_geo_core::edge::length::<T, N>(p0, p1);
     }
     len
@@ -44,8 +44,8 @@ where
     let mut edge2length = Vec::<T>::with_capacity(np);
     for ip0 in 0..np {
         let ip1 = (ip0 + 1) % np;
-        let p0 = &vtx2xyz[ip0 * N..ip0 * N + N];
-        let p1 = &vtx2xyz[ip1 * N..ip1 * N + N];
+        let p0: &[T;N] = &vtx2xyz[ip0 * N..ip0 * N + N].try_into().unwrap();
+        let p1: &[T;N] = &vtx2xyz[ip1 * N..ip1 * N + N].try_into().unwrap();
         edge2length.push(del_geo_core::edge::length::<T, N>(p0, p1));
     }
     edge2length

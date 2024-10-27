@@ -96,7 +96,7 @@ pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(path: Path) ->
 }
 
 fn parse_f32<const N: usize>(
-    buff: &Vec<u8>,
+    buff: &[u8],
     i_buff: usize) -> anyhow::Result<[f32;N]>
 {
     let mut a = [0f32;N];

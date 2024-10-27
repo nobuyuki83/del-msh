@@ -57,8 +57,8 @@ where
 
 #[test]
 fn test_cylider_open_end_tri3() {
-    crate::trimesh3_primitive::cylinder_open_end_yup::<f32>(32, 16, 1f32, 1f32, true);
-    crate::trimesh3_primitive::cylinder_open_end_yup::<f64>(32, 16, 1f64, 1f64, true);
+    cylinder_open_end_yup::<f32>(32, 16, 1f32, 1f32, true);
+    cylinder_open_end_yup::<f64>(32, 16, 1f64, 1f64, true);
 }
 
 // -------------------------------------
@@ -600,4 +600,28 @@ fn test_arrow_connecting_two_points() {
         3,
     )
     .unwrap();
+}
+
+// ------------------------------
+
+pub fn obb3<Real>(obb: &[Real;12]) -> (Vec<usize>, Vec<Real>)
+where Real: num_traits::Float
+{
+    let ps = del_geo_core::obb3::corner_points(obb);
+    let vtx2xyz: Vec<Real> = ps.iter().flat_map(|v| [v[0], v[1], v[2]] ).collect();
+    let tri2vtx: Vec<usize> = vec!(
+        0, 2, 1,
+        0, 3, 2,
+        4, 5, 6,
+        4, 6, 7,
+        0, 1, 5,
+        0, 5, 4,
+        1, 2, 6,
+        1, 6, 5,
+        2, 3, 7,
+        2, 7, 6,
+        3, 0, 4,
+        3, 4, 7,
+    );
+    (tri2vtx, vtx2xyz)
 }
