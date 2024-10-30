@@ -180,14 +180,14 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
     let mc2: u32 = idx2morton[idx1 + 1];
     if mc0 == mc1 && mc1 == mc2 {
         // for hash value collision
-        let mut jmc = idx1 + 1;
-        while jmc < num_mc {
-            jmc += 1;
-            if idx2morton[jmc] != mc1 {
-                break;
+        let mut jdx = idx1 + 1;
+        while jdx < num_mc - 1 {
+            jdx += 1;
+            if idx2morton[jdx] != mc1 {
+                return (idx1, jdx - 1);
             }
         }
-        return (idx1, jmc - 1);
+        return (idx1, jdx)
     }
     // get direction
     // (d==+1) -> imc is left-end, move forward
@@ -199,11 +199,11 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
     let delta_min = delta(idx1, (idx1 as i64 - d) as usize, idx2morton);
     let mut lmax: i64 = 2;
     loop {
-        let jmc = idx1 as i64 + lmax * d;
-        if jmc < 0 || jmc >= idx2morton.len() as i64 {
+        let jdx = idx1 as i64 + lmax * d;
+        if jdx < 0 || jdx >= idx2morton.len() as i64 {
             break;
         }
-        if delta(idx1, jmc.try_into().unwrap(), idx2morton) <= delta_min {
+        if delta(idx1, jdx.try_into().unwrap(), idx2morton) <= delta_min {
             break;
         }
         lmax *= 2;
@@ -214,10 +214,10 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
         let mut l = 0;
         let mut t = lmax / 2;
         while t >= 1 {
-            let jmc = idx1 as i64 + (l + t) * d;
-            if jmc >= 0
-                && jmc < idx2morton.len() as i64
-                && delta(idx1, jmc as usize, idx2morton) > delta_min
+            let jdx = idx1 as i64 + (l + t) * d;
+            if jdx >= 0
+                && jdx < idx2morton.len() as i64
+                && delta(idx1, jdx as usize, idx2morton) > delta_min
             {
                 l += t;
             }
@@ -225,11 +225,11 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
         }
         l
     };
-    let j = (idx1 as i64 + l * d) as usize;
-    if idx1 <= j {
-        (idx1, j)
+    let jdx = (idx1 as i64 + l * d) as usize;
+    if idx1 <= jdx {
+        (idx1, jdx)
     } else {
-        (j, idx1)
+        (jdx, idx1)
     }
 }
 
@@ -411,7 +411,8 @@ where
         3 => {
             let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
             let transform_xy2uni =
-                del_geo_core::aabb3::to_transformation_world2unit_ortho_preserve_asp(&aabb);
+                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit_preserve_asp(&aabb);
+//                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit(&aabb);
             sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,
