@@ -125,7 +125,6 @@ fn is_point_closer(aabb: &[f32], ray_dir: &[f32; 3], t: f32) -> bool {
 
 fn get_tri_mesh_with_bvh() {
     //TODO: get trimeshwithbvh struct from trimesh
-    todo!()
 }
 
 #[test]
