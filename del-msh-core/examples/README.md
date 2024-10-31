@@ -6,8 +6,9 @@
 cargo --version
 ```
 
-2. check library can be compiled
+2. download the library and check it can be compiled
 ```bash
+git clone https://github.com/nobuyuki83/del-msh.git
 cd del-msh
 cargo test del-msh-core --release
 ```
