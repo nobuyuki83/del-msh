@@ -87,14 +87,18 @@ where
         let node2vtx_i = [i0, i1, i2];
         let node2vtx_j = [j0, j1, j2];
         assert_eq!(node2vtx_i[is], node2vtx_j[js]);
-        del_geo_nalgebra::tri3::is_intersection_tri3(
+        let res = del_geo_nalgebra::tri3::is_intersection_tri3(
             &to_navec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
             &to_navec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
             &to_navec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
             &to_navec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
             &to_navec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
             &to_navec3(vtx2xyz, node2vtx_j[(js + 2) % 3]),
-        )
+        );
+        if let Some(res) = res {
+            dbg!(res.0, res.1);
+        }
+        return res;
     }
 }
 

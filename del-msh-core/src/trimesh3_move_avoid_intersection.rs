@@ -132,8 +132,10 @@ pub fn match_vtx2xyz_while_avoid_collision(
     {
         // there should be no self-intersection in the vtx2xyz_start mesh
         let tripairs = crate::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz_start);
-        println!("initial # of intersecting tripairs  {:}", tripairs.len());
-        assert_eq!(tripairs.len(), 0);
+        for pair in tripairs.iter() {
+            dbg!(pair.i_tri, pair.j_tri);
+        }
+        assert_eq!(tripairs.len(), 0, "there should be no intersections in start mesh but there are {:} intersecting try pairs", tripairs.len());
     }
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx, vtx2xyz_start.len() / 3);
     assert_eq!(vtx2xyz_start.len(), vtx2xyz_goal.len());

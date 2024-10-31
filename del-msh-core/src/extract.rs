@@ -32,13 +32,15 @@ pub fn extract(
     (tri2vtx_new, num_vtx_new, vtx2vtx_new)
 }
 
-pub fn map_values_old2new(
-    old2value: &[f32],
+pub fn map_values_old2new<VALUE>(
+    old2value: &[VALUE],
     od2new: &[usize],
     num_new: usize,
     num_dim: usize,
-) -> Vec<f32> {
-    let mut new2value = vec![0_f32; num_new * num_dim];
+) -> Vec<VALUE>
+where VALUE: num_traits::Zero + Copy
+{
+    let mut new2value = vec![VALUE::zero(); num_new * num_dim];
     for i_old in 0..old2value.len() / num_dim {
         let i_new = od2new[i_old];
         if i_new == usize::MAX {
