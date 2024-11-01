@@ -22,7 +22,9 @@ jobs:
         default: true
 
     - name: Cargo commands
-      run: |
+      run: |        
+        cargo fmt --check
+        cargo clippy -- -D warnings
         cargo build --release
         cargo test --release
         cargo doc --release

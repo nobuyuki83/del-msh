@@ -187,7 +187,7 @@ fn morton_code_determine_range(idx2morton: &[u32], idx1: usize) -> (usize, usize
                 return (idx1, jdx - 1);
             }
         }
-        return (idx1, jdx)
+        return (idx1, jdx);
     }
     // get direction
     // (d==+1) -> imc is left-end, move forward
@@ -412,7 +412,7 @@ where
             let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
             let transform_xy2uni =
                 del_geo_core::aabb3::to_mat4_col_major_transf_into_unit_preserve_asp(&aabb);
-//                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit(&aabb);
+            //                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit(&aabb);
             sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,

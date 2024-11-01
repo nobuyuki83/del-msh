@@ -43,18 +43,18 @@ pub fn from_grid(nx: usize, ny: usize) -> Vec<usize> {
     let mx = nx - 1;
     let my = ny - 1;
     let ncell = mx * my;
-    let mut tri2vtx = Vec::<usize>::with_capacity(ncell*2*3);
+    let mut tri2vtx = Vec::<usize>::with_capacity(ncell * 2 * 3);
     for imy in 0..my {
         for imx in 0..mx {
             let ivx0 = imx + imy * nx;
             let ivx1 = imx + 1 + imy * nx;
-            let ivx2 = imx + 1 + (imy+1) * nx;
-            let ivx3 = imx + (imy+1) * nx;
-            tri2vtx.extend([ivx0,ivx1,ivx2]);
-            tri2vtx.extend([ivx0,ivx2,ivx3]);
+            let ivx2 = imx + 1 + (imy + 1) * nx;
+            let ivx3 = imx + (imy + 1) * nx;
+            tri2vtx.extend([ivx0, ivx1, ivx2]);
+            tri2vtx.extend([ivx0, ivx2, ivx3]);
         }
     }
-    assert_eq!(tri2vtx.len(), ncell*2*3);
+    assert_eq!(tri2vtx.len(), ncell * 2 * 3);
     tri2vtx
 }
 

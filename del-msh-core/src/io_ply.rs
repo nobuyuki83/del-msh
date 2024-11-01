@@ -22,24 +22,26 @@ impl crate::vtx2xyz::HasXyz<f64> for XyzRgb {
  */
 
 pub trait XyzRgb {
-    fn new(
-        xyz: [f64;3],
-        rgb: [u8;3]) -> Self;
+    fn new(xyz: [f64; 3], rgb: [u8; 3]) -> Self;
 }
 
-pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(path: Path) -> anyhow::Result<Vec<_XyzRgb>> {
+pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(
+    path: Path,
+) -> anyhow::Result<Vec<_XyzRgb>> {
     // let file_path = "C:/Users/nobuy/Downloads/juice_box.ply";
     // let file_path = "/Users/nobuyuki/project/juice_box1.ply";
     let file = std::fs::File::open(path)?;
     let mut reader = std::io::BufReader::new(file);
     use std::io::BufRead;
     let mut line = String::new();
-    { // read magic number
+    {
+        // read magic number
         let _hoge = reader.read_line(&mut line)?;
         assert_eq!(line, "ply\n");
         line.clear();
     }
-    { // read format
+    {
+        // read format
         let _hoge = reader.read_line(&mut line)?;
         let strs: Vec<_> = line.split_whitespace().collect();
         assert_eq!(strs[0], "format");
@@ -51,13 +53,15 @@ pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(path: Path) ->
         };
         line.clear();
     }
-    { // read comment
+    {
+        // read comment
         let _ = reader.read_line(&mut line)?;
         let strs: Vec<_> = line.split_whitespace().collect();
         assert_eq!(strs[0], "comment");
         line.clear();
     }
-    let num_elem = {  // read element number
+    let num_elem = {
+        // read element number
         let _ = reader.read_line(&mut line)?; // element vertex
         let strs: Vec<_> = line.split_whitespace().collect();
         assert_eq!(strs[0], "element");
@@ -74,7 +78,8 @@ pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(path: Path) ->
         let _ = reader.read_line(&mut line)?; // property uchar blue
         line.clear();
     }
-    { // read "end header"
+    {
+        // read "end header"
         let _ = reader.read_line(&mut line)?;
         assert_eq!(line, "end_header\n");
     }
@@ -90,16 +95,13 @@ pub fn read_xyzrgb<Path: AsRef<std::path::Path>, _XyzRgb: XyzRgb>(path: Path) ->
         let r = u8::from_le_bytes(buf[i_byte + 24..i_byte + 25].try_into()?);
         let g = u8::from_le_bytes(buf[i_byte + 25..i_byte + 26].try_into()?);
         let b = u8::from_le_bytes(buf[i_byte + 26..i_byte + 27].try_into()?);
-        pnt2xyzrgb.push( XyzRgb::new([x,y,z], [r,g,b]) );
+        pnt2xyzrgb.push(XyzRgb::new([x, y, z], [r, g, b]));
     }
     Ok(pnt2xyzrgb)
 }
 
-fn parse_f32<const N: usize>(
-    buff: &[u8],
-    i_buff: usize) -> anyhow::Result<[f32;N]>
-{
-    let mut a = [0f32;N];
+fn parse_f32<const N: usize>(buff: &[u8], i_buff: usize) -> anyhow::Result<[f32; N]> {
+    let mut a = [0f32; N];
     for i in 0..N {
         a[i] = f32::from_le_bytes(buff[i_buff + 4 * i..i_buff + 4 * i + 4].try_into()?);
     }
@@ -109,16 +111,18 @@ fn parse_f32<const N: usize>(
 // ---------------------------
 pub trait GaussSplat3D {
     fn new(
-        xyz: [f32;3],
+        xyz: [f32; 3],
         rgb_dc: [f32; 3],
         rgb_sh: [f32; 45],
         opacity: f32,
-        scale: [f32;3],
-        quaternion: [f32;4]) -> Self;
+        scale: [f32; 3],
+        quaternion: [f32; 4],
+    ) -> Self;
 }
 
-
-pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(path: Path) -> anyhow::Result<Vec<Splat>> {
+pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(
+    path: Path,
+) -> anyhow::Result<Vec<Splat>> {
     let file = std::fs::File::open(path)?;
     let mut reader = std::io::BufReader::new(file);
     use std::io::BufRead;
@@ -175,11 +179,11 @@ pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(pa
     let mut buf: Vec<u8> = Vec::new();
     reader.read_to_end(&mut buf)?;
     assert_eq!(buf.len(), 62 * num_elem * 4);
-    let mut pnt2gs3: Vec<Splat> = vec!();
+    let mut pnt2gs3: Vec<Splat> = vec![];
     for i_elem in 0..num_elem {
         let xyz = parse_f32::<3>(&buf, i_elem * 62 * 4)?;
         let rgb = parse_f32::<3>(&buf, i_elem * 62 * 4 + 6 * 4)?;
-        let sh = parse_f32::<45>(&buf,i_elem * 62 * 4 + 9 * 4)?;
+        let sh = parse_f32::<45>(&buf, i_elem * 62 * 4 + 9 * 4)?;
         let op = parse_f32::<1>(&buf, i_elem * 62 * 4 + 54 * 4)?;
         let scale = parse_f32::<3>(&buf, i_elem * 62 * 4 + 55 * 4)?;
         let quaternion = parse_f32::<4>(&buf, i_elem * 62 * 4 + 58 * 4)?;
@@ -189,7 +193,7 @@ pub fn read_3d_gauss_splat<Path: AsRef<std::path::Path>, Splat: GaussSplat3D>(pa
             (rgb[1] + 0.5) * sh_c0,
             (rgb[2] + 0.5) * sh_c0,
         ];
-        let quaternion = [quaternion[1], quaternion[2],quaternion[3],quaternion[0]];
+        let quaternion = [quaternion[1], quaternion[2], quaternion[3], quaternion[0]];
         let quaternion = del_geo_core::quaternion::normalized(&quaternion);
         {
             // rotation in x direction to make the scene y-up?

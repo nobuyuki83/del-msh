@@ -1,4 +1,3 @@
-
 pub trait HasXyz<Real> {
     fn xyz(&self) -> &[Real; 3];
 }

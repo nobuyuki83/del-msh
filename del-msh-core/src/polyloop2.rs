@@ -128,31 +128,25 @@ where
     dist_min
 }
 
-pub fn moment_of_inertia(
-    vtx2xy: &[f32],
-    pivot: &[f32; 2]) -> f32
-{
+pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
     use del_geo_core::vec2;
     let ne = vtx2xy.len() / 2;
     let mut sum_i = 0.0;
     for ie in 0..ne {
         let ip0 = ie;
         let ip1 = (ie + 1) % ne;
-        let p0 = [vtx2xy[ip0*2] - pivot[0], vtx2xy[ip0*2+1] - pivot[1]];
-        let p1 = [vtx2xy[ip1*2] - pivot[0], vtx2xy[ip1*2+1] - pivot[1]];
+        let p0 = [vtx2xy[ip0 * 2] - pivot[0], vtx2xy[ip0 * 2 + 1] - pivot[1]];
+        let p1 = [vtx2xy[ip1 * 2] - pivot[0], vtx2xy[ip1 * 2 + 1] - pivot[1]];
         let a0 = vec2::area_quadrilateral(&p0, &p1) * 0.5;
         sum_i += a0 * (vec2::dot(&p0, &p0) + vec2::dot(&p0, &p1) + vec2::dot(&p1, &p1));
     }
-    sum_i *  (1.0 / 6.0)
+    sum_i * (1.0 / 6.0)
 }
 
 /// signed distance function
 /// * `vtx2xy` - flat array of coordinates
 /// * `q` - pont to be evaluated
-pub fn wdw_sdf_(
-    vtx2xy: &[f32],
-    q: &[f32; 2]) -> (f32, [f32; 2])
-{
+pub fn wdw_sdf_(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
     use del_geo_core::vec2;
     let nej = vtx2xy.len() / 2;
     let mut min_dist = -1.0;
@@ -160,12 +154,14 @@ pub fn wdw_sdf_(
     let mut pos_near = [0f32; 2];
     let mut ie_near = 0;
     for iej in 0..nej {
-        let ps = arrayref::array_ref!(vtx2xy, (iej % nej)*2, 2);
-        let pe = arrayref::array_ref!(vtx2xy, ((iej + 1) % nej)*2, 2);
+        let ps = arrayref::array_ref!(vtx2xy, (iej % nej) * 2, 2);
+        let pe = arrayref::array_ref!(vtx2xy, ((iej + 1) % nej) * 2, 2);
         winding_number += del_geo_core::edge2::winding_number(ps, pe, q);
         let (_rm, pm) = del_geo_core::edge2::nearest_point2(ps, pe, q);
         let dist0 = del_geo_core::edge2::length(&pm, q);
-        if min_dist > 0. && dist0 > min_dist { continue; }
+        if min_dist > 0. && dist0 > min_dist {
+            continue;
+        }
         min_dist = dist0;
         pos_near = pm;
         ie_near = iej;
@@ -173,15 +169,16 @@ pub fn wdw_sdf_(
     //
     let normal_out = {
         // if distance is small use edge's normal
-        let ps = arrayref::array_ref!(vtx2xy, (ie_near % nej)*2, 2);
-        let pe = arrayref::array_ref!(vtx2xy, ((ie_near + 1) % nej)*2, 2);
+        let ps = arrayref::array_ref!(vtx2xy, (ie_near % nej) * 2, 2);
+        let pe = arrayref::array_ref!(vtx2xy, ((ie_near + 1) % nej) * 2, 2);
         let ne = vec2::sub(pe, ps);
         let ne = vec2::rotate(&ne, -std::f32::consts::PI * 0.5);
         vec2::normalize(&ne)
     };
     //
     // dbg!(winding_number);
-    if (winding_number - 1.0).abs() < 0.5 { // inside
+    if (winding_number - 1.0).abs() < 0.5 {
+        // inside
         let normal = if min_dist < 1.0e-5 {
             normal_out
         } else {
@@ -200,11 +197,7 @@ pub fn wdw_sdf_(
 
 #[test]
 fn test_polygon2_sdf() {
-    let vtx2xy = vec!(
-        0., 0.,
-        1.0, 0.0,
-        1.0, 0.2,
-        0.0, 0.2);
+    let vtx2xy = vec![0., 0., 1.0, 0.0, 1.0, 0.2, 0.0, 0.2];
     use del_geo_core::vec2;
     {
         let (sdf, normal) = wdw_sdf_(&vtx2xy, &[0.01, 0.1]);

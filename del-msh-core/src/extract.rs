@@ -38,7 +38,8 @@ pub fn map_values_old2new<VALUE>(
     num_new: usize,
     num_dim: usize,
 ) -> Vec<VALUE>
-where VALUE: num_traits::Zero + Copy
+where
+    VALUE: num_traits::Zero + Copy,
 {
     let mut new2value = vec![VALUE::zero(); num_new * num_dim];
     for i_old in 0..old2value.len() / num_dim {
