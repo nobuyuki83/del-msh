@@ -68,13 +68,9 @@ where
         trimesh3.tri2vtx.len() / 3 * 2 - 1
     );
     assert_eq!(trimesh3.bvhnodes.len() / 3, trimesh3.bvhnode2aabb.len() / 6);
-    if del_geo_core::aabb3::from_aabbs(trimesh3.bvhnode2aabb, i_bvhnode)
-        .intersections_against_ray(ray_org, ray_dir)
-        .is_none()
-    {
-        // culling the branch
-        return None;
-    }
+    // culling the branch
+    del_geo_core::aabb3::from_aabbs(trimesh3.bvhnode2aabb, i_bvhnode)
+        .intersections_against_ray(ray_org, ray_dir)?;
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
@@ -167,12 +163,10 @@ where
         } else {
             Some((t_near, i_tri_near))
         }
+    } else if let Some((t_far, i_tri_far)) = res_far {
+        Some((t_far, i_tri_far))
     } else {
-        if let Some((t_far, i_tri_far)) = res_far {
-            Some((t_far, i_tri_far))
-        } else {
-            None
-        }
+        None
     }
 }
 

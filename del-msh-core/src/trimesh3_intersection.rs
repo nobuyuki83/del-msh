@@ -98,7 +98,7 @@ where
         if let Some(res) = res {
             dbg!(res.0, res.1);
         }
-        return res;
+        res
     }
 }
 
