@@ -62,6 +62,7 @@ fn intersection_trimesh3<'a>(
 }
 
 #[pyo3::pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn ccd_intersection_time<'a>(
     _py: pyo3::Python<'a>,
     edge2vtx: numpy::PyReadonlyArray2<'a, usize>,

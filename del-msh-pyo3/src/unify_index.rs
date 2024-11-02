@@ -10,6 +10,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 }
 
 #[pyo3::pyfunction]
+#[allow(clippy::type_complexity)]
 fn unify_two_indices_of_triangle_mesh<'a>(
     py: Python<'a>,
     tri2vtxa: PyReadonlyArrayDyn<'a, usize>,
@@ -34,6 +35,7 @@ fn unify_two_indices_of_triangle_mesh<'a>(
 }
 
 #[pyo3::pyfunction]
+#[allow(clippy::type_complexity)]
 fn unify_two_indices_of_polygon_mesh<'a>(
     py: Python<'a>,
     elem2idx: PyReadonlyArrayDyn<'a, usize>,
