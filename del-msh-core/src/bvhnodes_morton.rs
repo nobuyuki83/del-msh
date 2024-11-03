@@ -411,8 +411,8 @@ where
         3 => {
             let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
             let transform_xy2uni =
-                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit_preserve_asp(&aabb);
-            //                del_geo_core::aabb3::to_mat4_col_major_transf_into_unit(&aabb);
+                del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(&aabb);
+                // del_geo_core::mat4_col_major::from_aabb3_fit_into_unit(&aabb);
             sorted_morten_code3(
                 &mut idx2tri,
                 &mut idx2morton,

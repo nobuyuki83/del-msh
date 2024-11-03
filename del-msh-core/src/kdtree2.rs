@@ -166,7 +166,7 @@ pub fn nearest<Real>(
     } // this node does not exist
 
     let cur_dist = (pos_near.0 - pos_in).norm();
-    if cur_dist < del_geo_nalgebra::aabb2::signed_distance_aabb(pos_in, branch.min, branch.max) {
+    if cur_dist < del_geo_nalgebra::aabb2::signed_distance(pos_in, branch.min, branch.max) {
         return;
     }
 
@@ -299,7 +299,7 @@ pub fn inside_square<Real>(
         return;
     } // this node does not exist
 
-    if rad < del_geo_nalgebra::aabb2::signed_distance_aabb(pos_in, branch.min, branch.max) {
+    if rad < del_geo_nalgebra::aabb2::signed_distance(pos_in, branch.min, branch.max) {
         return;
     }
 
