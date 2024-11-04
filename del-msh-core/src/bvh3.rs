@@ -219,7 +219,7 @@ where
     let intersect_fun = |node: Index, max_dis: f32| {
         pre_order_first_intersection_ray(ray_org, ray_dir, trimesh3, node.as_(), max_dis)
     };
-    
+
     match compare_aabb_ray(trimesh3, l_bvh_i, r_bvh_i, ray_dir) {
         AABBStatus::Seperated(near, far) => {
             // no need to check far node if hit in near
