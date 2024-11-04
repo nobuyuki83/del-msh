@@ -52,8 +52,22 @@ pub fn search_intersections_ray<Index>(
     );
 }
 
-/// return the distance to triangle and triangle index
+/// return the distance to triangle and triangle index, default use post-order branch selecting
 pub fn search_first_intersection_ray<Index>(
+    ray_org: &[f32; 3],
+    ray_dir: &[f32; 3],
+    trimesh3: &TriMeshWithBvh<Index>,
+    i_bvhnode: usize,
+    dis: f32,
+) -> Option<(f32, usize)>
+where
+    Index: PrimInt + AsPrimitive<usize>,
+{
+    post_order_first_intersection_ray(ray_org, ray_dir, trimesh3, i_bvhnode, dis)
+}
+
+/// return first intesection using post-order branch selecting
+pub fn post_order_first_intersection_ray<Index>(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
     trimesh3: &TriMeshWithBvh<Index>,
@@ -170,32 +184,131 @@ where
     }
 }
 
-/*
-/// check if a point alone ray_dir is closer than an aabb
-fn is_point_closer(aabb: &[f32; 6], ray_dir: &[f32; 3], t: f32) -> bool {
-    // closest projection of aabb along ray
-    let mut proj_aabb = 0.;
+/// return first intesection using pre-order branch selecting
+pub fn pre_order_first_intersection_ray<Index>(
+    ray_org: &[f32; 3],
+    ray_dir: &[f32; 3],
+    trimesh3: &TriMeshWithBvh<Index>,
+    i_bvhnode: usize,
+    dis: f32,
+) -> Option<(f32, usize)>
+where
+    Index: PrimInt + AsPrimitive<usize>,
+{
+    use del_geo_core::aabb3;
+    assert_eq!(
+        trimesh3.bvhnodes.len() / 3,
+        trimesh3.tri2vtx.len() / 3 * 2 - 1
+    );
+    assert_eq!(trimesh3.bvhnodes.len() / 3, trimesh3.bvhnode2aabb.len() / 6);
+    // culling the branch
+    aabb3::from_aabbs(trimesh3.bvhnode2aabb, i_bvhnode)
+        .intersections_against_ray(ray_org, ray_dir)?;
+    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+        // leaf node
+        let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
+        return crate::trimesh3::to_tri3(i_tri, trimesh3.tri2vtx, trimesh3.vtx2xyz)
+            .intersection_against_ray(ray_org, ray_dir)
+            .filter(|&t| t < dis)
+            .map(|t| (t, i_tri));
+    }
+
+    let l_bvh_i = i_bvhnode * 3 + 1;
+    let r_bvh_i = i_bvhnode * 3 + 2;
+
+    let intersect_fun = |node: Index, max_dis: f32| {
+        pre_order_first_intersection_ray(ray_org, ray_dir, trimesh3, node.as_(), max_dis)
+    };
+    
+    match compare_aabb_ray(trimesh3, l_bvh_i, r_bvh_i, ray_dir) {
+        AABBStatus::Seperated(near, far) => {
+            // no need to check far node if hit in near
+            intersect_fun(trimesh3.bvhnodes[near], dis)
+                .or_else(|| intersect_fun(trimesh3.bvhnodes[far], dis))
+        }
+        AABBStatus::Overlapped(near, far) => {
+            intersect_fun(trimesh3.bvhnodes[near], dis).map_or_else(
+                // no hit in near node: check far node
+                || intersect_fun(trimesh3.bvhnodes[far], dis),
+                // hit in near node: try far node with updated distance
+                |(near_dis, near_tri)| {
+                    intersect_fun(trimesh3.bvhnodes[far], near_dis).or(Some((near_dis, near_tri)))
+                },
+            )
+        }
+    }
+}
+
+enum AABBStatus {
+    Seperated(usize, usize),
+    Overlapped(usize, usize),
+}
+
+/// compare two aabbs' spatial relation alone ray direction
+/// return closer AABB
+fn compare_aabb_ray<Index>(
+    trimesh3: &TriMeshWithBvh<Index>,
+    i_bvhnode: usize,
+    j_bvhnode: usize,
+    ray_dir: &[f32; 3],
+) -> AABBStatus
+where
+    Index: PrimInt + AsPrimitive<usize>,
+{
+    use del_geo_core::aabb3;
+
+    let i_aabb = aabb3::from_aabbs(trimesh3.bvhnode2aabb, trimesh3.bvhnodes[i_bvhnode].as_()).aabb;
+    let j_aabb = aabb3::from_aabbs(trimesh3.bvhnode2aabb, trimesh3.bvhnodes[j_bvhnode].as_()).aabb;
+
+    let a = range_axis(i_aabb, ray_dir);
+    let b = range_axis(j_aabb, ray_dir);
+
+    let (near, far, near_aabb, far_aabb) = {
+        if a.0 <= b.0 {
+            (a, b, i_bvhnode, j_bvhnode)
+        } else {
+            (b, a, j_bvhnode, i_bvhnode)
+        }
+    };
+
+    if near.1 <= far.0 {
+        return AABBStatus::Seperated(near_aabb, far_aabb);
+    }
+
+    AABBStatus::Overlapped(near_aabb, far_aabb)
+}
+
+/// Projection of an AABB at axis, return (min,max)
+fn range_axis(aabb: &[f32; 6], axis: &[f32; 3]) -> (f32, f32) {
+    let mut max_proj = 0.;
+    let mut min_proj = 0.;
     for i_dim in 0..3 {
-        if ray_dir[i_dim].abs() == 0. {
+        if axis[i_dim].abs() == 0. {
             continue;
         }
 
-        if ray_dir[i_dim] > 0. {
-            // min project
-            proj_aabb += aabb[i_dim] * ray_dir[i_dim];
+        if axis[i_dim] > 0. {
+            min_proj += aabb[i_dim] * axis[i_dim];
+            max_proj += aabb[i_dim + 3] * axis[i_dim];
         } else {
-            // max project
-            proj_aabb += aabb[i_dim + 3] * ray_dir[i_dim];
+            min_proj += aabb[i_dim + 3] * axis[i_dim];
+            max_proj += aabb[i_dim] * axis[i_dim];
         }
     }
 
-    let sqlen = del_geo_core::vec3::dot(ray_dir, ray_dir);
-    t * sqlen < proj_aabb
+    (min_proj, max_proj)
 }
- */
 
 #[test]
-fn test_first_intersection_ray() {
+fn test_intersection_ray() {
+    test_pre_order_intersection_ray();
+    test_post_order_intersection_ray();
+}
+
+#[test]
+fn test_post_order_intersection_ray() {
+    use std::time::Instant;
+
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
     let bvhnode2aabb = crate::aabbs3::from_uniform_mesh_with_bvh(
@@ -205,6 +318,8 @@ fn test_first_intersection_ray() {
         &vtx2xyz,
         None,
     );
+
+    let sw = Instant::now();
     use rand::Rng;
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
@@ -213,7 +328,7 @@ fn test_first_intersection_ray() {
         let y = reng.gen::<f32>() * 2.0 - 1.;
         let ray_dir = [0., 0., -1.];
         let ray_org = [x, y, 1.];
-        let res_first = search_first_intersection_ray(
+        let res_first = post_order_first_intersection_ray(
             &ray_org,
             &ray_dir,
             &TriMeshWithBvh {
@@ -256,4 +371,74 @@ fn test_first_intersection_ray() {
             }
         }
     }
+    println!("post order cast elapsed: {:?}", sw.elapsed());
+}
+
+#[test]
+fn test_pre_order_intersection_ray() {
+    use std::time::Instant;
+
+    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+    let bvhnode2aabb = crate::aabbs3::from_uniform_mesh_with_bvh(
+        0,
+        &bvhnodes,
+        Some((&tri2vtx, 3)),
+        &vtx2xyz,
+        None,
+    );
+
+    let sw = Instant::now();
+    use rand::Rng;
+    use rand::SeedableRng;
+    let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
+    for _iter in 0..1000 {
+        let x = reng.gen::<f32>() * 2.0 - 1.;
+        let y = reng.gen::<f32>() * 2.0 - 1.;
+        let ray_dir = [0., 0., -1.];
+        let ray_org = [x, y, 1.];
+        let res_first = pre_order_first_intersection_ray(
+            &ray_org,
+            &ray_dir,
+            &TriMeshWithBvh {
+                tri2vtx: &tri2vtx,
+                vtx2xyz: &vtx2xyz,
+                bvhnodes: &bvhnodes,
+                bvhnode2aabb: &bvhnode2aabb,
+            },
+            0,
+            f32::INFINITY,
+        );
+        if let Some((t, _i_tri)) = res_first {
+            let p = [
+                ray_org[0] + t * ray_dir[0],
+                ray_org[1] + t * ray_dir[1],
+                ray_org[2] + t * ray_dir[2],
+            ];
+            assert!(del_geo_core::vec3::norm(&p) < 1.0);
+        }
+        {
+            // intersection all
+            let mut hits = Vec::<(f32, usize)>::new();
+            search_intersections_ray::<usize>(
+                &mut hits,
+                &ray_org,
+                &ray_dir,
+                &TriMeshWithBvh {
+                    tri2vtx: &tri2vtx,
+                    vtx2xyz: &vtx2xyz,
+                    bvhnodes: &bvhnodes,
+                    bvhnode2aabb: &bvhnode2aabb,
+                },
+                0,
+            );
+            if let Some((t_first, _i_tri_first)) = res_first {
+                assert_eq!(hits.len(), 2);
+                assert!(hits[0].0 == t_first || hits[1].0 == t_first);
+            } else {
+                assert!(hits.is_empty());
+            }
+        }
+    }
+    println!("pre order cast elapsed: {:?}", sw.elapsed());
 }
