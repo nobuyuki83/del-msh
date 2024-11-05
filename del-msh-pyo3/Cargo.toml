@@ -15,7 +15,8 @@ nalgebra = {workspace = true}
 num-traits = {workspace = true}
 del-geo-core = { workspace = true }
 del-geo-nalgebra = { workspace = true }
-del-msh-core = { path = "../del-msh-core" }
 
+#del-msh-core = { path = "../del-msh-core" }
+del-msh-core = "0.1.36"
 # del-msh = "0.1.26"
 # del-geo = "0.1.20"
