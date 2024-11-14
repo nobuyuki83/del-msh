@@ -17,6 +17,7 @@ arrayref = {workspace = true }
 #
 del-geo-core = {workspace = true}  #0.1.29"
 del-geo-nalgebra ={workspace = true} #  "0.1.29" #
+del-msh-core = {workspace = true}
 
 [dev-dependencies]
 rand_chacha = {workspace = true}

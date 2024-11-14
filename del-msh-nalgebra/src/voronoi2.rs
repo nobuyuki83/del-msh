@@ -175,9 +175,9 @@ pub fn voronoi_cells<F>(vtxl2xy: &[f32], site2xy: &[f32], site2isalive: F) -> Ve
 where
     F: Fn(usize) -> bool,
 {
-    let vtxl2xy = crate::vtx2xdim::to_array_of_nalgebra_vector(vtxl2xy);
+    let vtxl2xy = del_msh_core::vtx2xdim::to_array_of_nalgebra_vector(vtxl2xy);
     let site2xy: Vec<nalgebra::Vector2<f32>> =
-        crate::vtx2xdim::to_array_of_nalgebra_vector(site2xy);
+        del_msh_core::vtx2xdim::to_array_of_nalgebra_vector(site2xy);
     let num_site = site2xy.len();
     let mut site2cell = vec![Cell::new_empty(); num_site];
     for (i_site, pos_i) in site2xy.iter().enumerate() {
@@ -280,17 +280,17 @@ pub fn position_of_voronoi_vertex(
 ) -> nalgebra::Vector2<f32> {
     if info[1] == usize::MAX {
         // original point
-        crate::vtx2xy::to_navec2(vtxl2xy, info[0])
+        del_msh_core::vtx2xy::to_navec2(vtxl2xy, info[0])
     } else if info[3] == usize::MAX {
         // two points against edge
         let num_vtxl = vtxl2xy.len() / 2;
         assert!(info[0] < num_vtxl);
         let i1_loop = info[0];
         let i2_loop = (i1_loop + 1) % num_vtxl;
-        let l1 = crate::vtx2xy::to_navec2(vtxl2xy, i1_loop);
-        let l2 = crate::vtx2xy::to_navec2(vtxl2xy, i2_loop);
-        let s1 = &crate::vtx2xy::to_navec2(site2xy, info[1]);
-        let s2 = &crate::vtx2xy::to_navec2(site2xy, info[2]);
+        let l1 = del_msh_core::vtx2xy::to_navec2(vtxl2xy, i1_loop);
+        let l2 = del_msh_core::vtx2xy::to_navec2(vtxl2xy, i2_loop);
+        let s1 = &del_msh_core::vtx2xy::to_navec2(site2xy, info[1]);
+        let s2 = &del_msh_core::vtx2xy::to_navec2(site2xy, info[2]);
         return del_geo_nalgebra::line2::intersection(
             &l1,
             &(l2 - l1),
@@ -301,9 +301,9 @@ pub fn position_of_voronoi_vertex(
         // three points
         assert_eq!(info[0], usize::MAX);
         return del_geo_nalgebra::tri2::circumcenter(
-            &crate::vtx2xy::to_navec2(site2xy, info[1]),
-            &crate::vtx2xy::to_navec2(site2xy, info[2]),
-            &crate::vtx2xy::to_navec2(site2xy, info[3]),
+            &del_msh_core::vtx2xy::to_navec2(site2xy, info[1]),
+            &del_msh_core::vtx2xy::to_navec2(site2xy, info[2]),
+            &del_msh_core::vtx2xy::to_navec2(site2xy, info[3]),
         );
     }
 }
@@ -316,16 +316,16 @@ fn test_voronoi_concave() {
         0.0, 0.0, 1.0, 0.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.5, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0,
     ];
     let site2xy =
-        crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
+        del_msh_core::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         // save boundary loop and input points
         let num_vtxl = vtxl2xy.len() / 2;
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(site2xy.clone());
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_concave_input.obj",
-            &crate::edge2vtx::from_polyloop(num_vtxl),
+            &del_msh_core::edge2vtx::from_polyloop(num_vtxl),
             &vtxl2xy,
             2,
         );
@@ -336,11 +336,11 @@ fn test_voronoi_concave() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
-            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            let vtxc2xy = del_msh_core::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let edge2vtxc = del_msh_core::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
+            del_msh_core::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_concave_cells.obj",
             &edge2vtxo,
             &vtxo2xy,
@@ -354,12 +354,12 @@ fn test_voronoi_convex() {
     let mut reng = rand::thread_rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     let site2xy =
-        crate::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
+        del_msh_core::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(site2xy.clone());
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_input.obj",
             &[0, 1, 1, 2, 2, 3, 3, 0],
             &vtxl2xy,
@@ -373,11 +373,11 @@ fn test_voronoi_convex() {
         let mut edge2vtxo = vec![0usize; 0];
         let mut vtxo2xy = vec![0f32; 0];
         for i_site in 0..num_site {
-            let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
-            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            let vtxc2xy = del_msh_core::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
+            let edge2vtxc = del_msh_core::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
+            del_msh_core::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
         }
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_cells.obj",
             &edge2vtxo,
             &vtxo2xy,
@@ -402,13 +402,13 @@ fn test_voronoi_convex() {
     }
     {
         // write edges to file
-        let edge2vtxc = crate::edge2vtx::from_polygon_mesh(
+        let edge2vtxc = del_msh_core::edge2vtx::from_polygon_mesh(
             &voronoi_mesh.site2idx,
             &voronoi_mesh.idx2vtxv,
             voronoi_mesh.vtxv2xy.len(),
         );
-        let vtxc2xy = crate::vtx2xdim::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let vtxc2xy = del_msh_core::vtx2xdim::from_array_of_nalgebra(&voronoi_mesh.vtxv2xy);
+        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_indexed.obj",
             &edge2vtxc,
             &vtxc2xy,
@@ -421,10 +421,10 @@ fn test_voronoi_convex() {
 fn test_voronoi_sites_on_edge() {
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     let (tri2vtx, vtx2xy) =
-        crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(&vtxl2xy, 0.08, 0.08);
-    let tri2xycc = crate::trimesh2::tri2circumcenter(&tri2vtx, &vtx2xy);
+        del_msh_core::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(&vtxl2xy, 0.08, 0.08);
+    let tri2xycc = del_msh_core::trimesh2::tri2circumcenter(&tri2vtx, &vtx2xy);
     let (bedge2vtx, tri2triedge) =
-        crate::trimesh_topology::boundaryedge2vtx(&tri2vtx, vtx2xy.len() / 2);
+        del_msh_core::trimesh_topology::boundaryedge2vtx(&tri2vtx, vtx2xy.len() / 2);
     //
     let bedge2xymp = {
         let mut bedge2xymp = vec![0f32; bedge2vtx.len()];
@@ -451,8 +451,8 @@ fn test_voronoi_sites_on_edge() {
                 vedge2pnt.extend(&[i_tri, i_triedge]);
             }
         }
-        let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(2);
-        let bedge2bedge = crate::elem2elem::from_uniform_mesh(
+        let (face2idx, idx2node) = del_msh_core::elem2elem::face2node_of_simplex_element(2);
+        let bedge2bedge = del_msh_core::elem2elem::from_uniform_mesh(
             &bedge2vtx,
             2,
             &face2idx,
@@ -471,7 +471,7 @@ fn test_voronoi_sites_on_edge() {
         }
         vedge2pnt
     };
-    let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+    let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
         "target/voronoi_sites_on_edge.obj",
         &vedge2pnt,
         &pnt2xy,
