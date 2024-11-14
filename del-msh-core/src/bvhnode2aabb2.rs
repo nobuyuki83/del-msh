@@ -103,7 +103,12 @@ where
     let num_bvhnode = bvhnodes.len() / 3;
     let mut bvhnode2aabb = vec![Real::zero(); num_bvhnode * 4];
     update_for_uniform_mesh_with_bvh::<Index, Real>(
-        &mut bvhnode2aabb, i_bvhnode, bvhnodes, elem2vtx, vtx2xyz0, vtx2xyz1,
+        &mut bvhnode2aabb,
+        i_bvhnode,
+        bvhnodes,
+        elem2vtx,
+        vtx2xyz0,
+        vtx2xyz1,
     );
     bvhnode2aabb
 }

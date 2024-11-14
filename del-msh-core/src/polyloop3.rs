@@ -130,7 +130,6 @@ where
     (vtx2nrm, vtx2bin)
 }
 
-
 pub fn smooth_gradient_of_distance(
     vtx2xyz: &[f64],
     q: &nalgebra::Vector3<f64>,

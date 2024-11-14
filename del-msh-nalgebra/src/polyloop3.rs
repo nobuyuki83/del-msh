@@ -1,4 +1,3 @@
-
 /// TODO: it might be better to specify the normal vector
 pub fn to_trimesh3_torus(
     vtx2xyz: &nalgebra::Matrix3xX<f32>,

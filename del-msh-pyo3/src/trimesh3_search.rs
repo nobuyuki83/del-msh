@@ -40,7 +40,8 @@ fn first_intersection_ray_meshtri3<'a>(
             let p = [
                 t * ray_dir[0] + ray_org[0],
                 t * ray_dir[1] + ray_org[1],
-                t * ray_dir[2] + ray_org[2] ];
+                t * ray_dir[2] + ray_org[2],
+            ];
             let a = PyArray1::<f32>::from_slice_bound(py, &p);
             (a, postri.1 as i64)
         }
@@ -76,7 +77,8 @@ fn pick_vertex_meshtri3<'a>(
             let pos = [
                 t * ray_dir[0] + ray_org[0],
                 t * ray_dir[1] + ray_org[1],
-                t * ray_dir[2] + ray_org[2] ];
+                t * ray_dir[2] + ray_org[2],
+            ];
             let d0 = squared_dist(&pos, q0);
             let d1 = squared_dist(&pos, q1);
             let d2 = squared_dist(&pos, q2);

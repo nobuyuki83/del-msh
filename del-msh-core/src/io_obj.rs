@@ -321,6 +321,29 @@ where
     Ok(())
 }
 
+fn write_vtx2xyz_vtx2rgb<Real>(
+    file: &mut std::io::BufWriter<File>,
+    vtx2xyz: &[Real],
+    vtx2rgb: &[f32],
+) -> anyhow::Result<()>
+where
+    Real: std::fmt::Display,
+{
+    for i_vtx in 0..vtx2xyz.len() / 3 {
+        writeln!(
+            file,
+            "v {} {} {} {} {} {}",
+            vtx2xyz[i_vtx * 3],
+            vtx2xyz[i_vtx * 3 + 1],
+            vtx2xyz[i_vtx * 3 + 2],
+            vtx2rgb[i_vtx * 3],
+            vtx2rgb[i_vtx * 3 + 1],
+            vtx2rgb[i_vtx * 3 + 2]
+        )?;
+    }
+    Ok(())
+}
+
 fn write_vtx2vecn<Real, const N: usize>(
     file: &mut std::io::BufWriter<File>,
     vtx2vecn: &[nalgebra::SVector<Real, N>],
@@ -360,6 +383,32 @@ where
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    for i_tri in 0..tri2vtx.len() / 3 {
+        writeln!(
+            file,
+            "f {} {} {}",
+            tri2vtx[i_tri * 3] + Index::one(),
+            tri2vtx[i_tri * 3 + 1] + Index::one(),
+            tri2vtx[i_tri * 3 + 2] + Index::one()
+        )?;
+    }
+    Ok(())
+}
+
+pub fn save_tri2vtx_vtx2xyz_vtx2rgb<Path, Index, Real>(
+    filepath: Path,
+    tri2vtx: &[Index],
+    vtx2xyz: &[Real],
+    vtx2rgb: &[f32],
+) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+    Index: num_traits::PrimInt + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz_vtx2rgb(&mut file, vtx2xyz, vtx2rgb)?;
     for i_tri in 0..tri2vtx.len() / 3 {
         writeln!(
             file,

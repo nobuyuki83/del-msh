@@ -211,7 +211,6 @@ fn test_polygon2_sdf() {
     }
 }
 
-
 pub fn to_uniform_density_random_points<Real>(
     vtx2xy: &[Real],
     cell_len: Real,
@@ -315,5 +314,3 @@ where
         edge_length_internal,
     )
 }
-
-

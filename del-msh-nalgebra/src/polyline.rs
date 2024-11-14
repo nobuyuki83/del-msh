@@ -7,9 +7,9 @@ pub fn resample<T, const NDIM: usize>(
     stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T,
 ) -> Vec<nalgebra::base::SVector<T, NDIM>>
-    where
-        T: nalgebra::RealField + Copy,
-        f64: AsPrimitive<T>,
+where
+    T: nalgebra::RealField + Copy,
+    f64: AsPrimitive<T>,
 {
     if stroke0.is_empty() {
         return vec![];
@@ -44,10 +44,10 @@ pub fn resample_preserve_corner<T, const NDIM: usize>(
     stroke0: &[nalgebra::base::SVector<T, NDIM>],
     l: T,
 ) -> Vec<nalgebra::base::SVector<T, NDIM>>
-    where
-        T: nalgebra::RealField + Copy + AsPrimitive<usize>,
-        f64: AsPrimitive<T>,
-        usize: AsPrimitive<T>,
+where
+    T: nalgebra::RealField + Copy + AsPrimitive<usize>,
+    f64: AsPrimitive<T>,
+    usize: AsPrimitive<T>,
 {
     if stroke0.is_empty() {
         return vec![];

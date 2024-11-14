@@ -42,12 +42,12 @@ pub mod io_vtk;
 // search
 pub mod bvhnode2aabb2;
 pub mod bvhnode2aabb3;
-pub mod search_bvh2;
-pub mod search_bvh3;
 pub mod bvhnodes;
 pub mod bvhnodes_morton;
 pub mod bvhnodes_topdown_trimesh3;
 pub mod kdtree2;
+pub mod search_bvh2;
+pub mod search_bvh3;
 
 // self intersection
 pub mod io_ply;

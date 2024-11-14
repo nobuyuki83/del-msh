@@ -14,8 +14,8 @@ pub fn from_circle(rad: f32, n: usize) -> nalgebra::Matrix2xX<f32> {
 // -----------------------------------------------------
 
 pub fn area<T>(vtx2xy: &[nalgebra::Vector2<T>]) -> T
-    where
-        T: nalgebra::RealField + Copy,
+where
+    T: nalgebra::RealField + Copy,
 {
     let num_vtx = vtx2xy.len();
     let zero = nalgebra::Vector2::<T>::zeros();
@@ -31,8 +31,8 @@ pub fn area<T>(vtx2xy: &[nalgebra::Vector2<T>]) -> T
 }
 
 pub fn winding_number<Real>(vtx2xy: &[nalgebra::Vector2<Real>], p: &nalgebra::Vector2<Real>) -> Real
-    where
-        Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + std::fmt::Debug,
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + std::fmt::Debug,
 {
     let num_vtx = vtx2xy.len();
     let mut wn: Real = Real::zero();
@@ -51,9 +51,9 @@ pub fn distance_to_point<Real>(
     vtx2xy: &[nalgebra::Vector2<Real>],
     g: &nalgebra::Vector2<Real>,
 ) -> Real
-    where
-        Real: nalgebra::RealField + Copy,
-        f64: AsPrimitive<Real>,
+where
+    Real: nalgebra::RealField + Copy,
+    f64: AsPrimitive<Real>,
 {
     // visit all the boudnary
     let np = vtx2xy.len() / 2;

@@ -213,8 +213,8 @@ where
 
 #[allow(clippy::identity_op)]
 pub fn normalize_in_place<Real>(vtx2xyz: &mut [Real], size: Real)
-    where
-        Real: num_traits::Float,
+where
+    Real: num_traits::Float,
 {
     let num_vtx = vtx2xyz.len() / 3;
     let mut mins = [Real::one(); 3];
