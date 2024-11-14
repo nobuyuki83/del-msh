@@ -76,7 +76,7 @@ where
 
 #[test]
 fn test_cog() {
-    let mut vtx2xy = crate::polyloop2::from_circle(1f32, 32);
+    let mut vtx2xy = del_msh_nalgebra::polyloop2::from_circle(1f32, 32);
     let (x0, y0) = (1.3, 0.5);
     vtx2xy
         .view_mut((0, 0), (1, vtx2xy.ncols()))

@@ -7,7 +7,7 @@ use num_traits::AsPrimitive;
 /// if 'elem2vtx' is None, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
 pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
-    aabbs: &mut [Real],
+    bvhnode2aabb: &mut [Real],
     i_bvhnode: usize,
     bvhnodes: &[Index],
     elem2vtx: Option<(&[Index], usize)>,
@@ -17,7 +17,7 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
     Real: num_traits::Float,
     Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
-    assert_eq!(aabbs.len() / 4, bvhnodes.len() / 3);
+    assert_eq!(bvhnode2aabb.len() / 4, bvhnodes.len() / 3);
     assert!(i_bvhnode < bvhnodes.len() / 3);
     assert!(if let Some(vtx2xyz1) = vtx2xy1 {
         vtx2xyz1.len() == vtx2xy0.len()
@@ -56,7 +56,7 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
                 aabb0
             }
         };
-        aabbs[i_bvhnode * 4..i_bvhnode * 4 + 4].copy_from_slice(&aabb[0..4]);
+        bvhnode2aabb[i_bvhnode * 4..i_bvhnode * 4 + 4].copy_from_slice(&aabb[0..4]);
     } else {
         let i_bvhnode_child0: usize = i_bvhnode_child0.as_().as_();
         let i_bvhnode_child1: usize = i_bvhnode_child1.as_().as_();
@@ -65,7 +65,7 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
         assert_eq!(bvhnodes[i_bvhnode_child1 * 3].as_(), i_bvhnode);
         // build right tree
         update_for_uniform_mesh_with_bvh(
-            aabbs,
+            bvhnode2aabb,
             i_bvhnode_child0,
             bvhnodes,
             elem2vtx,
@@ -74,7 +74,7 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
         );
         // build left tree
         update_for_uniform_mesh_with_bvh(
-            aabbs,
+            bvhnode2aabb,
             i_bvhnode_child1,
             bvhnodes,
             elem2vtx,
@@ -82,10 +82,10 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             vtx2xy1,
         );
         let aabb = del_geo_core::aabb2::from_two_aabbs(
-            array_ref![aabbs, i_bvhnode_child0 * 4, 4],
-            array_ref![aabbs, i_bvhnode_child1 * 4, 4],
+            array_ref![bvhnode2aabb, i_bvhnode_child0 * 4, 4],
+            array_ref![bvhnode2aabb, i_bvhnode_child1 * 4, 4],
         );
-        aabbs[i_bvhnode * 4..(i_bvhnode + 1) * 4].copy_from_slice(&aabb);
+        bvhnode2aabb[i_bvhnode * 4..(i_bvhnode + 1) * 4].copy_from_slice(&aabb);
     }
 }
 
@@ -101,9 +101,9 @@ where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
     let num_bvhnode = bvhnodes.len() / 3;
-    let mut aabbs = vec![Real::zero(); num_bvhnode * 4];
+    let mut bvhnode2aabb = vec![Real::zero(); num_bvhnode * 4];
     update_for_uniform_mesh_with_bvh::<Index, Real>(
-        &mut aabbs, i_bvhnode, bvhnodes, elem2vtx, vtx2xyz0, vtx2xyz1,
+        &mut bvhnode2aabb, i_bvhnode, bvhnodes, elem2vtx, vtx2xyz0, vtx2xyz1,
     );
-    aabbs
+    bvhnode2aabb
 }

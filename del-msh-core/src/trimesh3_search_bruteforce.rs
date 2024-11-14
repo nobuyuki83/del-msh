@@ -3,9 +3,9 @@
 pub fn first_intersection_ray(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
-    vtx2xyz: &[f32],
     tri2vtx: &[usize],
-) -> Option<([f32; 3], usize)> {
+    vtx2xyz: &[f32],
+) -> Option<(f32, usize)> {
     let mut hit_pos = Vec::<(f32, usize)>::new();
     for i_tri in 0..tri2vtx.len() / 3 {
         let Some(t) = crate::trimesh3::to_tri3(i_tri, tri2vtx, vtx2xyz)
@@ -19,13 +19,15 @@ pub fn first_intersection_ray(
         return None;
     }
     hit_pos.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let t = hit_pos[0].0;
+    /*
+            //let t = hit_pos[0].0;
     let a = [
         t * ray_dir[0] + ray_org[0],
         t * ray_dir[1] + ray_org[1],
         t * ray_dir[2] + ray_org[2],
     ];
-    Some((a, hit_pos[0].1))
+     */
+    Some(hit_pos[0])
 }
 
 #[allow(clippy::identity_op)]

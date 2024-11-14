@@ -1,6 +1,6 @@
 use num_traits::AsPrimitive;
 
-pub fn search_including_point<Real, Index>(
+pub fn including_point<Real, Index>(
     hits: &mut Vec<(Index, Real, Real)>,
     tri2vtx: &[Index],
     vtx2xy: &[Real],
@@ -28,7 +28,7 @@ pub fn search_including_point<Real, Index>(
         hits.push((i_tri.as_(), r0, r1));
         return;
     }
-    search_including_point(
+    including_point(
         hits,
         tri2vtx,
         vtx2xy,
@@ -37,7 +37,7 @@ pub fn search_including_point<Real, Index>(
         bvhnodes,
         aabbs,
     );
-    search_including_point(
+    including_point(
         hits,
         tri2vtx,
         vtx2xy,

@@ -1,5 +1,5 @@
 [package]
-name = "del-msh-core"
+name = "del-msh-nalgebra"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -20,9 +20,3 @@ del-geo-nalgebra ={workspace = true} #  "0.1.29" #
 
 [dev-dependencies]
 rand_chacha = {workspace = true}
-criterion = "0.5.1"
-del-msh-nalgebra = {workspace = true}
-
-[[bench]]
-name = "bvh"
-harness = false

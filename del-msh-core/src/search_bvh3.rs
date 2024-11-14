@@ -9,7 +9,7 @@ pub struct TriMeshWithBvh<'a, Index> {
     pub bvhnode2aabb: &'a [f32],
 }
 
-pub fn search_intersections_ray<Index>(
+pub fn intersections_ray<Index>(
     hits: &mut Vec<(f32, usize)>,
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
@@ -36,14 +36,14 @@ pub fn search_intersections_ray<Index>(
         hits.push((t, i_tri));
         return;
     }
-    search_intersections_ray(
+    intersections_ray(
         hits,
         ray_org,
         ray_dir,
         trimesh3,
         trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_(),
     );
-    search_intersections_ray(
+    intersections_ray(
         hits,
         ray_org,
         ray_dir,
@@ -53,7 +53,7 @@ pub fn search_intersections_ray<Index>(
 }
 
 /// return the distance to triangle and triangle index
-pub fn search_first_intersection_ray<Index>(
+pub fn first_intersection_ray<Index>(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
     trimesh3: &TriMeshWithBvh<Index>,
@@ -110,7 +110,7 @@ where
         } else {
             i_bvhnode * 3 + 2
         };
-        search_first_intersection_ray(
+        first_intersection_ray(
             ray_org,
             ray_dir,
             trimesh3,
@@ -144,7 +144,7 @@ where
         } else {
             i_bvhnode * 3 + 1
         };
-        search_first_intersection_ray(
+        first_intersection_ray(
             ray_org,
             ray_dir,
             trimesh3,
@@ -198,7 +198,7 @@ fn is_point_closer(aabb: &[f32; 6], ray_dir: &[f32; 3], t: f32) -> bool {
 fn test_first_intersection_ray() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let bvhnode2aabb = crate::aabbs3::from_uniform_mesh_with_bvh(
+    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
         Some((&tri2vtx, 3)),
@@ -213,7 +213,7 @@ fn test_first_intersection_ray() {
         let y = reng.gen::<f32>() * 2.0 - 1.;
         let ray_dir = [0., 0., -1.];
         let ray_org = [x, y, 1.];
-        let res_first = search_first_intersection_ray(
+        let res_first = first_intersection_ray(
             &ray_org,
             &ray_dir,
             &TriMeshWithBvh {
@@ -236,7 +236,7 @@ fn test_first_intersection_ray() {
         {
             // intersection all
             let mut hits = Vec::<(f32, usize)>::new();
-            search_intersections_ray::<usize>(
+            intersections_ray::<usize>(
                 &mut hits,
                 &ray_org,
                 &ray_dir,

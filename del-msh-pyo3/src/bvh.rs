@@ -137,7 +137,7 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
         None
     };
     let vtx2xyz0 = vtx2xyz0.as_slice().unwrap();
-    del_msh_core::aabbs3::update_for_uniform_mesh_with_bvh(
+    del_msh_core::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
         aabbs,
         i_bvhnode_root,
         bvhnodes,

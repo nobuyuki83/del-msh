@@ -22,11 +22,13 @@ fn first_intersection_ray_meshtri3<'a>(
     vtx2xyz: PyReadonlyArray2<'a, f32>,
     tri2vtx: PyReadonlyArray2<'a, usize>,
 ) -> (Bound<'a, PyArray1<f32>>, i64) {
+    let ray_org = src.as_slice().unwrap().try_into().unwrap();
+    let ray_dir = dir.as_slice().unwrap().try_into().unwrap();
     let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
-        src.as_slice().unwrap().try_into().unwrap(),
-        dir.as_slice().unwrap().try_into().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
+        ray_org,
+        ray_dir,
         tri2vtx.as_slice().unwrap(),
+        vtx2xyz.as_slice().unwrap(),
     );
     match res {
         None => {
@@ -34,7 +36,12 @@ fn first_intersection_ray_meshtri3<'a>(
             (a, -1)
         }
         Some(postri) => {
-            let a = PyArray1::<f32>::from_slice_bound(py, &postri.0);
+            let t = postri.0;
+            let p = [
+                t * ray_dir[0] + ray_org[0],
+                t * ray_dir[1] + ray_org[1],
+                t * ray_dir[2] + ray_org[2] ];
+            let a = PyArray1::<f32>::from_slice_bound(py, &p);
             (a, postri.1 as i64)
         }
     }
@@ -47,16 +54,18 @@ fn pick_vertex_meshtri3<'a>(
     src: PyReadonlyArray1<'a, f32>,
     dir: PyReadonlyArray1<'a, f32>,
 ) -> i64 {
+    let ray_org = src.as_slice().unwrap().try_into().unwrap();
+    let ray_dir = dir.as_slice().unwrap().try_into().unwrap();
     let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
-        src.as_slice().unwrap().try_into().unwrap(),
-        dir.as_slice().unwrap().try_into().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
+        ray_org,
+        ray_dir,
         tri2vtx.as_slice().unwrap(),
+        vtx2xyz.as_slice().unwrap(),
     );
     match res {
         None => -1,
         Some(postri) => {
-            let pos = postri.0;
+            let t = postri.0;
             let idx_tri = postri.1;
             let i0 = tri2vtx.get([idx_tri, 0]).unwrap();
             let i1 = tri2vtx.get([idx_tri, 1]).unwrap();
@@ -64,6 +73,10 @@ fn pick_vertex_meshtri3<'a>(
             let q0 = &vtx2xyz.as_slice().unwrap()[i0 * 3..i0 * 3 + 3];
             let q1 = &vtx2xyz.as_slice().unwrap()[i1 * 3..i1 * 3 + 3];
             let q2 = &vtx2xyz.as_slice().unwrap()[i2 * 3..i2 * 3 + 3];
+            let pos = [
+                t * ray_dir[0] + ray_org[0],
+                t * ray_dir[1] + ray_org[1],
+                t * ray_dir[2] + ray_org[2] ];
             let d0 = squared_dist(&pos, q0);
             let d1 = squared_dist(&pos, q1);
             let d2 = squared_dist(&pos, q2);

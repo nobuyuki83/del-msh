@@ -40,10 +40,10 @@ pub mod io_off;
 pub mod io_vtk;
 
 // search
-pub mod aabbs2;
-pub mod aabbs3;
-pub mod bvh2;
-pub mod bvh3;
+pub mod bvhnode2aabb2;
+pub mod bvhnode2aabb3;
+pub mod search_bvh2;
+pub mod search_bvh3;
 pub mod bvhnodes;
 pub mod bvhnodes_morton;
 pub mod bvhnodes_topdown_trimesh3;
@@ -61,4 +61,4 @@ pub mod trimesh3_move_avoid_intersection;
 pub mod trimesh3_proximity;
 pub mod trimesh_topology;
 pub mod uniform_mesh;
-pub mod voronoi2;
+pub mod vtx2group;
