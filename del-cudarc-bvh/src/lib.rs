@@ -143,7 +143,7 @@ pub fn assert_equal_cpu_gpu(
 
 #[cfg(feature="cuda")]
 pub fn make_bvh_from_trimesh3(
-    dev: &std::sync::Arc<CudaDevice>,
+    dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx_dev: &cudarc::driver::CudaSlice<u32>,
     vtx2xyz_dev: &cudarc::driver::CudaSlice<f32>)
     -> anyhow::Result<(cudarc::driver::CudaSlice<u32>, cudarc::driver::CudaSlice<f32>)>

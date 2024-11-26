@@ -49,7 +49,7 @@ kernel-bvh = {path="kernel-bvh"}
 del-geo-core = { path="../del-geo/del-geo-core"}
 del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
 del-cudarc-util = { path="../del-cudarc/del-cudarc-util"}
-# del-canvas-image = {path="../del-canvas/del-canvas-image"}
+del-canvas-image = {path="../del-canvas/del-canvas-image"}
 # for GitHub push
 # del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 # del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
