@@ -1,11 +1,11 @@
 use cudarc::driver::{CudaDevice, CudaSlice, DeviceSlice};
 
 pub fn bvhnode2aabb_from_trimesh_with_bvhnodes(
-    dev: &std::sync::Arc<CudaDevice>,
-    tri2vtx: &CudaSlice<u32>,
-    vtx2xyz: &CudaSlice<f32>,
-    bvhnodes: &CudaSlice<u32>,
-    bvhnode2aabb: &mut CudaSlice<f32>,
+    dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
+    tri2vtx: &cudarc::driver::CudaSlice<u32>,
+    vtx2xyz: &cudarc::driver::CudaSlice<f32>,
+    bvhnodes: &cudarc::driver::CudaSlice<u32>,
+    bvhnode2aabb: &mut cudarc::driver::CudaSlice<f32>,
 ) -> anyhow::Result<()> {
     let num_tri = tri2vtx.len() / 3;
     let num_bvhnode = bvhnodes.len() / 3;
@@ -61,6 +61,7 @@ pub fn vtx2morton(
     Ok(())
 }
 
+#[cfg(feature="cuda")]
 pub fn bvhnodes_from_sorted_morton_codes(
     dev: &std::sync::Arc<CudaDevice>,
     bvnodes: &mut CudaSlice<u32>,

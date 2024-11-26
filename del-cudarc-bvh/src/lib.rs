@@ -1,10 +1,14 @@
-use cudarc::driver::{CudaDevice, CudaSlice};
+// use cudarc::driver::{CudaDevice, CudaSlice};
 
+#[cfg(feature="cuda")]
 pub mod bvh;
+
+#[cfg(feature="cuda")]
 pub mod pix2tri;
 
+#[cfg(feature="cuda")]
 pub fn assert_equal_cpu_gpu(
-    dev: &std::sync::Arc<CudaDevice>,
+    dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &Vec<u32>,
     vtx2xyz: &Vec<f32>) -> anyhow::Result<()>
 {
@@ -137,6 +141,7 @@ pub fn assert_equal_cpu_gpu(
     Ok(())
 }
 
+#[cfg(feature="cuda")]
 pub fn make_bvh_from_trimesh3(
     dev: &std::sync::Arc<CudaDevice>,
     tri2vtx_dev: &cudarc::driver::CudaSlice<u32>,
