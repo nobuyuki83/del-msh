@@ -338,7 +338,13 @@ fn test_voronoi_concave() {
         for i_site in 0..num_site {
             let vtxc2xy = del_msh_core::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = del_msh_core::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            del_msh_core::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            del_msh_core::uniform_mesh::merge(
+                &mut edge2vtxo,
+                &mut vtxo2xy,
+                &edge2vtxc,
+                &vtxc2xy,
+                2,
+            );
         }
         let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_concave_cells.obj",
@@ -375,7 +381,13 @@ fn test_voronoi_convex() {
         for i_site in 0..num_site {
             let vtxc2xy = del_msh_core::vtx2xdim::from_array_of_nalgebra(&site2cell[i_site].vtx2xy);
             let edge2vtxc = del_msh_core::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            del_msh_core::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            del_msh_core::uniform_mesh::merge(
+                &mut edge2vtxo,
+                &mut vtxo2xy,
+                &edge2vtxc,
+                &vtxc2xy,
+                2,
+            );
         }
         let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
             "target/voronoi_convex_cells.obj",

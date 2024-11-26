@@ -1,5 +1,6 @@
 use cudarc::driver::{CudaDevice, CudaSlice, DeviceSlice};
 
+#[allow(clippy::too_many_arguments)]
 pub fn pix2tri(
     dev: &std::sync::Arc<CudaDevice>,
     img_shape: (usize, usize),

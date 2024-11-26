@@ -1,9 +1,9 @@
-#[cfg(feature="cuda")]
-use cudarc::driver::{CudaDevice, DeviceSlice, LaunchAsync};
+#[cfg(feature = "cuda")]
+use cudarc::driver::{CudaDevice, LaunchAsync};
 
-#[cfg(feature="cuda")]
+#[cfg(feature = "cuda")]
 fn main() -> anyhow::Result<()> {
-    let dev = cudarc::driver::CudaDevice::new(0)?;
+    let dev = CudaDevice::new(0)?;
     let (tri2vtx, vtx2xyz, _vtx2uv) = {
         let mut obj = del_msh_core::io_obj::WavefrontObj::<u32, f32>::new();
         obj.load("asset/spot/spot_triangulated.obj")?;
@@ -84,6 +84,5 @@ fn main() -> anyhow::Result<()> {
     dbg!(tri2vtx.len());
     Ok(())
 }
-#[cfg(not(feature="cuda"))]
-fn main(){}
-
+#[cfg(not(feature = "cuda"))]
+fn main() {}

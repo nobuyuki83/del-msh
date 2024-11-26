@@ -61,7 +61,7 @@ pub fn vtx2morton(
     Ok(())
 }
 
-#[cfg(feature="cuda")]
+#[cfg(feature = "cuda")]
 pub fn bvhnodes_from_sorted_morton_codes(
     dev: &std::sync::Arc<CudaDevice>,
     bvnodes: &mut CudaSlice<u32>,
@@ -83,11 +83,11 @@ pub fn bvhnodes_from_sorted_morton_codes(
 
 pub fn aabb3_from_vtx2xyz(
     dev: &std::sync::Arc<CudaDevice>,
-    vtx2xyz: &CudaSlice<f32> ) -> anyhow::Result<CudaSlice<f32>>
-{
+    vtx2xyz: &CudaSlice<f32>,
+) -> anyhow::Result<CudaSlice<f32>> {
     let num_vtx = vtx2xyz.len() / 3;
     let cfg = {
-        let ngrid = (num_vtx-1) / 256 + 1;
+        let ngrid = (num_vtx - 1) / 256 + 1;
         cudarc::driver::LaunchConfig {
             grid_dim: (ngrid as u32, 1, 1),
             block_dim: (256, 3, 1),
@@ -96,8 +96,13 @@ pub fn aabb3_from_vtx2xyz(
     };
 
     let aabb = dev.htod_copy(vec![
-        f32::MAX, f32::MAX, f32::MAX,
-        f32::MIN, f32::MIN, f32::MIN])?;
+        f32::MAX,
+        f32::MAX,
+        f32::MAX,
+        f32::MIN,
+        f32::MIN,
+        f32::MIN,
+    ])?;
     let param = (&aabb, vtx2xyz, num_vtx);
     let func = del_cudarc_util::get_or_load_func(
         dev,

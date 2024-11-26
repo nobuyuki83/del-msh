@@ -1,9 +1,9 @@
 //! computing BVH using the Linear BVH method (i.e., binary tree based on the Morton code)
 //!  * `bvhnodes` - array of index
-//! when the number of query object is N, `bvhnodes` is sized as (2N-1)*3
+//!
+//!  when the number of query object is N, `bvhnodes` is sized as (2N-1)*3
 //!  bvhnodes store the `parent node`, `left node` and `right node` index
 //!  if `right node` index is the maximum numbe, the left node stores the index of an object
-
 
 use num_traits::AsPrimitive;
 
