@@ -12,7 +12,7 @@ where
         del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, Real::zero());
     }
     for point in points.iter().skip(1) {
-        del_geo_core::aabb3::update(&mut aabb, point.xyz(), Real::zero());
+        del_geo_core::aabb3::add_point(&mut aabb, point.xyz(), Real::zero());
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);

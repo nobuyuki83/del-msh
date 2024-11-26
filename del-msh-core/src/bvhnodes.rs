@@ -20,4 +20,10 @@ pub fn check_bvh_topology(bvhnodes: &[usize], num_vtx: usize) {
     let mut vtx2cnt = vec![0usize; num_vtx];
     mark_child(bvhnodes, 0, &mut vtx2cnt);
     assert_eq!(vtx2cnt, vec!(1usize; num_vtx));
+    {
+        for i_vtx in 0..num_vtx {
+            let i_bvhnode = num_vtx - 1 + i_vtx;
+            assert_eq!(bvhnodes[i_bvhnode * 3 + 2], usize::MAX);
+        }
+    }
 }

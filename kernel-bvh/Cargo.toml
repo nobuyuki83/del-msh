@@ -1,0 +1,11 @@
+[package]
+name = "kernel-bvh"
+description = "hogehoge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[build-dependencies]
+bindgen_cuda.workspace = true

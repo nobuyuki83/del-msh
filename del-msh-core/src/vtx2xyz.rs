@@ -32,7 +32,7 @@ where
     }
     for i_vtx in 1..vtx2xyz.len() / 3 {
         let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
-        del_geo_core::aabb3::update(&mut aabb, xyz, eps);
+        del_geo_core::aabb3::add_point(&mut aabb, xyz, eps);
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);
@@ -55,7 +55,7 @@ where
     for &i_vtx in idx2vtx.iter().skip(1) {
         let i_vtx: usize = i_vtx.as_();
         let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
-        del_geo_core::aabb3::update(&mut aabb, xyz, eps);
+        del_geo_core::aabb3::add_point(&mut aabb, xyz, eps);
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);

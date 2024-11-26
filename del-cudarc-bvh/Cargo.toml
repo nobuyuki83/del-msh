@@ -1,0 +1,25 @@
+[package]
+name = "del-cudarc-bvh"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+cuda = []
+
+[dependencies]
+arrayref.workspace = true
+anyhow.workspace = true
+num-traits.workspace = true
+slice-of-array.workspace = true
+itertools.workspace = true
+cudarc.workspace = true
+del-msh-core.workspace = true
+del-geo-core.workspace = true
+# del-gl-core.workspace = true
+# del-canvas-cpu.workspace = true
+del-canvas-image.workspace = true
+del-cudarc-util.workspace = true
+# kernel-splat.workspace = true
+kernel-bvh.workspace = true
+# kernel-util.workspace = true
