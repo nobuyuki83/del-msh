@@ -23,8 +23,11 @@ pub fn bvhnode2aabb_from_trimesh_with_bvhnodes(
         vtx2xyz,
         0.,
     );
-    let from_trimsh =
-        del_cudarc_util::get_or_load_func(dev, "from_trimesh3", kernel_bvh::BVHNODE2AABB)?;
+    let from_trimsh = del_cudarc_util::get_or_load_func(
+        dev,
+        "from_trimesh3",
+        del_msh_bvh_cudarc_kernel::BVHNODE2AABB,
+    )?;
     use cudarc::driver::LaunchAsync;
     unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
@@ -39,8 +42,11 @@ pub fn tri2cntr_from_trimesh3(
     let num_tri = tri2vtx.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_tri as u32);
     let param = (tri2cntr, num_tri as u32, tri2vtx, vtx2xyz);
-    let from_trimsh =
-        del_cudarc_util::get_or_load_func(dev, "tri2cntr", kernel_bvh::BVHNODES_MORTON)?;
+    let from_trimsh = del_cudarc_util::get_or_load_func(
+        dev,
+        "tri2cntr",
+        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
+    )?;
     use cudarc::driver::LaunchAsync;
     unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
@@ -55,7 +61,11 @@ pub fn vtx2morton(
     let num_vtx = vtx2xyz.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_vtx as u32);
     let param = (num_vtx, vtx2xyz, transform_xyz2uni, vtx2morton);
-    let func = del_cudarc_util::get_or_load_func(dev, "vtx2morton", kernel_bvh::BVHNODES_MORTON)?;
+    let func = del_cudarc_util::get_or_load_func(
+        dev,
+        "vtx2morton",
+        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
+    )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;
     Ok(())
@@ -74,7 +84,7 @@ pub fn bvhnodes_from_sorted_morton_codes(
     let func = del_cudarc_util::get_or_load_func(
         dev,
         "kernel_MortonCode_BVHTopology",
-        kernel_bvh::BVHNODES_MORTON,
+        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;
@@ -107,7 +117,7 @@ pub fn aabb3_from_vtx2xyz(
     let func = del_cudarc_util::get_or_load_func(
         dev,
         "kernel_MinMax_TPB256",
-        kernel_bvh::AABB3_FROM_VTX2XYZ,
+        del_msh_bvh_cudarc_kernel::AABB3_FROM_VTX2XYZ,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;

@@ -42,7 +42,11 @@ fn main() -> anyhow::Result<()> {
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse(&transform_world2ndc).unwrap();
     //
-    dev.load_ptx(kernel_bvh::PIX2TRI.into(), "my_module", &["pix_to_tri"])?;
+    dev.load_ptx(
+        del_msh_bvh_cudarc_kernel::PIX2TRI.into(),
+        "my_module",
+        &["pix_to_tri"],
+    )?;
     let pix_to_tri = dev.get_func("my_module", "pix_to_tri").unwrap();
     //
     let mut pix2tri_dev = dev.alloc_zeros::<u32>(img_size.1 * img_size.0)?;

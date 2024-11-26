@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-cuda = ["dep:kernel-bvh", "dep:del-cudarc-util", "dep:cudarc"]
+cuda = ["dep:del-msh-bvh-cudarc-kernel", "dep:del-cudarc-util", "dep:cudarc"]
 
 [dependencies]
 arrayref.workspace = true
@@ -20,4 +20,4 @@ del-canvas-image.workspace = true
 # cuda dependent
 cudarc = {workspace = true, optional = true }
 del-cudarc-util = {workspace = true, optional = true }
-kernel-bvh = { workspace = true, optional = true }
+del-msh-bvh-cudarc-kernel = { workspace = true, optional = true }

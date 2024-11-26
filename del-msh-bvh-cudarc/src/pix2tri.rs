@@ -25,7 +25,8 @@ pub fn pix2tri(
         aabbs_dev,
     );
     //unsafe { self.pix_to_tri.clone().launch(cfg,param) }.unwrap();
-    let pix_to_tri = del_cudarc_util::get_or_load_func(dev, "pix_to_tri", kernel_bvh::PIX2TRI)?;
+    let pix_to_tri =
+        del_cudarc_util::get_or_load_func(dev, "pix_to_tri", del_msh_bvh_cudarc_kernel::PIX2TRI)?;
     use cudarc::driver::LaunchAsync;
     unsafe { pix_to_tri.launch(cfg, param) }?;
     Ok(())
