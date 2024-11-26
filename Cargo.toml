@@ -3,10 +3,10 @@ members = [
     "del-msh-pyo3",
     "del-msh-core",
     "del-msh-nalgebra",
-    "del-msh-bvh-cudarc",
+    "del-msh-cudarc",
 ]
 exclude = [
-    "del-msh-bvh-cudarc-kernel"
+    "del-msh-cudarc-kernel"
 ]
 resolver = "2"
 
@@ -42,8 +42,8 @@ bindgen_cuda = "0.1.5"
 # internal
 del-msh-nalgebra = { path="del-msh-nalgebra"}
 del-msh-core = {path="del-msh-core"}
-del-msh-bvh-cudarc = {path="del-msh-bvh-cudarc"}
-del-msh-bvh-cudarc-kernel = {path="del-msh-bvh-cudarc-kernel"}
+del-msh-cudarc = {path="del-msh-cudarc"}
+del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 
 # for development
 # del-geo-core = { path="../del-geo/del-geo-core"}

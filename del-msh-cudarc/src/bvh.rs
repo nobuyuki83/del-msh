@@ -26,7 +26,7 @@ pub fn bvhnode2aabb_from_trimesh_with_bvhnodes(
     let from_trimsh = del_cudarc_util::get_or_load_func(
         dev,
         "from_trimesh3",
-        del_msh_bvh_cudarc_kernel::BVHNODE2AABB,
+        del_msh_cudarc_kernel::BVHNODE2AABB,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { from_trimsh.launch(cfg, param) }?;
@@ -45,7 +45,7 @@ pub fn tri2cntr_from_trimesh3(
     let from_trimsh = del_cudarc_util::get_or_load_func(
         dev,
         "tri2cntr",
-        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
+        del_msh_cudarc_kernel::BVHNODES_MORTON,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { from_trimsh.launch(cfg, param) }?;
@@ -64,7 +64,7 @@ pub fn vtx2morton(
     let func = del_cudarc_util::get_or_load_func(
         dev,
         "vtx2morton",
-        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
+        del_msh_cudarc_kernel::BVHNODES_MORTON,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;
@@ -84,7 +84,7 @@ pub fn bvhnodes_from_sorted_morton_codes(
     let func = del_cudarc_util::get_or_load_func(
         dev,
         "kernel_MortonCode_BVHTopology",
-        del_msh_bvh_cudarc_kernel::BVHNODES_MORTON,
+        del_msh_cudarc_kernel::BVHNODES_MORTON,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;
@@ -117,7 +117,7 @@ pub fn aabb3_from_vtx2xyz(
     let func = del_cudarc_util::get_or_load_func(
         dev,
         "kernel_MinMax_TPB256",
-        del_msh_bvh_cudarc_kernel::AABB3_FROM_VTX2XYZ,
+        del_msh_cudarc_kernel::AABB3_FROM_VTX2XYZ,
     )?;
     use cudarc::driver::LaunchAsync;
     unsafe { func.launch(cfg, param) }?;

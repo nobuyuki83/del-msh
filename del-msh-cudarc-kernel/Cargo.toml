@@ -1,5 +1,5 @@
 [package]
-name = "del-msh-bvh-cudarc-kernel"
+name = "del-msh-cudarc-kernel"
 description = "hogehoge"
 # version.workspace = true
 # edition.workspace = true
