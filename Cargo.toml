@@ -46,13 +46,17 @@ del-cudarc-bvh = {path="del-cudarc-bvh"}
 kernel-bvh = {path="kernel-bvh"}
 
 # for development
-del-geo-core = { path="../del-geo/del-geo-core"}
-del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
-del-cudarc-util = { path="../del-cudarc/del-cudarc-util"}
-del-canvas-image = {path="../del-canvas/del-canvas-image"}
+# del-geo-core = { path="../del-geo/del-geo-core"}
+# del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
+# del-cudarc-util = { path="../del-cudarc/del-cudarc-util"}
+# del-canvas-image = {path="../del-canvas/del-canvas-image"}
+
 # for GitHub push
-# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
-# del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
+del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
+del-cudarc-util = { git="https://github.com/nobuyuki83/del-cudarc.git"}
+del-canvas-image = {git="https://github.com/nobuyuki83/del-canvas.git"}
+
 # for deploy
 # del-geo-core = "0.1.32"
 # del-geo-nalgebra = "0.1.32"
