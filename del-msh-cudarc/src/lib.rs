@@ -4,9 +4,6 @@
 pub mod bvh;
 
 #[cfg(feature = "cuda")]
-pub mod pix2tri;
-
-#[cfg(feature = "cuda")]
 pub fn assert_equal_cpu_gpu(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &[u32],
