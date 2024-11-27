@@ -20,7 +20,7 @@ fn torus_meshtri3(
     nlt: usize,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f64>>) {
     let (tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_yup::<usize, f64>(radius, radius_tube, nlg, nlt);
+        del_msh_core::trimesh3_primitive::torus_zup::<usize, f64>(radius, radius_tube, nlg, nlt);
     let v = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz).unwrap();
     let f = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx).unwrap();
     (f.into_pyarray_bound(py), v.into_pyarray_bound(py))

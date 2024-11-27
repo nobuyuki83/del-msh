@@ -4,6 +4,17 @@
 pub mod bvh;
 
 #[cfg(feature = "cuda")]
+pub mod vtx2xyz;
+
+#[cfg(feature = "cuda")]
+pub mod bvhnodes_morton;
+
+#[cfg(feature = "cuda")]
+pub mod bvhnode2aabb;
+
+
+
+#[cfg(feature = "cuda")]
 pub fn assert_equal_cpu_gpu(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &[u32],
@@ -41,7 +52,7 @@ pub fn assert_equal_cpu_gpu(
             assert_eq!(tri2cntr[i], tri2cntr_hst[i], "{}", diff);
         }
     }
-    let aabb_dev = crate::bvh::aabb3_from_vtx2xyz(dev, &tri2cntr_dev)?;
+    let aabb_dev = crate::vtx2xyz::to_aabb3(dev, &tri2cntr_dev)?;
     {
         let aabb_hst = dev.dtoh_sync_copy(&aabb_dev)?;
         assert_eq!(aabb_hst.len(), 6);
@@ -52,7 +63,7 @@ pub fn assert_equal_cpu_gpu(
     // get aabb
     let mut tri2morton_dev = dev.alloc_zeros(num_tri)?;
     let transform_cntr2uni_dev = dev.htod_copy(transform_cntr2uni.to_vec())?;
-    crate::bvh::vtx2morton(
+    crate::bvhnodes_morton::vtx2morton(
         dev,
         &tri2cntr_dev,
         &transform_cntr2uni_dev,
@@ -98,7 +109,7 @@ pub fn assert_equal_cpu_gpu(
         }
     }
     let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
-    crate::bvh::bvhnodes_from_sorted_morton_codes(
+    crate::bvhnodes_morton::from_sorted_morton_codes(
         dev,
         &mut bvhnodes_dev,
         &idx2morton_dev,
@@ -121,7 +132,7 @@ pub fn assert_equal_cpu_gpu(
         None,
     );
     let mut bvhnode2aabb_dev = dev.alloc_zeros::<f32>(bvhnodes_dev.len() / 3 * 6)?;
-    crate::bvh::bvhnode2aabb_from_trimesh_with_bvhnodes(
+    crate::bvhnode2aabb::from_trimesh3_with_bvhnodes(
         dev,
         &tri2vtx_dev,
         &vtx2xyz_dev,
@@ -150,7 +161,7 @@ pub fn make_bvh_from_trimesh3(
     let num_tri = tri2vtx_dev.len() / 3;
     let mut tri2cntr_dev = dev.alloc_zeros::<f32>(num_tri * 3)?;
     crate::bvh::tri2cntr_from_trimesh3(dev, tri2vtx_dev, vtx2xyz_dev, &mut tri2cntr_dev)?;
-    let aabb_dev = crate::bvh::aabb3_from_vtx2xyz(dev, &tri2cntr_dev)?;
+    let aabb_dev = crate::vtx2xyz::to_aabb3(dev, &tri2cntr_dev)?;
     let aabb = dev.dtoh_sync_copy(&aabb_dev)?;
     let aabb = arrayref::array_ref!(&aabb, 0, 6);
     // get aabb
@@ -158,7 +169,7 @@ pub fn make_bvh_from_trimesh3(
     let transform_cntr2uni =
         del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(aabb);
     let transform_cntr2uni_dev = dev.htod_copy(transform_cntr2uni.to_vec())?;
-    crate::bvh::vtx2morton(
+    crate::bvhnodes_morton::vtx2morton(
         dev,
         &tri2cntr_dev,
         &transform_cntr2uni_dev,
@@ -175,14 +186,14 @@ pub fn make_bvh_from_trimesh3(
     //let mut idx2morton_dev = dev.alloc_zeros(num_tri)?;
     //del_cudarc_util::util::permute(&dev, &mut idx2morton_dev, &idx2tri_dev, &tri2morton_dev)?;
     let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
-    crate::bvh::bvhnodes_from_sorted_morton_codes(
+    crate::bvhnodes_morton::from_sorted_morton_codes(
         dev,
         &mut bvhnodes_dev,
         &idx2morton_dev,
         &idx2tri_dev,
     )?;
     let mut bvhnode2aabb_dev = dev.alloc_zeros::<f32>(bvhnodes_dev.len() / 3 * 6)?;
-    crate::bvh::bvhnode2aabb_from_trimesh_with_bvhnodes(
+    crate::bvhnode2aabb::from_trimesh3_with_bvhnodes(
         dev,
         tri2vtx_dev,
         vtx2xyz_dev,

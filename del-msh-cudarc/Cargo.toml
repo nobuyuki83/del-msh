@@ -15,7 +15,6 @@ slice-of-array.workspace = true
 itertools.workspace = true
 del-msh-core.workspace = true
 del-geo-core.workspace = true
-del-canvas-image.workspace = true
 
 # cuda dependent
 cudarc = {workspace = true, optional = true }

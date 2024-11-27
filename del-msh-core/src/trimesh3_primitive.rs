@@ -296,7 +296,7 @@ where
 // --------------------------------------------------------
 
 #[allow(clippy::identity_op)]
-pub fn torus_yup<Index, Float>(
+pub fn torus_zup<Index, Float>(
     major_radius: Float,
     minor_radius: Float,
     ndiv_major: usize, // latitude
@@ -339,8 +339,8 @@ where
 
 #[test]
 fn test_torus_tri3() {
-    torus_yup::<usize, f32>(1., 1., 32, 32);
-    torus_yup::<usize, f64>(1., 1., 32, 32);
+    torus_zup::<usize, f32>(1., 1., 32, 32);
+    torus_zup::<usize, f64>(1., 1., 32, 32);
 }
 
 // --------------

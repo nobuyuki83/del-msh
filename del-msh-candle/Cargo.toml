@@ -1,0 +1,18 @@
+[package]
+name = "del-msh-candle"
+description = "hgoehoge"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+cuda = ["candle-core/cuda"]
+
+[dependencies]
+anyhow.workspace = true
+candle-core = { git = "https://github.com/huggingface/candle.git"}
+del-msh-cudarc = {path="../../del-msh/del-msh-cudarc", features = ["cuda"]}
+
+[dev-dependencies]

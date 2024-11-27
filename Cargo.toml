@@ -4,6 +4,7 @@ members = [
     "del-msh-core",
     "del-msh-nalgebra",
     "del-msh-cudarc",
+    "del-msh-candle"
 ]
 exclude = [
     "del-msh-cudarc-kernel"
@@ -46,16 +47,15 @@ del-msh-cudarc = {path="del-msh-cudarc"}
 del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 
 # for development
-# del-geo-core = { path="../del-geo/del-geo-core"}
-# del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
-# del-cudarc-util = { path="../del-cudarc/del-cudarc-util"}
-# del-canvas-image = {path="../del-canvas/del-canvas-image"}
+del-geo-core = { path="../del-geo/del-geo-core"}
+del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
+del-cudarc-util = { path="../del-cudarc/del-cudarc-util"}
 
 # for GitHub push
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-cudarc-util = { git="https://github.com/nobuyuki83/del-cudarc.git"}
-del-canvas-image = {git="https://github.com/nobuyuki83/del-canvas.git"}
+# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-cudarc-util = { git="https://github.com/nobuyuki83/del-cudarc.git"}
+
 
 # for deploy
 # del-geo-core = "0.1.32"
