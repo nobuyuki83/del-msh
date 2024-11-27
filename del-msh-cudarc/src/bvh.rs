@@ -15,6 +15,3 @@ pub fn tri2cntr_from_trimesh3(
     unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
 }
-
-
-

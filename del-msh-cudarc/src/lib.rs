@@ -12,8 +12,6 @@ pub mod bvhnodes_morton;
 #[cfg(feature = "cuda")]
 pub mod bvhnode2aabb;
 
-
-
 #[cfg(feature = "cuda")]
 pub fn assert_equal_cpu_gpu(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
