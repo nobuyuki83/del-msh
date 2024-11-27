@@ -5,9 +5,7 @@ pub fn test(
     vtx2xyz: &candle_core::Tensor,
 ) -> anyhow::Result<()> {
     let dev = dev.as_cuda_device()?;
-    use candle_core::backend::BackendDevice;
     use std::ops::Deref;
-    let num_tri = tri2vtx.dims2()?.0;
     let tri2vtx = tri2vtx.storage_and_layout().0;
     let tri2vtx = match tri2vtx.deref() {
         candle_core::Storage::Cuda(cpu_tri2vtx) => cpu_tri2vtx.as_cuda_slice::<u32>(),

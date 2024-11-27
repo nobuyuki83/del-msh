@@ -23,7 +23,7 @@ pub fn to_aabb3(
         f32::MIN,
     ])?;
     let param = (&aabb, vtx2xyz, num_vtx);
-    let func = del_cudarc_util::get_or_load_func(
+    let func = del_cudarc::get_or_load_func(
         dev,
         "kernel_MinMax_TPB256",
         del_msh_cudarc_kernel::AABB3_FROM_VTX2XYZ,

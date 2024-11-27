@@ -22,11 +22,8 @@ pub fn from_trimesh3_with_bvhnodes(
         vtx2xyz,
         0.,
     );
-    let from_trimsh = del_cudarc_util::get_or_load_func(
-        dev,
-        "from_trimesh3",
-        del_msh_cudarc_kernel::BVHNODE2AABB,
-    )?;
+    let from_trimsh =
+        del_cudarc::get_or_load_func(dev, "from_trimesh3", del_msh_cudarc_kernel::BVHNODE2AABB)?;
     use cudarc::driver::LaunchAsync;
     unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
