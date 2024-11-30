@@ -9,3 +9,5 @@ description = "hogehoge"
 
 [build-dependencies]
 bindgen_cuda = "0.1.5"
+# del-geo-cpp-headers = {path="../../del-geo/del-geo-cpp-headers"}
+del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
