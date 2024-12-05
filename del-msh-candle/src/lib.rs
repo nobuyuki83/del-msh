@@ -1,3 +1,11 @@
+pub mod bvh;
+pub mod bvh_gpu;
+// pub mod cubic_stylization;
+// pub mod diffcoord_polyloop2;
+pub mod diffcoord_trimesh3;
+// pub mod vtx2xyz_to_edgevector;
+pub mod perturb_tensor;
+
 #[cfg(feature = "cuda")]
 pub fn test(
     dev: &candle_core::Device,

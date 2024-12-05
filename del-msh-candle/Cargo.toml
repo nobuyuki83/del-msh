@@ -11,8 +11,13 @@ repository.workspace = true
 cuda = ["candle-core/cuda", "del-msh-cudarc/cuda"]
 
 [dependencies]
+rand.workspace = true
 anyhow.workspace = true
+nalgebra.workspace = true
 candle-core = { git = "https://github.com/huggingface/candle.git"}
-del-msh-cudarc = {path="../../del-msh/del-msh-cudarc"}
+del-msh-core.workspace = true
+del-msh-nalgebra.workspace = true
+del-msh-cudarc = { workspace = true, optional = true }
+# del-candle = {path="../../del-candle"}
 
 [dev-dependencies]
