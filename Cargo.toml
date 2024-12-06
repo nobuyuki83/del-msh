@@ -47,12 +47,12 @@ del-msh-cudarc = {path="del-msh-cudarc"}
 del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 
 # for development
-# del-geo-core = { path="../del-geo/del-geo-core"}
+del-geo-core = { path="../del-geo/del-geo-core"}
 # del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
 # del-cudarc = { path="../del-cudarc"}
 
 # for GitHub push
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
 del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git"}
 

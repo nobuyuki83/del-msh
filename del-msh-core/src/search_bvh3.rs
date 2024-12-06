@@ -52,6 +52,49 @@ pub fn intersections_ray<Index>(
     );
 }
 
+pub fn intersections_line<Index>(
+    hits: &mut Vec<(f32, usize)>,
+    line_org: &[f32; 3],
+    line_dir: &[f32; 3],
+    trimesh3: &TriMeshWithBvh<Index>,
+    i_bvhnode: usize,
+) where
+    Index: PrimInt + AsPrimitive<usize>,
+{
+    if del_geo_core::aabb3::from_aabbs(trimesh3.bvhnode2aabb, i_bvhnode)
+        .intersections_against_line(line_org, line_dir)
+        .is_none()
+    {
+        return;
+    }
+    assert_eq!(trimesh3.bvhnodes.len() / 3, trimesh3.bvhnode2aabb.len() / 6);
+    if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+        // leaf node
+        let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
+        let Some(t) = crate::trimesh3::to_tri3(i_tri, trimesh3.tri2vtx, trimesh3.vtx2xyz)
+            .intersection_against_line(line_org, line_dir)
+        else {
+            return;
+        };
+        hits.push((t, i_tri));
+        return;
+    }
+    crate::search_bvh3::intersections_line(
+        hits,
+        line_org,
+        line_dir,
+        trimesh3,
+        trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_(),
+    );
+    crate::search_bvh3::intersections_line(
+        hits,
+        line_org,
+        line_dir,
+        trimesh3,
+        trimesh3.bvhnodes[i_bvhnode * 3 + 2].as_(),
+    );
+}
+
 /// return the distance to triangle and triangle index
 pub fn first_intersection_ray<Index>(
     ray_org: &[f32; 3],

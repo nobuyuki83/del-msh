@@ -1,4 +1,5 @@
 // topology
+pub mod edge2elem;
 pub mod edge2vtx;
 pub mod elem2elem;
 pub mod tri2vtx;
@@ -38,6 +39,8 @@ pub mod io_nas;
 pub mod io_obj;
 pub mod io_off;
 pub mod io_vtk;
+pub mod io_ply;
+pub mod io_svg;
 
 // search
 pub mod bvhnode2aabb2;
@@ -50,15 +53,15 @@ pub mod search_bvh2;
 pub mod search_bvh3;
 
 // self intersection
-pub mod io_ply;
-pub mod io_svg;
-pub mod polygon_mesh;
-pub mod trimesh;
-pub mod trimesh2_dynamic;
 pub mod trimesh3_intersection;
 pub mod trimesh3_intersection_time;
 pub mod trimesh3_move_avoid_intersection;
 pub mod trimesh3_proximity;
+
+// misc
+pub mod polygon_mesh;
+pub mod trimesh;
+pub mod trimesh2_dynamic;
 pub mod trimesh_topology;
 pub mod uniform_mesh;
 pub mod vtx2group;
