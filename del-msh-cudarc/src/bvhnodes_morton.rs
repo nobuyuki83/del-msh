@@ -20,7 +20,7 @@ pub fn vtx2morton(
 #[cfg(feature = "cuda")]
 pub fn from_sorted_morton_codes(
     dev: &std::sync::Arc<CudaDevice>,
-    bvnodes: &mut cudarc::driver::CudaSlice<u32>,
+    bvnodes: &cudarc::driver::CudaSlice<u32>,
     idx2morton: &cudarc::driver::CudaSlice<u32>,
     idx2tri: &cudarc::driver::CudaSlice<u32>,
 ) -> anyhow::Result<()> {

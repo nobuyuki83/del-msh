@@ -145,12 +145,11 @@ pub fn assert_equal_cpu_gpu(
 #[cfg(feature = "cuda")]
 pub fn make_bvh_from_trimesh3(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
+    bvhnodes: &cudarc::driver::CudaSlice<u32>,
+    bvhnode2aabbiii: &cudarc::driver::CudaSlice<f32>,
     tri2vtx_dev: &cudarc::driver::CudaSlice<u32>,
     vtx2xyz_dev: &cudarc::driver::CudaSlice<f32>,
-) -> anyhow::Result<(
-    cudarc::driver::CudaSlice<u32>,
-    cudarc::driver::CudaSlice<f32>,
-)> {
+) -> anyhow::Result<()> {
     use cudarc::driver::DeviceSlice;
     let num_tri = tri2vtx_dev.len() / 3;
     let mut tri2cntr_dev = dev.alloc_zeros::<f32>(num_tri * 3)?;
@@ -175,20 +174,15 @@ pub fn make_bvh_from_trimesh3(
     let idx2morton_dev = tri2morton_dev;
     //let mut idx2morton_dev = dev.alloc_zeros(num_tri)?;
     //del_cudarc_util::util::permute(&dev, &mut idx2morton_dev, &idx2tri_dev, &tri2morton_dev)?;
-    let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
-    crate::bvhnodes_morton::from_sorted_morton_codes(
-        dev,
-        &mut bvhnodes_dev,
-        &idx2morton_dev,
-        &idx2tri_dev,
-    )?;
-    let mut bvhnode2aabb_dev = dev.alloc_zeros::<f32>(bvhnodes_dev.len() / 3 * 6)?;
+    // let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
+    crate::bvhnodes_morton::from_sorted_morton_codes(dev, bvhnodes, &idx2morton_dev, &idx2tri_dev)?;
+    // let mut bvhnode2aabb_dev = dev.alloc_zeros::<f32>(bvhnodes_dev.len() / 3 * 6)?;
     crate::bvhnode2aabb::from_trimesh3_with_bvhnodes(
         dev,
         tri2vtx_dev,
         vtx2xyz_dev,
-        &bvhnodes_dev,
-        &mut bvhnode2aabb_dev,
+        &bvhnodes,
+        bvhnode2aabbiii,
     )?;
-    Ok((bvhnodes_dev, bvhnode2aabb_dev))
+    Ok(())
 }

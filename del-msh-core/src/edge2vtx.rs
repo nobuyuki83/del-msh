@@ -72,7 +72,6 @@ pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
     edge2vtx
 }
 
-
 pub fn occluding_contour_for_triangle_mesh(
     tri2vtx: &[usize],
     vtx2xyz: &[f32],
@@ -106,7 +105,7 @@ pub fn occluding_contour_for_triangle_mesh(
                 bvhnodes,
                 bvhnode2aabb,
                 tri2vtx,
-                vtx2xyz
+                vtx2xyz,
             },
             0,
             f32::MAX,
@@ -146,7 +145,7 @@ pub fn silhouette_for_triangle_mesh(
             let nrm = del_geo_core::vec3::normalized(&del_geo_core::vec3::add(&nrm0, &nrm1));
             del_geo_core::vec3::axpy(0.001, &nrm, &pos_mid)
         };
-        let mut res:  Vec<(f32, usize)> = vec!();
+        let mut res: Vec<(f32, usize)> = vec![];
         crate::search_bvh3::intersections_line(
             &mut res,
             &ray_org,
@@ -155,7 +154,7 @@ pub fn silhouette_for_triangle_mesh(
                 bvhnodes,
                 bvhnode2aabb,
                 tri2vtx,
-                vtx2xyz
+                vtx2xyz,
             },
             0,
         );
@@ -202,7 +201,8 @@ pub fn test_contour() {
             &edge2vtx_contour,
             &vtx2xyz,
             3,
-        ).unwrap();
+        )
+        .unwrap();
     }
     {
         let edge2vtx_contour = silhouette_for_triangle_mesh(
@@ -219,7 +219,8 @@ pub fn test_contour() {
             &edge2vtx_contour,
             &vtx2xyz,
             3,
-        ).unwrap();
+        )
+        .unwrap();
     }
     crate::io_obj::save_tri2vtx_vtx2xyz("../target/edge2vtx_trimsh.obj", &tri2vtx, &vtx2xyz, 3)
         .unwrap();

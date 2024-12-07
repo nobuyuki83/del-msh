@@ -3,7 +3,7 @@ pub fn from_trimesh3_with_bvhnodes(
     tri2vtx: &cudarc::driver::CudaSlice<u32>,
     vtx2xyz: &cudarc::driver::CudaSlice<f32>,
     bvhnodes: &cudarc::driver::CudaSlice<u32>,
-    bvhnode2aabb: &mut cudarc::driver::CudaSlice<f32>,
+    bvhnode2aabb: &cudarc::driver::CudaSlice<f32>,
 ) -> anyhow::Result<()> {
     use cudarc::driver::DeviceSlice;
     let num_tri = tri2vtx.len() / 3;

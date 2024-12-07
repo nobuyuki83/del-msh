@@ -38,9 +38,9 @@ pub mod unindex;
 pub mod io_nas;
 pub mod io_obj;
 pub mod io_off;
-pub mod io_vtk;
 pub mod io_ply;
 pub mod io_svg;
+pub mod io_vtk;
 
 // search
 pub mod bvhnode2aabb2;

@@ -1,4 +1,3 @@
-
 /// two adjacent triangles indices for each edge
 /// assuming there is no t-junction
 pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx(
