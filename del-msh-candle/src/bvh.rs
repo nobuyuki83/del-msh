@@ -143,9 +143,7 @@ pub fn from_trimesh3(
 ) -> candle_core::Result<(candle_core::Tensor, candle_core::Tensor)> {
     use candle_core::Device::{Cpu, Cuda};
     match (tri2vtx.device(), vtx2xyz.device()) {
-        (&Cpu, &Cpu) => {
-            from_trimesh3_cpu(tri2vtx, vtx2xyz)
-        }
+        (&Cpu, &Cpu) => from_trimesh3_cpu(tri2vtx, vtx2xyz),
         (Cuda(c), Cuda(b)) => {
             use candle_core::backend::BackendDevice;
             assert!(c.same_device(b));
@@ -154,9 +152,7 @@ pub fn from_trimesh3(
             #[cfg(not(feature = "cuda"))]
             return Err(candle_core::Error::NotCompiledWithCudaSupport);
         }
-        _ => {
-            Err(candle_core::Error::Msg("hogehoge".to_string()))
-        }
+        _ => Err(candle_core::Error::Msg("hogehoge".to_string())),
     }
 }
 
