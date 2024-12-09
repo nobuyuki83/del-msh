@@ -28,7 +28,7 @@ pub fn intersections_ray<Index>(
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        let Some(t) = crate::trimesh3::to_tri3(i_tri, trimesh3.tri2vtx, trimesh3.vtx2xyz)
+        let Some(t) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
         else {
             return;
@@ -71,7 +71,7 @@ pub fn intersections_line<Index>(
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        let Some(t) = crate::trimesh3::to_tri3(i_tri, trimesh3.tri2vtx, trimesh3.vtx2xyz)
+        let Some(t) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_line(line_org, line_dir)
         else {
             return;
@@ -117,7 +117,7 @@ where
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        return crate::trimesh3::to_tri3(i_tri, trimesh3.tri2vtx, trimesh3.vtx2xyz)
+        return crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
             .filter(|&t| t < dis)
             .map(|t| (t, i_tri));

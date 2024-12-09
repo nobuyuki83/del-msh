@@ -20,7 +20,7 @@ where
         } else if num_dim == 2 {
             crate::trimesh2::to_tri2(idx_tri, tri2vtx, vtx2xyz).area()
         } else {
-            crate::trimesh3::to_tri3(idx_tri, tri2vtx, vtx2xyz).area()
+            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, idx_tri).area()
         };
         let t0 = cumulative_area_sum[cumulative_area_sum.len() - 1];
         cumulative_area_sum.push(a0 + t0);

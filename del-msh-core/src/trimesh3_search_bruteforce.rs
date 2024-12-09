@@ -8,7 +8,7 @@ pub fn first_intersection_ray(
 ) -> Option<(f32, usize)> {
     let mut hit_pos = Vec::<(f32, usize)>::new();
     for i_tri in 0..tri2vtx.len() / 3 {
-        let Some(t) = crate::trimesh3::to_tri3(i_tri, tri2vtx, vtx2xyz)
+        let Some(t) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
         else {
             continue;

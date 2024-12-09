@@ -75,27 +75,66 @@ pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
 pub fn occluding_contour_for_triangle_mesh(
     tri2vtx: &[usize],
     vtx2xyz: &[f32],
-    dir: &[f32; 3],
+    transform_world2ndc: &[f32; 16],
     edge2vtx: &[usize],
     edge2tri: &[usize],
     bvhnodes: &[usize],
     bvhnode2aabb: &[f32],
 ) -> Vec<usize> {
+    use del_geo_core::{mat4_col_major, vec3};
+    let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
     for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
-        let nrm0 = crate::trimesh3::to_tri3(edge2tri[i_edge * 2], tri2vtx, vtx2xyz).normal();
-        let nrm1 = crate::trimesh3::to_tri3(edge2tri[i_edge * 2 + 1], tri2vtx, vtx2xyz).normal();
-        let flg0 = del_geo_core::vec3::dot(&nrm0, dir) > 0.;
-        let flg1 = del_geo_core::vec3::dot(&nrm1, dir) > 0.;
-        if flg0 == flg1 {
-            continue;
-        }
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let pos_mid: [f32; 3] =
             std::array::from_fn(|i| (vtx2xyz[i0_vtx * 3 + i] + vtx2xyz[i1_vtx * 3 + i]) * 0.5);
-        let ray_dir: [f32; 3] = std::array::from_fn(|i| -dir[i]);
+        let ray_dir = {
+            let pos_mid_ndc =
+                mat4_col_major::transform_homogeneous(transform_world2ndc, &pos_mid).unwrap();
+            let ray_stt_world = mat4_col_major::transform_homogeneous(
+                &transform_ndc2world,
+                &[pos_mid_ndc[0], pos_mid_ndc[1], 1.0],
+            )
+            .unwrap();
+            let ray_end_world = mat4_col_major::transform_homogeneous(
+                &transform_ndc2world,
+                &[pos_mid_ndc[0], pos_mid_ndc[1], -1.0],
+            )
+            .unwrap();
+            vec3::normalized(&vec3::sub(&ray_stt_world, &ray_end_world))
+        };
+        let i0_tri = edge2tri[i_edge * 2];
+        let i1_tri = edge2tri[i_edge * 2 + 1];
+        assert!(
+            i0_tri < tri2vtx.len() / 3,
+            "{} {}",
+            i0_tri,
+            tri2vtx.len() / 3
+        );
+        assert!(
+            i1_tri < tri2vtx.len() / 3,
+            "{} {}",
+            i1_tri,
+            tri2vtx.len() / 3
+        );
+        let (flg0, nrm0_world) = {
+            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri);
+            let nrm0_world = tri.unit_normal();
+            let flg = vec3::dot(&nrm0_world, &ray_dir) > 0.;
+            (flg, nrm0_world)
+        };
+        let (flg1, nrm1_world) = {
+            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri);
+            let nrm1_world = tri.unit_normal();
+            let flg = vec3::dot(&nrm1_world, &ray_dir) > 0.;
+            (flg, nrm1_world)
+        };
+        if flg0 == flg1 {
+            continue;
+        }
         let ray_org = {
-            let nrm = del_geo_core::vec3::normalized(&del_geo_core::vec3::add(&nrm0, &nrm1));
+            let nrm =
+                del_geo_core::vec3::normalized(&del_geo_core::vec3::add(&nrm0_world, &nrm1_world));
             del_geo_core::vec3::axpy(0.001, &nrm, &pos_mid)
         };
         let res = crate::search_bvh3::first_intersection_ray(
@@ -122,27 +161,66 @@ pub fn occluding_contour_for_triangle_mesh(
 pub fn silhouette_for_triangle_mesh(
     tri2vtx: &[usize],
     vtx2xyz: &[f32],
-    dir: &[f32; 3],
+    transform_world2ndc: &[f32; 16],
     edge2vtx: &[usize],
     edge2tri: &[usize],
     bvhnodes: &[usize],
     bvhnode2aabb: &[f32],
 ) -> Vec<usize> {
+    use del_geo_core::{mat4_col_major, vec3};
+    let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
     for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
-        let nrm0 = crate::trimesh3::to_tri3(edge2tri[i_edge * 2], tri2vtx, vtx2xyz).normal();
-        let nrm1 = crate::trimesh3::to_tri3(edge2tri[i_edge * 2 + 1], tri2vtx, vtx2xyz).normal();
-        let flg0 = del_geo_core::vec3::dot(&nrm0, dir) > 0.;
-        let flg1 = del_geo_core::vec3::dot(&nrm1, dir) > 0.;
-        if flg0 == flg1 {
-            continue;
-        }
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let pos_mid: [f32; 3] =
             std::array::from_fn(|i| (vtx2xyz[i0_vtx * 3 + i] + vtx2xyz[i1_vtx * 3 + i]) * 0.5);
-        let ray_dir: [f32; 3] = std::array::from_fn(|i| -dir[i]);
+        let ray_dir = {
+            let pos_mid_ndc =
+                mat4_col_major::transform_homogeneous(transform_world2ndc, &pos_mid).unwrap();
+            let ray_stt_world = mat4_col_major::transform_homogeneous(
+                &transform_ndc2world,
+                &[pos_mid_ndc[0], pos_mid_ndc[1], 1.0],
+            )
+            .unwrap();
+            let ray_end_world = mat4_col_major::transform_homogeneous(
+                &transform_ndc2world,
+                &[pos_mid_ndc[0], pos_mid_ndc[1], -1.0],
+            )
+            .unwrap();
+            vec3::normalized(&vec3::sub(&ray_stt_world, &ray_end_world))
+        };
+        let i0_tri = edge2tri[i_edge * 2];
+        let i1_tri = edge2tri[i_edge * 2 + 1];
+        assert!(
+            i0_tri < tri2vtx.len() / 3,
+            "{} {}",
+            i0_tri,
+            tri2vtx.len() / 3
+        );
+        assert!(
+            i1_tri < tri2vtx.len() / 3,
+            "{} {}",
+            i1_tri,
+            tri2vtx.len() / 3
+        );
+        let (flg0, nrm0_world) = {
+            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri);
+            let nrm0_world = tri.unit_normal();
+            let flg = vec3::dot(&nrm0_world, &ray_dir) > 0.;
+            (flg, nrm0_world)
+        };
+        let (flg1, nrm1_world) = {
+            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri);
+            let nrm1_world = tri.unit_normal();
+            let flg = vec3::dot(&nrm1_world, &ray_dir) > 0.;
+            (flg, nrm1_world)
+        };
+        if flg0 == flg1 {
+            continue;
+        }
         let ray_org = {
-            let nrm = del_geo_core::vec3::normalized(&del_geo_core::vec3::add(&nrm0, &nrm1));
+            let nrm =
+                del_geo_core::vec3::normalized(&del_geo_core::vec3::add(&nrm0_world, &nrm1_world));
             del_geo_core::vec3::axpy(0.001, &nrm, &pos_mid)
         };
         let mut res: Vec<(f32, usize)> = vec![];
@@ -173,6 +251,13 @@ pub fn test_contour() {
         // = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1., 32, 32);
         = crate::trimesh3_primitive::torus_zup(2.0, 0.5, 32, 32);
     let dir = del_geo_core::vec3::normalized(&[1f32, 1.0, 0.1]);
+    let transform_world2ndc = {
+        let ez = dir;
+        let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&ez);
+        let m3 = del_geo_core::mat3_col_major::from_column_vectors(&ex, &ey, &ez);
+        let t = del_geo_core::mat4_col_major::from_mat3_col_major(&m3);
+        del_geo_core::mat4_col_major::transpose(&t)
+    };
     //
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
     let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
@@ -190,7 +275,7 @@ pub fn test_contour() {
         let edge2vtx_contour = occluding_contour_for_triangle_mesh(
             &tri2vtx,
             &vtx2xyz,
-            &dir,
+            &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
             &bvhnodes,
@@ -208,7 +293,7 @@ pub fn test_contour() {
         let edge2vtx_contour = silhouette_for_triangle_mesh(
             &tri2vtx,
             &vtx2xyz,
-            &dir,
+            &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
             &bvhnodes,

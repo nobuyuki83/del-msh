@@ -94,7 +94,7 @@ pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
     let num_tri = tri2vtx.len() / 3;
     let mut tri2area = Vec::<f32>::with_capacity(num_tri);
     for i_tri in 0..num_tri {
-        let area = to_tri3(i_tri, tri2vtx, vtx2xyz).area();
+        let area = to_tri3(tri2vtx, vtx2xyz, i_tri).area();
         tri2area.push(area);
     }
     tri2area
@@ -177,7 +177,7 @@ pub fn distance_to_points3(tri2vtx: &[usize], vtx2xyz: &[f32], hv2xyz: &[f32]) -
 pub fn area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
     let mut sum_area = 0f32;
     for i_tri in 0..tri2vtx.len() / 3 {
-        sum_area += to_tri3(i_tri, tri2vtx, vtx2xyz).area();
+        sum_area += to_tri3(tri2vtx, vtx2xyz, i_tri).area();
     }
     sum_area
 }
@@ -185,9 +185,9 @@ pub fn area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
 // ---------------------
 
 pub fn to_tri3<'a, Index, Real>(
-    i_tri: usize,
     tri2vtx: &'a [Index],
     vtx2xyz: &'a [Real],
+    i_tri: usize,
 ) -> del_geo_core::tri3::Tri3<'a, Real>
 where
     Index: AsPrimitive<usize>,
