@@ -54,7 +54,13 @@ where
     let mut i_tri_u = num_tri;
     loop {
         // bisection method
-        assert!(cumulative_area_sum[i_tri_l] <= a0, "{:?} {:?} {:?}", i_tri_l, cumulative_area_sum[i_tri_l], a0);
+        assert!(
+            cumulative_area_sum[i_tri_l] <= a0,
+            "{:?} {:?} {:?}",
+            i_tri_l,
+            cumulative_area_sum[i_tri_l],
+            a0
+        );
         assert!(a0 <= cumulative_area_sum[i_tri_u]);
         let i_tri_h = (i_tri_u + i_tri_l) / 2;
         if i_tri_u - i_tri_l == 1 {
