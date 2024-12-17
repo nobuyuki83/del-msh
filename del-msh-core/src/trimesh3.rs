@@ -24,7 +24,7 @@ pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
 
 pub fn vtx2area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
 where
-    T: num_traits::Float + std::ops::AddAssign,
+    T: num_traits::Float + std::ops::AddAssign + std::ops::MulAssign,
 {
     let num_vtx = vtx2xyz.len() / 3;
     let mut areas = vec![T::zero(); num_vtx];

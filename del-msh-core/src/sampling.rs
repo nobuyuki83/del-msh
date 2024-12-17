@@ -7,7 +7,7 @@ pub fn cumulative_areas_trimesh3_condition<F: Fn(usize) -> bool, Real>(
     tri2isvalid: F,
 ) -> Vec<Real>
 where
-    Real: num_traits::Float + std::fmt::Debug,
+    Real: num_traits::Float + std::fmt::Debug + std::ops::MulAssign,
 {
     assert!(num_dim == 2 || num_dim == 3);
     let num_tri = tri2vtx.len() / 3;
@@ -30,7 +30,7 @@ where
 
 pub fn cumulative_area_sum<Real>(tri2vtx: &[usize], vtx2xyz: &[Real], num_dim: usize) -> Vec<Real>
 where
-    Real: num_traits::Float + std::fmt::Debug,
+    Real: num_traits::Float + std::fmt::Debug + std::ops::MulAssign,
 {
     cumulative_areas_trimesh3_condition(tri2vtx, vtx2xyz, num_dim, |_itri| true)
 }
