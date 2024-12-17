@@ -14,6 +14,7 @@ cuda = ["candle-core/cuda", "del-msh-cudarc/cuda"]
 rand.workspace = true
 anyhow.workspace = true
 nalgebra.workspace = true
+serde_json = "1.0.133"
 candle-core = { git = "https://github.com/huggingface/candle.git"}
 del-msh-core.workspace = true
 del-msh-nalgebra.workspace = true
