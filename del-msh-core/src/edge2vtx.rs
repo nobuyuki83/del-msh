@@ -45,8 +45,9 @@ where
 }
 
 pub fn from_triangle_mesh<INDEX>(tri2vtx: &[INDEX], num_vtx: usize) -> Vec<INDEX>
-where INDEX: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
-      usize: AsPrimitive<INDEX>
+where
+    INDEX: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<INDEX>,
 {
     from_uniform_mesh_with_specific_edges(tri2vtx, 3, &[0, 1, 1, 2, 2, 0], num_vtx)
 }
@@ -77,16 +78,16 @@ pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
 
 // -----------
 
-
 pub fn contour_for_triangle_mesh<INDEX>(
     tri2vtx: &[INDEX],
     vtx2xyz: &[f32],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[INDEX],
-    edge2tri: &[INDEX]
+    edge2tri: &[INDEX],
 ) -> Vec<INDEX>
-where INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::fmt::Display,
-      usize: AsPrimitive<INDEX>
+where
+    INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::fmt::Display,
+    usize: AsPrimitive<INDEX>,
 {
     use del_geo_core::{mat4_col_major, vec3};
     let num_tri = tri2vtx.len() / 3;
@@ -104,18 +105,8 @@ where INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::fmt::Di
         // -----
         let i0_tri = edge2tri[i_edge * 2];
         let i1_tri = edge2tri[i_edge * 2 + 1];
-        assert!(
-            i0_tri.as_() < num_tri,
-            "{} {}",
-            i0_tri,
-            tri2vtx.len() / 3
-        );
-        assert!(
-            i1_tri.as_() < num_tri,
-            "{} {}",
-            i1_tri,
-            tri2vtx.len() / 3
-        );
+        assert!(i0_tri.as_() < num_tri, "{} {}", i0_tri, tri2vtx.len() / 3);
+        assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len() / 3);
         let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri.as_()).unit_normal();
         let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri.as_()).unit_normal();
         let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.;

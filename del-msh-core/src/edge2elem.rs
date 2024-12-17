@@ -8,8 +8,9 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
     vtx2idx: &[INDEX],
     idx2tri: &[INDEX],
 ) -> Vec<INDEX>
-where INDEX: num_traits::PrimInt + 'static + AsPrimitive<usize>,
-      usize: num_traits::AsPrimitive<INDEX>
+where
+    INDEX: num_traits::PrimInt + 'static + AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<INDEX>,
 {
     use num_traits::AsPrimitive;
     let mut edge2tri = vec![INDEX::max_value(); edge2vtx.len()];
@@ -49,8 +50,9 @@ pub fn from_edge2vtx_of_tri2vtx<INDEX>(
     tri2vtx: &[INDEX],
     num_vtx: usize,
 ) -> Vec<INDEX>
-where INDEX: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
-      usize: num_traits::AsPrimitive<INDEX>
+where
+    INDEX: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<INDEX>,
 {
     let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, 3, num_vtx);
     from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri)
