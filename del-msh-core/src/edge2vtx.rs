@@ -166,7 +166,7 @@ pub fn occluding_contour_for_triangle_mesh(
             }
         }
         let ray_org = {
-            let nrm = vec3::normalized(&vec3::add(&nrm0_world, &nrm1_world));
+            let nrm = vec3::normalize(&vec3::add(&nrm0_world, &nrm1_world));
             vec3::axpy(0.001, &nrm, &pos_mid)
         };
         let res = crate::search_bvh3::first_intersection_ray(
@@ -237,7 +237,7 @@ pub fn silhouette_for_triangle_mesh(
             }
         }
         let ray_org = {
-            let nrm = vec3::normalized(&vec3::add(&nrm0_world, &nrm1_world));
+            let nrm = vec3::normalize(&vec3::add(&nrm0_world, &nrm1_world));
             vec3::axpy(0.001, &nrm, &pos_mid)
         };
         let mut res: Vec<(f32, usize)> = vec![];
@@ -267,7 +267,7 @@ pub fn test_contour() {
     let (tri2vtx, vtx2xyz)
         // = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1., 32, 32);
         = crate::trimesh3_primitive::torus_zup(2.0, 0.5, 32, 32);
-    let dir = del_geo_core::vec3::normalized(&[1f32, 1.0, 0.1]);
+    let dir = del_geo_core::vec3::normalize(&[1f32, 1.0, 0.1]);
     let transform_world2ndc = {
         let ez = dir;
         let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&ez);
