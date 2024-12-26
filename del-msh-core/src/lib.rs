@@ -59,6 +59,7 @@ pub mod trimesh3_move_avoid_intersection;
 pub mod trimesh3_proximity;
 
 // misc
+pub mod cumsum;
 pub mod polygon_mesh;
 pub mod trimesh;
 pub mod trimesh2_dynamic;

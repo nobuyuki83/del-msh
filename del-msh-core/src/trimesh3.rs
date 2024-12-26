@@ -182,6 +182,23 @@ pub fn area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
     sum_area
 }
 
+pub fn cog_and_area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Option<([f32; 3], f32)> {
+    use del_geo_core::vec3;
+    let mut sum_area = 0f32;
+    let mut sum_cg = [0f32; 3];
+    for i_tri in 0..tri2vtx.len() / 3 {
+        let tri = to_tri3(tri2vtx, vtx2xyz, i_tri);
+        let area = tri.area();
+        sum_area += area;
+        sum_cg = vec3::add(&sum_cg, &vec3::scale(&tri.cog(), area));
+    }
+    if sum_area == 0f32 {
+        return None;
+    }
+    let sum_cog = vec3::scale(&sum_cg, 1.0 / sum_area);
+    Some((sum_cog, sum_area))
+}
+
 // ---------------------
 
 pub fn to_tri3<'a, Index, Real>(

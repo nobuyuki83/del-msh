@@ -48,34 +48,7 @@ pub fn sample_uniformly_trimesh<Real>(
 where
     Real: num_traits::Float + std::fmt::Debug,
 {
-    let num_tri = cumulative_area_sum.len() - 1;
-    let a0 = val01_a * cumulative_area_sum[num_tri];
-    let mut i_tri_l = 0;
-    let mut i_tri_u = num_tri;
-    loop {
-        // bisection method
-        assert!(
-            cumulative_area_sum[i_tri_l] <= a0,
-            "{:?} {:?} {:?}",
-            i_tri_l,
-            cumulative_area_sum[i_tri_l],
-            a0
-        );
-        assert!(a0 <= cumulative_area_sum[i_tri_u]);
-        let i_tri_h = (i_tri_u + i_tri_l) / 2;
-        if i_tri_u - i_tri_l == 1 {
-            break;
-        }
-        if cumulative_area_sum[i_tri_h] < a0 {
-            i_tri_l = i_tri_h;
-        } else {
-            i_tri_u = i_tri_h;
-        }
-    }
-    assert!(cumulative_area_sum[i_tri_l] <= a0);
-    assert!(a0 <= cumulative_area_sum[i_tri_l + 1]);
-    let r0 = (a0 - cumulative_area_sum[i_tri_l])
-        / (cumulative_area_sum[i_tri_l + 1] - cumulative_area_sum[i_tri_l]);
+    let (i_tri_l, r0, _p0) = crate::cumsum::sample(cumulative_area_sum, val01_a);
     if r0 + val01_b > Real::one() {
         let r0a = r0;
         let r1a = val01_b;
