@@ -3,6 +3,7 @@ requires = ["maturin>=0.13,<0.15"]
 build-backend = "maturin"
 
 [project]
+version = "0.1.36"
 name = "del-msh"
 requires-python = ">=3.7"
 classifiers = [
