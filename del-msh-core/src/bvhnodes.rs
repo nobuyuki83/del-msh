@@ -9,7 +9,7 @@ where
         // leaf
         let in0 = bvhnodes[inode0 * 3 + 1];
         let in0: usize = in0.as_();
-        assert!(in0 < vtx2flag.len());
+        assert!(in0 < vtx2flag.len(), "{} {}", in0, vtx2flag.len());
         vtx2flag[in0] += 1;
         return;
     }

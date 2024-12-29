@@ -44,6 +44,14 @@ impl candle_core::InplaceOp1 for FromTrimesh_UsingMorton {
     }
 }
 
+pub fn from_trimesh(tri2vtx: Tensor, vtx2xyz: Tensor) -> Result<Tensor> {
+    let num_tri = tri2vtx.dims2()?.0;
+    let layer = FromTrimesh_UsingMorton { tri2vtx, vtx2xyz };
+    let bvhnodes = Tensor::zeros((num_tri * 2 - 1, 3), candle_core::DType::U32, &Cpu)?;
+    bvhnodes.inplace_op1(&layer)?;
+    Ok(bvhnodes)
+}
+
 #[test]
 fn test() -> anyhow::Result<()> {
     let (tri2vtx, vtx2xyz) =
@@ -57,13 +65,8 @@ fn test() -> anyhow::Result<()> {
             candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &candle_core::Device::Cpu)?;
         (tri2vtx, vtx2xyz)
     };
-    let layer = FromTrimesh_UsingMorton {
-        tri2vtx: tri2vtx.clone(),
-        vtx2xyz: vtx2xyz.clone(),
-    };
     let num_tri = tri2vtx.dims2()?.0;
-    let bvhnodes = Tensor::zeros((num_tri * 2 - 1, 3), candle_core::DType::U32, &Cpu)?;
-    bvhnodes.inplace_op1(&layer)?;
+    let bvhnodes = from_trimesh(tri2vtx, vtx2xyz)?;
     {
         let bvhnodes = bvhnodes.flatten_all()?.to_vec1::<u32>()?;
         del_msh_core::bvhnodes::check_bvh_topology(&bvhnodes, num_tri);
