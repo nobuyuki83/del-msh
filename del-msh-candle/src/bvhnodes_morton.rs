@@ -59,7 +59,7 @@ impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
             _ => panic!(),
         };
         let (idx2vtx, idx2morton) = morton_data.split_at(num_vtx);
-        let (idx2morton, vtx2morton) = idx2morton.split_at(num_vtx);
+        let (idx2morton, _vtx2morton) = idx2morton.split_at(num_vtx);
         del_msh_core::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2vtx, idx2morton);
         Ok(())
     }

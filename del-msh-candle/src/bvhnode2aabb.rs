@@ -1,6 +1,6 @@
-use candle_core::{CpuStorage, Device, Layout, Tensor};
+use candle_core::{CpuStorage, Layout, Tensor};
 
-struct Layer {
+pub struct Layer {
     pub tri2vtx: Tensor,
     pub vtx2xyz: Tensor,
     pub bvhnodes: Tensor,
@@ -67,14 +67,19 @@ fn test() -> anyhow::Result<()> {
         del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let (tri2vtx, vtx2xyz) = {
         let num_tri = tri2vtx.len() / 3;
-        let tri2vtx = candle_core::Tensor::from_vec(tri2vtx, (num_tri, 3), &Device::Cpu)?;
+        let tri2vtx =
+            candle_core::Tensor::from_vec(tri2vtx, (num_tri, 3), &candle_core::Device::Cpu)?;
         let num_vtx = vtx2xyz.len() / 3;
-        let vtx2xyz = candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &Device::Cpu)?;
+        let vtx2xyz =
+            candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &candle_core::Device::Cpu)?;
         (tri2vtx, vtx2xyz)
     };
     let num_tri = tri2vtx.dims2()?.0;
-    let bvhnode2aabbiii =
-        Tensor::zeros((num_tri * 2 - 1, 6), candle_core::DType::F32, &Device::Cpu)?;
+    let bvhnode2aabbiii = Tensor::zeros(
+        (num_tri * 2 - 1, 6),
+        candle_core::DType::F32,
+        &candle_core::Device::Cpu,
+    )?;
     //
     let bvhnodes = crate::bvhnodes_morton::from_trimesh(&tri2vtx, &vtx2xyz)?;
     let layer = Layer {
