@@ -5,6 +5,37 @@ use num_traits::AsPrimitive;
 // TODO: implement from_polygon_mesh_as_edges
 // TODO: implement from_polygon_mesh_as_faces
 
+pub fn update_from_uniform_mesh_as_points<Index, T>(
+    elem2center: &mut [T],
+    elem2vtx: &[Index],
+    num_node: usize,
+    vtx2xyz: &[T],
+    num_dim: usize,
+) where
+    T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
+    usize: AsPrimitive<T>,
+    Index: AsPrimitive<usize>,
+{
+    let num_elem = elem2vtx.len() / num_node;
+    assert_eq!(elem2center.len(), num_elem * num_dim);
+    assert_eq!(vtx2xyz.len() % num_dim, 0);
+    assert_eq!(elem2vtx.len(), num_elem * num_node);
+    let ratio: T = T::one() / num_node.as_();
+    let mut cog = vec![T::zero(); num_dim];
+    for (i_elem, node2vtx) in elem2vtx.chunks(num_node).enumerate() {
+        cog.fill(T::zero());
+        for i_vtx in &node2vtx[0..num_node] {
+            let i_vtx: usize = i_vtx.as_();
+            for idim in 0..num_dim {
+                cog[idim] += vtx2xyz[i_vtx * num_dim + idim];
+            }
+        }
+        for idim in 0..num_dim {
+            elem2center[i_elem * num_dim + idim] = cog[idim] * ratio;
+        }
+    }
+}
+
 pub fn from_uniform_mesh_as_points<Index, T>(
     elem2vtx: &[Index],
     num_node: usize,
@@ -19,20 +50,9 @@ where
     assert_eq!(vtx2xyz.len() % num_dim, 0);
     let num_elem = elem2vtx.len() / num_node;
     assert_eq!(elem2vtx.len(), num_elem * num_node);
-    let mut elem2cog = Vec::<T>::with_capacity(num_elem * num_dim);
-    let ratio: T = T::one() / num_node.as_();
-    let mut cog = vec![T::zero(); num_dim];
-    for node2vtx in elem2vtx.chunks(num_node) {
-        cog.fill(T::zero());
-        for i_vtx in &node2vtx[0..num_node] {
-            let i_vtx: usize = i_vtx.as_();
-            for idim in 0..num_dim {
-                cog[idim] += vtx2xyz[i_vtx * num_dim + idim];
-            }
-        }
-        cog.iter().for_each(|&v| elem2cog.push(v * ratio));
-    }
-    elem2cog
+    let mut elem2center = vec![T::zero(); num_elem * num_dim];
+    update_from_uniform_mesh_as_points(&mut elem2center, elem2vtx, num_node, vtx2xyz, num_dim);
+    elem2center
 }
 
 /// the center of gravity of each element where mass is lumped at the vertices

@@ -73,7 +73,7 @@ fn build_bvh_topology_morton<'a>(
     let bvhnodes = numpy::PyArray2::<usize>::zeros_bound(_py, (num_vtx * 2 - 1, 3), false);
     {
         let bvhnodes_slice = unsafe { bvhnodes.as_slice_mut().unwrap() };
-        del_msh_core::bvhnodes_morton::bvhnodes_morton(bvhnodes_slice, &idx2vtx, &idx2morton);
+        del_msh_core::bvhnodes_morton::update_bvhnodes(bvhnodes_slice, &idx2vtx, &idx2morton);
     }
     bvhnodes
 }

@@ -2,7 +2,9 @@ pub mod perturb_tensor;
 //
 pub mod bvh;
 pub mod bvhnode2aabb;
-pub mod bvhnodes;
+pub mod bvhnodes_morton;
+pub mod elem2center;
+
 //
 pub mod diffcoord_polyloop2;
 pub mod diffcoord_trimesh3;

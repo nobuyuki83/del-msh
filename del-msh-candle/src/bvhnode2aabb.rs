@@ -13,8 +13,8 @@ impl candle_core::InplaceOp1 for Layer {
 
     fn cpu_fwd(&self, storage: &mut CpuStorage, layout: &Layout) -> candle_core::Result<()> {
         assert_eq!(layout.dims().len(), 2);
-        let num_bvhnode = layout.dims()[0] as usize;
-        assert_eq!(layout.dims()[1] as usize, 6);
+        let num_bvhnode = layout.dims()[0];
+        assert_eq!(layout.dims()[1], 6);
         assert_eq!(self.bvhnodes.dims2()?.0, num_bvhnode);
         assert_eq!(self.bvhnodes.dims2()?.1, 3);
         use std::ops::Deref;
@@ -67,21 +67,21 @@ fn test() -> anyhow::Result<()> {
         del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let (tri2vtx, vtx2xyz) = {
         let num_tri = tri2vtx.len() / 3;
-        let tri2vtx =
-            candle_core::Tensor::from_vec(tri2vtx, (num_tri, 3), &candle_core::Device::Cpu)?;
+        let tri2vtx = candle_core::Tensor::from_vec(tri2vtx, (num_tri, 3), &Device::Cpu)?;
         let num_vtx = vtx2xyz.len() / 3;
-        let vtx2xyz =
-            candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &candle_core::Device::Cpu)?;
+        let vtx2xyz = candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &Device::Cpu)?;
         (tri2vtx, vtx2xyz)
     };
-    let bvhnodes = crate::bvhnodes::from_trimesh(tri2vtx.clone(), vtx2xyz.clone())?;
+    let num_tri = tri2vtx.dims2()?.0;
+    let bvhnode2aabbiii =
+        Tensor::zeros((num_tri * 2 - 1, 6), candle_core::DType::F32, &Device::Cpu)?;
+    //
+    let bvhnodes = crate::bvhnodes_morton::from_trimesh(&tri2vtx, &vtx2xyz)?;
     let layer = Layer {
         tri2vtx: tri2vtx.clone(),
         vtx2xyz: vtx2xyz.clone(),
         bvhnodes: bvhnodes.clone(),
     };
-    let num_bvhnode = bvhnodes.dims2()?.0;
-    let bvhnode2aabbiii = Tensor::zeros((num_bvhnode, 6), candle_core::DType::F32, &Device::Cpu)?;
     bvhnode2aabbiii.inplace_op1(&layer)?;
     Ok(())
 }
