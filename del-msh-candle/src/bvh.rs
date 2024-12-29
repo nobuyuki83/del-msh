@@ -37,7 +37,7 @@ pub fn from_trimesh2(
     Ok((bvhnodes, aabbs))
 }
 
-pub fn from_trimesh3_cpu(
+fn from_trimesh3_cpu(
     tri2vtx: &candle_core::Tensor,
     vtx2xyz: &candle_core::Tensor,
 ) -> candle_core::Result<(candle_core::Tensor, candle_core::Tensor)> {
@@ -75,7 +75,7 @@ pub fn from_trimesh3_cpu(
 }
 
 #[cfg(feature = "cuda")]
-pub fn from_trimesh3_cuda(
+fn from_trimesh3_cuda(
     tri2vtx: &candle_core::Tensor,
     vtx2xyz: &candle_core::Tensor,
 ) -> candle_core::Result<(candle_core::Tensor, candle_core::Tensor)> {
