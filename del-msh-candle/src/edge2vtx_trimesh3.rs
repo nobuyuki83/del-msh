@@ -19,12 +19,12 @@ pub fn contour(
         candle_core::Storage::Cpu(cpu_vtx2xyz) => cpu_vtx2xyz.as_slice::<f32>(),
         _ => panic!(),
     }?;
-    let edge2vtx = del_msh_core::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
-    let edge2tri = del_msh_core::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+    let edge2vtx = del_msh_core::edge2vtx::from_triangle_mesh(tri2vtx, num_vtx);
+    let edge2tri = del_msh_core::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, tri2vtx, num_vtx);
     let edge2vtx_contour = del_msh_core::edge2vtx::contour_for_triangle_mesh(
-        &tri2vtx,
-        &vtx2xyz,
-        &transform_world2ndc,
+        tri2vtx,
+        vtx2xyz,
+        transform_world2ndc,
         &edge2vtx,
         &edge2tri,
     );
