@@ -393,12 +393,13 @@ fn test_2d() {
     crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
-pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>
+pub fn from_vtx2xyz_inplace<Index>(bvhnodes: &mut [Index], vtx2xyz: &[f32], num_dim: usize)
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
     let num_tri = vtx2xyz.len() / num_dim;
+    assert_eq!(bvhnodes.len(), (num_tri * 2 - 1) * 3);
     let mut idx2tri = vec![0usize; num_tri];
     let mut idx2morton = vec![0u32; num_tri];
     let mut tri2morton = vec![0u32; num_tri];
@@ -432,8 +433,17 @@ where
             panic!();
         }
     }
+    bvhnodes_morton(bvhnodes, &idx2tri, &idx2morton);
+}
+
+pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>
+where
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
+{
+    let num_tri = vtx2xyz.len() / num_dim;
     let mut bvhnodes = vec![Index::zero(); (num_tri * 2 - 1) * 3];
-    bvhnodes_morton(&mut bvhnodes, &idx2tri, &idx2morton);
+    from_vtx2xyz_inplace(&mut bvhnodes, vtx2xyz, num_dim);
     bvhnodes
 }
 
@@ -445,4 +455,20 @@ where
     let tri2cntr =
         crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
     from_vtx2xyz(&tri2cntr, num_dim)
+}
+
+pub fn from_triangle_mesh_inplace<Index>(
+    bvhnodes: &mut [Index],
+    tri2vtx: &[Index],
+    vtx2xy: &[f32],
+    num_dim: usize,
+) where
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<Index>,
+{
+    let num_tri = tri2vtx.len() / 3;
+    assert_eq!(bvhnodes.len(), (num_tri * 2 - 1) * 3);
+    let tri2cntr =
+        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
+    from_vtx2xyz_inplace(bvhnodes, &tri2cntr, num_dim)
 }

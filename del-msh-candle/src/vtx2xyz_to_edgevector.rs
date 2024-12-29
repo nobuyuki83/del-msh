@@ -113,7 +113,7 @@ fn edge_length_constraint() -> anyhow::Result<()> {
         {
             let vtx2xy: Vec<_> = vtx2xy.flatten_all()?.to_vec1::<f32>()?;
             del_msh_core::io_obj::save_vtx2xyz_as_polyloop(
-                format!("target/polyloop_{}.obj", iter),
+                format!("../target/polyloop_{}.obj", iter),
                 &vtx2xy,
                 2,
             )?;

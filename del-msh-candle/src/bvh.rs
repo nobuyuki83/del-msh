@@ -66,12 +66,12 @@ fn from_trimesh3_cpu(
         &candle_core::Device::Cpu,
     )?;
     let num_aabb = aabbs.len() / 6;
-    let aabbs = candle_core::Tensor::from_vec(
+    let bvhnode2aabb = candle_core::Tensor::from_vec(
         aabbs,
         candle_core::Shape::from((num_aabb, 6)),
         &candle_core::Device::Cpu,
     )?;
-    Ok((bvhnodes, aabbs))
+    Ok((bvhnodes, bvhnode2aabb))
 }
 
 #[cfg(feature = "cuda")]
