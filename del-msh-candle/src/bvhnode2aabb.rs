@@ -21,11 +21,11 @@ impl candle_core::InplaceOp3 for Layer {
     ) -> candle_core::Result<()> {
         assert_eq!(l_bvhnode2aabb.dims().len(), 2);
         let num_bvhnode = l_bvhnode2aabb.dims()[0];
-        assert_eq!(l_bvhnode2aabb.dim(1)?, 6);
+        let num_dim = l_vtx2xyz.dim(1)?;
+        assert_eq!(l_bvhnode2aabb.dim(1)?, num_dim * 2);
         assert_eq!(l_bvhnodes.dim(0)?, num_bvhnode);
         assert_eq!(l_bvhnodes.dim(1)?, 3);
         use std::ops::Deref;
-        let num_dim = l_vtx2xyz.dim(1)?;
         let bvhnodes = match bvhnodes {
             CpuStorage::U32(a) => a,
             _ => panic!(),
@@ -123,14 +123,18 @@ impl candle_core::InplaceOp3 for Layer {
 }
 
 pub struct BvhForTriMesh {
-    tri2center: Tensor,
-    sorted_morton_code: Tensor,
-    bvhnodes: Tensor,
-    bvhnode2aabb: Tensor,
+    pub tri2center: Tensor,
+    pub sorted_morton_code: Tensor,
+    pub bvhnodes: Tensor,
+    pub bvhnode2aabb: Tensor,
 }
 
 impl BvhForTriMesh {
-    pub fn new(num_tri: usize, num_dim: usize, device: &Device) -> anyhow::Result<Self> {
+    pub fn new(
+        num_tri: usize,
+        num_dim: usize,
+        device: &Device,
+    ) -> std::result::Result<Self, candle_core::Error> {
         let tri2center = candle_core::Tensor::zeros((num_tri, num_dim), DType::F32, device)?;
         let sorted_morton_code = candle_core::Tensor::zeros(num_tri * 3, DType::U32, device)?;
         let num_bvhnodes = num_tri * 2 - 1;
