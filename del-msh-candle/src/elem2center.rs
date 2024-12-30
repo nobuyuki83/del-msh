@@ -55,42 +55,36 @@ impl candle_core::InplaceOp3 for Layer {
     ) -> candle_core::Result<()> {
         use candle_core::backend::BackendDevice;
         use candle_core::cuda_backend::CudaStorageSlice;
+        use candle_core::cuda_backend::WrapErr;
         let num_elem = l_elem2vtx.dim(0)?;
         let _num_node = l_elem2vtx.dim(1)?;
         let num_dim = l_vtx2pos.dim(1)?;
         assert_eq!(l_elem2center.dims(), &[num_elem, num_dim]);
-        let (elem2vtx, dev) = match elem2vtx {
-            CudaStorage { slice, device } => match slice {
-                CudaStorageSlice::U32(vec) => (vec, device),
-                _ => todo!(),
-            },
+        let CudaStorage { slice, device } = elem2vtx;
+        let (elem2vtx, device_elem2vtx) = match slice {
+            CudaStorageSlice::U32(slice) => (slice, device),
+            _ => todo!(),
         };
-        let (vtx2pos, dev_vtx2pos) = match vtx2pos {
-            CudaStorage { slice, device } => match slice {
-                CudaStorageSlice::F32(vec) => (vec, device),
-                _ => panic!(),
-            },
+        let CudaStorage { slice, device } = vtx2pos;
+        let (vtx2pos, dev_vtx2pos) = match slice {
+            CudaStorageSlice::F32(slice) => (slice, device),
+            _ => panic!(),
         };
-        let (elem2center, dev_elem2center) = match elem2center {
-            CudaStorage { slice, device } => match slice {
-                CudaStorageSlice::F32(vec) => (vec, device),
-                _ => panic!(),
-            },
+        let CudaStorage { slice, device } = elem2center;
+        let (elem2center, dev_elem2center) = match slice {
+            CudaStorageSlice::F32(slice) => (slice, device),
+            _ => panic!(),
         };
-        assert!(dev.same_device(dev_vtx2pos));
-        assert!(dev.same_device(dev_elem2center));
-        let res = del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(
-            dev,
+        assert!(device_elem2vtx.same_device(dev_vtx2pos));
+        assert!(device_elem2vtx.same_device(dev_elem2center));
+        del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(
+            device_elem2vtx,
             elem2vtx,
             vtx2pos,
             elem2center,
-        );
-        match res {
-            Err(e) => {
-                return Err(candle_core::Error::Msg(e.to_string()));
-            }
-            Ok(()) => Ok(()),
-        }
+        )
+        .w()?;
+        Ok(())
     }
 }
 

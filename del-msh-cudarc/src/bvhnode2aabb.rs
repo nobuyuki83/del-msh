@@ -2,9 +2,9 @@ pub fn from_trimesh3_with_bvhnodes(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &cudarc::driver::CudaSlice<u32>,
     vtx2xyz: &cudarc::driver::CudaSlice<f32>,
-    bvhnodes: &cudarc::driver::CudaSlice<u32>,
-    bvhnode2aabb: &cudarc::driver::CudaSlice<f32>,
-) -> anyhow::Result<()> {
+    bvhnodes: &cudarc::driver::CudaView<u32>,
+    bvhnode2aabb: &mut cudarc::driver::CudaViewMut<f32>,
+) -> std::result::Result<(), cudarc::driver::DriverError> {
     use cudarc::driver::DeviceSlice;
     let num_tri = tri2vtx.len() / 3;
     let num_bvhnode = bvhnodes.len() / 3;

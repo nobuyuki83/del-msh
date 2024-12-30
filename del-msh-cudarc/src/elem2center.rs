@@ -5,7 +5,7 @@ pub fn tri2cntr_from_trimesh3(
     tri2vtx: &CudaSlice<u32>,
     vtx2xyz: &CudaSlice<f32>,
     tri2cntr: &mut CudaSlice<f32>,
-) -> anyhow::Result<()> {
+) -> std::result::Result<(), cudarc::driver::DriverError> {
     let num_tri = tri2vtx.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_tri as u32);
     let param = (tri2cntr, num_tri as u32, tri2vtx, vtx2xyz);

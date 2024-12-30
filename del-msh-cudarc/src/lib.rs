@@ -109,9 +109,9 @@ pub fn assert_equal_cpu_gpu(
     let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
     crate::bvhnodes_morton::from_sorted_morton_codes(
         dev,
-        &mut bvhnodes_dev,
-        &idx2morton_dev,
-        &idx2tri_dev,
+        &mut bvhnodes_dev.slice_mut(0..),
+        &idx2morton_dev.slice(0..num_tri),
+        &idx2tri_dev.slice(0..num_tri),
     )?;
     {
         let bvhnodes_hst = dev.dtoh_sync_copy(&bvhnodes_dev)?;
@@ -134,8 +134,8 @@ pub fn assert_equal_cpu_gpu(
         dev,
         &tri2vtx_dev,
         &vtx2xyz_dev,
-        &bvhnodes_dev,
-        &mut bvhnode2aabb_dev,
+        &bvhnodes_dev.slice(0..),
+        &mut bvhnode2aabb_dev.slice_mut(..),
     )?;
     {
         let bvhnode2aabb_from_gpu = dev.dtoh_sync_copy(&bvhnode2aabb_dev)?;
@@ -149,8 +149,8 @@ pub fn assert_equal_cpu_gpu(
 #[cfg(feature = "cuda")]
 pub fn make_bvh_from_trimesh3(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
-    bvhnodes: &cudarc::driver::CudaSlice<u32>,
-    bvhnode2aabbiii: &cudarc::driver::CudaSlice<f32>,
+    bvhnodes: &mut cudarc::driver::CudaViewMut<u32>,
+    bvhnode2aabbiii: &mut cudarc::driver::CudaSlice<f32>,
     tri2vtx_dev: &cudarc::driver::CudaSlice<u32>,
     vtx2xyz_dev: &cudarc::driver::CudaSlice<f32>,
 ) -> anyhow::Result<()> {
@@ -183,14 +183,19 @@ pub fn make_bvh_from_trimesh3(
     //let mut idx2morton_dev = dev.alloc_zeros(num_tri)?;
     //del_cudarc_util::util::permute(&dev, &mut idx2morton_dev, &idx2tri_dev, &tri2morton_dev)?;
     // let mut bvhnodes_dev = dev.alloc_zeros((num_tri * 2 - 1) * 3)?;
-    crate::bvhnodes_morton::from_sorted_morton_codes(dev, bvhnodes, &idx2morton_dev, &idx2tri_dev)?;
+    crate::bvhnodes_morton::from_sorted_morton_codes(
+        dev,
+        bvhnodes,
+        &idx2morton_dev.slice(0..),
+        &idx2tri_dev.slice(0..),
+    )?;
     // let mut bvhnode2aabb_dev = dev.alloc_zeros::<f32>(bvhnodes_dev.len() / 3 * 6)?;
     crate::bvhnode2aabb::from_trimesh3_with_bvhnodes(
         dev,
         tri2vtx_dev,
         vtx2xyz_dev,
-        &bvhnodes,
-        bvhnode2aabbiii,
+        &bvhnodes.slice(0..),
+        &mut bvhnode2aabbiii.slice_mut(..),
     )?;
     Ok(())
 }

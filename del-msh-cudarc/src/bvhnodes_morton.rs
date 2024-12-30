@@ -20,10 +20,10 @@ pub fn vtx2morton(
 #[cfg(feature = "cuda")]
 pub fn from_sorted_morton_codes(
     dev: &std::sync::Arc<CudaDevice>,
-    bvnodes: &cudarc::driver::CudaSlice<u32>,
-    idx2morton: &cudarc::driver::CudaSlice<u32>,
-    idx2tri: &cudarc::driver::CudaSlice<u32>,
-) -> anyhow::Result<()> {
+    bvnodes: &mut cudarc::driver::CudaViewMut<u32>,
+    idx2morton: &cudarc::driver::CudaView<u32>,
+    idx2tri: &cudarc::driver::CudaView<u32>,
+) -> std::result::Result<(), cudarc::driver::DriverError> {
     use cudarc::driver::DeviceSlice;
     let num_leaf = idx2morton.len();
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_leaf as u32);

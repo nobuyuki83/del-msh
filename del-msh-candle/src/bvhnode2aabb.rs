@@ -1,4 +1,5 @@
-use candle_core::{CpuStorage, DType, Device, Layout, Tensor};
+#[allow(unused_imports)]
+use candle_core::{CpuStorage, CudaDevice, CudaStorage, DType, Device, Layout, Tensor};
 
 pub struct Layer {
     pub tri2vtx: Tensor,
@@ -64,6 +65,61 @@ impl candle_core::InplaceOp3 for Layer {
         }
         Ok(())
     }
+
+    #[cfg(feature = "cuda")]
+    fn cuda_fwd(
+        &self,
+        bvhnode2aabb: &mut CudaStorage,
+        l_bvhnode2aabb: &Layout,
+        bvhnodes: &CudaStorage,
+        l_bvhnodes: &Layout,
+        vtx2xyz: &CudaStorage,
+        l_vtx2xyz: &Layout,
+    ) -> candle_core::Result<()> {
+        let num_tri = self.tri2vtx.storage_and_layout().1.dim(0)?;
+        let num_bvhnode = num_tri * 2 - 1;
+        assert_eq!(l_bvhnode2aabb.dims(), &[num_bvhnode, 6]);
+        assert_eq!(l_bvhnodes.dims(), &[num_bvhnode, 3]);
+        assert_eq!(l_vtx2xyz.dim(1)?, 3);
+        use candle_core::backend::BackendDevice;
+        use candle_core::cuda_backend::CudaStorageSlice;
+        use candle_core::cuda_backend::WrapErr;
+        use std::ops::Deref;
+        let CudaStorage { slice, device } = bvhnode2aabb;
+        let (bvhnode2aabb, device_bvhnodes2aabb) = match slice {
+            CudaStorageSlice::F32(slice) => (slice, device),
+            _ => panic!(),
+        };
+        //
+        let CudaStorage { slice, device } = vtx2xyz;
+        let (vtx2xyz, device_vtx2xyz) = match slice {
+            CudaStorageSlice::F32(slice) => (slice, device),
+            _ => panic!(),
+        };
+        //
+        let CudaStorage { slice, device } = bvhnodes;
+        let (bvhnodes, device_bvhnodes) = match slice {
+            CudaStorageSlice::U32(slice) => (slice, device),
+            _ => panic!(),
+        };
+        assert!(device_bvhnodes2aabb.same_device(device_vtx2xyz));
+        assert!(device_bvhnodes2aabb.same_device(device_bvhnodes));
+        //
+        let tri2vtx = self.tri2vtx.storage_and_layout().0;
+        let tri2vtx = match tri2vtx.deref() {
+            candle_core::Storage::Cuda(cuda_storage) => cuda_storage.as_cuda_slice()?,
+            _ => panic!(),
+        };
+        del_msh_cudarc::bvhnode2aabb::from_trimesh3_with_bvhnodes(
+            device,
+            tri2vtx,
+            vtx2xyz,
+            &bvhnodes.slice(..),
+            &mut bvhnode2aabb.slice_mut(..),
+        )
+        .w()?;
+        Ok(())
+    }
 }
 
 pub struct BvhForTriMesh {
@@ -74,13 +130,13 @@ pub struct BvhForTriMesh {
 }
 
 impl BvhForTriMesh {
-    pub fn new(num_tri: usize, num_dim: usize) -> anyhow::Result<Self> {
-        let tri2center = candle_core::Tensor::zeros((num_tri, num_dim), DType::F32, &Device::Cpu)?;
-        let sorted_morton_code = candle_core::Tensor::zeros(num_tri * 3, DType::U32, &Device::Cpu)?;
+    pub fn new(num_tri: usize, num_dim: usize, device: &Device) -> anyhow::Result<Self> {
+        let tri2center = candle_core::Tensor::zeros((num_tri, num_dim), DType::F32, device)?;
+        let sorted_morton_code = candle_core::Tensor::zeros(num_tri * 3, DType::U32, device)?;
         let num_bvhnodes = num_tri * 2 - 1;
-        let bvhnodes = candle_core::Tensor::zeros((num_bvhnodes, 3), DType::U32, &Device::Cpu)?;
+        let bvhnodes = candle_core::Tensor::zeros((num_bvhnodes, 3), DType::U32, device)?;
         let bvhnode2aabb =
-            candle_core::Tensor::zeros((num_bvhnodes, num_dim * 2), DType::F32, &Device::Cpu)?;
+            candle_core::Tensor::zeros((num_bvhnodes, num_dim * 2), DType::F32, device)?;
         let res = BvhForTriMesh {
             tri2center,
             sorted_morton_code,
@@ -124,7 +180,23 @@ fn test() -> anyhow::Result<()> {
         (tri2vtx, vtx2xyz)
     };
     let num_tri = tri2vtx.dims2()?.0;
-    let bvhdata = BvhForTriMesh::new(num_tri, 3)?;
+    let bvhdata = BvhForTriMesh::new(num_tri, 3, &Device::Cpu)?;
     bvhdata.compute(&tri2vtx, &vtx2xyz)?;
+    let bvhnode2aabb_cpu = bvhdata.bvhnode2aabb.flatten_all()?.to_vec1::<f32>()?;
+    #[cfg(feature = "cuda")]
+    {
+        let device = Device::new_cuda(0)?;
+        let bvhdata = BvhForTriMesh::new(num_tri, 3, &device)?;
+        let tri2vtx = tri2vtx.to_device(&device)?;
+        let vtx2xyz = vtx2xyz.to_device(&device)?;
+        bvhdata.compute(&tri2vtx, &vtx2xyz)?;
+        let bvhnode2aabb_gpu = bvhdata.bvhnode2aabb.flatten_all()?.to_vec1::<f32>()?;
+        bvhnode2aabb_cpu
+            .iter()
+            .zip(bvhnode2aabb_gpu.iter())
+            .for_each(|(a, b)| {
+                assert_eq!(a, b);
+            })
+    }
     Ok(())
 }

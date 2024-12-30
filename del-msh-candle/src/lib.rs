@@ -1,6 +1,5 @@
 pub mod perturb_tensor;
 //
-pub mod bvh;
 pub mod bvhnode2aabb;
 pub mod bvhnodes_morton;
 pub mod elem2center;

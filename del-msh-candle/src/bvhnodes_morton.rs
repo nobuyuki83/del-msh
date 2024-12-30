@@ -44,19 +44,18 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         use candle_core::backend::BackendDevice;
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
-        let (sorted_morton_code, device) = match sorted_morton_code {
-            CudaStorage { slice, device } => match slice {
-                CudaStorageSlice::U32(slice) => (slice, device),
-                _ => panic!(),
-            },
+
+        let CudaStorage { slice, device } = sorted_morton_code;
+        let (sorted_morton_code, device_sorted_morton_code) = match slice {
+            CudaStorageSlice::U32(slice) => (slice, device),
+            _ => panic!(),
         };
-        let (vtx2pos, device_vtx2pos) = match vtx2pos {
-            CudaStorage { slice, device } => match slice {
-                CudaStorageSlice::F32(slice) => (slice, device),
-                _ => panic!(),
-            },
+        let CudaStorage { slice, device } = vtx2pos;
+        let (vtx2pos, device_vtx2pos) = match slice {
+            CudaStorageSlice::F32(slice) => (slice, device),
+            _ => panic!(),
         };
-        assert!(device.same_device(device_vtx2pos));
+        assert!(device_sorted_morton_code.same_device(device_vtx2pos));
         let aabb = del_msh_cudarc::vtx2xyz::to_aabb3(device, vtx2pos).w()?;
         let transform_cntr2uni = {
             let aabb_cpu = device.dtoh_sync_copy(&aabb).w()?;
@@ -71,7 +70,7 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         let (mut idx2morton, mut vtx2morton) = idx2morton.split_at_mut(num_vtx);
         del_msh_cudarc::bvhnodes_morton::vtx2morton(
             device,
-            &vtx2pos,
+            vtx2pos,
             &transform_cntr2uni,
             &mut vtx2morton,
         )
@@ -114,7 +113,45 @@ impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
         del_msh_core::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2vtx, idx2morton);
         Ok(())
     }
+
+    #[cfg(feature = "cuda")]
+    fn cuda_fwd(
+        &self,
+        bvhnodes: &mut CudaStorage,
+        l_bvhnodes: &Layout,
+        sorted_morton_code: &CudaStorage,
+        l_morton_data: &Layout,
+    ) -> candle_core::Result<()> {
+        use candle_core::backend::BackendDevice;
+        use candle_core::cuda_backend::CudaStorageSlice;
+        use candle_core::cuda_backend::WrapErr;
+        let CudaStorage { slice, device } = bvhnodes;
+        let (bvhnodes, device_bvhnodes) = match slice {
+            CudaStorageSlice::U32(slice) => (slice, device),
+            _ => panic!(),
+        };
+        let num_vtx = l_morton_data.dim(0)? / 3;
+        assert_eq!(l_bvhnodes.dims(), &[num_vtx * 2 - 1, 3]);
+        let CudaStorage { slice, device } = sorted_morton_code;
+        let (sorted_morton_code, device_sorted_morton_code) = match slice {
+            CudaStorageSlice::U32(slice) => (slice, device),
+            _ => panic!(),
+        };
+        assert!(device_bvhnodes.same_device(device_sorted_morton_code));
+        let idx2vtx = sorted_morton_code.slice(0..num_vtx);
+        let idx2morton = sorted_morton_code.slice(num_vtx..num_vtx * 2);
+        del_msh_cudarc::bvhnodes_morton::from_sorted_morton_codes(
+            device,
+            &mut bvhnodes.slice_mut(0..),
+            &idx2morton,
+            &idx2vtx,
+        )
+        .w()?;
+        Ok(())
+    }
 }
+
+// ---------------------------
 
 pub fn from_trimesh(tri2vtx: &Tensor, vtx2xyz: &Tensor) -> anyhow::Result<Tensor> {
     let num_tri = tri2vtx.dims2()?.0;
@@ -205,6 +242,7 @@ fn test_from_trimesh3() -> anyhow::Result<()> {
     sorted_morton_code.inplace_op2(&tri2center, &SortedMortonCode {})?;
     let sorted_morton_code_cpu = sorted_morton_code.flatten_all()?.to_vec1::<u32>()?;
     bvhnodes.inplace_op2(&sorted_morton_code, &BvhNodesFromSortedMortonCode {})?;
+    let bvhnodes_cpu = bvhnodes.flatten_all()?.to_vec1::<u32>()?;
     #[cfg(feature = "cuda")]
     {
         let device = Device::new_cuda(0)?;
@@ -229,6 +267,13 @@ fn test_from_trimesh3() -> anyhow::Result<()> {
             .for_each(|(&a, &b)| {
                 assert_eq!(a, b);
             });
+        let bvhnodes = bvhnodes.zeros_like()?.to_device(&device)?;
+        bvhnodes.inplace_op2(&sorted_morton_code, &BvhNodesFromSortedMortonCode {})?;
+        let bvhnodes_gpu = bvhnodes.flatten_all()?.to_vec1::<u32>()?;
+        bvhnodes_cpu
+            .iter()
+            .zip(bvhnodes_gpu.iter())
+            .for_each(|(&a, &b)| assert_eq!(a, b));
     }
     Ok(())
 }
