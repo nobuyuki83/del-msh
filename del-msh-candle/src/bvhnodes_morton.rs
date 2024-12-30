@@ -1,4 +1,5 @@
-use candle_core::{CpuStorage, Layout, Tensor};
+#[allow(unused_imports)]
+use candle_core::{CpuStorage, CudaStorage, Device, Layout, Tensor};
 
 pub struct SortedMortonCode {}
 
@@ -29,6 +30,56 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         del_msh_core::bvhnodes_morton::update_sorted_morton_code(
             idx2vtx, idx2morton, vtx2morton, vtx2pos, num_dim,
         );
+        Ok(())
+    }
+
+    #[cfg(feature = "cuda")]
+    fn cuda_fwd(
+        &self,
+        sorted_morton_code: &mut CudaStorage,
+        l_sorted_morton_code: &Layout,
+        vtx2pos: &CudaStorage,
+        l_vtx2pos: &Layout,
+    ) -> candle_core::Result<()> {
+        use candle_core::backend::BackendDevice;
+        use candle_core::cuda_backend::CudaStorageSlice;
+        use candle_core::cuda_backend::WrapErr;
+        let (sorted_morton_code, device) = match sorted_morton_code {
+            CudaStorage { slice, device } => match slice {
+                CudaStorageSlice::U32(slice) => (slice, device),
+                _ => panic!(),
+            },
+        };
+        let (vtx2pos, device_vtx2pos) = match vtx2pos {
+            CudaStorage { slice, device } => match slice {
+                CudaStorageSlice::F32(slice) => (slice, device),
+                _ => panic!(),
+            },
+        };
+        assert!(device.same_device(device_vtx2pos));
+        let aabb = del_msh_cudarc::vtx2xyz::to_aabb3(device, vtx2pos).w()?;
+        let transform_cntr2uni = {
+            let aabb_cpu = device.dtoh_sync_copy(&aabb).w()?;
+            let aabb_cpu = arrayref::array_ref!(&aabb_cpu, 0, 6);
+            // get aabb
+            let transform_cntr2uni_cpu =
+                del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(aabb_cpu);
+            device.htod_copy(transform_cntr2uni_cpu.to_vec()).w()?
+        };
+        let num_vtx = l_vtx2pos.dim(0)?;
+        let (mut idx2vtx, mut idx2morton) = sorted_morton_code.split_at_mut(num_vtx);
+        let (mut idx2morton, mut vtx2morton) = idx2morton.split_at_mut(num_vtx);
+        del_msh_cudarc::bvhnodes_morton::vtx2morton(
+            device,
+            &vtx2pos,
+            &transform_cntr2uni,
+            &mut vtx2morton,
+        )
+        .w()?;
+        del_cudarc::util::set_consecutive_sequence(device, &mut idx2vtx).w()?;
+        del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(device, &mut vtx2morton, &mut idx2vtx)
+            .w()?;
+        device.dtod_copy(&vtx2morton, &mut idx2morton).w()?;
         Ok(())
     }
 }
@@ -150,7 +201,34 @@ fn test_from_trimesh3() -> anyhow::Result<()> {
     )?;
     // -----------------
     tri2center.inplace_op3(&tri2vtx, &vtx2xyz, &crate::elem2center::Layer {})?;
+    let tri2center_cpu = tri2center.flatten_all()?.to_vec1::<f32>()?;
     sorted_morton_code.inplace_op2(&tri2center, &SortedMortonCode {})?;
+    let sorted_morton_code_cpu = sorted_morton_code.flatten_all()?.to_vec1::<u32>()?;
     bvhnodes.inplace_op2(&sorted_morton_code, &BvhNodesFromSortedMortonCode {})?;
+    #[cfg(feature = "cuda")]
+    {
+        let device = Device::new_cuda(0)?;
+        let tri2vtx = tri2vtx.to_device(&device)?;
+        let vtx2xyz = vtx2xyz.to_device(&device)?;
+        let tri2center = tri2center.zeros_like()?.to_device(&device)?;
+        tri2center.inplace_op3(&tri2vtx, &vtx2xyz, &crate::elem2center::Layer {})?;
+        let tri2center_gpu = tri2center.flatten_all()?.to_vec1::<f32>()?;
+        tri2center_cpu
+            .iter()
+            .zip(tri2center_gpu.iter())
+            .for_each(|(&a, &b)| {
+                assert_eq!(a, b);
+            });
+        let sorted_morton_code = sorted_morton_code.zeros_like()?.to_device(&device)?;
+        sorted_morton_code.inplace_op2(&tri2center, &SortedMortonCode {})?;
+        let sorted_morton_code_gpu = sorted_morton_code.flatten_all()?.to_vec1::<u32>()?;
+        sorted_morton_code_cpu
+            .iter()
+            .zip(sorted_morton_code_gpu.iter())
+            .take(num_tri * 2)
+            .for_each(|(&a, &b)| {
+                assert_eq!(a, b);
+            });
+    }
     Ok(())
 }

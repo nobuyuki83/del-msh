@@ -4,8 +4,8 @@ pub fn vtx2morton(
     dev: &std::sync::Arc<CudaDevice>,
     vtx2xyz: &CudaSlice<f32>,
     transform_xyz2uni: &CudaSlice<f32>,
-    vtx2morton: &mut CudaSlice<u32>,
-) -> anyhow::Result<()> {
+    vtx2morton: &mut cudarc::driver::CudaViewMut<u32>,
+) -> std::result::Result<(), cudarc::driver::DriverError> {
     use cudarc::driver::DeviceSlice;
     let num_vtx = vtx2xyz.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_vtx as u32);

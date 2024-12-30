@@ -65,7 +65,7 @@ pub fn assert_equal_cpu_gpu(
         dev,
         &tri2cntr_dev,
         &transform_cntr2uni_dev,
-        &mut tri2morton_dev,
+        &mut tri2morton_dev.slice_mut(0..num_tri),
     )?;
     {
         let tri2morton_hst = dev.dtoh_sync_copy(&tri2morton_dev)?;
@@ -79,8 +79,12 @@ pub fn assert_equal_cpu_gpu(
         }
     }
     let mut idx2tri_dev = dev.alloc_zeros(num_tri)?;
-    del_cudarc::util::set_consecutive_sequence(dev, &mut idx2tri_dev)?;
-    del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(dev, &mut tri2morton_dev, &mut idx2tri_dev)?;
+    del_cudarc::util::set_consecutive_sequence(dev, &mut idx2tri_dev.slice_mut(0..num_tri))?;
+    del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(
+        dev,
+        &mut tri2morton_dev.slice_mut(0..num_tri),
+        &mut idx2tri_dev.slice_mut(0..num_tri),
+    )?;
     let idx2morton_dev = tri2morton_dev;
     {
         let idx2tri_hst = dev.dtoh_sync_copy(&idx2tri_dev)?;
@@ -166,11 +170,15 @@ pub fn make_bvh_from_trimesh3(
         dev,
         &tri2cntr_dev,
         &transform_cntr2uni_dev,
-        &mut tri2morton_dev,
+        &mut tri2morton_dev.slice_mut(0..num_tri),
     )?;
     let mut idx2tri_dev = dev.alloc_zeros(num_tri)?;
-    del_cudarc::util::set_consecutive_sequence(dev, &mut idx2tri_dev)?;
-    del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(dev, &mut tri2morton_dev, &mut idx2tri_dev)?;
+    del_cudarc::util::set_consecutive_sequence(dev, &mut idx2tri_dev.slice_mut(0..num_tri))?;
+    del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(
+        dev,
+        &mut tri2morton_dev.slice_mut(0..num_tri),
+        &mut idx2tri_dev.slice_mut(0..num_tri),
+    )?;
     let idx2morton_dev = tri2morton_dev;
     //let mut idx2morton_dev = dev.alloc_zeros(num_tri)?;
     //del_cudarc_util::util::permute(&dev, &mut idx2morton_dev, &idx2tri_dev, &tri2morton_dev)?;

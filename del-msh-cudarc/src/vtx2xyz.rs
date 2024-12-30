@@ -3,7 +3,7 @@ use cudarc::driver::{CudaDevice, CudaSlice};
 pub fn to_aabb3(
     dev: &std::sync::Arc<CudaDevice>,
     vtx2xyz: &CudaSlice<f32>,
-) -> anyhow::Result<CudaSlice<f32>> {
+) -> core::result::Result<CudaSlice<f32>, cudarc::driver::DriverError> {
     use cudarc::driver::DeviceSlice;
     let num_vtx = vtx2xyz.len() / 3;
     let cfg = {
