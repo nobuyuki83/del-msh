@@ -1,7 +1,7 @@
 // use cudarc::driver::{CudaDevice, CudaSlice};
 
 #[cfg(feature = "cuda")]
-pub mod bvh;
+pub mod elem2center;
 
 #[cfg(feature = "cuda")]
 pub mod vtx2xyz;
@@ -40,7 +40,7 @@ pub fn assert_equal_cpu_gpu(
     let tri2vtx_dev = dev.htod_copy(tri2vtx.to_vec())?;
     let vtx2xyz_dev = dev.htod_copy(vtx2xyz.to_vec())?;
     let mut tri2cntr_dev = dev.alloc_zeros::<f32>(num_tri * 3)?;
-    crate::bvh::tri2cntr_from_trimesh3(dev, &tri2vtx_dev, &vtx2xyz_dev, &mut tri2cntr_dev)?;
+    crate::elem2center::tri2cntr_from_trimesh3(dev, &tri2vtx_dev, &vtx2xyz_dev, &mut tri2cntr_dev)?;
     {
         // check tri2cntr
         let tri2cntr_hst = dev.dtoh_sync_copy(&tri2cntr_dev)?;
@@ -153,7 +153,7 @@ pub fn make_bvh_from_trimesh3(
     use cudarc::driver::DeviceSlice;
     let num_tri = tri2vtx_dev.len() / 3;
     let mut tri2cntr_dev = dev.alloc_zeros::<f32>(num_tri * 3)?;
-    crate::bvh::tri2cntr_from_trimesh3(dev, tri2vtx_dev, vtx2xyz_dev, &mut tri2cntr_dev)?;
+    crate::elem2center::tri2cntr_from_trimesh3(dev, tri2vtx_dev, vtx2xyz_dev, &mut tri2cntr_dev)?;
     let aabb_dev = crate::vtx2xyz::to_aabb3(dev, &tri2cntr_dev)?;
     let aabb = dev.dtoh_sync_copy(&aabb_dev)?;
     let aabb = arrayref::array_ref!(&aabb, 0, 6);

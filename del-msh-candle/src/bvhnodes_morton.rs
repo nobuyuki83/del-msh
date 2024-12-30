@@ -1,6 +1,6 @@
 use candle_core::{CpuStorage, Layout, Tensor};
 
-struct SortedMortonCode {}
+pub struct SortedMortonCode {}
 
 impl candle_core::InplaceOp2 for SortedMortonCode {
     fn name(&self) -> &'static str {
@@ -33,11 +33,11 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
     }
 }
 
-struct BvhNodesFromSortedMortonCode {}
+pub struct BvhNodesFromSortedMortonCode {}
 
 impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
     fn name(&self) -> &'static str {
-        "BvhNodes_FromSortedMorton"
+        "BvhNodesFromSortedMorton"
     }
 
     fn cpu_fwd(
