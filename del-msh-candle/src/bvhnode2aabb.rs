@@ -1,5 +1,6 @@
+use candle_core::{CpuStorage, DType, Device, Layout, Tensor};
 #[allow(unused_imports)]
-use candle_core::{CpuStorage, CudaDevice, CudaStorage, DType, Device, Layout, Tensor};
+use candle_core::{CudaDevice, CudaStorage};
 
 pub struct Layer {
     pub tri2vtx: Tensor,
@@ -148,6 +149,16 @@ impl BvhForTriMesh {
             bvhnode2aabb,
         };
         Ok(res)
+    }
+
+    pub fn from_trimesh(tri2vtx: &Tensor, vtx2xyz: &Tensor) -> candle_core::Result<Self> {
+        let dev = tri2vtx.device();
+        assert!(dev.same_device(vtx2xyz.device()));
+        let num_tri = tri2vtx.dims2()?.0;
+        let num_dim = vtx2xyz.dims2()?.1;
+        let data = Self::new(num_tri, num_dim, dev)?;
+        data.compute(tri2vtx, vtx2xyz)?;
+        Ok(data)
     }
 
     pub fn compute(&self, tri2vtx: &Tensor, vtx2xyz: &Tensor) -> candle_core::Result<()> {
