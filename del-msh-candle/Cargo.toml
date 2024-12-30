@@ -26,3 +26,4 @@ del-msh-cudarc = { workspace = true, optional = true }
 # del-candle = {path="../../del-candle"}
 
 [dev-dependencies]
+rand_chacha.workspace = true

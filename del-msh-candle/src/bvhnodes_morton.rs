@@ -37,7 +37,7 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
     fn cuda_fwd(
         &self,
         sorted_morton_code: &mut CudaStorage,
-        l_sorted_morton_code: &Layout,
+        _l_sorted_morton_code: &Layout,
         vtx2pos: &CudaStorage,
         l_vtx2pos: &Layout,
     ) -> candle_core::Result<()> {

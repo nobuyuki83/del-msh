@@ -128,8 +128,11 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
 
 #[test]
 fn test_backward() -> anyhow::Result<()> {
+    use rand::SeedableRng;
+    // use rand::Rng;
+    let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    let mut reng = rand::thread_rng();
+    // let mut reng = rand::thread_rng();
     let site2xy0 =
         del_msh_core::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 10, &mut reng);
     let site2xy0 = {
