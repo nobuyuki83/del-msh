@@ -27,24 +27,14 @@ impl candle_core::InplaceOp3 for Layer {
         assert_eq!(l_bvhnodes.dim(0)?, num_bvhnode);
         assert_eq!(l_bvhnodes.dim(1)?, 3);
         use std::ops::Deref;
-        let bvhnodes = match bvhnodes {
-            CpuStorage::U32(a) => a,
-            _ => panic!(),
-        };
-        let vtx2xyz = match vtx2xyz {
-            CpuStorage::F32(a) => a,
-            _ => panic!(),
-        };
         let bvhnode2aabb = match bvhnode2aabb {
             CpuStorage::F32(a) => a,
             _ => panic!(),
         };
+        let bvhnodes = bvhnodes.as_slice::<u32>()?;
+        let vtx2xyz = vtx2xyz.as_slice::<f32>()?;
         let num_node = self.tri2vtx.dims2()?.1;
-        let tri2vtx = self.tri2vtx.storage_and_layout().0;
-        let tri2vtx = match tri2vtx.deref() {
-            candle_core::Storage::Cpu(cpu_storage) => cpu_storage.as_slice::<u32>()?,
-            _ => panic!(),
-        };
+        get_cpu_slice_from_tensor!(tri2vtx, s_tri2vtx, self.tri2vtx, u32);
         match num_dim {
             3 => del_msh_core::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
                 bvhnode2aabb,
@@ -86,33 +76,15 @@ impl candle_core::InplaceOp3 for Layer {
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
         use std::ops::Deref;
-        let CudaStorage { slice, device } = bvhnode2aabb;
-        let (bvhnode2aabb, device_bvhnodes2aabb) = match slice {
-            CudaStorageSlice::F32(slice) => (slice, device),
-            _ => panic!(),
-        };
-        //
-        let CudaStorage { slice, device } = vtx2xyz;
-        let (vtx2xyz, device_vtx2xyz) = match slice {
-            CudaStorageSlice::F32(slice) => (slice, device),
-            _ => panic!(),
-        };
-        //
-        let CudaStorage { slice, device } = bvhnodes;
-        let (bvhnodes, device_bvhnodes) = match slice {
-            CudaStorageSlice::U32(slice) => (slice, device),
-            _ => panic!(),
-        };
-        assert!(device_bvhnodes2aabb.same_device(device_vtx2xyz));
-        assert!(device_bvhnodes2aabb.same_device(device_bvhnodes));
-        //
-        let tri2vtx = self.tri2vtx.storage_and_layout().0;
-        let tri2vtx = match tri2vtx.deref() {
-            candle_core::Storage::Cuda(cuda_storage) => cuda_storage.as_cuda_slice()?,
-            _ => panic!(),
-        };
+        get_cuda_slice_from_storage_f32!(bvhnode2aabb, device_bvhnode2aabb, bvhnode2aabb);
+        get_cuda_slice_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
+        get_cuda_slice_from_storage_u32!(bvhnodes, device_bvhnodes, bvhnodes);
+        assert!(device_bvhnode2aabb.same_device(device_vtx2xyz));
+        assert!(device_bvhnode2aabb.same_device(device_bvhnodes));
+        get_cuda_slice_from_tensor!(tri2vtx, s_tri2vtx, l_tri2vtx, self.tri2vtx, u32);
+        assert_eq!(l_tri2vtx.dims(), &[num_tri, 3]);
         del_msh_cudarc::bvhnode2aabb::from_trimesh3_with_bvhnodes(
-            device,
+            device_bvhnode2aabb,
             tri2vtx,
             vtx2xyz,
             &bvhnodes.slice(..),

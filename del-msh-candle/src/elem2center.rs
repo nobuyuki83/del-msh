@@ -21,14 +21,8 @@ impl candle_core::InplaceOp3 for Layer {
         let num_node = l_elem2vtx.dim(1)?;
         let num_dim = l_vtx2xyz.dim(1)?;
         assert_eq!(l_elem2center.dims(), &[num_elem, num_dim]);
-        let elem2vtx = match elem2vtx {
-            CpuStorage::U32(vec) => vec,
-            _ => panic!(),
-        };
-        let vtx2xyz = match vtx2pos {
-            CpuStorage::F32(vec) => vec,
-            _ => panic!(),
-        };
+        let elem2vtx = elem2vtx.as_slice::<u32>()?;
+        let vtx2xyz = vtx2pos.as_slice::<f32>()?;
         let elem2center = match elem2center {
             CpuStorage::F32(vec) => vec,
             _ => panic!(),
@@ -60,23 +54,11 @@ impl candle_core::InplaceOp3 for Layer {
         let _num_node = l_elem2vtx.dim(1)?;
         let num_dim = l_vtx2pos.dim(1)?;
         assert_eq!(l_elem2center.dims(), &[num_elem, num_dim]);
-        let CudaStorage { slice, device } = elem2vtx;
-        let (elem2vtx, device_elem2vtx) = match slice {
-            CudaStorageSlice::U32(slice) => (slice, device),
-            _ => todo!(),
-        };
-        let CudaStorage { slice, device } = vtx2pos;
-        let (vtx2pos, dev_vtx2pos) = match slice {
-            CudaStorageSlice::F32(slice) => (slice, device),
-            _ => panic!(),
-        };
-        let CudaStorage { slice, device } = elem2center;
-        let (elem2center, dev_elem2center) = match slice {
-            CudaStorageSlice::F32(slice) => (slice, device),
-            _ => panic!(),
-        };
-        assert!(device_elem2vtx.same_device(dev_vtx2pos));
-        assert!(device_elem2vtx.same_device(dev_elem2center));
+        get_cuda_slice_from_storage_u32!(elem2vtx, device_elem2vtx, elem2vtx);
+        get_cuda_slice_from_storage_f32!(vtx2pos, device_vtx2pos, vtx2pos);
+        get_cuda_slice_from_storage_f32!(elem2center, device_elem2center, elem2center);
+        assert!(device_elem2vtx.same_device(device_vtx2pos));
+        assert!(device_elem2vtx.same_device(device_elem2center));
         del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(
             device_elem2vtx,
             elem2vtx,
