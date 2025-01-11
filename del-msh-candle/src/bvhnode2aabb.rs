@@ -34,7 +34,7 @@ impl candle_core::InplaceOp3 for Layer {
         let bvhnodes = bvhnodes.as_slice::<u32>()?;
         let vtx2xyz = vtx2xyz.as_slice::<f32>()?;
         let num_node = self.tri2vtx.dims2()?.1;
-        get_cpu_slice_from_tensor!(tri2vtx, s_tri2vtx, self.tri2vtx, u32);
+        get_cpu_slice_and_storage_from_tensor!(tri2vtx, s_tri2vtx, self.tri2vtx, u32);
         match num_dim {
             3 => del_msh_core::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
                 bvhnode2aabb,
@@ -81,7 +81,13 @@ impl candle_core::InplaceOp3 for Layer {
         get_cuda_slice_from_storage_u32!(bvhnodes, device_bvhnodes, bvhnodes);
         assert!(device_bvhnode2aabb.same_device(device_vtx2xyz));
         assert!(device_bvhnode2aabb.same_device(device_bvhnodes));
-        get_cuda_slice_from_tensor!(tri2vtx, s_tri2vtx, l_tri2vtx, self.tri2vtx, u32);
+        get_cuda_slice_and_storage_and_layout_from_tensor!(
+            tri2vtx,
+            s_tri2vtx,
+            l_tri2vtx,
+            self.tri2vtx,
+            u32
+        );
         assert_eq!(l_tri2vtx.dims(), &[num_tri, 3]);
         del_msh_cudarc::bvhnode2aabb::from_trimesh3_with_bvhnodes(
             device_bvhnode2aabb,

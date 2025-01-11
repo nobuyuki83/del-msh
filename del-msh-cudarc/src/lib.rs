@@ -13,6 +13,10 @@ pub mod bvhnodes_morton;
 pub mod bvhnode2aabb;
 
 #[cfg(feature = "cuda")]
+pub mod edge2vtx_contour;
+
+/*
+#[cfg(feature = "cuda")]
 pub fn assert_equal_cpu_gpu(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &[u32],
@@ -199,3 +203,4 @@ pub fn make_bvh_from_trimesh3(
     )?;
     Ok(())
 }
+ */

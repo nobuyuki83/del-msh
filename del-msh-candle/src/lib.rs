@@ -1,4 +1,4 @@
-macro_rules! get_cpu_slice_from_tensor {
+macro_rules! get_cpu_slice_and_storage_from_tensor {
     ($slice: ident, $storage: ident, $tensor: expr, $t: ty) => {
         let $storage = $tensor.storage_and_layout().0;
         let $slice = match $storage.deref() {
@@ -9,7 +9,7 @@ macro_rules! get_cpu_slice_from_tensor {
 }
 
 #[cfg(feature = "cuda")]
-macro_rules! get_cuda_slice_from_tensor {
+macro_rules! get_cuda_slice_and_storage_and_layout_from_tensor {
     ($slc: ident, $storage: ident, $layout: ident, $tnsr: expr, $t: ty) => {
         let ($storage, $layout) = $tnsr.storage_and_layout();
         let $slc = match $storage.deref() {

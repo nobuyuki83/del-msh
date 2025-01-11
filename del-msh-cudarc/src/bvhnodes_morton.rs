@@ -17,7 +17,6 @@ pub fn vtx2morton(
     Ok(())
 }
 
-#[cfg(feature = "cuda")]
 pub fn from_sorted_morton_codes(
     dev: &std::sync::Arc<CudaDevice>,
     bvnodes: &mut cudarc::driver::CudaViewMut<u32>,
