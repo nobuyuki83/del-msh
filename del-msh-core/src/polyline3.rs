@@ -354,3 +354,64 @@ where
     }
     len
 }
+fn reduce_recursive(
+    vtx2flg: &mut [i32],
+    i_vtx0: usize,
+    i_vtx1: usize,
+    vtx2xyz: &[f32],
+    threshold: f32,
+) {
+    assert!(i_vtx1 as i64 - i_vtx0 as i64 > 1);
+    let p0 = arrayref::array_ref![vtx2xyz, i_vtx0 * 3, 3];
+    let p1 = arrayref::array_ref![vtx2xyz, i_vtx1 * 3, 3];
+    let vtx_farest = {
+        let mut vtx_nearest = (usize::MAX, 0.);
+        for i_vtxm in i_vtx0 + 1..i_vtx1 {
+            let pm = arrayref::array_ref![vtx2xyz, i_vtxm * 3, 3];
+            let pn = del_geo_core::edge3::nearest_to_point3(p0, p1, pm);
+            let dist = del_geo_core::edge3::length(pm, &pn);
+            if dist >= vtx_nearest.1 {
+                vtx_nearest = (i_vtxm, dist);
+            }
+        }
+        vtx_nearest
+    };
+    assert_ne!(vtx_farest.0, usize::MAX);
+    assert!(i_vtx0 < vtx_farest.0);
+    assert!(vtx_farest.0 < i_vtx1);
+    if vtx_farest.1 > threshold {
+        vtx2flg[vtx_farest.0] = 1; // this is fixed
+    }
+    if vtx_farest.0 - i_vtx0 > 1 {
+        reduce_recursive(vtx2flg, i_vtx0, vtx_farest.0, vtx2xyz, threshold);
+    }
+    if i_vtx1 - vtx_farest.0 > 1 {
+        reduce_recursive(vtx2flg, vtx_farest.0, i_vtx1, vtx2xyz, threshold);
+    }
+}
+
+/// <https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm>
+pub fn reduce(vtx2xyz: &[f32], threshold: f32) -> Vec<f32> {
+    let num_vtx = vtx2xyz.len() / 3;
+    let mut vtx2flg = vec![0; num_vtx]; // 0: free, 1: fix
+    vtx2flg[0] = 1;
+    vtx2flg[num_vtx - 1] = 1;
+    reduce_recursive(&mut vtx2flg, 0, num_vtx - 1, vtx2xyz, threshold);
+    // dbg!(&vtx2flg);
+    let vtx2xyz_reduced: Vec<f32> = vtx2xyz
+        .chunks(3)
+        .enumerate()
+        .filter(|&(iv, _xyz)| vtx2flg[iv] == 1)
+        .flat_map(|(_iv, xyz)| [xyz[0], xyz[1], xyz[2]])
+        .collect();
+    vtx2xyz_reduced
+}
+
+#[test]
+fn test_reduce() -> anyhow::Result<()> {
+    let vtx2xy = crate::polyloop2::from_circle(1.0, 100);
+    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(&vtx2xy);
+    let vtx2xyz_reduced = reduce(&vtx2xyz, 0.01);
+    crate::io_obj::save_vtx2xyz_as_polyloop("../target/reduce_polyline.obj", &vtx2xyz_reduced, 3)?;
+    Ok(())
+}

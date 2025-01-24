@@ -107,6 +107,16 @@ where
     xys
 }
 
+pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
+    let mut vtx2xy = vec![0f32; 2 * n];
+    for i in 0..n {
+        let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
+        vtx2xy[i * 2] = rad * f32::cos(theta);
+        vtx2xy[i * 2 + 1] = rad * f32::sin(theta);
+    }
+    vtx2xy
+}
+
 pub fn distance_to_point_<Real>(vtx2xy: &[Real], p: &[Real]) -> Real
 where
     Real: nalgebra::RealField + Copy,
