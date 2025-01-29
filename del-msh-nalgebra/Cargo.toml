@@ -21,7 +21,7 @@ del-geo-nalgebra ={workspace = true} #  "0.1.29" #
 # del-msh-core = {workspace = true}
 
 # for deploy
-del-msh-core = "0.1.39"
+del-msh-core = "0.1.37"
 
 [dev-dependencies]
 rand_chacha = {workspace = true}
