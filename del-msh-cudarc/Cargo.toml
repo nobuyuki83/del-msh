@@ -11,14 +11,15 @@ cuda = ["dep:del-msh-cudarc-kernel", "dep:del-cudarc", "dep:cudarc"]
 [dependencies]
 arrayref.workspace = true
 anyhow.workspace = true
-
 num-traits.workspace = true
-#del-msh-core.workspace = true
 del-geo-core.workspace = true
 cudarc = {workspace = true, optional = true }
-del-cudarc = {workspace = true, optional = true }
+# del-cudarc = {workspace = true, optional = true }
+
+#del-msh-core.workspace = true
 #del-msh-cudarc-kernel = { workspace = true, optional = true }
 
 # for deploy
 del-msh-core = "=0.1.37"
 del-msh-cudarc-kernel = {  version = "=0.1.0", optional = true }
+del-cudarc = { version="=0.1.0", optional = true}
