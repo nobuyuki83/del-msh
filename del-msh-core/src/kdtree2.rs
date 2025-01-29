@@ -373,14 +373,12 @@ pub fn inside_square<Real>(
 mod tests {
     use crate::kdtree2::TreeBranch;
     use num_traits::AsPrimitive;
-    use rand::distributions::Standard;
-    use rand::Rng;
 
     fn test_data<Real>(num_xy: usize) -> (Vec<Real>, Vec<usize>)
     where
         Real: nalgebra::RealField + 'static + Copy,
         f64: AsPrimitive<Real>,
-        Standard: rand::prelude::Distribution<Real>,
+        rand::distr::StandardUniform: rand::distr::Distribution<Real>,
     {
         let xys = {
             let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
@@ -388,8 +386,9 @@ mod tests {
             let half: Real = 0.4_f64.as_();
             let mut ps = Vec::<Real>::with_capacity(num_xy * 2);
             for _i in 0..num_xy {
-                let x: Real = (rng.gen::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
-                let y: Real = (rng.gen::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
+                use rand::Rng;
+                let x: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
+                let y: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
                 ps.push(x);
                 ps.push(y);
             }
@@ -418,7 +417,8 @@ mod tests {
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
         // let time_nearest = time::Instant::now();
         for _ in 0..10000 {
-            let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
+            use rand::Rng;
+            let p0 = Vector::new(rng.random::<Real>(), rng.random::<Real>());
             let mut pos_near = (Vector::new(Real::MAX, Real::MAX), usize::MAX);
             nearest(
                 &mut pos_near,
@@ -435,7 +435,8 @@ mod tests {
         }
         // dbg!(time_nearest.elapsed());
         for _ in 0..10000 {
-            let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
+            use rand::Rng;
+            let p0 = Vector::new(rng.random::<Real>(), rng.random::<Real>());
             let mut pos_near = (Vector::new(Real::MAX, Real::MAX), usize::MAX);
             nearest(
                 &mut pos_near,
@@ -467,7 +468,8 @@ mod tests {
         let rad: Real = 0.03;
         // let time_inside_square = time::Instant::now();
         for _ in 0..10000 {
-            let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
+            use rand::Rng;
+            let p0 = Vector::new(rng.random::<Real>(), rng.random::<Real>());
             let mut pos_near = Vec::<usize>::new();
             inside_square(
                 &mut pos_near,
@@ -486,7 +488,8 @@ mod tests {
         // dbg!(time_inside_square.elapsed());
         //
         for _ in 0..10000 {
-            let p0 = Vector::new(rng.gen::<Real>(), rng.gen::<Real>());
+            use rand::Rng;
+            let p0 = Vector::new(rng.random::<Real>(), rng.random::<Real>());
             let mut idxs0 = Vec::<usize>::new();
             inside_square(
                 &mut idxs0,

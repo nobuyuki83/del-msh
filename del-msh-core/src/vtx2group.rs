@@ -35,7 +35,7 @@ fn test_vtx2dist_for_vtx2vtx() {
     use rand::Rng;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
-    let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.gen::<f32>()).collect();
+    let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.random::<f32>()).collect();
     let vtx2rgb: Vec<_> = vtx2group
         .iter()
         .flat_map(|&i_group| {

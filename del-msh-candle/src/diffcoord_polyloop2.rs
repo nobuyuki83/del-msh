@@ -76,9 +76,9 @@ fn edge_length_constraint() -> anyhow::Result<()> {
     let mut vtx2xy = del_msh_nalgebra::polyloop2::from_circle(1.0, num_vtx);
     {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for mut vtx in vtx2xy.column_iter_mut() {
-            vtx += nalgebra::Vector2::<f32>::new(rng.gen(), rng.gen());
+            vtx += nalgebra::Vector2::<f32>::new(rng.random(), rng.random());
         }
     }
     let vtx2xy = {

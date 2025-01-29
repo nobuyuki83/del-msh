@@ -310,7 +310,7 @@ pub fn position_of_voronoi_vertex(
 
 #[test]
 fn test_voronoi_concave() {
-    let mut reng = rand::thread_rng();
+    let mut reng = rand::rng();
     // let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0];
     let vtxl2xy = vec![
         0.0, 0.0, 1.0, 0.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.5, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0,
@@ -357,7 +357,7 @@ fn test_voronoi_concave() {
 
 #[test]
 fn test_voronoi_convex() {
-    let mut reng = rand::thread_rng();
+    let mut reng = rand::rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     let site2xy =
         del_msh_core::sampling::poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.15, 30, &mut reng);

@@ -36,7 +36,7 @@ where
     let tri2cumarea = crate::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 2);
     let mut vtx2vectwo: Vec<nalgebra::Vector2<f32>> = vec![];
     for _iter in 0..num_iteration {
-        let (i_tri, r0, r1) = sample_uniformly_trimesh(&tri2cumarea, reng.gen(), reng.gen());
+        let (i_tri, r0, r1) = sample_uniformly_trimesh(&tri2cumarea, reng.random(), reng.random());
         let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(
             &tri2vtx, &vtx2xyz, i_tri, r0, r1,
         );
@@ -60,7 +60,7 @@ where
 
 #[test]
 fn test_poisson_disk_sampling() {
-    let mut reng = rand::thread_rng();
+    let mut reng = rand::rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     let vtx2xy = poisson_disk_sampling_from_polyloop2(&vtxl2xy, 0.1, 2000, &mut reng);
     {

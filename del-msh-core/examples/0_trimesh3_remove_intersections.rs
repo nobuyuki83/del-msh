@@ -8,7 +8,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
         vtx2xyz
             .iter_mut()
-            .for_each(|v| *v += (reng.gen::<f64>() - 0.5) * 0.01);
+            .for_each(|v| *v += (reng.random::<f64>() - 0.5) * 0.01);
         (tri2vtx, vtx2xyz)
     };
     {

@@ -252,8 +252,8 @@ fn test_first_intersection_ray() {
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
     for _iter in 0..1000 {
-        let x = reng.gen::<f32>() * 2.0 - 1.;
-        let y = reng.gen::<f32>() * 2.0 - 1.;
+        let x = reng.random::<f32>() * 2.0 - 1.;
+        let y = reng.random::<f32>() * 2.0 - 1.;
         let ray_dir = [0., 0., -1.];
         let ray_org = [x, y, 1.];
         let res_first = first_intersection_ray(

@@ -228,22 +228,22 @@ pub fn to_uniform_density_random_points<Real>(
 ) -> Vec<Real>
 where
     Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + AsPrimitive<usize>,
-    rand::distributions::Standard: rand::prelude::Distribution<Real>,
+    rand::distr::StandardUniform: rand::distr::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
     let aabb = crate::vtx2xy::aabb2(vtx2xy);
     use rand::Rng;
     let base_pos = [
-        aabb[0] - cell_len * rng.gen::<Real>(),
-        aabb[1] - cell_len * rng.gen::<Real>(),
+        aabb[0] - cell_len * rng.random::<Real>(),
+        aabb[1] - cell_len * rng.random::<Real>(),
     ];
     let nx = ((aabb[2] - base_pos[0]) / cell_len).as_() + 1;
     let ny = ((aabb[3] - base_pos[1]) / cell_len).as_() + 1;
     let mut res = vec![];
     for ix in 0..nx {
         for iy in 0..ny {
-            let x = base_pos[0] + (ix.as_() + rng.gen::<Real>()) * cell_len;
-            let y = base_pos[1] + (iy.as_() + rng.gen::<Real>()) * cell_len;
+            let x = base_pos[0] + (ix.as_() + rng.random::<Real>()) * cell_len;
+            let y = base_pos[1] + (iy.as_() + rng.random::<Real>()) * cell_len;
             let is_inside = is_inside_(vtx2xy, &[x, y]);
             if !is_inside {
                 continue;

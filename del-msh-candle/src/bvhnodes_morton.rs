@@ -175,8 +175,8 @@ fn test_from_vtx2xyz() -> anyhow::Result<()> {
     let vtx2xyz = {
         let vtx2xyz: Vec<f32> = {
             use rand::Rng;
-            let mut rng = rand::thread_rng();
-            (0..num_vtx * 3).map(|_| rng.gen::<f32>()).collect()
+            let mut rng = rand::rng();
+            (0..num_vtx * 3).map(|_| rng.random::<f32>()).collect()
         };
         candle_core::Tensor::from_vec(vtx2xyz, (num_vtx, 3), &candle_core::Device::Cpu)?
     };

@@ -15,8 +15,8 @@ nalgebra = { workspace = true }
 ordered-float = { workspace =true }
 arrayref = {workspace = true }
 #
-del-geo-core = {workspace = true}  #0.1.29"
-del-geo-nalgebra ={workspace = true} #  "0.1.29" #
+del-geo-core = {workspace = true}
+del-geo-nalgebra ={workspace = true}
 
 [dev-dependencies]
 rand_chacha = {workspace = true}

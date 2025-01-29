@@ -348,8 +348,8 @@ fn test_3d() {
     let num_vtx = 100000;
     let vtx2xyz: Vec<f32> = {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
-        (0..num_vtx * 3).map(|_| rng.gen::<f32>()).collect()
+        let mut rng = rand::rng();
+        (0..num_vtx * 3).map(|_| rng.random::<f32>()).collect()
     };
     let mut idx2vtx = vec![0usize; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
@@ -376,8 +376,8 @@ fn test_2d() {
     let num_vtx = 100000;
     let vtx2xy: Vec<f32> = {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
-        (0..num_vtx * 2).map(|_| rng.gen::<f32>()).collect()
+        let mut rng = rand::rng();
+        (0..num_vtx * 2).map(|_| rng.random::<f32>()).collect()
     };
     let mut idx2vtx = vec![0usize; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
