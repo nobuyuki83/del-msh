@@ -24,8 +24,7 @@ description = "mesh utility library for computer graphics research and prototypi
 [workspace.dependencies.cudarc]
 version = "=0.12.1"
 features = [
-    "std", "cublas", "cublaslt", "curand", "driver", "nvrtc",
-    "f16", "cuda-version-from-build-system", "dynamic-linking"]
+    "std", "driver", "nvrtc", "cuda-version-from-build-system", "dynamic-linking"]
 default-features=false
 
 [workspace.dependencies]
