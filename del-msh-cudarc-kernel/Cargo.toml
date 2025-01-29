@@ -12,4 +12,5 @@ version = "0.1.0"
 [build-dependencies]
 bindgen_cuda = "0.1.5"
 # del-geo-cpp-headers = {path="../../del-geo/del-geo-cpp-headers"}
-del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
+del-geo-cpp-headers = "0.1.33"
