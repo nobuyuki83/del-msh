@@ -3,10 +3,10 @@ use candle_core::CudaStorage;
 use candle_core::{CpuStorage, CustomOp1, Layout, Shape, Tensor};
 
 pub struct Layer {
-    tri2vtx: Tensor,
-    edge2vtx: Tensor,
-    edge2tri: Tensor,
-    transform_world2ndc: Tensor,
+    pub tri2vtx: Tensor,
+    pub edge2vtx: Tensor,
+    pub edge2tri: Tensor,
+    pub transform_world2ndc: Tensor,
 }
 
 impl CustomOp1 for Layer {

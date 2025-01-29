@@ -54,10 +54,11 @@ del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 # for GitHub push
 # del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git", version = "0.1.33"}
 # del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git"}
+# del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git"}
 
 
 # for deploy
-del-geo-core = "0.1.33"
-del-geo-nalgebra = "0.1.33"
+del-geo-core = "=0.1.33"
+del-geo-nalgebra = "=0.1.33"
+del-cudarc = "=0.1.0"
 
