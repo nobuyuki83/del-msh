@@ -1,3 +1,5 @@
+use del_cudarc::cudarc as cudarc;
+
 pub fn fwd(
     device: &std::sync::Arc<cudarc::driver::CudaDevice>,
     tri2vtx: &cudarc::driver::CudaSlice<u32>,

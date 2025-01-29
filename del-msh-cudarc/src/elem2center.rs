@@ -1,3 +1,4 @@
+use del_cudarc::cudarc as cudarc;
 use cudarc::driver::{CudaDevice, CudaSlice, DeviceSlice};
 
 pub fn tri2cntr_from_trimesh3(

@@ -1,6 +1,6 @@
 [package]
 name = "del-msh-candle"
-description = "hgoehoge"
+description = "differentiable mesh processing library using candle"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -16,17 +16,25 @@ anyhow.workspace = true
 nalgebra.workspace = true
 arrayref.workspace = true
 serde_json = "1.0.133"
-# candle-core = { git = "https://github.com/huggingface/candle.git"}
-del-cudarc = { workspace = true, optional = true}
 del-geo-core.workspace = true
 del-geo-nalgebra.workspace = true
 del-msh-core.workspace = true
 del-msh-nalgebra.workspace = true
+candle-core.workspace = true
+del-cudarc = { workspace = true, optional = true }
 del-msh-cudarc = { workspace = true, optional = true }
+
+# for develop
+# candle-core = { git = "https://github.com/huggingface/candle.git"}
+# del-msh-cudarc = { workspace = true, optional = true }
+
+# for push
+# candle-core = { git = "https://github.com/huggingface/candle.git"}
+
 # del-candle = {path="../../del-candle"}
 
 # for delpoy
-candle-core = "0.8.2"
+# del-msh-cudarc = {  version="=0.1.38", optional = true }
 
 [dev-dependencies]
 rand_chacha.workspace = true

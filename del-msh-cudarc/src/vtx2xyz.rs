@@ -1,3 +1,4 @@
+use del_cudarc::cudarc as cudarc;
 use cudarc::driver::{CudaDevice, CudaSlice};
 
 pub fn to_aabb3(
@@ -34,7 +35,7 @@ pub fn to_aabb3(
 }
 
 #[test]
-fn test_to_aabb3() -> anyhow::Result<()> {
+fn test_to_aabb3() -> Result<(), cudarc::driver::DriverError> {
     let (_tri2vtx, vtx2xyz) =
         del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(2.0, 1.0, 32, 32);
     let dev = cudarc::driver::CudaDevice::new(0)?;
