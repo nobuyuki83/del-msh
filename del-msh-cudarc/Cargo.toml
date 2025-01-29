@@ -1,5 +1,6 @@
 [package]
 name = "del-msh-cudarc"
+description = "2D/3D Mesh processing using Cuda for scientific prototyping."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
