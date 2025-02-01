@@ -36,7 +36,7 @@ pub fn load_wavefront_obj(
         dbg!(str);
         panic!();
     }
-    use pyo3::IntoPy;
+    use pyo3::IntoPyObject;
     (
         numpy::ndarray::Array2::from_shape_vec((obj.vtx2xyz.len() / 3, 3), obj.vtx2xyz)
             .unwrap()
@@ -52,10 +52,10 @@ pub fn load_wavefront_obj(
         numpy::ndarray::Array1::from_vec(obj.idx2vtx_uv).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.idx2vtx_nrm).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.elem2group).into_pyarray(py),
-        obj.group2name.into_py(py),
+        obj.group2name.into_pyobject(py).unwrap().into(),
         numpy::ndarray::Array1::from_vec(obj.elem2mtl).into_pyarray(py),
-        obj.mtl2name.into_py(py),
-        obj.mtl_file_name.into_py(py),
+        obj.mtl2name.into_pyobject(py).unwrap().into(),
+        obj.mtl_file_name.into_pyobject(py).unwrap().into(),
     )
 }
 
