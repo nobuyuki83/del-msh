@@ -202,9 +202,7 @@ where
 {
     vtx2xyz
         .chunks(3)
-        .flat_map(|v| {
-            del_geo_core::mat3_col_major::mult_vec(m, arrayref::array_ref![v, 0, 3])
-        })
+        .flat_map(|v| del_geo_core::mat3_col_major::mult_vec(m, arrayref::array_ref![v, 0, 3]))
         .collect()
 }
 
@@ -285,10 +283,10 @@ pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<R
     }
 }
 
-pub fn to_vec3<Real>(vtx2xyz: &[Real], i_vtx: usize) -> &[Real;3] {
+pub fn to_vec3<Real>(vtx2xyz: &[Real], i_vtx: usize) -> &[Real; 3] {
     arrayref::array_ref![vtx2xyz, i_vtx * 3, 3]
 }
 
-pub fn to_vec3_mut<Real>(vtx2xyz: &mut [Real], i_vtx: usize) -> &mut [Real;3] {
+pub fn to_vec3_mut<Real>(vtx2xyz: &mut [Real], i_vtx: usize) -> &mut [Real; 3] {
     arrayref::array_mut_ref![vtx2xyz, i_vtx * 3, 3]
 }

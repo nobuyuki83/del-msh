@@ -43,10 +43,10 @@ pub fn tri2circumcenter(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
     let mut tri2cc = Vec::<f32>::with_capacity(tri2vtx.len());
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0: &[f32;2] = crate::vtx2xy::to_vec2(&vtx2xyz, i0);
-        let p1: &[f32;2] = crate::vtx2xy::to_vec2(&vtx2xyz, i1);
-        let p2: &[f32;2] = crate::vtx2xy::to_vec2(&vtx2xyz, i2);
-        let cc = del_geo_core::tri2::circumcenter(&p0, &p1, &p2);
+        let p0: &[f32; 2] = crate::vtx2xy::to_vec2(vtx2xyz, i0);
+        let p1: &[f32; 2] = crate::vtx2xy::to_vec2(vtx2xyz, i1);
+        let p2: &[f32; 2] = crate::vtx2xy::to_vec2(vtx2xyz, i2);
+        let cc = del_geo_core::tri2::circumcenter(p0, p1, p2);
         tri2cc.push(cc[0]);
         tri2cc.push(cc[1]);
     }

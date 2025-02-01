@@ -34,9 +34,9 @@ where
 
 pub fn to_vecn<T, const N: usize>(vtx2xyz: &[T], i_vtx: usize) -> &[T; N]
 where
-    T: num_traits::Float
+    T: num_traits::Float,
 {
-    vtx2xyz[i_vtx*N..i_vtx*N+N].try_into().unwrap()
+    vtx2xyz[i_vtx * N..i_vtx * N + N].try_into().unwrap()
 }
 
 pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>

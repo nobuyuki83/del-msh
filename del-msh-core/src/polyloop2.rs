@@ -117,7 +117,7 @@ pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
     vtx2xy
 }
 
-pub fn distance_to_point_<Real>(vtx2xy: &[Real], g: &[Real;2]) -> Real
+pub fn distance_to_point_<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Real
 where
     Real: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<Real>,
@@ -255,7 +255,7 @@ where
 }
 
 #[allow(clippy::identity_op)]
-pub fn to_svg<Real>(vtx2xy: &[Real], transform: &[Real;9]) -> String
+pub fn to_svg<Real>(vtx2xy: &[Real], transform: &[Real; 9]) -> String
 where
     Real: std::fmt::Display + Copy + num_traits::Float,
 {

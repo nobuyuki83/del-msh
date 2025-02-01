@@ -66,14 +66,14 @@ where
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0: &[T;N] = vtx2xyz[iv0 * N..iv0 * N + N].try_into().unwrap();
-        let q1: &[T;N] = vtx2xyz[iv1 * N..iv1 * N + N].try_into().unwrap();
+        let q0: &[T; N] = vtx2xyz[iv0 * N..iv0 * N + N].try_into().unwrap();
+        let q1: &[T; N] = vtx2xyz[iv1 * N..iv1 * N + N].try_into().unwrap();
         let l = q0.sub(q1).norm();
         let d = q0.add(q1).scale(0.5_f64.as_() * l);
         cog = cog.add(&d);
         len = len + l;
     }
-    cog.scale(T::one()/len)
+    cog.scale(T::one() / len)
 }
 
 #[test]
@@ -138,13 +138,14 @@ where
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xn::to_vecn(&vtx2xyz, iv0).sub(&cog);
-        let q1 = crate::vtx2xn::to_vecn(&vtx2xyz, iv1).sub(&cog);
+        let q0 = crate::vtx2xn::to_vecn(vtx2xyz, iv0).sub(&cog);
+        let q1 = crate::vtx2xn::to_vecn(vtx2xyz, iv1).sub(&cog);
         let l = q0.sub(&q1).norm();
         for i in 0..N {
             for j in 0..N {
-                cov[i][j] = cov[i][j] + (q0[i] * q0[j] + q1[i] * q1[j]) * (l / three)
-                    + (q0[i] * q1[j] + q1[i]  * q0[j]) * (l / six);
+                cov[i][j] = cov[i][j]
+                    + (q0[i] * q0[j] + q1[i] * q1[j]) * (l / three)
+                    + (q0[i] * q1[j] + q1[i] * q0[j]) * (l / six);
             }
         }
         // cov += (q0 * q0.transpose() + q1 * q1.transpose()).scale(l / 3_f64.as_());
@@ -176,14 +177,16 @@ where
         }
         let i0 = i_edge_in;
         let i1 = (i_edge_in + 1) % num_edge_in;
-        let p0: &[T;N] = vtx2xyz_in[i0 * N..i0 * N + N].try_into().unwrap();
-        let p1: &[T;N] = vtx2xyz_in[i1 * N..i1 * N + N].try_into().unwrap();
+        let p0: &[T; N] = vtx2xyz_in[i0 * N..i0 * N + N].try_into().unwrap();
+        let p1: &[T; N] = vtx2xyz_in[i1 * N..i1 * N + N].try_into().unwrap();
         let len_edge0 = p1.sub(p0).norm();
         let len_togo0 = len_edge0 * (1_f64.as_() - traveled_ratio0);
         if len_togo0 > remaining_length {
             // put point in this segment
             traveled_ratio0 += remaining_length / len_edge0;
-            let pn = p0.scale(1_f64.as_() - traveled_ratio0).add(&p1.scale(traveled_ratio0));
+            let pn = p0
+                .scale(1_f64.as_() - traveled_ratio0)
+                .add(&p1.scale(traveled_ratio0));
             v2x_out.extend(pn.iter());
             remaining_length = len_edge_out;
         } else {

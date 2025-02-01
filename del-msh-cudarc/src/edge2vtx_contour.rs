@@ -1,4 +1,4 @@
-use del_cudarc::cudarc as cudarc;
+use del_cudarc::cudarc;
 
 pub fn fwd(
     device: &std::sync::Arc<cudarc::driver::CudaDevice>,

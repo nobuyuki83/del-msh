@@ -1,4 +1,4 @@
-use del_cudarc::cudarc as cudarc;
+use del_cudarc::cudarc;
 
 pub fn from_trimesh3_with_bvhnodes(
     dev: &std::sync::Arc<cudarc::driver::CudaDevice>,

@@ -3,25 +3,25 @@
 use num_traits::AsPrimitive;
 
 /// the center of gravity
-pub fn cog<T>(vtx2xyz: &[T]) -> [T;3]
+pub fn cog<T>(vtx2xyz: &[T]) -> [T; 3]
 where
     T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / 3;
-    let mut cg = [T::zero();3];
+    let mut cg = [T::zero(); 3];
     let mut w = T::zero();
     use del_geo_core::vec3::Vec3;
     for iseg in 0..num_vtx - 1 {
         let ip0 = iseg;
         let ip1 = iseg + 1;
-        let p0 = arrayref::array_ref![vtx2xyz, ip0*3, 3];
-        let p1 = arrayref::array_ref![vtx2xyz, ip1*3, 3];
+        let p0 = arrayref::array_ref![vtx2xyz, ip0 * 3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, ip1 * 3, 3];
         let len = p0.sub(p1).norm();
         cg = cg.add(&p0.add(p1).scale(0.5f64.as_() * len));
         w = w + len;
     }
-    cg.scale(T::one()/w)
+    cg.scale(T::one() / w)
 }
 
 /// bi-normal vector on each vertex
@@ -32,7 +32,7 @@ where
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
-    let mut vtx2bin = vec!(T::zero(); num_vtx * 3);
+    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
     {
         // first segment
         let p1 = arrayref::array_ref![vtx2xyz, 3, 3];
@@ -46,24 +46,26 @@ where
         let iv1 = iseg1;
         let iv2 = iseg1 + 1;
         let iseg0 = iseg1 - 1;
-        let p0 = arrayref::array_ref![vtx2xyz, iv0*3, 3];
-        let p1 = arrayref::array_ref![vtx2xyz, iv1*3, 3];
-        let p2 = arrayref::array_ref![vtx2xyz, iv2*3, 3];
+        let p0 = arrayref::array_ref![vtx2xyz, iv0 * 3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, iv1 * 3, 3];
+        let p2 = arrayref::array_ref![vtx2xyz, iv2 * 3, 3];
         let v01 = p1.sub(p0);
         let v12 = p2.sub(p1);
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
-        let b01: &[T;3] = arrayref::array_ref![vtx2bin, iseg0 * 3, 3];
-        let b12: [T;3] = del_geo_core::mat3_col_major::mult_vec(&rot, &b01);
+        let b01: &[T; 3] = arrayref::array_ref![vtx2bin, iseg0 * 3, 3];
+        let b12: [T; 3] = del_geo_core::mat3_col_major::mult_vec(&rot, b01);
         crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, iseg1).copy_from_slice(&b12);
     }
     {
-        let a: &[T;3] = &vtx2bin[(num_vtx - 2)*3..(num_vtx-1)*3].try_into().unwrap();
+        let a: &[T; 3] = &vtx2bin[(num_vtx - 2) * 3..(num_vtx - 1) * 3]
+            .try_into()
+            .unwrap();
         crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(a);
     }
     vtx2bin
 }
 
-pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T;3]
+pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
 where
     T: num_traits::Float + Copy,
 {
@@ -96,12 +98,11 @@ where
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
     assert_eq!(vtx2framex.len(), num_vtx * 3);
-    let mut vtx2framey = vec!(T::zero();num_vtx*3);
+    let mut vtx2framey = vec![T::zero(); num_vtx * 3];
     for i_vtx in 0..num_vtx {
         let framez = framez(vtx2xyz, i_vtx);
-        let framex = crate::vtx2xyz::to_vec3(&vtx2framex, i_vtx);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2framey, i_vtx)
-            .copy_from_slice(&framez.cross(&framex));
+        let framex = crate::vtx2xyz::to_vec3(vtx2framex, i_vtx);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2framey, i_vtx).copy_from_slice(&framez.cross(framex));
     }
     vtx2framey
 }
@@ -112,8 +113,8 @@ where
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
-    let mut vtx2bin = vec!(T::zero();num_vtx*3);
-    let mut vtx2nrm = vec!(T::zero();num_vtx*3);
+    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
+    let mut vtx2nrm = vec![T::zero(); num_vtx * 3];
     for ivtx1 in 1..num_vtx - 1 {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;

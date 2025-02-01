@@ -1,5 +1,5 @@
-use del_cudarc::cudarc as cudarc;
 use cudarc::driver::{CudaDevice, CudaSlice};
+use del_cudarc::cudarc;
 
 pub fn to_aabb3(
     dev: &std::sync::Arc<CudaDevice>,

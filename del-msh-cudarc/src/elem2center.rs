@@ -1,5 +1,5 @@
-use del_cudarc::cudarc as cudarc;
 use cudarc::driver::{CudaDevice, CudaSlice, DeviceSlice};
+use del_cudarc::cudarc;
 
 pub fn tri2cntr_from_trimesh3(
     dev: &std::sync::Arc<CudaDevice>,
