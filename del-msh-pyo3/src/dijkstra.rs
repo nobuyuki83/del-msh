@@ -25,5 +25,5 @@ pub fn topological_distance_on_uniform_mesh<'a>(
     assert_eq!(elem2dist.len(), num_elem);
     numpy::ndarray::Array1::from_shape_vec(num_elem, elem2dist)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }

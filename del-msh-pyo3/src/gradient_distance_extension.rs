@@ -41,7 +41,7 @@ pub fn extend_trimesh3<'a>(
     }
     numpy::ndarray::Array2::<f64>::from_shape_vec((num_vtx, 3), a)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }
 
 #[pyo3::pyfunction]
@@ -61,9 +61,9 @@ pub fn extend_polyloop3<'a>(
     );
     let v1 = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
         .unwrap()
-        .into_pyarray_bound(py);
+        .into_pyarray(py);
     let v2 = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
         .unwrap()
-        .into_pyarray_bound(py);
+        .into_pyarray(py);
     (v1, v2)
 }

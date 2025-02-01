@@ -68,7 +68,7 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         };
         numpy::ndarray::Array1::from_shape_vec(tri2vtx.shape()[0], tri2area)
             .unwrap()
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
     }
 
     #[pyfn(m)]
@@ -91,7 +91,7 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         };
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc)
             .unwrap()
-            .into_pyarray_bound(py)
+            .into_pyarray(py)
     }
 
     Ok(())

@@ -32,7 +32,7 @@ fn first_intersection_ray_meshtri3<'a>(
     );
     match res {
         None => {
-            let a = PyArray1::<f32>::zeros_bound(py, 3, true);
+            let a = PyArray1::<f32>::zeros(py, 3, true);
             (a, -1)
         }
         Some(postri) => {
@@ -42,7 +42,7 @@ fn first_intersection_ray_meshtri3<'a>(
                 t * ray_dir[1] + ray_org[1],
                 t * ray_dir[2] + ray_org[2],
             ];
-            let a = PyArray1::<f32>::from_slice_bound(py, &p);
+            let a = PyArray1::<f32>::from_slice(py, &p);
             (a, postri.1 as i64)
         }
     }

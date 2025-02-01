@@ -27,7 +27,7 @@ pub fn kdtree_build_2d<'a>(
     del_msh_core::kdtree2::construct_kdtree(&mut tree, 0, &mut pairs_xy_idx, 0, num_vtx, 0);
     numpy::ndarray::Array2::from_shape_vec((tree.len() / 3, 3), tree)
         .unwrap()
-        .into_pyarray_bound(_py)
+        .into_pyarray(_py)
 }
 
 #[pyo3::pyfunction]
@@ -65,5 +65,5 @@ fn kdtree_edge_2d<'a>(
     edge2xy.push(min.y);
     numpy::ndarray::Array3::from_shape_vec((edge2xy.len() / 4, 2, 2), edge2xy)
         .unwrap()
-        .into_pyarray_bound(_py)
+        .into_pyarray(_py)
 }

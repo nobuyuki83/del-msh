@@ -28,7 +28,7 @@ fn edge2vtx_uniform_mesh<'a>(
     );
     numpy::ndarray::Array2::from_shape_vec((mshline.len() / 2, 2), mshline)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }
 
 #[pyo3::pyfunction]
@@ -45,7 +45,7 @@ fn edge2vtx_polygon_mesh<'a>(
     );
     numpy::ndarray::Array2::from_shape_vec((mshline.len() / 2, 2), mshline)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }
 
 #[pyo3::pyfunction]
@@ -64,9 +64,9 @@ fn boundaryedge2vtx_triangle_mesh<'a>(
     (
         numpy::ndarray::Array2::from_shape_vec((bedge2vtx.len() / 2, 2), bedge2vtx)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((tri2tri.len() / 3, 3), tri2tri)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }

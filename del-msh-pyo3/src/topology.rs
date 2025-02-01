@@ -26,7 +26,7 @@ fn triangles_from_polygon_mesh<'a>(
     );
     numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }
 
 #[pyfunction]
@@ -40,8 +40,8 @@ fn vtx2vtx_trimesh<'a>(
     let (vtx2idx, idx2vtx) =
         del_msh_core::vtx2vtx::from_uniform_mesh(tri2vtx.as_slice().unwrap(), 3, num_vtx, is_self);
     (
-        numpy::ndarray::Array1::from_vec(vtx2idx).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(idx2vtx).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(vtx2idx).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(idx2vtx).into_pyarray(py),
     )
 }
 
@@ -67,6 +67,6 @@ fn group_connected_element_uniform_polygon_mesh<'a>(
     );
     (
         num_group,
-        numpy::ndarray::Array1::from_vec(elem2group).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(elem2group).into_pyarray(py),
     )
 }

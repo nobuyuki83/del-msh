@@ -36,7 +36,7 @@ fn build_bvh_topology_topdown<'a>(
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     // change this to uniform mesh
     let bvhnodes = del_msh_core::bvhnodes_topdown_trimesh3::from_triangle_mesh(tri2vtx, vtx2xyz);
-    let bvhnodes = numpy::PyArray1::<usize>::from_slice_bound(_py, &bvhnodes);
+    let bvhnodes = numpy::PyArray1::<usize>::from_slice(_py, &bvhnodes);
     bvhnodes.reshape((bvhnodes.len() / 3, 3)).unwrap()
 }
 
@@ -70,7 +70,7 @@ fn build_bvh_topology_morton<'a>(
             &del_geo_core::mat3_col_major::from_identity(),
         );
     }
-    let bvhnodes = numpy::PyArray2::<usize>::zeros_bound(_py, (num_vtx * 2 - 1, 3), false);
+    let bvhnodes = numpy::PyArray2::<usize>::zeros(_py, (num_vtx * 2 - 1, 3), false);
     {
         let bvhnodes_slice = unsafe { bvhnodes.as_slice_mut().unwrap() };
         del_msh_core::bvhnodes_morton::update_bvhnodes(bvhnodes_slice, &idx2vtx, &idx2morton);

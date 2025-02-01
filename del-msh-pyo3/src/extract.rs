@@ -29,9 +29,9 @@ pub fn extract<'a>(
         num_tri_new,
     );
     (
-        numpy::ndarray::Array1::from_vec(tri2vtx_new).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(tri2vtx_new).into_pyarray(py),
         num_vtx_new,
-        numpy::ndarray::Array1::from_vec(vtx2vtx_new).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(vtx2vtx_new).into_pyarray(py),
     )
 }
 
@@ -49,7 +49,7 @@ fn extract_flagged_polygonal_element<'a>(
     let (felem2jdx, jdx2vtx) =
         del_msh_core::extract::from_polygonal_mesh_array(elem2idx, idx2vtx, elem2flag);
     (
-        numpy::ndarray::Array1::from_vec(felem2jdx).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(jdx2vtx).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(felem2jdx).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(jdx2vtx).into_pyarray(py),
     )
 }

@@ -68,9 +68,9 @@ pub fn tesselation2d<'a>(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2pnt.len() / 3, 3), tri2pnt)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xy_out.len() / 2, 2), vtx2xy_out)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }

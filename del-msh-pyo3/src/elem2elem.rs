@@ -38,7 +38,7 @@ fn elem2elem_uniform_mesh_polygon_indexing<'a>(
     assert_eq!(elem2vtx.len(), elem2elem.len());
     numpy::ndarray::Array2::from_shape_vec((elem2elem.len() / num_node, num_node), elem2elem)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }
 
 #[pyo3::pyfunction]
@@ -60,5 +60,5 @@ fn elem2elem_uniform_mesh_simplex_indexing<'a>(
     assert_eq!(elem2vtx.len(), elsuel.len());
     numpy::ndarray::Array2::from_shape_vec((elsuel.len() / num_node, num_node), elsuel)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }

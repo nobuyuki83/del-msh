@@ -37,5 +37,5 @@ fn vtx2area_from_uniformmesh<'a>(
     } else {
         panic!();
     };
-    numpy::ndarray::Array1::from_vec(vtx2area).into_pyarray_bound(py)
+    numpy::ndarray::Array1::from_vec(vtx2area).into_pyarray(py)
 }

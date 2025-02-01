@@ -25,5 +25,5 @@ pub fn unidex_vertex_attribute_for_triangle_mesh<'a>(
     );
     numpy::ndarray::Array3::from_shape_vec((tri2xyz.len() / (3 * num_val), 3, num_val), tri2xyz)
         .unwrap()
-        .into_pyarray_bound(py)
+        .into_pyarray(py)
 }

@@ -28,9 +28,9 @@ fn unify_two_indices_of_triangle_mesh<'a>(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2uni.len() / 3, 3), tri2uni)
             .unwrap()
-            .into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(uni2vtxxyz).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(uni2vtxuv).into_pyarray_bound(py),
+            .into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(uni2vtxxyz).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(uni2vtxuv).into_pyarray(py),
     )
 }
 
@@ -53,8 +53,8 @@ fn unify_two_indices_of_polygon_mesh<'a>(
             idx2vtxb.as_slice().unwrap(),
         );
     (
-        numpy::ndarray::Array1::from_vec(idx2uni).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(uni2vtxa).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(uni2vtxb).into_pyarray_bound(py),
+        numpy::ndarray::Array1::from_vec(idx2uni).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(uni2vtxa).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(uni2vtxb).into_pyarray(py),
     )
 }

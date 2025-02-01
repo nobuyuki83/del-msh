@@ -23,7 +23,7 @@ fn torus_meshtri3(
         del_msh_core::trimesh3_primitive::torus_zup::<usize, f64>(radius, radius_tube, nlg, nlt);
     let v = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz).unwrap();
     let f = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx).unwrap();
-    (f.into_pyarray_bound(py), v.into_pyarray_bound(py))
+    (f.into_pyarray(py), v.into_pyarray(py))
 }
 
 #[pyfunction]
@@ -46,7 +46,7 @@ fn capsule_meshtri3(
         Vec::from(tri_vtx.as_slice()),
     )
     .unwrap();
-    (f.into_pyarray_bound(py), v.into_pyarray_bound(py))
+    (f.into_pyarray(py), v.into_pyarray(py))
 }
 
 #[pyfunction]
@@ -86,7 +86,7 @@ fn cylinder_closed_end_meshtri3(
         Vec::from(tri2vtx.as_slice()),
     )
     .unwrap();
-    (f.into_pyarray_bound(py), v.into_pyarray_bound(py))
+    (f.into_pyarray(py), v.into_pyarray(py))
 }
 
 #[pyfunction]
@@ -99,7 +99,7 @@ fn sphere_meshtri3(
     let (tri2vtx, vtx2xyz) = del_msh_core::trimesh3_primitive::sphere_yup(r, nr, nl);
     let v = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz).unwrap();
     let f = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx).unwrap();
-    (f.into_pyarray_bound(py), v.into_pyarray_bound(py))
+    (f.into_pyarray(py), v.into_pyarray(py))
 }
 
 #[pyfunction]
@@ -113,9 +113,9 @@ fn trimesh3_hemisphere_zup(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }

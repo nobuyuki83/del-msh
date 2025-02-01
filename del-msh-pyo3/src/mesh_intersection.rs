@@ -54,10 +54,10 @@ fn intersection_trimesh3<'a>(
     (
         numpy::ndarray::Array3::from_shape_vec((edge2node2xyz.len() / 6, 2, 3), edge2node2xyz)
             .unwrap()
-            .to_pyarray_bound(_py),
+            .to_pyarray(_py),
         numpy::ndarray::Array2::from_shape_vec((edge2tri.len() / 2, 2), edge2tri)
             .unwrap()
-            .to_pyarray_bound(_py),
+            .to_pyarray(_py),
     )
 }
 
@@ -96,8 +96,8 @@ fn ccd_intersection_time<'a>(
     (
         numpy::ndarray::Array2::from_shape_vec((intersecting_pair.len() / 3, 3), intersecting_pair)
             .unwrap()
-            .to_pyarray_bound(_py),
-        numpy::ndarray::Array1::from_vec(intersecting_time).to_pyarray_bound(_py),
+            .to_pyarray(_py),
+        numpy::ndarray::Array1::from_vec(intersecting_time).to_pyarray(_py),
     )
 }
 
@@ -120,9 +120,9 @@ fn contacting_pair<'a>(
     (
         numpy::ndarray::Array2::from_shape_vec((contacting_pair.len() / 3, 3), contacting_pair)
             .unwrap()
-            .to_pyarray_bound(_py),
+            .to_pyarray(_py),
         numpy::ndarray::Array2::from_shape_vec((contacting_coord.len() / 4, 4), contacting_coord)
             .unwrap()
-            .to_pyarray_bound(_py),
+            .to_pyarray(_py),
     )
 }

@@ -1,8 +1,6 @@
 use numpy::PyUntypedArrayMethods;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
-use pyo3::{
-    pyfunction, types::PyModule, wrap_pyfunction, Bound, PyObject, PyResult, Python, ToPyObject,
-};
+use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, Bound, PyObject, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
@@ -38,25 +36,26 @@ pub fn load_wavefront_obj(
         dbg!(str);
         panic!();
     }
+    use pyo3::IntoPy;
     (
         numpy::ndarray::Array2::from_shape_vec((obj.vtx2xyz.len() / 3, 3), obj.vtx2xyz)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((obj.vtx2uv.len() / 2, 2), obj.vtx2uv)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((obj.vtx2nrm.len() / 3, 3), obj.vtx2nrm)
             .unwrap()
-            .into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(obj.elem2idx).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(obj.idx2vtx_xyz).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(obj.idx2vtx_uv).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(obj.idx2vtx_nrm).into_pyarray_bound(py),
-        numpy::ndarray::Array1::from_vec(obj.elem2group).into_pyarray_bound(py),
-        obj.group2name.to_object(py),
-        numpy::ndarray::Array1::from_vec(obj.elem2mtl).into_pyarray_bound(py),
-        obj.mtl2name.to_object(py),
-        obj.mtl_file_name.to_object(py),
+            .into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(obj.elem2idx).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(obj.idx2vtx_xyz).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(obj.idx2vtx_uv).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(obj.idx2vtx_nrm).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(obj.elem2group).into_pyarray(py),
+        obj.group2name.into_py(py),
+        numpy::ndarray::Array1::from_vec(obj.elem2mtl).into_pyarray(py),
+        obj.mtl2name.into_py(py),
+        obj.mtl_file_name.into_py(py),
     )
 }
 
@@ -71,10 +70,10 @@ pub fn load_wavefront_obj_as_triangle_mesh(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }
 
@@ -87,10 +86,10 @@ pub fn load_nastran_as_triangle_mesh(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }
 
@@ -103,10 +102,10 @@ pub fn load_off_as_triangle_mesh(
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
             .unwrap()
-            .into_pyarray_bound(py),
+            .into_pyarray(py),
     )
 }
 
