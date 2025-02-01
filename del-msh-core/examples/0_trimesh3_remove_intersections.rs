@@ -17,7 +17,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             nalgebra::Matrix4::<f64>::new_translation(&nalgebra::Vector3::new(1.0, 0.1, 0.1));
         let transf = rot_x_90 * transl_x;
         let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();
-        let vtx2xyz1 = del_msh_core::vtx2xyz::transform(
+        let vtx2xyz1 = del_msh_core::vtx2xyz::transform_homogeneous(
             vtx2xyz.as_slice(),
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );
@@ -32,7 +32,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             nalgebra::Matrix4::<f64>::new_translation(&nalgebra::Vector3::new(0.5, 0.0, 0.0));
         let transf = rot_x_90 * transl_x;
         let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();
-        let vtx2xyz1 = del_msh_core::vtx2xyz::transform(
+        let vtx2xyz1 = del_msh_core::vtx2xyz::transform_homogeneous(
             vtx2xyz.as_slice(),
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );

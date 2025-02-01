@@ -106,21 +106,22 @@ pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {
 pub fn extend_avoid_intersection(
     tri2vtx: &[usize],
     vtx2xyz: &[f64],
-    q: &[f64],
+    q: &[f64;3],
     step: f64,
 ) -> [f64; 3] {
-    let q = nalgebra::Vector3::<f64>::from_row_slice(q);
-    let mut dq = nalgebra::Vector3::<f64>::zeros();
+    use del_geo_core::vec3::Vec3;
+    // let q = nalgebra::Vector3::<f64>::from_row_slice(q);
+    let mut dq = [0f64;3];
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[i0 * 3..i0 * 3 + 3]);
-        let p1 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[i1 * 3..i1 * 3 + 3]);
-        let p2 = nalgebra::Vector3::<f64>::from_row_slice(&vtx2xyz[i2 * 3..i2 * 3 + 3]);
+        let p0: &[f64;3] = crate::vtx2xyz::to_vec3(&vtx2xyz, i0);
+        let p1: &[f64;3] = crate::vtx2xyz::to_vec3(&vtx2xyz, i1);
+        let p2: &[f64;3] = crate::vtx2xyz::to_vec3(&vtx2xyz, i2);
         let (_, dw) =
-            del_geo_nalgebra::tri3::wdw_integral_of_inverse_distance_cubic(&p0, &p1, &p2, &q);
-        dq -= dw;
+            del_geo_core::tri3::wdw_integral_of_inverse_distance_cubic(&p0, &p1, &p2, &q);
+        dq = dq.sub(&dw);
     }
-    let q = q + dq.normalize() * step;
+    let q = q.add(&dq.normalize().scale(step));
     [q[0], q[1], q[2]]
 }
 

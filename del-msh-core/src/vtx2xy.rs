@@ -2,13 +2,13 @@
 
 use num_traits::AsPrimitive;
 
-pub fn to_array2<T, Index>(vtx2xyz: &[T], i_vtx: Index) -> [T; 2]
+pub fn to_vec2<T, Index>(vtx2xyz: &[T], i_vtx: Index) -> &[T; 2]
 where
     T: Copy,
     Index: AsPrimitive<usize>,
 {
     let i_vtx: usize = i_vtx.as_();
-    [vtx2xyz[i_vtx * 2], vtx2xyz[i_vtx * 2 + 1]]
+    arrayref::array_ref![vtx2xyz, i_vtx * 2, 2]
 }
 
 pub fn to_navec2<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector2<T>

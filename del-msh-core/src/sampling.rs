@@ -55,7 +55,7 @@ where
         }
         vtx2vectwo.push(pos);
     }
-    crate::vtx2xdim::from_array_of_nalgebra(&vtx2vectwo)
+    crate::vtx2xn::from_array_of_nalgebra(&vtx2vectwo)
 }
 
 #[test]

@@ -21,7 +21,7 @@ pub mod trimesh3_primitive;
 pub mod trimesh3_search_bruteforce;
 pub mod vtx2point;
 pub mod vtx2vec;
-pub mod vtx2xdim;
+pub mod vtx2xn;
 pub mod vtx2xy;
 pub mod vtx2xyz;
 

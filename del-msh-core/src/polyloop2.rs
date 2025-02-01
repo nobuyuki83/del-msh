@@ -117,20 +117,19 @@ pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
     vtx2xy
 }
 
-pub fn distance_to_point_<Real>(vtx2xy: &[Real], p: &[Real]) -> Real
+pub fn distance_to_point_<Real>(vtx2xy: &[Real], g: &[Real;2]) -> Real
 where
-    Real: nalgebra::RealField + Copy,
+    Real: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<Real>,
 {
-    let g = nalgebra::Vector2::<Real>::from_row_slice(p);
     // visit all the boudnary
     let np = vtx2xy.len() / 2;
-    let mut dist_min = Real::max_value().unwrap();
+    let mut dist_min = Real::max_value();
     for ip in 0..np {
         let jp = (ip + 1) % np;
-        let pi = crate::vtx2xy::to_navec2(vtx2xy, ip);
-        let pj = crate::vtx2xy::to_navec2(vtx2xy, jp);
-        let dist = del_geo_nalgebra::edge::distance_to_point(&g, &pi, &pj);
+        let pi = crate::vtx2xy::to_vec2(vtx2xy, ip);
+        let pj = crate::vtx2xy::to_vec2(vtx2xy, jp);
+        let (dist, _p_near) = del_geo_core::edge2::nearest_point2(pi, pj, g);
         if dist < dist_min {
             dist_min = dist;
         }
@@ -256,16 +255,16 @@ where
 }
 
 #[allow(clippy::identity_op)]
-pub fn to_svg<Real>(vtx2xy: &[Real], transform: &nalgebra::Matrix3<Real>) -> String
+pub fn to_svg<Real>(vtx2xy: &[Real], transform: &[Real;9]) -> String
 where
-    Real: std::fmt::Display + Copy + nalgebra::RealField,
+    Real: std::fmt::Display + Copy + num_traits::Float,
 {
     let mut res = String::new();
     for ivtx in 0..vtx2xy.len() / 2 {
         let x = vtx2xy[ivtx * 2 + 0];
         let y = vtx2xy[ivtx * 2 + 1];
-        let a = transform * nalgebra::Vector3::<Real>::new(x, y, Real::one());
-        res += format!("{} {}", a.x, a.y).as_str();
+        let a = del_geo_core::mat3_col_major::transform_homogeneous(transform, &[x, y]).unwrap();
+        res += format!("{} {}", a[0], a[1]).as_str();
         if ivtx != vtx2xy.len() / 2 - 1 {
             res += ",";
         }

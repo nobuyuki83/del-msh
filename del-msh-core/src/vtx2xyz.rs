@@ -69,7 +69,7 @@ where
     Real: nalgebra::RealField + Copy,
     usize: AsPrimitive<Real>,
 {
-    let (cov, cog) = crate::vtx2xdim::cov_cog::<Real, 3>(vtx2xyz);
+    let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz);
     let svd = cov.svd(true, true);
     let r: nalgebra::Matrix3<Real> = svd.v_t.unwrap(); // row is the axis vectors
     let mut x_size = Real::zero();
@@ -124,7 +124,7 @@ fn test_obb3() {
     let rot = nalgebra::Matrix4::<f32>::new_rotation(rot_vec.clone());
     let transl = nalgebra::Matrix4::<f32>::new_translation(&transl_vec);
     let mat = transl * rot;
-    let vtx2xyz1 = transform(&vtx2xyz0, mat.as_slice().try_into().unwrap());
+    let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, mat.as_slice().try_into().unwrap());
     let obb1 = obb3(&vtx2xyz1);
     assert!((obb1[0] - transl_vec[0]).abs() < 0.01);
     assert!((obb1[1] - transl_vec[1]).abs() < 0.01);
@@ -183,7 +183,7 @@ pub fn translate_then_scale<Real>(
      */
 }
 
-pub fn transform<Real>(vtx2xyz: &[Real], m: &[Real; 16]) -> Vec<Real>
+pub fn transform_homogeneous<Real>(vtx2xyz: &[Real], m: &[Real; 16]) -> Vec<Real>
 where
     Real: num_traits::Float,
 {
@@ -192,6 +192,18 @@ where
         .flat_map(|v| {
             del_geo_core::mat4_col_major::transform_homogeneous(m, arrayref::array_ref![v, 0, 3])
                 .unwrap()
+        })
+        .collect()
+}
+
+pub fn transform_linear<Real>(vtx2xyz: &[Real], m: &[Real; 9]) -> Vec<Real>
+where
+    Real: num_traits::Float,
+{
+    vtx2xyz
+        .chunks(3)
+        .flat_map(|v| {
+            del_geo_core::mat3_col_major::mult_vec(m, arrayref::array_ref![v, 0, 3])
         })
         .collect()
 }
@@ -271,4 +283,12 @@ pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<R
     del_geo_core::vec3::XYZ {
         p: arrayref::array_ref![vtx2xyz, i_vtx * 3, 3],
     }
+}
+
+pub fn to_vec3<Real>(vtx2xyz: &[Real], i_vtx: usize) -> &[Real;3] {
+    arrayref::array_ref![vtx2xyz, i_vtx * 3, 3]
+}
+
+pub fn to_vec3_mut<Real>(vtx2xyz: &mut [Real], i_vtx: usize) -> &mut [Real;3] {
+    arrayref::array_mut_ref![vtx2xyz, i_vtx * 3, 3]
 }

@@ -22,14 +22,14 @@ candle-core.workspace = true
 del-cudarc = { workspace = true, optional = true }
 
 # for develop/push
-# del-msh-core.workspace = true
-# del-msh-nalgebra.workspace = true
-# del-msh-cudarc = { workspace = true, optional = true }
+del-msh-core.workspace = true
+del-msh-nalgebra.workspace = true
+del-msh-cudarc = { workspace = true, optional = true }
 
 # for delpoy (internal crates must specify version explicitly)
-del-msh-core = "0.1.37"
-del-msh-cudarc = {  version="=0.1.39", optional = true }
-del-msh-nalgebra = "0.1.39"
+# del-msh-core = "0.1.37"
+# del-msh-cudarc = {  version="=0.1.39", optional = true }
+# del-msh-nalgebra = "0.1.39"
 
 
 [dev-dependencies]

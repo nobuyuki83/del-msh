@@ -3,135 +3,145 @@
 use num_traits::AsPrimitive;
 
 /// the center of gravity
-pub fn cg<T>(vtx2xyz: &[T]) -> nalgebra::Vector3<T>
+pub fn cog<T>(vtx2xyz: &[T]) -> [T;3]
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / 3;
-    let mut cg = nalgebra::Vector3::<T>::zeros();
+    let mut cg = [T::zero();3];
     let mut w = T::zero();
+    use del_geo_core::vec3::Vec3;
     for iseg in 0..num_vtx - 1 {
         let ip0 = iseg;
         let ip1 = iseg + 1;
-        let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ip0);
-        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, ip1);
-        let len = (p0 - p1).norm();
-        cg += (p0 + p1).scale(0.5f64.as_() * len);
-        w += len;
+        let p0 = arrayref::array_ref![vtx2xyz, ip0*3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, ip1*3, 3];
+        let len = p0.sub(p1).norm();
+        cg = cg.add(&p0.add(p1).scale(0.5f64.as_() * len));
+        w = w + len;
     }
-    cg / w
+    cg.scale(T::one()/w)
 }
 
 /// bi-normal vector on each vertex
-pub fn vtx2framex<T>(vtx2xyz: &[T]) -> nalgebra::Matrix3xX<T>
+pub fn vtx2framex<T>(vtx2xyz: &[T]) -> Vec<T>
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<T>,
 {
-    use crate::vtx2xyz::to_navec3;
+    use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
-    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    let mut vtx2bin = vec!(T::zero(); num_vtx * 3);
     {
         // first segment
-        let v01 = (to_navec3(vtx2xyz, 1) - to_navec3(vtx2xyz, 0)).into_owned();
-        let (x, _) = del_geo_nalgebra::vec3::frame_from_z_vector(v01);
-        vtx2bin.column_mut(0).copy_from(&x);
+        let p1 = arrayref::array_ref![vtx2xyz, 3, 3];
+        let p0 = arrayref::array_ref![vtx2xyz, 0, 3];
+        let v01 = p1.sub(p0);
+        let (x, _) = del_geo_core::vec3::basis_xy_from_basis_z(&v01);
+        vtx2bin[0..3].copy_from_slice(&x);
     }
     for iseg1 in 1..num_vtx - 1 {
         let iv0 = iseg1 - 1;
         let iv1 = iseg1;
         let iv2 = iseg1 + 1;
         let iseg0 = iseg1 - 1;
-        let v01 = to_navec3(vtx2xyz, iv1) - to_navec3(vtx2xyz, iv0);
-        let v12 = to_navec3(vtx2xyz, iv2) - to_navec3(vtx2xyz, iv1);
-        let rot = del_geo_nalgebra::mat3::minimum_rotation_matrix(v01, v12);
-        let b01: nalgebra::Vector3<T> = vtx2bin.column(iseg0).into_owned();
-        let b12: nalgebra::Vector3<T> = rot * b01;
-        vtx2bin.column_mut(iseg1).copy_from(&b12);
+        let p0 = arrayref::array_ref![vtx2xyz, iv0*3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, iv1*3, 3];
+        let p2 = arrayref::array_ref![vtx2xyz, iv2*3, 3];
+        let v01 = p1.sub(p0);
+        let v12 = p2.sub(p1);
+        let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
+        let b01: &[T;3] = arrayref::array_ref![vtx2bin, iseg0 * 3, 3];
+        let b12: [T;3] = del_geo_core::mat3_col_major::mult_vec(&rot, &b01);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, iseg1).copy_from_slice(&b12);
     }
     {
-        let a: nalgebra::Vector3<T> = vtx2bin.column(num_vtx - 2).into();
-        vtx2bin.column_mut(num_vtx - 1).copy_from(&a);
+        let a: &[T;3] = &vtx2bin[(num_vtx - 2)*3..(num_vtx-1)*3].try_into().unwrap();
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(a);
     }
     vtx2bin
 }
 
-pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector3<T>
+pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T;3]
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy,
 {
     let num_vtx = vtx2xyz.len() / 3;
     assert!(i_vtx < num_vtx);
+    use del_geo_core::vec3::Vec3;
     if i_vtx == 0 {
-        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, 0);
-        let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, 1);
-        return (p2 - p1).normalize();
+        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, 0);
+        let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, 1);
+        return p2.sub(p1).normalize();
     }
     if i_vtx == num_vtx - 1 {
-        let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, num_vtx - 2);
-        let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, num_vtx - 1);
-        return (p1 - p0).normalize();
+        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, num_vtx - 2);
+        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, num_vtx - 1);
+        return p1.sub(p0).normalize();
     }
-    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx - 1);
-    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx);
-    let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, i_vtx + 1);
-    ((p1 - p0).normalize() + (p2 - p1).normalize()).normalize()
+    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, i_vtx - 1);
+    let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, i_vtx);
+    let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, i_vtx + 1);
+    let u01 = p1.sub(p0).normalize();
+    let u12 = p2.sub(p1).normalize();
+    u01.add(&u12).normalize()
 }
 
-pub fn vtx2framey<T>(vtx2xyz: &[T], vtx2framex: &nalgebra::Matrix3xX<T>) -> nalgebra::Matrix3xX<T>
+pub fn vtx2framey<T>(vtx2xyz: &[T], vtx2framex: &[T]) -> Vec<T>
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2framex.ncols(), num_vtx);
-    let mut vtx2framey = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    assert_eq!(vtx2framex.len(), num_vtx * 3);
+    let mut vtx2framey = vec!(T::zero();num_vtx*3);
     for i_vtx in 0..num_vtx {
         let framez = framez(vtx2xyz, i_vtx);
-        let framex = vtx2framex.column(i_vtx);
-        vtx2framey
-            .column_mut(i_vtx)
-            .copy_from(&framez.cross(&framex));
+        let framex = crate::vtx2xyz::to_vec3(&vtx2framex, i_vtx);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2framey, i_vtx)
+            .copy_from_slice(&framez.cross(&framex));
     }
     vtx2framey
 }
 
-pub fn normal_binormal<T>(vtx2xyz: &[T]) -> (nalgebra::Matrix3xX<T>, nalgebra::Matrix3xX<T>)
+pub fn normal_binormal<T>(vtx2xyz: &[T]) -> (Vec<T>, Vec<T>)
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy,
 {
+    use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
-    let mut vtx2bin = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
-    let mut vtx2nrm = nalgebra::Matrix3xX::<T>::zeros(num_vtx);
+    let mut vtx2bin = vec!(T::zero();num_vtx*3);
+    let mut vtx2nrm = vec!(T::zero();num_vtx*3);
     for ivtx1 in 1..num_vtx - 1 {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
-        let v0 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx0);
-        let v1 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx1);
-        let v2 = crate::vtx2xyz::to_navec3(vtx2xyz, ivtx2);
-        let v01 = v1 - v0;
-        let v12 = v2 - v1;
+        let v0 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx0);
+        let v1 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx1);
+        let v2 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx2);
+        let v01 = v1.sub(v0);
+        let v12 = v2.sub(v1);
         let binormal = v12.cross(&v01);
-        vtx2bin.column_mut(ivtx1).copy_from(&binormal.normalize());
-        let norm = (v01 + v12).cross(&binormal);
-        vtx2nrm.column_mut(ivtx1).copy_from(&norm.normalize());
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, ivtx1).copy_from_slice(&binormal.normalize());
+        let norm = v01.add(&v12).cross(&binormal);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, ivtx1).copy_from_slice(&norm.normalize());
     }
     {
-        let c1 = vtx2nrm.column(1).into_owned();
-        vtx2nrm.column_mut(0).copy_from(&c1);
+        let c1 = *crate::vtx2xyz::to_vec3(&vtx2nrm, 1);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, 0).copy_from_slice(&c1);
     }
     {
-        let c1 = vtx2nrm.column(num_vtx - 2).into_owned();
-        vtx2nrm.column_mut(num_vtx - 1).copy_from(&c1);
+        let c1 = *crate::vtx2xyz::to_vec3(&vtx2nrm, num_vtx - 2);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, num_vtx - 1).copy_from_slice(&c1);
     }
     {
-        let c1 = vtx2bin.column(1).into_owned();
-        vtx2bin.column_mut(0).copy_from(&c1);
+        let c1 = *crate::vtx2xyz::to_vec3(&vtx2bin, 1);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, 0).copy_from_slice(&c1);
     }
     {
-        let c1 = vtx2bin.column(num_vtx - 2).into_owned();
-        vtx2bin.column_mut(num_vtx - 1).copy_from(&c1);
+        let c1 = *crate::vtx2xyz::to_vec3(&vtx2bin, num_vtx - 2);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(&c1);
     }
     (vtx2nrm, vtx2bin)
 }
@@ -149,6 +159,7 @@ where
     f32: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
     assert!(ndiv_circum > 2);
     let num_vtxl = vtxl2xyz.len() / 3;
     let vtxl2framex = vtx2framex(vtxl2xyz);
@@ -172,75 +183,75 @@ where
     let half: T = 0.5.as_();
     {
         // south pole
-        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, 0);
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
         let ez = framez(vtxl2xyz, 0);
-        let q = p0 - ez * r;
-        vtx2xyz[0] = q.x;
-        vtx2xyz[1] = q.y;
-        vtx2xyz[2] = q.z;
+        let q = p0.sub(&ez.scale(r));
+        vtx2xyz[0] = q[0];
+        vtx2xyz[1] = q[1];
+        vtx2xyz[2] = q[2];
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, 0);
-        let ex = vtxl2framex.column(0);
-        let ey = vtxl2framey.column(0);
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
+        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, 0);
+        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, 0);
         let ez = framez(vtxl2xyz, 0);
         let t0 = pi * half * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
-            let q = p0
-                + ez.scale(-r * num_traits::Float::sin(t0))
-                + ey.scale(c0 * num_traits::Float::cos(theta))
-                + ex.scale(c0 * num_traits::Float::sin(theta));
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 0] = q.x;
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 1] = q.y;
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 2] = q.z;
+            let az = ez.scale(-r * num_traits::Float::sin(t0));
+            let ay = ey.scale(c0 * num_traits::Float::cos(theta));
+            let ax = ex.scale(c0 * num_traits::Float::sin(theta));
+            let q = p0.add(&az).add(&ay).add(&ax);
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 1] = q[1];
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 2] = q[2];
         }
     }
     for il in 0..ndiv_length - 1 {
-        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, il + 1);
-        let ex = vtxl2framex.column(il + 1);
-        let ey = vtxl2framey.column(il + 1);
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, il + 1);
+        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, il + 1);
+        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, il + 1);
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
-            let q = p0
-                + ey.scale(r * num_traits::Float::cos(theta))
-                + ex.scale(r * num_traits::Float::sin(theta));
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 0] = q.x;
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 1] = q.y;
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 2] = q.z;
+            let ay = ey.scale(r * num_traits::Float::cos(theta));
+            let ax = ex.scale(r * num_traits::Float::sin(theta));
+            let q = p0.add(&ay).add(&ax);
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 1] = q[1];
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 2] = q[2];
         }
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, num_vtxl - 1);
-        let ex = vtxl2framex.column(num_vtxl - 1);
-        let ey = vtxl2framey.column(num_vtxl - 1);
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, num_vtxl - 1);
+        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, num_vtxl - 1);
+        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, num_vtxl - 1);
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
-            let q = p0
-                + ez.scale(r * num_traits::Float::sin(t0))
-                + ey.scale(c0 * num_traits::Float::cos(theta))
-                + ex.scale(c0 * num_traits::Float::sin(theta));
+            let az = ez.scale(r * num_traits::Float::sin(t0));
+            let ay = ey.scale(c0 * num_traits::Float::cos(theta));
+            let ax = ex.scale(c0 * num_traits::Float::sin(theta));
+            let q = p0.add(&az).add(&ax).add(&ay);
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 0] =
-                q.x;
+                q[0];
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 1] =
-                q.y;
+                q[1];
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] =
-                q.z;
+                q[2];
         }
     }
     {
         // North Pole
-        let p0 = crate::vtx2xyz::to_navec3(vtxl2xyz, num_vtxl - 1);
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, num_vtxl - 1);
         let ez = framez(vtxl2xyz, num_vtxl - 1);
-        let q = p0 + ez * r;
+        let q = p0.add(&ez.scale(r));
         let np = vtx2xyz.len() / 3;
-        vtx2xyz[(np - 1) * 3 + 0] = q.x;
-        vtx2xyz[(np - 1) * 3 + 1] = q.y;
-        vtx2xyz[(np - 1) * 3 + 2] = q.z;
+        vtx2xyz[(np - 1) * 3 + 0] = q[0];
+        vtx2xyz[(np - 1) * 3 + 1] = q[1];
+        vtx2xyz[(np - 1) * 3 + 2] = q[2];
     }
     (tri2vtx, vtx2xyz)
 }
@@ -361,6 +372,7 @@ fn reduce_recursive(
     vtx2xyz: &[f32],
     threshold: f32,
 ) {
+    use del_geo_core::vec3::Vec3;
     assert!(i_vtx1 as i64 - i_vtx0 as i64 > 1);
     let p0 = arrayref::array_ref![vtx2xyz, i_vtx0 * 3, 3];
     let p1 = arrayref::array_ref![vtx2xyz, i_vtx1 * 3, 3];
@@ -368,7 +380,8 @@ fn reduce_recursive(
         let mut vtx_nearest = (usize::MAX, 0.);
         for i_vtxm in i_vtx0 + 1..i_vtx1 {
             let pm = arrayref::array_ref![vtx2xyz, i_vtxm * 3, 3];
-            let pn = del_geo_core::edge3::nearest_to_point3(p0, p1, pm);
+            let (_dist, rn) = del_geo_core::edge3::nearest_to_point3(p0, p1, pm);
+            let pn = del_geo_core::vec3::axpy(rn, &p1.sub(p0), p0);
             let dist = del_geo_core::edge3::length(pm, &pn);
             if dist >= vtx_nearest.1 {
                 vtx_nearest = (i_vtxm, dist);

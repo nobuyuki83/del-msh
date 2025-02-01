@@ -43,7 +43,7 @@ fn test_to_aabb3() -> Result<(), cudarc::driver::DriverError> {
     let aabb3 = to_aabb3(&dev, &vtx2xyz)?;
     let aabb3 = dev.dtoh_sync_copy(&aabb3)?;
     let aabb3 = arrayref::array_ref![&aabb3, 0, 6];
-    use del_geo_core::vecn::Arr;
+    use del_geo_core::vecn::VecN;
     assert!(aabb3.sub(&[-3., -3., -1., 3., 3., 1.]).norm() < 1.0e-8);
     Ok(())
 }
