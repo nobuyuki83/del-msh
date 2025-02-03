@@ -66,18 +66,26 @@ where
 /// Oriented Bounding Box (OBB)
 pub fn obb3<Real>(vtx2xyz: &[Real]) -> [Real; 12]
 where
-    Real: nalgebra::RealField + Copy,
+    Real: num_traits::Float + Copy + 'static + std::iter::Sum + num_traits::FloatConst,
     usize: AsPrimitive<Real>,
 {
+    use del_geo_core::vec3::Vec3;
     let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz);
-    let svd = cov.svd(true, true);
-    let r: nalgebra::Matrix3<Real> = svd.v_t.unwrap(); // row is the axis vectors
+    use slice_of_array::SliceFlatExt;
+    let cov = cov.flat();
+    let cov = arrayref::array_ref![cov, 0, 9];
+    let (_u, _s, v) = del_geo_core::mat3_row_major::svd(
+        cov,
+        del_geo_core::mat3_sym::EigenDecompositionModes::Analytic,
+    )
+    .unwrap();
+    // let r: nalgebra::Matrix3<Real> = svd.v_t.unwrap(); // row is the axis vectors
     let mut x_size = Real::zero();
     let mut y_size = Real::zero();
     let mut z_size = Real::zero();
     for xyz in vtx2xyz.chunks(3) {
-        let p = nalgebra::Vector3::<Real>::from_row_slice(xyz);
-        let l = r * (p - cog);
+        let xyz = arrayref::array_ref![xyz, 0, 3];
+        let l = del_geo_core::mat3_col_major::mult_vec(&v, &xyz.sub(&cog)); // v^t * (v-cog)
         x_size = if l[0].abs() > x_size {
             l[0].abs()
         } else {
@@ -94,16 +102,18 @@ where
             z_size
         };
     }
+    let (v0, v1, v2) = del_geo_core::mat3_row_major::to_columns(&v);
     let mut out = [Real::zero(); 12];
     out[0..3].copy_from_slice(cog.as_slice());
-    out[3..6].copy_from_slice((r.row(0) * x_size).as_slice());
-    out[6..9].copy_from_slice((r.row(1) * y_size).as_slice());
-    out[9..12].copy_from_slice((r.row(2) * z_size).as_slice());
+    out[3..6].copy_from_slice(&v0.scale(x_size));
+    out[6..9].copy_from_slice(&v1.scale(y_size));
+    out[9..12].copy_from_slice(&v2.scale(z_size));
     out
 }
 
 #[test]
 fn test_obb3() {
+    use del_geo_core::vec3::Vec3;
     let (x_size, y_size, z_size) = (0.3, 0.1, 0.5);
     let aabb3 = [-x_size, -y_size, -z_size, x_size, y_size, z_size];
     use rand::SeedableRng;
@@ -117,32 +127,33 @@ fn test_obb3() {
     assert!(obb0[1].abs() < 0.01);
     assert!(obb0[2].abs() < 0.01);
     //
-    // let transl_vec = nalgebra::Vector3::<f32>::new(0.3, -1.0, 0.5);
-    let transl_vec = nalgebra::Vector3::<f32>::new(0.3, -1.0, 0.5);
-    let rot_vec = nalgebra::Vector3::<f32>::new(0.5, 0.0, 0.0);
-    //
-    let rot = nalgebra::Matrix4::<f32>::new_rotation(rot_vec.clone());
-    let transl = nalgebra::Matrix4::<f32>::new_translation(&transl_vec);
-    let mat = transl * rot;
-    let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, mat.as_slice().try_into().unwrap());
+    let transl_vec = [0.3, -1.0, 0.5];
+    let transl = del_geo_core::mat4_col_major::from_translate(&transl_vec);
+    let rot = del_geo_core::mat4_col_major::from_bryant_angle(0.5, 0.0, 0.0);
+    let mat = del_geo_core::mat4_col_major::mult_mat_col_major(&transl, &rot);
+    let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, &mat);
     let obb1 = obb3(&vtx2xyz1);
     assert!((obb1[0] - transl_vec[0]).abs() < 0.01);
     assert!((obb1[1] - transl_vec[1]).abs() < 0.01);
     assert!((obb1[2] - transl_vec[2]).abs() < 0.01);
-    let ea = nalgebra::Vector3::<f32>::from_row_slice(&obb1[3..6]);
-    let eb = nalgebra::Vector3::<f32>::from_row_slice(&obb1[6..9]);
-    let ec = nalgebra::Vector3::<f32>::from_row_slice(&obb1[9..12]);
+    let (ea, eb, ec) = {
+        let ea = arrayref::array_ref![&obb1, 3, 3];
+        let eb = arrayref::array_ref![&obb1, 6, 3];
+        let ec = arrayref::array_ref![&obb1, 9, 3];
+        let mut a = [(ea, ea.norm()), (eb, eb.norm()), (ec, ec.norm())];
+        a.sort_by(|&(_a0, a1), &(_b0, b1)| a1.partial_cmp(&b1).unwrap());
+        (a[2].0, a[1].0, a[0].0)
+    };
     assert!((ea.norm() - 0.5).abs() < 0.05);
     assert!((eb.norm() - 0.3).abs() < 0.05);
     assert!((ec.norm() - 0.1).abs() < 0.05);
+    let rot3 = del_geo_core::mat4_col_major::to_mat3_col_major_xyz(&rot);
+    let (dirb1, dirc1, dira1) = del_geo_core::mat3_col_major::to_columns(&rot3);
     let dira0 = ea.normalize();
-    let dira1 = nalgebra::Vector3::<f32>::from_homogeneous(rot.column(2).into_owned()).unwrap();
     assert!(dira0.cross(&dira1).norm() < 0.01);
     let dirb0 = eb.normalize();
-    let dirb1 = nalgebra::Vector3::<f32>::from_homogeneous(rot.column(0).into_owned()).unwrap();
     assert!(dirb0.cross(&dirb1).norm() < 0.02);
     let dirc0 = ec.normalize();
-    let dirc1 = nalgebra::Vector3::<f32>::from_homogeneous(rot.column(1).into_owned()).unwrap();
     assert!(dirc0.cross(&dirc1).norm() < 0.01);
     // check all the points are included
     for xyz in vtx2xyz1.chunks(3) {

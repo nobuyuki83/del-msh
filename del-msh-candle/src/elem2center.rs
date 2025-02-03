@@ -71,6 +71,7 @@ impl candle_core::InplaceOp3 for Layer {
 }
 
 #[test]
+#[allow(unused_variables)]
 fn test() -> anyhow::Result<()> {
     use candle_core::{Device, Tensor};
     let (tri2vtx, vtx2xyz) =

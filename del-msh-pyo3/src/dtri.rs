@@ -20,8 +20,7 @@ pub fn tesselation2d<'a>(
     let vtx2xy_in = vtx2xy_in.as_slice().unwrap();
     let mut loop2idx = vec![0, num_vtx];
     let mut idx2vtx = Vec::<usize>::from_iter(0..num_vtx);
-    type Vec2 = nalgebra::Vector2<f32>;
-    let mut vtx2xy = vtx2xy_in.chunks(2).map(|v| Vec2::new(v[0], v[1])).collect();
+    let mut vtx2xy = vtx2xy_in.chunks(2).map(|v| [v[0], v[1]]).collect();
     //
     if resolution_edge > 0. {
         // resample edge edge
@@ -61,8 +60,8 @@ pub fn tesselation2d<'a>(
     // ----------------------------------------
     let mut vtx2xy_out = Vec::<f32>::new();
     for xy in vtx2xy.iter() {
-        vtx2xy_out.push(xy.x);
-        vtx2xy_out.push(xy.y);
+        vtx2xy_out.push(xy[0]);
+        vtx2xy_out.push(xy[1]);
     }
     use numpy::IntoPyArray;
     (

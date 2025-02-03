@@ -98,18 +98,14 @@ where
 // ------------------------------
 // below: nalgebra dependent
 
-pub fn area_of_a_triangle<Real>(
-    tri2vtx: &[usize],
-    vtx2vectwo: &[nalgebra::Vector2<Real>],
-    i_tri: usize,
-) -> Real
+pub fn area_of_a_triangle<Real>(tri2vtx: &[usize], vtx2vectwo: &[[Real; 2]], i_tri: usize) -> Real
 where
-    Real: nalgebra::RealField + Copy,
+    Real: num_traits::Float + Copy,
 {
     let i0 = tri2vtx[i_tri * 3];
     let i1 = tri2vtx[i_tri * 3 + 1];
     let i2 = tri2vtx[i_tri * 3 + 2];
-    del_geo_nalgebra::tri2::area(&vtx2vectwo[i0], &vtx2vectwo[i1], &vtx2vectwo[i2])
+    del_geo_core::tri2::area(&vtx2vectwo[i0], &vtx2vectwo[i1], &vtx2vectwo[i2])
 }
 
 // -----------------------------

@@ -14,7 +14,7 @@ fn wdw_proximity<T>(
     dist0: T,
     stiff: T,
 ) where
-    T: Copy + nalgebra::RealField,
+    T: Copy + num_traits::Float + 'static + std::fmt::Display,
     f64: num_traits::AsPrimitive<T>,
 {
     use num_traits::AsPrimitive;
@@ -22,7 +22,8 @@ fn wdw_proximity<T>(
     let diff_barrier = |x: T| {
         -stiff * (x - dist0) * (x - dist0) / x - stiff * 2f64.as_() * (x - dist0) * (x / dist0).ln()
     };
-    use crate::vtx2xyz::to_navec3;
+    use crate::vtx2xyz::to_vec3;
+    use del_geo_core::vec3::Vec3;
     for (iprox, idxs) in prox_idx.chunks(3).enumerate() {
         if idxs[2] == 0 {
             // edge edge
@@ -32,51 +33,66 @@ fn wdw_proximity<T>(
             let ip1 = mesh.edge2vtx[ie0 * 2 + 1];
             let iq0 = mesh.edge2vtx[ie1 * 2 + 0];
             let iq1 = mesh.edge2vtx[ie1 * 2 + 1];
-            let p0 = to_navec3(mesh.vtx2xyz, ip0);
-            let p1 = to_navec3(mesh.vtx2xyz, ip1);
-            let q0 = to_navec3(mesh.vtx2xyz, iq0);
-            let q1 = to_navec3(mesh.vtx2xyz, iq1);
-            let pc = p0.scale(prox_param[iprox * 4 + 0]) + p1.scale(prox_param[iprox * 4 + 1]);
-            let qc = q0.scale(prox_param[iprox * 4 + 2]) + q1.scale(prox_param[iprox * 4 + 3]);
-            let dist1 = (pc - qc).norm();
+            let p0 = to_vec3(mesh.vtx2xyz, ip0);
+            let p1 = to_vec3(mesh.vtx2xyz, ip1);
+            let q0 = to_vec3(mesh.vtx2xyz, iq0);
+            let q1 = to_vec3(mesh.vtx2xyz, iq1);
+            let pc = del_geo_core::vec3::add(
+                &p0.scale(prox_param[iprox * 4 + 0]),
+                &p1.scale(prox_param[iprox * 4 + 1]),
+            );
+            let qc = del_geo_core::vec3::add(
+                &q0.scale(prox_param[iprox * 4 + 2]),
+                &q1.scale(prox_param[iprox * 4 + 3]),
+            );
+            let dist1 = pc.sub(&qc).norm();
             println!("  proximity edge {}", dist1);
             assert!(dist1 <= dist0);
             let eng1 = barrier(dist1);
             let deng1 = diff_barrier(dist1);
-            let unorm = (pc - qc).normalize();
+            let unorm = pc.sub(&qc).normalize();
             for i in 0..3 {
-                grad[ip0 * 3 + i] += unorm[i] * deng1 * prox_param[iprox * 4 + 0];
-                grad[ip1 * 3 + i] += unorm[i] * deng1 * prox_param[iprox * 4 + 1];
-                grad[iq0 * 3 + i] -= unorm[i] * deng1 * prox_param[iprox * 4 + 2];
-                grad[iq1 * 3 + i] -= unorm[i] * deng1 * prox_param[iprox * 4 + 3];
+                grad[ip0 * 3 + i] =
+                    grad[ip0 * 3 + i] + unorm[i] * deng1 * prox_param[iprox * 4 + 0];
+                grad[ip1 * 3 + i] =
+                    grad[ip1 * 3 + i] + unorm[i] * deng1 * prox_param[iprox * 4 + 1];
+                grad[iq0 * 3 + i] =
+                    grad[iq0 * 3 + i] - unorm[i] * deng1 * prox_param[iprox * 4 + 2];
+                grad[iq1 * 3 + i] =
+                    grad[iq1 * 3 + i] - unorm[i] * deng1 * prox_param[iprox * 4 + 3];
             }
-            *sum_eng += eng1;
+            *sum_eng = *sum_eng + eng1;
         } else {
             let it = idxs[0];
             let iv = idxs[1];
             let ip0 = mesh.tri2vtx[it * 3 + 0];
             let ip1 = mesh.tri2vtx[it * 3 + 1];
             let ip2 = mesh.tri2vtx[it * 3 + 2];
-            let p0 = to_navec3(mesh.vtx2xyz, ip0);
-            let p1 = to_navec3(mesh.vtx2xyz, ip1);
-            let p2 = to_navec3(mesh.vtx2xyz, ip2);
-            let q0 = to_navec3(mesh.vtx2xyz, iv);
-            let pc = p0.scale(prox_param[iprox * 4 + 0])
-                + p1.scale(prox_param[iprox * 4 + 1])
-                + p2.scale(prox_param[iprox * 4 + 2]);
-            let dist1 = (pc - q0).norm();
+            let p0 = to_vec3(mesh.vtx2xyz, ip0);
+            let p1 = to_vec3(mesh.vtx2xyz, ip1);
+            let p2 = to_vec3(mesh.vtx2xyz, ip2);
+            let q0 = to_vec3(mesh.vtx2xyz, iv);
+            let pc = del_geo_core::vec3::add_three_vectors(
+                &p0.scale(prox_param[iprox * 4 + 0]),
+                &p1.scale(prox_param[iprox * 4 + 1]),
+                &p2.scale(prox_param[iprox * 4 + 2]),
+            );
+            let dist1 = pc.sub(q0).norm();
             println!("  proximity face {}", dist1);
             assert!(dist1 <= dist0);
             let eng1 = barrier(dist1);
             let deng1 = diff_barrier(dist1);
-            let unorm = (pc - q0).normalize();
+            let unorm = pc.sub(q0).normalize();
             for i in 0..3 {
-                grad[ip0 * 3 + i] += unorm[i] * deng1 * prox_param[iprox * 4 + 0];
-                grad[ip1 * 3 + i] += unorm[i] * deng1 * prox_param[iprox * 4 + 1];
-                grad[ip2 * 3 + i] += unorm[i] * deng1 * prox_param[iprox * 4 + 2];
-                grad[iv * 3 + i] -= unorm[i] * deng1;
+                grad[ip0 * 3 + i] =
+                    grad[ip0 * 3 + i] + unorm[i] * deng1 * prox_param[iprox * 4 + 0];
+                grad[ip1 * 3 + i] =
+                    grad[ip1 * 3 + i] + unorm[i] * deng1 * prox_param[iprox * 4 + 1];
+                grad[ip2 * 3 + i] =
+                    grad[ip2 * 3 + i] + unorm[i] * deng1 * prox_param[iprox * 4 + 2];
+                grad[iv * 3 + i] = grad[iv * 3 + i] - unorm[i] * deng1;
             }
-            *sum_eng += eng1;
+            *sum_eng = *sum_eng + eng1;
         }
     }
 }

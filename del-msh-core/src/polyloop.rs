@@ -3,11 +3,12 @@
 use num_traits::AsPrimitive;
 
 /// return  arc-length of a 2D or 3D poly loop
-pub fn arclength_from_vtx2vecn<T, const N: usize>(vtxs: &[nalgebra::SVector<T, N>]) -> T
+pub fn arclength_from_vtx2vecn<T, const N: usize>(vtxs: &[[T; N]]) -> T
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static + std::iter::Sum,
     f64: AsPrimitive<T>,
 {
+    use del_geo_core::vecn::VecN;
     if vtxs.len() < 2 {
         return T::zero();
     }
@@ -15,7 +16,7 @@ where
     let mut len: T = T::zero();
     for ip0 in 0..np {
         let ip1 = (ip0 + 1) % np;
-        len += (vtxs[ip0] - vtxs[ip1]).norm();
+        len = len + vtxs[ip0].sub(&vtxs[ip1]).norm();
     }
     len
 }
@@ -23,7 +24,7 @@ where
 /// return  arc-length of a 2D or 3D poly loop
 pub fn arclength<T, const N: usize>(vtx2xyz: &[T]) -> T
 where
-    T: num_traits::Float + std::ops::AddAssign,
+    T: num_traits::Float,
 {
     let np = vtx2xyz.len() / N;
     let mut len: T = T::zero();
@@ -31,7 +32,7 @@ where
         let ip1 = (ip0 + 1) % np;
         let p0: &[T; N] = &vtx2xyz[ip0 * N..ip0 * N + N].try_into().unwrap();
         let p1: &[T; N] = &vtx2xyz[ip1 * N..ip1 * N + N].try_into().unwrap();
-        len += del_geo_core::edge::length::<T, N>(p0, p1);
+        len = len + del_geo_core::edge::length::<T, N>(p0, p1);
     }
     len
 }
@@ -138,8 +139,8 @@ where
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xn::to_vecn(vtx2xyz, iv0).sub(&cog);
-        let q1 = crate::vtx2xn::to_vecn(vtx2xyz, iv1).sub(&cog);
+        let q0 = crate::vtx2xn::to_xn(vtx2xyz, iv0).sub(&cog);
+        let q1 = crate::vtx2xn::to_xn(vtx2xyz, iv1).sub(&cog);
         let l = q0.sub(&q1).norm();
         for i in 0..N {
             for j in 0..N {
@@ -156,8 +157,7 @@ where
 
 pub fn resample<T, const N: usize>(vtx2xyz_in: &[T], num_edge_out: usize) -> Vec<T>
 where
-    T: nalgebra::RealField + num_traits::Float + Copy + std::iter::Sum,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + Copy + std::iter::Sum + 'static,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vecn::VecN;
@@ -180,19 +180,19 @@ where
         let p0: &[T; N] = vtx2xyz_in[i0 * N..i0 * N + N].try_into().unwrap();
         let p1: &[T; N] = vtx2xyz_in[i1 * N..i1 * N + N].try_into().unwrap();
         let len_edge0 = p1.sub(p0).norm();
-        let len_togo0 = len_edge0 * (1_f64.as_() - traveled_ratio0);
+        let len_togo0 = len_edge0 * (T::one() - traveled_ratio0);
         if len_togo0 > remaining_length {
             // put point in this segment
-            traveled_ratio0 += remaining_length / len_edge0;
+            traveled_ratio0 = traveled_ratio0 + remaining_length / len_edge0;
             let pn = p0
-                .scale(1_f64.as_() - traveled_ratio0)
+                .scale(T::one() - traveled_ratio0)
                 .add(&p1.scale(traveled_ratio0));
             v2x_out.extend(pn.iter());
             remaining_length = len_edge_out;
         } else {
             // next segment
-            remaining_length -= len_togo0;
-            traveled_ratio0 = 0_f64.as_();
+            remaining_length = remaining_length - len_togo0;
+            traveled_ratio0 = T::zero();
             i_edge_in += 1;
         }
     }
@@ -202,12 +202,14 @@ where
 pub fn resample_multiple_loops_remain_original_vtxs<T>(
     loop2idx_inout: &mut Vec<usize>,
     idx2vtx_inout: &mut Vec<usize>,
-    vtx2vec_inout: &mut Vec<nalgebra::Vector2<T>>,
+    vtx2vec_inout: &mut Vec<[T; 2]>,
     max_edge_length: T,
 ) where
-    T: nalgebra::RealField + Copy + AsPrimitive<usize>,
+    T: num_traits::Float + Copy + AsPrimitive<usize>,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vec2::Vec2;
+    let one = T::one();
     assert_eq!(vtx2vec_inout.len(), idx2vtx_inout.len());
     let loop2idx_in = loop2idx_inout.clone();
     let idx2vtx_in = idx2vtx_inout.clone();
@@ -229,13 +231,13 @@ pub fn resample_multiple_loops_remain_original_vtxs<T>(
                 assert!(ipo1 < vtx2vec_inout.len());
                 let po0 = vtx2vec_inout[ipo0]; // never use reference here because aVec2 will resize afterward
                 let po1 = vtx2vec_inout[ipo1]; // never use reference here because aVec2 will resize afterward
-                let nadd: usize = ((po0 - po1).norm() / max_edge_length).as_();
+                let nadd: usize = (po0.sub(&po1).norm() / max_edge_length).as_();
                 if nadd == 0 {
                     continue;
                 }
                 for iadd in 0..nadd {
                     let r2: T = (iadd + 1).as_() / (nadd + 1).as_();
-                    let v2 = po0.scale(T::one() - r2) + po1.scale(r2);
+                    let v2 = po0.scale(one - r2).add(&po1.scale(r2));
                     let ipo2 = vtx2vec_inout.len();
                     vtx2vec_inout.push(v2);
                     assert!(iipo0 < edge2point.len());
@@ -282,7 +284,6 @@ pub fn to_cylinder_trimeshes<Real>(
 where
     Real: num_traits::Float + num_traits::FloatConst + 'static + Copy,
     usize: AsPrimitive<Real>,
-    f64: AsPrimitive<Real>,
 {
     let num_vtx = vtx2xy.len() / num_dim;
     let mut out_tri2vtx: Vec<usize> = vec![];

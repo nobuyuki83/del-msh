@@ -1,6 +1,5 @@
 //! methods related to array of Axis-Aligned Bounding Box (AABB)
 
-use arrayref::array_ref;
 use num_traits::AsPrimitive;
 
 /// build aabb for uniform mesh
@@ -82,8 +81,8 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             vtx2xy1,
         );
         let aabb = del_geo_core::aabb2::from_two_aabbs(
-            array_ref![bvhnode2aabb, i_bvhnode_child0 * 4, 4],
-            array_ref![bvhnode2aabb, i_bvhnode_child1 * 4, 4],
+            arrayref::array_ref![bvhnode2aabb, i_bvhnode_child0 * 4, 4],
+            arrayref::array_ref![bvhnode2aabb, i_bvhnode_child1 * 4, 4],
         );
         bvhnode2aabb[i_bvhnode * 4..(i_bvhnode + 1) * 4].copy_from_slice(&aabb);
     }

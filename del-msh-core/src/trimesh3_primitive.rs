@@ -70,7 +70,6 @@ pub fn cylinder_open_connecting_two_points<Real>(
 where
     Real: 'static + num_traits::Float + Copy + num_traits::FloatConst,
     usize: AsPrimitive<Real>,
-    f64: AsPrimitive<Real>,
 {
     use del_geo_core::vec3::Vec3;
     let len = p1.sub(p0).norm();
@@ -141,7 +140,7 @@ pub fn cylinder_closed_end_yup<T>(
     is_center: bool,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: num_traits::FloatConst + 'static + Copy + nalgebra::RealField,
+    T: num_traits::FloatConst + 'static + Copy + num_traits::Float,
     usize: AsPrimitive<T>,
 {
     let num_vtx = ndiv_circumference * (ndiv_length + 1) + 2;
@@ -195,8 +194,7 @@ pub fn capsule_yup<T>(
     ndiv_length: usize,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: num_traits::FloatConst + 'static + Copy + nalgebra::RealField,
-    f64: AsPrimitive<T>,
+    T: num_traits::FloatConst + 'static + Copy + num_traits::Float,
     usize: AsPrimitive<T>,
 {
     let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_yup::<T>(
@@ -211,7 +209,8 @@ where
         (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2
     );
     let pi: T = T::PI();
-    let half: T = 0.5.as_();
+    let one = T::one();
+    let half: T = one / (one + one);
     {
         // South Pole
         vtx2xyz[0] = T::zero();
@@ -276,14 +275,15 @@ pub fn capsule_connecting_two_point<T>(
     ndiv_length: usize,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
-    f64: AsPrimitive<T>,
+    T: Copy + num_traits::Float + num_traits::FloatConst + 'static,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
+    let one = T::one();
+    let half = one / (one + one);
     let len = p1.sub(p0).norm();
     let (tri2vtx, mut vtx2xyz) = capsule_yup(rad, len, ndiv_circum, ndiv_longtitude, ndiv_length);
-    let q2 = [T::zero(), len * 0.5_f64.as_(), T::zero()];
+    let q2 = [T::zero(), len * half, T::zero()];
     let mat = del_geo_core::mat3_col_major::minimum_rotation_matrix(
         &[T::zero(), T::one(), T::zero()],
         &p1.sub(p0).normalize(),
@@ -509,14 +509,17 @@ fn test_biypyramid_zup() {
 #[allow(clippy::identity_op)]
 fn arrow_yup<Real>(num_division_circumference: usize) -> (Vec<usize>, Vec<Real>)
 where
-    Real: nalgebra::RealField + num_traits::FloatConst + 'static + Copy,
-    f64: AsPrimitive<Real>,
+    Real: num_traits::Float + num_traits::FloatConst + 'static + Copy,
     usize: AsPrimitive<Real>,
 {
-    let dr: Real = Real::PI() * 2f64.as_() / num_division_circumference.as_();
-    let stem_height: Real = 0.65f64.as_();
-    let radius_small: Real = 0.1.as_();
-    let radius_large: Real = 0.2.as_();
+    let one = Real::one();
+    let two = one + one;
+    let three = two + one;
+    let five = one + two + two;
+    let dr: Real = Real::PI() * two / num_division_circumference.as_();
+    let stem_height: Real = two / three;
+    let radius_small: Real = one / (five * two);
+    let radius_large: Real = one / five;
     let (tri2vtx, mut vtx2xyz) = cylinder_closed_end_yup(
         Real::one(),
         Real::one(),
@@ -570,8 +573,7 @@ pub fn arrow_connecting_two_points<T>(
     num_division_circumference: usize,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
-    f64: AsPrimitive<T>,
+    T: Copy + num_traits::Float + num_traits::FloatConst + 'static,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;

@@ -2,28 +2,29 @@
 
 use num_traits::AsPrimitive;
 
-pub fn winding_number_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
+pub fn winding_number<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
 where
-    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
+    Real: num_traits::Float + num_traits::FloatConst,
 {
     let num_vtx = vtx2xy.len() / 2;
     let mut wn: Real = Real::zero();
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
-        wn += del_geo_core::edge2::winding_number(
-            arrayref::array_ref![vtx2xy, i * 2, 2],
-            arrayref::array_ref![vtx2xy, j * 2, 2],
-            p,
-        );
+        wn = wn
+            + del_geo_core::edge2::winding_number(
+                arrayref::array_ref![vtx2xy, i * 2, 2],
+                arrayref::array_ref![vtx2xy, j * 2, 2],
+                p,
+            );
     }
     wn
 }
 
 pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
 where
-    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign,
+    Real: num_traits::Float + num_traits::FloatConst,
 {
-    let wn = winding_number_(vtx2xy, p);
+    let wn = winding_number(vtx2xy, p);
     let one = Real::one();
     let thres = one / (one + one + one + one + one);
     if (wn - one).abs() < thres {
@@ -226,7 +227,7 @@ pub fn to_uniform_density_random_points<Real>(
     rng: &mut rand::rngs::StdRng,
 ) -> Vec<Real>
 where
-    Real: num_traits::Float + num_traits::FloatConst + std::ops::AddAssign + AsPrimitive<usize>,
+    Real: num_traits::Float + num_traits::FloatConst + AsPrimitive<usize>,
     rand::distr::StandardUniform: rand::distr::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
@@ -312,7 +313,12 @@ pub fn meshing_to_trimesh2<Index, Real>(
     edge_length_internal: Real,
 ) -> (Vec<Index>, Vec<Real>)
 where
-    Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
+    Real: Copy
+        + 'static
+        + num_traits::Float
+        + AsPrimitive<usize>
+        + std::fmt::Display
+        + std::fmt::Debug,
     Index: Copy + 'static,
     f64: AsPrimitive<Real>,
     usize: AsPrimitive<Real> + AsPrimitive<Index>,

@@ -1,57 +1,53 @@
 use num_traits::AsPrimitive;
-fn dominant_direction_pca<T>(
-    remaining_elems: &[usize],
-    elem2center: &[T],
-) -> (nalgebra::Vector3<T>, nalgebra::Vector3<T>)
+fn dominant_direction_pca<T>(remaining_elems: &[usize], elem2center: &[T]) -> ([T; 3], [T; 3])
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy,
     usize: AsPrimitive<T>,
 {
-    let mut org = nalgebra::Vector3::<T>::zeros();
-    for i_tri in remaining_elems {
+    use del_geo_core::vec3::Vec3;
+    let mut org = [T::zero(); 3];
+    for &i_tri in remaining_elems {
         // center of the gravity of list
-        org += nalgebra::Vector3::<T>::from_row_slice(&elem2center[i_tri * 3..i_tri * 3 + 3]);
+        let pc = crate::vtx2xyz::to_vec3(elem2center, i_tri);
+        org.add_in_place(pc);
     }
-    org /= remaining_elems.len().as_();
-    let mut cov = nalgebra::Matrix3::<T>::zeros();
-    for i_tri in remaining_elems {
-        let v =
-            nalgebra::Vector3::<T>::from_row_slice(&elem2center[i_tri * 3..i_tri * 3 + 3]) - org;
-        cov += v * v.transpose();
+    org.scale_in_place(T::one() / remaining_elems.len().as_());
+    let mut cov = [T::zero(); 9];
+    for &i_tri in remaining_elems {
+        let v = crate::vtx2xyz::to_vec3(elem2center, i_tri).sub(&org);
+        let cov0 = &del_geo_core::mat3_col_major::from_outer_product(&v, &v);
+        cov = del_geo_core::mat3_col_major::add(&cov, cov0);
     }
-    let mut dir = nalgebra::Vector3::<T>::new(T::one(), T::one(), T::one());
+    let mut dir = [T::one(), T::one(), T::one()];
     for _ in 0..10 {
         // power method to find the max eigen value/vector
-        dir = cov * dir;
+        dir = del_geo_core::mat3_col_major::mult_vec(&cov, &dir);
         dir = dir.normalize();
     }
     (org, dir)
 }
 
 #[allow(dead_code)]
-fn dominant_direction_aabb(
-    remaining_elems: &[usize],
-    elem2center: &[f32],
-) -> (nalgebra::Vector3<f32>, nalgebra::Vector3<f32>) {
+fn dominant_direction_aabb(remaining_elems: &[usize], elem2center: &[f32]) -> ([f32; 3], [f32; 3]) {
     let aabb = crate::vtx2xyz::aabb3_indexed(remaining_elems, elem2center, 1.0e-6);
     let lenx = aabb[3] - aabb[0];
     let leny = aabb[4] - aabb[1];
     let lenz = aabb[5] - aabb[2];
-    let mut dir = nalgebra::Vector3::<f32>::zeros(); // longest direction of AABB
+    let mut dir = [0f32; 3]; // longest direction of AABB
     if lenx > leny && lenx > lenz {
-        dir.x = 1.;
+        dir[0] = 1.;
     }
     if leny > lenz && leny > lenx {
-        dir.y = 1.;
+        dir[1] = 1.;
     }
     if lenz > lenx && lenz > leny {
-        dir.z = 1.;
+        dir[2] = 1.;
     }
-    let org = nalgebra::Vector3::<f32>::new(
+    let org = [
         (aabb[0] + aabb[3]) * 0.5,
         (aabb[1] + aabb[4]) * 0.5,
         (aabb[2] + aabb[5]) * 0.5,
-    );
+    ];
     (org, dir)
 }
 
@@ -64,10 +60,11 @@ fn divide_list_of_elements<T>(
     elem2elem: &[usize],
     elem2center: &[T],
 ) where
-    T: nalgebra::RealField + Copy + 'static,
+    T: num_traits::Float + Copy + 'static,
     usize: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
     let inode_ch0 = nodes.len() / 3;
     let inode_ch1 = inode_ch0 + 1;
     nodes.resize(nodes.len() + 6, usize::MAX);
@@ -89,15 +86,13 @@ fn divide_list_of_elements<T>(
                 // pick one element
                 let mut i_elem_ker = usize::MAX;
                 for &i_elem in remaining_elems {
-                    let cntr = nalgebra::Vector3::<T>::from_row_slice(
-                        &elem2center[i_elem * 3..i_elem * 3 + 3],
-                    );
-                    let det0 = (cntr - org).dot(&dir);
+                    let cntr = crate::vtx2xyz::to_vec3(elem2center, i_elem);
+                    let det0 = cntr.sub(&org).dot(&dir);
                     if det0.abs() < 1.0e-10f64.as_() {
                         continue;
                     }
                     if det0 < T::zero() {
-                        dir *= -(T::one());
+                        dir = dir.scale(-T::one());
                     }
                     i_elem_ker = i_elem;
                     break;
@@ -118,10 +113,8 @@ fn divide_list_of_elements<T>(
                     if elem2node[j_elem] != i_node_root {
                         continue;
                     }
-                    let cntr = nalgebra::Vector3::<T>::from_row_slice(
-                        &elem2center[j_elem * 3..j_elem * 3 + 3],
-                    );
-                    if (cntr - org).dot(&dir) < T::zero() {
+                    let cntr = crate::vtx2xyz::to_vec3(elem2center, j_elem);
+                    if cntr.sub(&org).dot(&dir) < T::zero() {
                         continue;
                     }
                     elem_stack.push(j_elem);
@@ -185,7 +178,7 @@ pub fn from_uniform_mesh_with_elem2elem_elem2center<T>(
     elem2center: &[T],
 ) -> Vec<usize>
 where
-    T: nalgebra::RealField + Copy + 'static,
+    T: num_traits::Float + Copy + 'static,
     usize: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
@@ -207,7 +200,7 @@ where
 
 pub fn from_triangle_mesh<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<usize>
 where
-    T: num_traits::Float + std::ops::AddAssign + 'static + Copy + nalgebra::RealField,
+    T: num_traits::Float + std::ops::AddAssign + 'static + Copy,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {

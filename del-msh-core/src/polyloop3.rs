@@ -37,18 +37,19 @@ where
     vtx2bin
 }
 
-pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector3<T>
+pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy,
 {
     let num_vtx = vtx2xyz.len() / 3;
     assert!(i_vtx < num_vtx);
     let i0_vtx = (i_vtx + num_vtx - 1) % num_vtx;
     // let i1_vtx = i_vtx;
     let i2_vtx = (i_vtx + 1) % num_vtx;
-    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, i0_vtx);
-    let p2 = crate::vtx2xyz::to_navec3(vtx2xyz, i2_vtx);
-    (p2 - p0).normalize()
+    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, i0_vtx);
+    let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, i2_vtx);
+    use del_geo_core::vec3::Vec3;
+    p2.sub(p0).normalize()
 }
 
 fn match_frames_of_two_ends<T>(vtx2xyz: &[T], vtx2bin0: &[T]) -> Vec<T>
@@ -220,17 +221,14 @@ pub fn tube_mesh_avoid_intersection(
     (tri2pnt, pnt2xyz)
 }
 
-pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(
-    filepath: P,
-    vtx2xyz: &nalgebra::Matrix3xX<f32>,
-) {
+pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(filepath: P, vtx2xyz: &[f32]) {
     use std::io::Write;
     let mut file = std::fs::File::create(filepath).expect("file not found.");
-    for vtx in vtx2xyz.column_iter() {
+    for vtx in vtx2xyz.chunks(3) {
         writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2]).expect("fail");
     }
     write!(file, "l ").expect("fail");
-    for i in 1..vtx2xyz.ncols() + 1 {
+    for i in 1..vtx2xyz.len() / 3 + 1 {
         write!(file, "{} ", i).expect("fail");
     }
     writeln!(file, "1").expect("fail");
@@ -239,7 +237,6 @@ pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(
 pub fn nearest_to_edge3<T>(vtx2xyz: &[T], p0: &[T; 3], p1: &[T; 3]) -> (T, T, T)
 where
     T: num_traits::Float + Copy + 'static,
-    f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
     let num_vtx = vtx2xyz.len() / 3;
@@ -263,22 +260,22 @@ where
     res
 }
 
-pub fn nearest_to_point3<T>(vtx2xyz: &[T], p0: &nalgebra::Vector3<T>) -> (T, T)
+pub fn nearest_to_point3<T>(vtx2xyz: &[T], p0: &[T; 3]) -> (T, T)
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
     assert_eq!(p0.len(), 3);
     let num_vtx = vtx2xyz.len() / 3;
     assert_eq!(vtx2xyz.len(), num_vtx * 3);
-    let mut res = (T::max_value().unwrap(), T::zero());
+    let mut res = (T::max_value(), T::zero());
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xyz::to_navec3(vtx2xyz, iv0);
-        let q1 = crate::vtx2xyz::to_navec3(vtx2xyz, iv1);
-        let (dist, rq) = del_geo_nalgebra::edge3::nearest_to_point3(&q0, &q1, p0);
+        let q0 = crate::vtx2xyz::to_vec3(vtx2xyz, iv0);
+        let q1 = crate::vtx2xyz::to_vec3(vtx2xyz, iv1);
+        let (dist, rq) = del_geo_core::edge3::nearest_to_point3(q0, q1, p0);
         if dist < res.0 {
             //dbg!((p0+(p1-p0)*r0));
             //dbg!((q0+(q1-q0)*r1));
@@ -314,43 +311,46 @@ pub fn winding_number(vtx2xyz: &[f64], org: &[f64; 3], dir: &[f64; 3]) -> f64 {
 }
 
 #[allow(clippy::identity_op)]
-pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> nalgebra::Vector3<T>
+pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> [T; 3]
 where
-    T: nalgebra::RealField + AsPrimitive<usize>,
+    T: num_traits::Float + AsPrimitive<usize> + std::fmt::Display + std::fmt::Debug,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
     let ied: usize = r.as_();
     let ned = vtx2xyz.len() / 3;
     if r.as_() == ned {
         assert_eq!(ied.as_(), r);
-        return crate::vtx2xyz::to_navec3(vtx2xyz, 0);
+        return *crate::vtx2xyz::to_vec3(vtx2xyz, 0);
     }
     assert!(ied < ned, "{}, {}, {}", r, ied, ned);
-    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ied);
-    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, (ied + 1) % ned);
+    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ied);
+    let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, (ied + 1) % ned);
     let r0 = r - ied.as_();
-    p0 + (p1 - p0).scale(r0)
+    p0.add(&p1.sub(p0).scale(r0))
 }
 
 #[allow(clippy::identity_op)]
 pub fn smooth<T>(vtx2xyz: &[T], r: T, num_iter: usize) -> Vec<T>
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2xyz1 = Vec::from(vtx2xyz);
     for _iter in 0..num_iter {
         for ip1 in 0..num_vtx {
             let ip0 = (ip1 + num_vtx - 1) % num_vtx;
             let ip2 = (ip1 + 1) % num_vtx;
-            let p0 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip0);
-            let p1 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip1);
-            let p2 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip2);
-            let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
-            vtx2xyz1[ip1 * 3 + 0] = p1n.x;
-            vtx2xyz1[ip1 * 3 + 1] = p1n.y;
-            vtx2xyz1[ip1 * 3 + 2] = p1n.z;
+            let p0 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip0);
+            let p1 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip1);
+            let p2 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip2);
+            let pm = p0.add(p2).scale(0.5f64.as_());
+            let p1n = del_geo_core::edge3::position_from_ratio(p1, &pm, r);
+            vtx2xyz1[ip1 * 3 + 0] = p1n[0];
+            vtx2xyz1[ip1 * 3 + 1] = p1n[1];
+            vtx2xyz1[ip1 * 3 + 2] = p1n[2];
         }
     }
     vtx2xyz1

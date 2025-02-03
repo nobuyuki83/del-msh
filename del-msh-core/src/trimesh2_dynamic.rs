@@ -2,12 +2,12 @@ use num_traits::AsPrimitive;
 
 /// Returns tri2vtx, tri2tri, vtx2tri
 pub fn make_super_triangle<T>(
-    vtx2xy: &mut Vec<nalgebra::Vector2<T>>,
+    vtx2xy: &mut Vec<[T; 2]>,
     min_xy: &[T; 2],
     max_xy: &[T; 2],
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<T>,
 {
     // super triangle
@@ -33,12 +33,10 @@ where
     let tmp_len: T = tri_len * (3.0_f64.sqrt() / 6.0_f64).as_();
     let npo = vtx2xy.len();
     //
-    vtx2xy.resize(npo + 3, nalgebra::Vector2::<T>::zeros());
-    vtx2xy[npo] = nalgebra::Vector2::<T>::new(center[0], center[1] + 2_f64.as_() * tmp_len);
-    vtx2xy[npo + 1] =
-        nalgebra::Vector2::<T>::new(center[0] - 0.5_f64.as_() * tri_len, center[1] - tmp_len);
-    vtx2xy[npo + 2] =
-        nalgebra::Vector2::<T>::new(center[0] + 0.5_f64.as_() * tri_len, center[1] - tmp_len);
+    vtx2xy.resize(npo + 3, [T::zero(); 2]);
+    vtx2xy[npo] = [center[0], center[1] + 2_f64.as_() * tmp_len];
+    vtx2xy[npo + 1] = [center[0] - 0.5_f64.as_() * tri_len, center[1] - tmp_len];
+    vtx2xy[npo + 2] = [center[0] + 0.5_f64.as_() * tri_len, center[1] - tmp_len];
     //
     vtx2tri.resize(npo + 3, 0);
     //
@@ -51,10 +49,10 @@ pub fn add_points_to_mesh<T>(
     tri2vtx: &mut Vec<usize>,
     tri2tri: &mut Vec<usize>,
     vtx2tri: &mut [usize],
-    vtx2xy: &[nalgebra::Vector2<T>],
+    vtx2xy: &[[T; 2]],
     i_vtx: usize,
 ) where
-    T: nalgebra::RealField + Copy + std::fmt::Debug,
+    T: num_traits::Float + Copy + std::fmt::Debug + 'static + std::fmt::Display,
     f64: AsPrimitive<T>,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
@@ -64,17 +62,17 @@ pub fn add_points_to_mesh<T>(
     let po_add = vtx2xy[i_vtx];
     for i_tri in 0..tri2vtx.len() {
         let areas = [
-            del_geo_nalgebra::tri2::area(
+            del_geo_core::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3 + 1]],
                 &vtx2xy[tri2vtx[i_tri * 3 + 2]],
             ),
-            del_geo_nalgebra::tri2::area(
+            del_geo_core::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3 + 2]],
                 &vtx2xy[tri2vtx[i_tri * 3]],
             ),
-            del_geo_nalgebra::tri2::area(
+            del_geo_core::tri2::area(
                 &po_add,
                 &vtx2xy[tri2vtx[i_tri * 3]],
                 &vtx2xy[tri2vtx[i_tri * 3 + 1]],
@@ -111,10 +109,10 @@ pub fn should_flip<T>(
     i_node0: usize,
     tri2vtx: &[usize],
     tri2tri: &[usize],
-    vtx2xy: &[nalgebra::Vector2<T>],
+    vtx2xy: &[[T; 2]],
 ) -> bool
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy + std::fmt::Display + std::fmt::Debug,
     f64: AsPrimitive<T>,
 {
     if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() / 3 {
@@ -132,22 +130,22 @@ where
     let pi0 = vtx2xy[tri2vtx[i_tri0 * 3 + i_node0]];
     let pi1 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]];
     let pi2 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 2) % 3]];
-    let a_i0_i1_i2 = del_geo_nalgebra::tri2::area(&pi0, &pi1, &pi2);
-    let a_j0_i2_i1 = del_geo_nalgebra::tri2::area(&pj0, &pi2, &pi1);
+    let a_i0_i1_i2 = del_geo_core::tri2::area(&pi0, &pi1, &pi2);
+    let a_j0_i2_i1 = del_geo_core::tri2::area(&pj0, &pi2, &pi1);
     assert!(a_i0_i1_i2 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
     assert!(a_j0_i2_i1 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
     let area_diamond = a_i0_i1_i2 + a_j0_i2_i1;
-    let a_i0_i1_j0 = del_geo_nalgebra::tri2::area(&pi0, &pi1, &pj0);
-    let a_i0_j0_i2 = del_geo_nalgebra::tri2::area(&pi0, &pj0, &pi2);
+    let a_i0_i1_j0 = del_geo_core::tri2::area(&pi0, &pi1, &pj0);
+    let a_i0_j0_i2 = del_geo_core::tri2::area(&pi0, &pj0, &pi2);
     if a_i0_i1_j0 < area_diamond * 1.0e-3f64.as_() {
         return false;
     }
     if a_i0_j0_i2 < area_diamond * 1.0e-3f64.as_() {
         return false;
     }
-    let cc = del_geo_nalgebra::tri2::circumcenter(&pi0, &pi1, &pi2);
-    let rad = del_geo_nalgebra::edge2::length_squared(&cc, &pi0);
-    let dist = del_geo_nalgebra::edge2::length_squared(&cc, &pj0);
+    let cc = del_geo_core::tri2::circumcenter(&pi0, &pi1, &pi2);
+    let rad = del_geo_core::edge2::squared_length(&cc, &pi0);
+    let dist = del_geo_core::edge2::squared_length(&cc, &pj0);
     if dist >= rad {
         return false;
     }
@@ -159,9 +157,9 @@ pub fn delaunay_around_point<T>(
     tri2vtx: &mut [usize],
     tri2tri: &mut [usize],
     vtx2tri: &mut [usize],
-    vtx2xy: &[nalgebra::Vector2<T>],
+    vtx2xy: &[[T; 2]],
 ) where
-    T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
+    T: num_traits::Float + 'static + Copy + std::fmt::Debug + std::fmt::Display,
     f64: AsPrimitive<T>,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
@@ -234,10 +232,10 @@ fn find_edge_point_across_edge<T>(
     tri2vtx: &[usize],
     tri2tri: &[usize],
     vtx2tri: &[usize],
-    vtx2xy: &[nalgebra::Vector2<T>],
+    vtx2xy: &[[T; 2]],
 ) -> Option<(usize, usize, usize, T)>
 where
-    T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
+    T: num_traits::Float + 'static + Copy + std::fmt::Debug,
     f64: AsPrimitive<T>,
 {
     let i_tri_ini = vtx2tri[ipo0];
@@ -249,13 +247,13 @@ where
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
-            let area0 = del_geo_nalgebra::tri2::area(
+            let area0 = del_geo_core::tri2::area(
                 &vtx2xy[ipo0],
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > -(1.0e-20_f64.as_()) {
-                let area1 = del_geo_nalgebra::tri2::area(
+                let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
@@ -301,13 +299,13 @@ where
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
-            let area0 = del_geo_nalgebra::tri2::area(
+            let area0 = del_geo_core::tri2::area(
                 &vtx2xy[ipo0],
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > (-1.0e-20_f64).as_() {
-                let area1 = del_geo_nalgebra::tri2::area(
+                let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
@@ -349,9 +347,9 @@ pub fn enforce_edge<T>(
     vtx2tri: &mut [usize],
     i0_vtx: usize,
     i1_vtx: usize,
-    vtx2xy: &[nalgebra::Vector2<T>],
+    vtx2xy: &[[T; 2]],
 ) where
-    T: nalgebra::RealField + 'static + Copy + std::fmt::Debug,
+    T: num_traits::Float + 'static + Copy + std::fmt::Debug,
     f64: AsPrimitive<T>,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
@@ -393,14 +391,14 @@ pub fn enforce_edge<T>(
             assert!(ratio > (-1.0e-20_f64).as_());
             // assert!( ratio < 1_f64.as_() + 1.0e-20_f64.as_());
             assert!(
-                del_geo_nalgebra::tri2::area(
+                del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i0_node]],
                     &vtx2xy[i1_vtx]
                 ) > 1.0e-20_f64.as_()
             );
             assert!(
-                del_geo_nalgebra::tri2::area(
+                del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[i1_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]
@@ -427,11 +425,11 @@ pub fn enforce_edge<T>(
 pub fn delete_unreferenced_points<Real>(
     tri2vtx: &mut [usize],
     vtx2tri_tmp: &[usize],
-    vtx2xy_tmp: &[nalgebra::Vector2<Real>],
+    vtx2xy_tmp: &[[Real; 2]],
     point_idxs_to_delete: &Vec<usize>,
-) -> (Vec<usize>, Vec<nalgebra::Vector2<Real>>)
+) -> (Vec<usize>, Vec<[Real; 2]>)
 where
-    Real: nalgebra::RealField + Copy,
+    Real: num_traits::Float + Copy,
 {
     assert_eq!(vtx2tri_tmp.len(), vtx2xy_tmp.len());
     let (map_po_del, npo_pos) = {
@@ -451,7 +449,7 @@ where
         (map_po_del, npo_pos)
     };
     let mut vtx2tri = vec![0; npo_pos];
-    let mut vtx2xy = vec![nalgebra::Vector2::<Real>::zeros(); npo_pos];
+    let mut vtx2xy = vec![[Real::zero(); 2]; npo_pos];
     {
         for ipo in 0..map_po_del.len() {
             if map_po_del[ipo] == usize::MAX {
@@ -475,12 +473,12 @@ where
 ///
 /// Returns tri2vtx, tri2tri, vtx2tri
 pub fn triangulate_single_connected_shape<Real>(
-    vtx2xy: &mut Vec<nalgebra::Vector2<Real>>,
+    vtx2xy: &mut Vec<[Real; 2]>,
     loop2idx: &[usize],
     idx2vtx: &[usize],
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
-    Real: nalgebra::RealField + Copy + 'static,
+    Real: num_traits::Float + Copy + 'static + std::fmt::Display + std::fmt::Debug,
     f64: AsPrimitive<Real>,
 {
     let point_idx_to_delete = {
@@ -489,7 +487,7 @@ where
         vec![npo, npo + 1, npo + 2]
     };
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) = {
-        let aabb = del_geo_nalgebra::aabb2::from_vtx2vec(vtx2xy);
+        let aabb = crate::vtx2vec::aabb2(vtx2xy);
         make_super_triangle(
             vtx2xy,
             aabb[0..2].try_into().unwrap(),
@@ -541,16 +539,17 @@ where
 }
 
 pub fn laplacian_mesh_smoothing_around_point<T>(
-    vtx2xy: &mut [nalgebra::Vector2<T>],
+    vtx2xy: &mut [[T; 2]],
     i_vtx0: usize,
     tri2vtx: &[usize],
     tri2tri: &[usize],
     vtx2tri: &[usize],
 ) -> bool
 where
-    T: nalgebra::RealField + 'static + Copy,
+    T: num_traits::Float + 'static + Copy,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vec2::Vec2;
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     let mut i_tri0 = vtx2tri[i_vtx0];
     let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx, i_tri0);
@@ -561,7 +560,7 @@ where
         // counter-clock wise
         assert!(i_tri0 < tri2vtx.len() && i_node0 < 3);
         assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
-        pos_new += vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]];
+        pos_new = pos_new.add(&vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]]);
         num_tri_around += 1;
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0,
@@ -576,7 +575,7 @@ where
             break;
         }
     }
-    vtx2xy[i_vtx0] = pos_new / num_tri_around.as_();
+    vtx2xy[i_vtx0] = pos_new.scale(T::one() / num_tri_around.as_());
     //
     let mut flipped = false;
     i_tri0 = vtx2tri[i_vtx0];
@@ -613,7 +612,7 @@ pub struct MeshForTopologicalChange<'a, T> {
     pub tri2vtx: &'a mut Vec<usize>,
     pub tri2tri: &'a mut Vec<usize>,
     pub vtx2tri: &'a mut Vec<usize>,
-    pub vtx2xy: &'a mut Vec<nalgebra::Vector2<T>>,
+    pub vtx2xy: &'a mut Vec<[T; 2]>,
 }
 
 pub fn add_points_uniformly<T>(
@@ -624,14 +623,14 @@ pub fn add_points_uniformly<T>(
     nflgpnt_offset: usize,
     target_len: T,
 ) where
-    T: nalgebra::RealField + Copy + 'static,
+    T: Copy + 'static + num_traits::Float + std::fmt::Debug + std::fmt::Display,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vec2::Vec2;
     assert_eq!(dm.vtx2xy.len(), dm.vtx2tri.len());
     assert_eq!(vtx2flag.len(), dm.vtx2tri.len());
     assert_eq!(tri2flag.len(), dm.tri2vtx.len() / 3);
-
     let mut ratio: T = 3_f64.as_();
     loop {
         let mut nadd = 0;
@@ -643,12 +642,13 @@ pub fn add_points_uniformly<T>(
             }
             let ipo0 = dm.vtx2tri.len();
             dm.vtx2tri.resize(dm.vtx2tri.len() + 1, usize::MAX);
-            dm.vtx2xy
-                .resize(dm.vtx2xy.len() + 1, nalgebra::Vector2::<T>::zeros());
-            dm.vtx2xy[ipo0] = (dm.vtx2xy[dm.tri2vtx[i_tri * 3]]
-                + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]]
-                + dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]])
-                / 3_f64.as_();
+            dm.vtx2xy.resize(dm.vtx2xy.len() + 1, [T::zero(); 2]);
+            dm.vtx2xy[ipo0] = del_geo_core::vec2::add_three_vectors(
+                &dm.vtx2xy[dm.tri2vtx[i_tri * 3]],
+                &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]],
+                &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]],
+            )
+            .scale(T::one() / 3_f64.as_());
             crate::trimesh_topology::insert_a_point_inside_an_element(
                 ipo0, i_tri, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
             );
@@ -665,9 +665,9 @@ pub fn add_points_uniformly<T>(
             );
         }
         if nadd != 0 {
-            ratio *= 0.8_f64.as_();
+            ratio = ratio * 0.8_f64.as_();
         } else {
-            ratio *= 0.5_f64.as_();
+            ratio = ratio * 0.5_f64.as_();
         }
         if ratio < 0.65.as_() {
             break;
@@ -689,15 +689,17 @@ pub fn meshing_from_polyloop2<Index, Real>(
     edge_length_internal: Real,
 ) -> (Vec<Index>, Vec<Real>)
 where
-    Real: nalgebra::RealField + Copy + 'static + num_traits::Float + AsPrimitive<usize>,
+    Real: Copy
+        + 'static
+        + num_traits::Float
+        + AsPrimitive<usize>
+        + std::fmt::Display
+        + std::fmt::Debug,
     Index: Copy + 'static,
     f64: AsPrimitive<Real>,
     usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
-    let mut vtx2xy: Vec<nalgebra::Vector2<Real>> = vtxl2xy
-        .chunks(2)
-        .map(|v| nalgebra::Vector2::<Real>::new(v[0], v[1]))
-        .collect();
+    let mut vtx2xy: Vec<[Real; 2]> = vtxl2xy.chunks(2).map(|v| [v[0], v[1]]).collect();
     let mut loop2idx = vec![0, vtx2xy.len()];
     let mut idx2vtx: Vec<usize> = (0..vtx2xy.len()).collect();
     if edge_length_boundary > Real::zero() {
@@ -727,73 +729,68 @@ where
         0,
         edge_length_internal,
     );
-    let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v.x, v.y]).collect();
+    let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v[0], v[1]]).collect();
     let tri2vtx: Vec<Index> = tri2vtx.iter().map(|&v| v.as_()).collect();
     (tri2vtx, vtx2xy)
 }
 
 #[test]
 fn test_square() {
-    type Vec2 = nalgebra::Vector2<f32>;
-    let vtx2xy0 = vec![
-        Vec2::new(-1.0, -1.0),
-        Vec2::new(1.0, -1.0),
-        Vec2::new(1.0, 1.0),
-        Vec2::new(-1.0, 1.0),
-    ];
+    let vtx2xy0 = vec![[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]];
     // test non-convex shape
     let vtx2xy1 = vec![
-        Vec2::new(-1.0, -1.0),
-        Vec2::new(1.0, -1.0),
-        Vec2::new(1.0, 0.5),
-        Vec2::new(0.5, 0.5),
-        Vec2::new(0.5, 1.0),
-        Vec2::new(-1.0, 1.0),
+        [-1.0, -1.0],
+        [1.0, -1.0],
+        [1.0, 0.5],
+        [0.5, 0.5],
+        [0.5, 1.0],
+        [-1.0, 1.0],
     ];
     // test add_point_on_edge
     let vtx2xy2 = vec![
-        Vec2::new(-1.0, -1.0),
-        Vec2::new(-0.5, -1.0),
-        Vec2::new(0.0, -1.0),
-        Vec2::new(0.5, -1.0),
-        Vec2::new(1.0, -1.0),
-        Vec2::new(1.0, -0.5),
-        Vec2::new(1.0, 0.0),
-        Vec2::new(1.0, 0.5),
-        Vec2::new(0.5, 0.5),
-        Vec2::new(0.5, 1.0),
-        Vec2::new(0.0, 1.0),
-        Vec2::new(-1.0, 1.0),
-        Vec2::new(-1.0, 0.0),
+        [-1.0, -1.0],
+        [-0.5, -1.0],
+        [0.0, -1.0],
+        [0.5, -1.0],
+        [1.0, -1.0],
+        [1.0, -0.5],
+        [1.0, 0.0],
+        [1.0, 0.5],
+        [0.5, 0.5],
+        [0.5, 1.0],
+        [0.0, 1.0],
+        [-1.0, 1.0],
+        [-1.0, 0.0],
     ];
     // comb model
     let vtx2xy3 = vec![
-        Vec2::new(-1.0, -1.0),
-        Vec2::new(1.0, -1.0),
-        Vec2::new(1.0, -0.0),
-        Vec2::new(1.0, 1.0),
+        [-1.0, -1.0],
+        [1.0, -1.0],
+        [1.0, -0.0],
+        [1.0, 1.0],
         //
-        Vec2::new(0.5, 1.0),
-        Vec2::new(0.5, -0.9),
-        Vec2::new(0.4, -0.9),
-        Vec2::new(0.4, 1.0),
+        [0.5, 1.0],
+        [0.5, -0.9],
+        [0.4, -0.9],
+        [0.4, 1.0],
         //
-        Vec2::new(0.0, 1.0),
-        Vec2::new(0.0, -0.9),
-        Vec2::new(-0.1, -0.9),
-        Vec2::new(-0.1, 1.0),
+        [0.0, 1.0],
+        [0.0, -0.9],
+        [-0.1, -0.9],
+        [-0.1, 1.0],
         //
-        Vec2::new(-1.0, 1.0),
+        [-1.0, 1.0],
     ];
     let vtx2xy4 = vec![
-        Vec2::new(0.0, 0.0),
-        Vec2::new(1.0, 0.0),
-        Vec2::new(1.0, 0.2),
-        Vec2::new(0.1, 0.2),
-        Vec2::new(0.2, 0.5), // todo!(0.1, 0.5)
-        Vec2::new(1.0, 0.5),
-        Vec2::new(1.0, 1.0),
-        Vec2::new(0.0, 1.0),
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [1.0, 0.2],
+        [0.1, 0.2],
+        [0.2, 0.5],
+        // todo!(0.1, 0.5)
+        [1.0, 0.5],
+        [1.0, 1.0],
+        [0.0, 1.0],
     ];
     for (i_loop, vtx2xy) in [vtx2xy0, vtx2xy1, vtx2xy2, vtx2xy3, vtx2xy4]
         .iter()
@@ -825,22 +822,21 @@ fn test_square() {
 
 #[test]
 fn test_shape_with_hole() {
-    type Vec2 = nalgebra::Vector2<f32>;
     {
         // test shape with a hole
         let mut vtx2xy0 = vec![
-            Vec2::new(-1.0, -1.0),
-            Vec2::new(1.0, -1.0),
-            Vec2::new(1.0, 1.0),
-            Vec2::new(-1.0, 1.0),
-            Vec2::new(0.0, 0.0),
-            Vec2::new(0.5, 0.0),
-            Vec2::new(0.0, 0.5),
+            [-1.0, -1.0],
+            [1.0, -1.0],
+            [1.0, 1.0],
+            [-1.0, 1.0],
+            [0.0, 0.0],
+            [0.5, 0.0],
+            [0.0, 0.5],
         ];
         let loop2idx = [0, 4, 7];
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        let _ = crate::io_obj::save_tri2vtx_vtx2vecn("target/d.obj", &tri2vtx, &vtx2xy0);
+        crate::io_obj::save_tri2vtx_vtx2vecn("../target/d.obj", &tri2vtx, &vtx2xy0).unwrap();
     }
 }

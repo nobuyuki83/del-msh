@@ -200,6 +200,7 @@ fn test_from_vtx2xyz() -> anyhow::Result<()> {
 }
 
 #[test]
+#[allow(unused_variables)]
 fn test_from_trimesh3() -> anyhow::Result<()> {
     let (tri2vtx, vtx2xyz) =
         del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);

@@ -5,9 +5,10 @@ use num_traits::AsPrimitive;
 /// the center of gravity
 pub fn cog<T>(vtx2xyz: &[T]) -> [T; 3]
 where
-    T: num_traits::Float + Copy + 'static,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float,
 {
+    let one = T::one();
+    let half = one / (one + one);
     let num_vtx = vtx2xyz.len() / 3;
     let mut cg = [T::zero(); 3];
     let mut w = T::zero();
@@ -18,7 +19,7 @@ where
         let p0 = arrayref::array_ref![vtx2xyz, ip0 * 3, 3];
         let p1 = arrayref::array_ref![vtx2xyz, ip1 * 3, 3];
         let len = p0.sub(p1).norm();
-        cg = cg.add(&p0.add(p1).scale(0.5f64.as_() * len));
+        cg = cg.add(&p0.add(p1).scale(half * len));
         w = w + len;
     }
     cg.scale(T::one() / w)
@@ -27,8 +28,7 @@ where
 /// bi-normal vector on each vertex
 pub fn vtx2framex<T>(vtx2xyz: &[T]) -> Vec<T>
 where
-    T: num_traits::Float + 'static + Copy,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
@@ -92,8 +92,7 @@ where
 
 pub fn vtx2framey<T>(vtx2xyz: &[T], vtx2framex: &[T]) -> Vec<T>
 where
-    T: num_traits::Float + 'static + Copy,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len() / 3;
@@ -155,9 +154,7 @@ pub fn to_trimesh3_capsule<T>(
     r: T,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: nalgebra::RealField + Copy + num_traits::Float + num_traits::FloatConst,
-    f64: AsPrimitive<T>,
-    f32: AsPrimitive<T>,
+    T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
@@ -180,8 +177,9 @@ where
         vtx2xyz.len() / 3,
         (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2
     );
-    let pi: T = (std::f32::consts::PI).as_();
-    let half: T = 0.5.as_();
+    let pi: T = T::PI();
+    let one = T::one();
+    let half: T = one / (one + one);
     {
         // south pole
         let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
@@ -311,39 +309,44 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
     (pair_idx, pair_prm)
 }
 
-pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> nalgebra::Vector3<T>
+pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> [T; 3]
 where
-    T: num_traits::Float + nalgebra::RealField + AsPrimitive<usize>,
+    T: num_traits::Float + AsPrimitive<usize>,
     usize: AsPrimitive<T>,
 {
     let ied: usize = r.as_();
     let ned = vtx2xyz.len() / 3 - 1;
-    dbg!(r, ied, ned);
+    // dbg!(r, ied, ned);
     assert!(ied < ned);
-    let p0 = crate::vtx2xyz::to_navec3(vtx2xyz, ied);
-    let p1 = crate::vtx2xyz::to_navec3(vtx2xyz, ied + 1);
+    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ied);
+    let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, ied + 1);
     let r0 = r - ied.as_();
-    p0 + (p1 - p0).scale(r0)
+    use del_geo_core::vec3::Vec3;
+    p0.add(&p1.sub(p0).scale(r0))
 }
 
 pub fn smooth<T>(vtx2xyz: &[T], r: T, num_iter: usize) -> Vec<T>
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
 {
+    use del_geo_core::vec3::Vec3;
+    let one = T::one();
+    let half = one / (one + one);
     let num_vtx = vtx2xyz.len() / 3;
     let mut vtx2xyz1 = Vec::from(vtx2xyz);
     for _iter in 0..num_iter {
         for ip1 in 1..num_vtx - 1 {
             let ip0 = (ip1 + num_vtx - 1) % num_vtx;
             let ip2 = (ip1 + 1) % num_vtx;
-            let p0 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip0);
-            let p1 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip1);
-            let p2 = crate::vtx2xyz::to_navec3(&vtx2xyz1, ip2);
-            let p1n = (p0 + p2).scale(0.5f64.as_() * r) + p1.scale(T::one() - r);
-            vtx2xyz1[ip1 * 3] = p1n.x;
-            vtx2xyz1[ip1 * 3 + 1] = p1n.y;
-            vtx2xyz1[ip1 * 3 + 2] = p1n.z;
+            let p0 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip0);
+            let p1 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip1);
+            let p2 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip2);
+            let pm = p0.add(p2).scale(half);
+            let p1n = pm.scale(r).add(&p1.scale(one - r));
+            vtx2xyz1[ip1 * 3] = p1n[0];
+            vtx2xyz1[ip1 * 3 + 1] = p1n[1];
+            vtx2xyz1[ip1 * 3 + 2] = p1n[2];
         }
     }
     vtx2xyz1

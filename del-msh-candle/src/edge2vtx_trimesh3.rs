@@ -108,6 +108,7 @@ impl CustomOp1 for Layer {
 }
 
 #[test]
+#[allow(unused_variables)]
 fn test_contour() -> candle_core::Result<()> {
     use candle_core::Device::Cpu;
     let (tri2vtx, vtx2xyz) =
@@ -125,7 +126,7 @@ fn test_contour() -> candle_core::Result<()> {
     let cam_modelview =
         del_geo_core::mat4_col_major::camera_external_blender(&[0., 0., 2.0], 0., 0., 0.);
     let transform_world2ndc =
-        del_geo_core::mat4_col_major::mult_mat(&cam_projection, &cam_modelview);
+        del_geo_core::mat4_col_major::mult_mat_col_major(&cam_projection, &cam_modelview);
     //
     let tri2vtx = Tensor::from_vec(tri2vtx, (num_tri, 3), &Cpu)?;
     let vtx2xyz = Tensor::from_vec(vtx2xyz, (num_vtx, 3), &Cpu)?;

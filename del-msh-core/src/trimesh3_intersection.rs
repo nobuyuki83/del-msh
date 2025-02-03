@@ -3,8 +3,8 @@
 pub struct IntersectingPair<T> {
     pub i_tri: usize,
     pub j_tri: usize,
-    pub p0: nalgebra::Vector3<T>,
-    pub p1: nalgebra::Vector3<T>,
+    pub p0: [T; 3],
+    pub p1: [T; 3],
 }
 
 #[allow(clippy::identity_op)]
@@ -13,9 +13,9 @@ fn intersection_of_two_triangles_in_mesh<T>(
     vtx2xyz: &[T],
     i_tri: usize,
     j_tri: usize,
-) -> Option<(nalgebra::Vector3<T>, nalgebra::Vector3<T>)>
+) -> Option<([T; 3], [T; 3])>
 where
-    T: Copy + nalgebra::RealField,
+    T: Copy + num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
     let i0 = tri2vtx[i_tri * 3 + 0];
     let i1 = tri2vtx[i_tri * 3 + 1];
@@ -41,15 +41,15 @@ where
     if icnt0 + icnt1 + icnt2 > 1 {
         return None;
     } // return  if sharing edge, identical triangle
-    use crate::vtx2xyz::to_navec3;
+    use crate::vtx2xyz::to_vec3;
     if icnt0 + icnt1 + icnt2 == 0 {
-        del_geo_nalgebra::tri3::is_intersection_tri3(
-            &to_navec3(vtx2xyz, i0),
-            &to_navec3(vtx2xyz, i1),
-            &to_navec3(vtx2xyz, i2),
-            &to_navec3(vtx2xyz, j0),
-            &to_navec3(vtx2xyz, j1),
-            &to_navec3(vtx2xyz, j2),
+        del_geo_core::tri3::is_intersection_tri3(
+            to_vec3(vtx2xyz, i0),
+            to_vec3(vtx2xyz, i1),
+            to_vec3(vtx2xyz, i2),
+            to_vec3(vtx2xyz, j0),
+            to_vec3(vtx2xyz, j1),
+            to_vec3(vtx2xyz, j2),
         )
     } else {
         // sharing one point
@@ -87,13 +87,13 @@ where
         let node2vtx_i = [i0, i1, i2];
         let node2vtx_j = [j0, j1, j2];
         assert_eq!(node2vtx_i[is], node2vtx_j[js]);
-        let res = del_geo_nalgebra::tri3::is_intersection_tri3(
-            &to_navec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
-            &to_navec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
-            &to_navec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
-            &to_navec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
-            &to_navec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
-            &to_navec3(vtx2xyz, node2vtx_j[(js + 2) % 3]),
+        let res = del_geo_core::tri3::is_intersection_tri3(
+            to_vec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
+            to_vec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
+            to_vec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(js + 2) % 3]),
         );
         if let Some(res) = res {
             dbg!(res.0, res.1);
@@ -112,7 +112,7 @@ pub fn search_with_bvh_between_branches<T>(
     bvhnodes: &[usize],
     aabbs: &[T],
 ) where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + std::fmt::Debug + std::fmt::Display,
 {
     assert!(ibvh0 < aabbs.len() / 6);
     assert!(ibvh1 < aabbs.len() / 6);
@@ -182,7 +182,7 @@ pub fn search_with_bvh_inside_branch<T>(
     bvhnodes: &[usize],
     aabbs: &[T],
 ) where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + std::fmt::Display + std::fmt::Debug,
 {
     let ichild0 = bvhnodes[ibvh * 3 + 1];
     let ichild1 = bvhnodes[ibvh * 3 + 2];
@@ -198,7 +198,7 @@ pub fn search_with_bvh_inside_branch<T>(
 
 pub fn search_brute_force<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<IntersectingPair<T>>
 where
-    T: nalgebra::RealField + Copy + 'static,
+    T: num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
     let mut pairs: Vec<IntersectingPair<T>> = vec![];
     let num_tri = tri2vtx.len() / 3;

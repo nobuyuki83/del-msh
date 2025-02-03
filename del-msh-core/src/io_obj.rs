@@ -346,10 +346,10 @@ where
 
 fn write_vtx2vecn<Real, const N: usize>(
     file: &mut std::io::BufWriter<File>,
-    vtx2vecn: &[nalgebra::SVector<Real, N>],
+    vtx2vecn: &[[Real; N]],
 ) -> anyhow::Result<()>
 where
-    Real: nalgebra::RealField + std::fmt::Display,
+    Real: num_traits::Float + std::fmt::Display,
 {
     match N {
         3_usize => {
@@ -424,11 +424,11 @@ where
 pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
     filepath: Path,
     tri2vtx: &[usize],
-    vtx2vecn: &[nalgebra::SVector<Real, N>],
+    vtx2vecn: &[[Real; N]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
-    Real: nalgebra::RealField + std::fmt::Display,
+    Real: num_traits::Float + std::fmt::Display,
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
@@ -463,11 +463,11 @@ where
 
 pub fn save_vtx2vecn_as_polyloop<Path, Real, const N: usize>(
     filepath: Path,
-    vtx2vecn: &[nalgebra::SVector<Real, N>],
+    vtx2vecn: &[[Real; N]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
-    Real: nalgebra::RealField + std::fmt::Display,
+    Real: num_traits::Float + std::fmt::Display,
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);

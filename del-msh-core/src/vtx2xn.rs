@@ -32,45 +32,49 @@ where
         .collect()
 }
 
-pub fn to_vecn<T, const N: usize>(vtx2xyz: &[T], i_vtx: usize) -> &[T; N]
+pub fn to_xn<T, const N: usize>(vtx2xyz: &[T], i_vtx: usize) -> &[T; N]
 where
     T: num_traits::Float,
 {
     vtx2xyz[i_vtx * N..i_vtx * N + N].try_into().unwrap()
 }
 
-pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> nalgebra::SVector<T, N>
+pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> [T; N]
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static + std::iter::Sum<T>,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vecn::VecN;
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
-    let mut cog = nalgebra::SVector::<T, N>::zeros();
+    let mut cog = [T::zero(); N];
     for i_vtx in 0..num_vtx {
-        let q0 = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[i_vtx * N..i_vtx * N + N]);
-        cog += q0;
+        let q0 = crate::vtx2xn::to_xn::<T, N>(vtx2xyz, i_vtx);
+        cog.add_in_place(q0);
     }
     let s = T::one() / num_vtx.as_();
-    cog *= s;
+    cog.scale_in_place(s);
     cog
 }
 
-pub fn cov_cog<T, const N: usize>(
-    vtx2xyz: &[T],
-) -> (nalgebra::SMatrix<T, N, N>, nalgebra::SVector<T, N>)
+pub fn cov_cog<T, const N: usize>(vtx2xyz: &[T]) -> ([[T; N]; N], [T; N])
 where
-    T: nalgebra::RealField + Copy,
+    T: num_traits::Float + Copy + 'static + std::iter::Sum,
     usize: AsPrimitive<T>,
 {
+    use del_geo_core::vecn::VecN;
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
     let cog = cog::<T, N>(vtx2xyz);
-    let mut cov = nalgebra::SMatrix::<T, N, N>::zeros();
+    let mut cov = [[T::zero(); N]; N];
     for i_vtx in 0..num_vtx {
-        let q = nalgebra::SVector::<T, N>::from_row_slice(&vtx2xyz[i_vtx * N..i_vtx * N + N]);
-        let d = q - cog;
-        cov += d * d.transpose();
+        let q = crate::vtx2xn::to_xn::<T, N>(vtx2xyz, i_vtx);
+        let d = q.sub(&cog);
+        for i in 0..N {
+            for j in 0..N {
+                cov[i][j] = cov[i][j] + d[i] * d[j];
+            }
+        }
     }
     (cov, cog)
 }

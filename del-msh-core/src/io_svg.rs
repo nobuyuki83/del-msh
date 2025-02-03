@@ -42,18 +42,15 @@ pub fn svg_outline_path_from_shape(s0: &str) -> Vec<String> {
 }
 
 #[allow(clippy::identity_op)]
-pub fn svg_loops_from_outline_path(
-    strs: &[String],
-) -> Vec<(Vec<nalgebra::Vector2<f32>>, Vec<usize>, bool)> {
-    type Vec3 = nalgebra::Vector2<f32>;
-    let hoge =
-        |s0: &str, s1: &str| Vec3::new(s0.parse::<f32>().unwrap(), s1.parse::<f32>().unwrap());
-    let mut loops: Vec<(Vec<Vec3>, Vec<usize>, bool)> = vec![];
-    let mut vtxl2xy: Vec<Vec3> = vec![];
+pub fn svg_loops_from_outline_path(strs: &[String]) -> Vec<(Vec<[f32; 2]>, Vec<usize>, bool)> {
+    use del_geo_core::vec2::Vec2;
+    let hoge = |s0: &str, s1: &str| [s0.parse::<f32>().unwrap(), s1.parse::<f32>().unwrap()];
+    let mut loops: Vec<(Vec<[f32; 2]>, Vec<usize>, bool)> = vec![];
+    let mut vtxl2xy: Vec<[f32; 2]> = vec![];
     let mut seg2vtxl: Vec<usize> = vec![0];
     assert!(strs[0] == "M" || strs[0] == "m");
     // assert!(strs[strs.len() - 1] == "Z" || strs[strs.len() - 1] == "z");
-    let mut pos_cur = nalgebra::Vector2::<f32>::zeros();
+    let mut pos_cur = [0f32; 2];
     let mut is = 0;
     loop {
         if strs[is] == "M" {
@@ -65,7 +62,7 @@ pub fn svg_loops_from_outline_path(
         } else if strs[is] == "m" {
             // start relative
             is += 1;
-            pos_cur += hoge(&strs[is + 0], &strs[is + 1]);
+            pos_cur = pos_cur.add(&hoge(&strs[is + 0], &strs[is + 1]));
             vtxl2xy.push(pos_cur);
             is += 2;
         } else if strs[is] == "l" {
@@ -73,7 +70,7 @@ pub fn svg_loops_from_outline_path(
             is += 1;
             loop {
                 seg2vtxl.push(vtxl2xy.len());
-                let p1 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
+                let p1 = pos_cur.add(&hoge(&strs[is + 0], &strs[is + 1]));
                 vtxl2xy.push(p1);
                 pos_cur = p1;
                 is += 2;
@@ -97,23 +94,21 @@ pub fn svg_loops_from_outline_path(
         } else if strs[is] == "v" {
             // vertical relative
             seg2vtxl.push(vtxl2xy.len());
-            let p1 =
-                pos_cur + nalgebra::Vector2::<f32>::new(0., strs[is + 1].parse::<f32>().unwrap());
+            let p1 = pos_cur.add(&[0., strs[is + 1].parse::<f32>().unwrap()]);
             vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
         } else if strs[is] == "V" {
             // vertical absolute
             seg2vtxl.push(vtxl2xy.len());
-            let p1 =
-                nalgebra::Vector2::<f32>::new(pos_cur[0], strs[is + 1].parse::<f32>().unwrap());
+            let p1 = [pos_cur[0], strs[is + 1].parse::<f32>().unwrap()];
             vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
         } else if strs[is] == "H" {
             // horizontal absolute
             seg2vtxl.push(vtxl2xy.len());
-            let p1 = nalgebra::Vector2::new(strs[is + 1].parse::<f32>().unwrap(), pos_cur[1]);
+            let p1 = [strs[is + 1].parse::<f32>().unwrap(), pos_cur[1]];
             vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
@@ -121,7 +116,7 @@ pub fn svg_loops_from_outline_path(
             // horizontal relative
             seg2vtxl.push(vtxl2xy.len());
             let dh = strs[is + 1].parse::<f32>().unwrap();
-            let p1 = pos_cur + nalgebra::Vector2::<f32>::new(dh, 0.);
+            let p1 = pos_cur.add(&[dh, 0.]);
             vtxl2xy.push(p1);
             pos_cur = p1;
             is += 2;
@@ -130,8 +125,8 @@ pub fn svg_loops_from_outline_path(
             is += 1;
             loop {
                 // loop for poly quadratic Bézeir curve
-                let pm0 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
-                let p1 = pos_cur + hoge(&strs[is + 2], &strs[is + 3]);
+                let pm0 = pos_cur.add(&hoge(&strs[is + 0], &strs[is + 1]));
+                let p1 = pos_cur.add(&hoge(&strs[is + 2], &strs[is + 3]));
                 vtxl2xy.push(pm0);
                 seg2vtxl.push(vtxl2xy.len());
                 vtxl2xy.push(p1);
@@ -166,9 +161,9 @@ pub fn svg_loops_from_outline_path(
             is += 1;
             loop {
                 // loop for poly cubic Bézeir curve
-                let pm0 = pos_cur + hoge(&strs[is + 0], &strs[is + 1]);
-                let pm1 = pos_cur + hoge(&strs[is + 2], &strs[is + 3]);
-                let p1 = pos_cur + hoge(&strs[is + 4], &strs[is + 5]);
+                let pm0 = pos_cur.add(&hoge(&strs[is + 0], &strs[is + 1]));
+                let pm1 = pos_cur.add(&hoge(&strs[is + 2], &strs[is + 3]));
+                let p1 = pos_cur.add(&hoge(&strs[is + 4], &strs[is + 5]));
                 vtxl2xy.push(pm0);
                 vtxl2xy.push(pm1);
                 seg2vtxl.push(vtxl2xy.len());
@@ -186,7 +181,7 @@ pub fn svg_loops_from_outline_path(
         } else if strs[is] == "z" || strs[is] == "Z" {
             let pe = vtxl2xy[0];
             let ps = vtxl2xy[vtxl2xy.len() - 1];
-            let _dist0 = (ps - pe).norm();
+            let _dist0 = ps.sub(&pe).norm();
             loops.push((vtxl2xy.clone(), seg2vtxl.clone(), true));
             vtxl2xy.clear();
             seg2vtxl = vec![0];
@@ -203,23 +198,24 @@ pub fn svg_loops_from_outline_path(
 }
 
 pub fn polybezier2polyloop(
-    vtx2xy: &[nalgebra::Vector2<f32>],
+    vtx2xy: &[[f32; 2]],
     seg2vtx: &[usize],
     is_close: bool,
     edge_length: f32,
-) -> Vec<nalgebra::Vector2<f32>> {
-    let mut ret: Vec<nalgebra::Vector2<f32>> = vec![];
+) -> Vec<[f32; 2]> {
+    use del_geo_core::vec2::Vec2;
+    let mut ret: Vec<[f32; 2]> = vec![];
     let num_seg = seg2vtx.len() - 1;
     for i_seg in 0..num_seg {
         let (is_vtx, ie_vtx) = (seg2vtx[i_seg], seg2vtx[i_seg + 1]);
         let ps = &vtx2xy[is_vtx];
         let pe = &vtx2xy[ie_vtx];
         if ie_vtx - is_vtx == 1 {
-            let len = (pe - ps).norm();
+            let len = pe.sub(ps).norm();
             let ndiv = (len / edge_length) as usize;
             for i in 0..ndiv {
                 let r = i as f32 / ndiv as f32;
-                let p = ps.scale(1f32 - r) + pe.scale(r);
+                let p = ps.scale(1f32 - r).add(&pe.scale(r));
                 ret.push(p);
             }
         } else if ie_vtx - is_vtx == 2 {
@@ -235,8 +231,8 @@ pub fn polybezier2polyloop(
             // cubic bezier
             let pc0 = &vtx2xy[is_vtx + 1];
             let pc1 = &vtx2xy[is_vtx + 2];
-            let samples = del_geo_nalgebra::bezier_cubic::sample_uniform_length(
-                del_geo_nalgebra::bezier_cubic::ControlPoints {
+            let samples = del_geo_core::bezier_cubic::sample_uniform_length(
+                del_geo_core::bezier_cubic::ControlPoints::<'_, f32, 2> {
                     p0: ps,
                     p1: pc0,
                     p2: pc1,
@@ -253,11 +249,11 @@ pub fn polybezier2polyloop(
     if is_close {
         let ps = &vtx2xy[vtx2xy.len() - 1];
         let pe = &vtx2xy[0];
-        let len = (pe - ps).norm();
+        let len = pe.sub(ps).norm();
         let ndiv = (len / edge_length) as usize;
         for i in 0..ndiv {
             let r = i as f32 / ndiv as f32;
-            let p = ps.scale(1f32 - r) + pe.scale(r);
+            let p = ps.scale(1f32 - r).add(&pe.scale(r));
             ret.push(p);
         }
     }
@@ -318,7 +314,8 @@ fn hoge2() {
     let loops = svg_loops_from_outline_path(&strs);
     assert_eq!(loops.len(), 1);
     let polyline = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 10.0);
-    let polyline = crate::vtx2xn::from_array_of_nalgebra(&polyline);
+    use slice_of_array::SliceFlatExt;
+    let polyline = polyline.flat().to_vec();
     let polyline = crate::polyloop::resample::<_, 2>(&polyline, 100);
     crate::io_obj::save_vtx2xyz_as_polyloop("../target/svg.obj", &polyline, 2).unwrap();
 }
@@ -343,8 +340,7 @@ fn hoge3() {
     // dbg!(&outline_path);
     let loops = svg_loops_from_outline_path(&outline_path);
     let vtxl2xy = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
-    let vtxl2xy =
-        crate::vtx2vec::normalize2(&vtxl2xy, &nalgebra::Vector2::<f32>::new(0.5, 0.5), 1.0);
+    let vtxl2xy = crate::vtx2vec::normalize2(&vtxl2xy, &[0.5, 0.5], 1.0);
     crate::io_obj::save_vtx2vecn_as_polyloop("../target/duck_curve.obj", &vtxl2xy).unwrap();
-    crate::vtx2xn::from_array_of_nalgebra(&vtxl2xy);
+    // crate::vtx2xn::from_array_of_nalgebra(&vtxl2xy);
 }
