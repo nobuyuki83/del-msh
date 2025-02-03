@@ -30,6 +30,7 @@ def test_ccd():
     aabbs = TriMesh.aabb_vtxedgetri(edge2vtx, tri2vtx, vtx2xyz0, bvhnodes, roots, vtx2xyz1=vtx2xyz1)
     pairs0, times0 = TriMesh.ccd_intersection_time(edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1)
     pairs, times = TriMesh.ccd_intersection_time(edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, aabbs, roots)
+    #
     assert pairs0.shape == pairs.shape
     intersecting_time = numpy.min(times)
     assert math.fabs(intersecting_time-0.5) < 1.0e-5

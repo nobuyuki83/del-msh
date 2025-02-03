@@ -258,6 +258,7 @@ where
                 epsilon,
             );
             if let Some(t) = t {
+                // println!("ee {} {} {}", t, i_edge, j_edge);
                 intersection_pair.extend([i_edge, j_edge, 0]);
                 intersection_times.push(t);
             }
@@ -299,6 +300,7 @@ where
                 epsilon,
             );
             if let Some(t) = t {
+                // println!("fv {} {} {}", t, i_tri, j_vtx);
                 intersection_pair.extend([i_tri, j_vtx, 1]);
                 intersection_times.push(t);
             }
