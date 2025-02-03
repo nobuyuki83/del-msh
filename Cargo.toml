@@ -33,6 +33,8 @@ itertools = "0.14.0"
 slice-of-array = "0.3.2"
 bindgen_cuda = "0.1.5"
 serde_json = "1.0.133" # from candle core?
+pyo3 = { version = "0.23.4", features = ["extension-module"] }
+numpy = "0.23.0"
 
 # internal
 del-msh-nalgebra = { path="del-msh-nalgebra"}
@@ -41,16 +43,16 @@ del-msh-cudarc = {path="del-msh-cudarc"}
 del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 
 # for development
-# del-geo-core = { path="../del-geo/del-geo-core"}
-# del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
-# del-cudarc = { path="../del-cudarc"}
-# candle-core = { git="https://github.com/huggingface/candle.git" }
+del-geo-core = { path="../del-geo/del-geo-core"}
+del-geo-nalgebra = { path="../del-geo/del-geo-nalgebra"}
+del-cudarc = { path="../del-cudarc"}
+candle-core = { git="https://github.com/huggingface/candle.git" }
 
 # for GitHub push
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git"}
-candle-core = { git="https://github.com/huggingface/candle.git" }
+# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-geo-nalgebra = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git"}
+# candle-core = { git="https://github.com/huggingface/candle.git" }
 
 # for deploy
 # del-geo-core = "=0.1.33"

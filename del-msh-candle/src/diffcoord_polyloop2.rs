@@ -73,18 +73,19 @@ impl candle_core::CustomOp1 for crate::diffcoord_polyloop2::Layer {
 fn edge_length_constraint() -> anyhow::Result<()> {
     let num_vtx = 16;
     // let edge_length = 2.0f32 * std::f32::consts::PI / num_vtx as f32;
-    let mut vtx2xy = del_msh_nalgebra::polyloop2::from_circle(1.0, num_vtx);
+    let mut vtx2xy = del_msh_core::polyloop2::from_circle(1.0, num_vtx);
     {
         use rand::Rng;
         let mut rng = rand::rng();
-        for mut vtx in vtx2xy.column_iter_mut() {
-            vtx += nalgebra::Vector2::<f32>::new(rng.random(), rng.random());
+        for vtx in vtx2xy.chunks_mut(2) {
+            vtx[0] += rng.random::<f32>();
+            vtx[1] += rng.random::<f32>();
         }
     }
     let vtx2xy = {
         candle_core::Var::from_slice(
             vtx2xy.as_slice(),
-            candle_core::Shape::from((vtx2xy.ncols(), 2)),
+            candle_core::Shape::from((vtx2xy.len() / 2, 2)),
             &candle_core::Device::Cpu,
         )
         .unwrap()

@@ -9,14 +9,12 @@ name = "del_msh"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.23.4", features = ["extension-module"] }
-numpy = "0.23.0"
-nalgebra = {workspace = true}
-num-traits = {workspace = true}
-del-geo-core = { workspace = true }
-del-geo-nalgebra = { workspace = true }
+pyo3.workspace= true
+numpy.workspace = true
+num-traits.workspace = true
+del-geo-core.workspace = true
 
-del-msh-core = { path = "../del-msh-core" }
+# for develop/push
+del-msh-core.workspace = true
+# for deploy
 # del-msh-core = "0.1.36"
-# del-msh = "0.1.26"
-# del-geo = "0.1.20"

@@ -57,11 +57,7 @@ where
             let v0 = to_vec3(vtx2xyz, j_vtx);
             let (_p, rf0, rf1) = del_geo_core::tri3::nearest_to_point3(f0, f1, f2, v0);
             let rf2 = T::one() - rf0 - rf1;
-            let p0 = del_geo_core::vec3::add_three_vectors(
-                &f0.scale(rf0),
-                &f1.scale(rf1),
-                &f2.scale(rf2),
-            );
+            let p0 = del_geo_core::vec3::add_three(&f0.scale(rf0), &f1.scale(rf1), &f2.scale(rf2));
             let dist = p0.sub(v0).norm();
             if dist > threshold {
                 continue;

@@ -13,11 +13,9 @@ cuda = ["candle-core/cuda", "del-msh-cudarc/cuda", "del-cudarc"]
 [dependencies]
 rand.workspace = true
 anyhow.workspace = true
-nalgebra.workspace = true
 arrayref.workspace = true
 serde_json.workspace = true
 del-geo-core.workspace = true
-del-geo-nalgebra.workspace = true
 candle-core.workspace = true
 del-cudarc = { workspace = true, optional = true }
 

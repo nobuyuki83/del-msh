@@ -72,7 +72,7 @@ fn wdw_proximity<T>(
             let p1 = to_vec3(mesh.vtx2xyz, ip1);
             let p2 = to_vec3(mesh.vtx2xyz, ip2);
             let q0 = to_vec3(mesh.vtx2xyz, iv);
-            let pc = del_geo_core::vec3::add_three_vectors(
+            let pc = del_geo_core::vec3::add_three(
                 &p0.scale(prox_param[iprox * 4 + 0]),
                 &p1.scale(prox_param[iprox * 4 + 1]),
                 &p2.scale(prox_param[iprox * 4 + 2]),
