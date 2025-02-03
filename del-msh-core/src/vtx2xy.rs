@@ -11,12 +11,14 @@ where
     arrayref::array_ref![vtx2xyz, i_vtx * 2, 2]
 }
 
+/*
 pub fn to_navec2<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector2<T>
 where
     T: Copy + nalgebra::RealField,
 {
     nalgebra::Vector2::<T>::from_row_slice(&vtx2xyz[i_vtx * 2..(i_vtx + 1) * 2])
 }
+ */
 
 pub fn to_vtx2xyz<Real>(vtx2xy: &[Real]) -> Vec<Real>
 where
@@ -97,8 +99,10 @@ where
     aabb
 }
 
+/*
 pub fn to_xy<Real>(vtx2xy: &[Real], i_vtx: usize) -> del_geo_core::vec2::XY<Real> {
     del_geo_core::vec2::XY {
         p: arrayref::array_ref![vtx2xy, i_vtx * 2, 2],
     }
 }
+ */

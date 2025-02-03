@@ -289,13 +289,12 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
     for i_poly in 0..num_poly {
         for j_poly in i_poly + 1..num_poly {
             for i_seg in poly2vtx[i_poly]..poly2vtx[i_poly + 1] - 1 {
-                let pi = crate::vtx2xyz::to_navec3(vtx2xyz, i_seg);
-                let qi = crate::vtx2xyz::to_navec3(vtx2xyz, i_seg + 1);
+                let pi = crate::vtx2xyz::to_vec3(vtx2xyz, i_seg);
+                let qi = crate::vtx2xyz::to_vec3(vtx2xyz, i_seg + 1);
                 for j_seg in poly2vtx[j_poly]..poly2vtx[j_poly + 1] - 1 {
-                    let pj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg);
-                    let qj = crate::vtx2xyz::to_navec3(vtx2xyz, j_seg + 1);
-                    let (dist, ri, rj) =
-                        del_geo_nalgebra::edge3::nearest_to_edge3(&pi, &qi, &pj, &qj);
+                    let pj = crate::vtx2xyz::to_vec3(vtx2xyz, j_seg);
+                    let qj = crate::vtx2xyz::to_vec3(vtx2xyz, j_seg + 1);
+                    let (dist, ri, rj) = del_geo_core::edge3::nearest_to_edge3(pi, qi, pj, qj);
                     if dist > dist0 {
                         continue;
                     }

@@ -643,7 +643,7 @@ pub fn add_points_uniformly<T>(
             let ipo0 = dm.vtx2tri.len();
             dm.vtx2tri.resize(dm.vtx2tri.len() + 1, usize::MAX);
             dm.vtx2xy.resize(dm.vtx2xy.len() + 1, [T::zero(); 2]);
-            dm.vtx2xy[ipo0] = del_geo_core::vec2::add_three_vectors(
+            dm.vtx2xy[ipo0] = del_geo_core::vec2::add_three(
                 &dm.vtx2xy[dm.tri2vtx[i_tri * 3]],
                 &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]],
                 &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]],

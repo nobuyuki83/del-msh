@@ -224,7 +224,7 @@ pub fn polybezier2polyloop(
             let ndiv = 10;
             for idiv in 0..ndiv {
                 let t0 = idiv as f32 / ndiv as f32;
-                let p0 = del_geo_nalgebra::bezier_quadratic::eval(ps, pc, pe, t0);
+                let p0 = del_geo_core::bezier_quadratic::eval(ps, pc, pe, t0);
                 ret.push(p0);
             }
         } else if ie_vtx - is_vtx == 3 {

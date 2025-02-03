@@ -16,7 +16,7 @@ arrayref.workspace = true
 slice-of-array.workspace = true
 nalgebra.workspace = true
 del-geo-core.workspace = true
-del-geo-nalgebra.workspace = true
+# del-geo-nalgebra.workspace = true
 
 [dev-dependencies]
 rand_chacha = {workspace = true}

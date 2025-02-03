@@ -39,12 +39,15 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
     /// produced by the forward operation `res` and the gradient of the result `grad_res`.
     /// The function should return the gradient of the argument.
     #[allow(clippy::identity_op)]
+    #[allow(clippy::assign_op_pattern)]
     fn bwd(
         &self,
         site2xy: &Tensor,
         _vtxv2xy: &Tensor,
         dw_vtxv2xy: &Tensor,
     ) -> candle_core::Result<Option<Tensor>> {
+        use del_geo_core::mat2_col_major::Mat2ColMajor;
+        use del_geo_core::vec2::Vec2;
         let (num_site, two) = site2xy.shape().dims2()?;
         assert_eq!(two, 2);
         let (num_vtxv, two) = _vtxv2xy.shape().dims2()?;
@@ -78,42 +81,38 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
                 assert!(info[0] < num_vtxl);
                 let i1_loop = info[0];
                 let i2_loop = (i1_loop + 1) % num_vtxl;
-                let l1 = del_msh_core::vtx2xy::to_navec2(&self.vtxl2xy, i1_loop);
-                let l2 = del_msh_core::vtx2xy::to_navec2(&self.vtxl2xy, i2_loop);
+                let l1 = del_msh_core::vtx2xy::to_vec2(&self.vtxl2xy, i1_loop);
+                let l2 = del_msh_core::vtx2xy::to_vec2(&self.vtxl2xy, i2_loop);
                 let i0_site = info[1];
                 let i1_site = info[2];
-                let s0 = del_msh_core::vtx2xy::to_navec2(site2xy, i0_site);
-                let s1 = del_msh_core::vtx2xy::to_navec2(site2xy, i1_site);
-                let (_r, drds0, drds1) = del_geo_nalgebra::line2::dw_intersection_against_bisector(
-                    &l1,
-                    &(l2 - l1),
-                    &s0,
-                    &s1,
-                );
-                let dv = del_msh_core::vtx2xy::to_navec2(dw_vtxv2xy, i_vtxv);
+                let s0 = del_msh_core::vtx2xy::to_vec2(site2xy, i0_site);
+                let s1 = del_msh_core::vtx2xy::to_vec2(site2xy, i1_site);
+                let (_r, drds0, drds1) =
+                    del_geo_core::line2::dw_intersection_against_bisector(l1, &l2.sub(l1), s0, s1);
+                let dv = del_msh_core::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
                 {
-                    let ds0 = drds0.transpose() * dv;
-                    dw_site2xy[i0_site * 2 + 0] += ds0.x;
-                    dw_site2xy[i0_site * 2 + 1] += ds0.y;
+                    let ds0 = drds0.transpose().mult_vec(dv);
+                    dw_site2xy[i0_site * 2 + 0] += ds0[0];
+                    dw_site2xy[i0_site * 2 + 1] += ds0[1];
                 }
                 {
-                    let ds1 = drds1.transpose() * dv;
-                    dw_site2xy[i1_site * 2 + 0] += ds1.x;
-                    dw_site2xy[i1_site * 2 + 1] += ds1.y;
+                    let ds1 = drds1.transpose().mult_vec(dv);
+                    dw_site2xy[i1_site * 2 + 0] += ds1[0];
+                    dw_site2xy[i1_site * 2 + 1] += ds1[1];
                 }
             } else {
                 // circumference of three voronoi vtx
                 let idx_site = [info[1], info[2], info[3]];
-                let s0 = del_msh_core::vtx2xy::to_navec2(site2xy, idx_site[0]);
-                let s1 = del_msh_core::vtx2xy::to_navec2(site2xy, idx_site[1]);
-                let s2 = del_msh_core::vtx2xy::to_navec2(site2xy, idx_site[2]);
-                let (_v, dvds) = del_geo_nalgebra::tri2::wdw_circumcenter(&s0, &s1, &s2);
-                let dv = del_msh_core::vtx2xy::to_navec2(dw_vtxv2xy, i_vtxv);
+                let s0 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[0]);
+                let s1 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[1]);
+                let s2 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[2]);
+                let (_v, dvds) = del_geo_core::tri2::wdw_circumcenter(s0, s1, s2);
+                let dv = del_msh_core::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
                 for i_node in 0..3 {
-                    let ds0 = dvds[i_node].transpose() * dv;
+                    let ds0 = dvds[i_node].transpose().mult_vec(dv);
                     let is0 = idx_site[i_node];
-                    dw_site2xy[is0 * 2 + 0] += ds0.x;
-                    dw_site2xy[is0 * 2 + 1] += ds0.y;
+                    dw_site2xy[is0 * 2 + 0] = dw_site2xy[is0 * 2 + 0] + ds0[0];
+                    dw_site2xy[is0 * 2 + 1] = dw_site2xy[is0 * 2 + 1] + ds0[1];
                 }
             }
         }
@@ -154,12 +153,12 @@ fn test_backward() -> anyhow::Result<()> {
             &voronoi_info0.idx2vtxv,
             vtx2xy.len() / 2,
         );
-        let _ = del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
-            "target/voronoi0.obj",
+        del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
+            "../target/voronoi0.obj",
             &edge2vtxv,
             &vtx2xy,
             2,
-        );
+        )?;
     }
     let vtxv2xygoal =
         candle_core::Tensor::randn(1f32, 1f32, vtxv2xy0.shape(), &candle_core::Device::Cpu)?;

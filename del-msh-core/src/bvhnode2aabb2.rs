@@ -16,6 +16,7 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
     Real: num_traits::Float,
     Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
+    use del_geo_core::vec2::Vec2;
     assert_eq!(bvhnode2aabb.len() / 4, bvhnodes.len() / 3);
     assert!(i_bvhnode < bvhnodes.len() / 3);
     assert!(if let Some(vtx2xyz1) = vtx2xy1 {
@@ -47,9 +48,9 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             }
         } else {
             // no elements. vertex direct
-            let aabb0 = crate::vtx2xy::to_xy(vtx2xy0, i_elem).aabb();
+            let aabb0 = crate::vtx2xy::to_vec2(vtx2xy0, i_elem).aabb();
             if let Some(vtx2xy1) = vtx2xy1 {
-                let aabb1 = crate::vtx2xy::to_xy(vtx2xy1, i_elem).aabb();
+                let aabb1 = crate::vtx2xy::to_vec2(vtx2xy1, i_elem).aabb();
                 del_geo_core::aabb2::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0

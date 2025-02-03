@@ -13,12 +13,14 @@ where
     ]
 }
 
+/*
 pub fn to_navec3<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector3<T>
 where
     T: Copy + nalgebra::RealField,
 {
     nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i_vtx * 3..(i_vtx + 1) * 3])
 }
+ */
 
 pub fn aabb3<T>(vtx2xyz: &[T], eps: T) -> [T; 6]
 where
