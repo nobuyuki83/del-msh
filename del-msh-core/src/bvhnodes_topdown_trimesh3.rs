@@ -15,7 +15,7 @@ where
     let mut cov = [T::zero(); 9];
     for &i_tri in remaining_elems {
         let v = crate::vtx2xyz::to_vec3(elem2center, i_tri).sub(&org);
-        let cov0 = &del_geo_core::mat3_col_major::from_outer_product(&v, &v);
+        let cov0 = &del_geo_core::mat3_col_major::from_scaled_outer_product(T::one(), &v, &v);
         cov = del_geo_core::mat3_col_major::add(&cov, cov0);
     }
     let mut dir = [T::one(), T::one(), T::one()];

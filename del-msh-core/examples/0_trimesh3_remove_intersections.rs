@@ -12,7 +12,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         (tri2vtx, vtx2xyz)
     };
     {
-        let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angle::<f64>(1.5, 0.1, 0.1);
+        let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.1, 0.1);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[1.0, 0.1, 0.1]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
         let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();
@@ -26,7 +26,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         del_msh_core::io_obj::save_tri2vtx_vtx2xyz(fpath_start, &tri2vtx0, &vtx2xyz0, 3).unwrap()
     }
     {
-        let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angle::<f64>(1.5, 0.0, 0.0);
+        let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.0, 0.0);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[0.5, 0.0, 0.0]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
         let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();

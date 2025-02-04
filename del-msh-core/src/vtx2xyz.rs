@@ -131,7 +131,7 @@ fn test_obb3() {
     //
     let transl_vec = [0.3, -1.0, 0.5];
     let transl = del_geo_core::mat4_col_major::from_translate(&transl_vec);
-    let rot = del_geo_core::mat4_col_major::from_bryant_angle(0.5, 0.0, 0.0);
+    let rot = del_geo_core::mat4_col_major::from_bryant_angles(0.5, 0.0, 0.0);
     let mat = del_geo_core::mat4_col_major::mult_mat_col_major(&transl, &rot);
     let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, &mat);
     let obb1 = obb3(&vtx2xyz1);
