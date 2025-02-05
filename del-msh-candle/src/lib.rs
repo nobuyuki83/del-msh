@@ -14,7 +14,7 @@ macro_rules! get_cuda_slice_and_storage_and_layout_from_tensor {
         let ($storage, $layout) = $tnsr.storage_and_layout();
         let $slc = match $storage.deref() {
             candle_core::Storage::Cuda(cuda_storage) => cuda_storage.as_cuda_slice::<$t>()?,
-            _ => panic!(),
+            _ => panic!("Error: This is not a cuda tensor!"),
         };
     };
 }
