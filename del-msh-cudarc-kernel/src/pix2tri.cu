@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <thrust/pair.h>
+#include <cfloat>
 #include "mat4_col_major.h"
 #include "tri3.h"
 #include "aabb.h"
