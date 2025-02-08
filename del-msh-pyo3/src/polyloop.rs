@@ -17,7 +17,7 @@ where
 {
     assert_eq!(vtx2xy.shape()[1], 2);
     let vtx2xy = vtx2xy.as_slice().unwrap();
-    del_msh_core::polyloop2::area_(vtx2xy)
+    del_msh_core::polyloop2::area(vtx2xy)
 }
 
 #[pyo3::pyfunction]

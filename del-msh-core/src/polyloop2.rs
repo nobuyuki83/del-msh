@@ -20,7 +20,7 @@ where
     wn
 }
 
-pub fn is_inside_<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+pub fn is_inside<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
 where
     Real: num_traits::Float + num_traits::FloatConst,
 {
@@ -34,10 +34,9 @@ where
 }
 
 /// area
-pub fn area_<T>(vtx2xy: &[T]) -> T
+pub fn area<T>(vtx2xy: &[T]) -> T
 where
-    T: num_traits::Float + Copy + 'static + std::ops::AddAssign,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float,
 {
     let num_vtx = vtx2xy.len() / 2;
     assert_eq!(vtx2xy.len(), num_vtx * 2);
@@ -48,7 +47,7 @@ where
         let i1 = (i_edge + 1) % num_vtx;
         let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
         let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
-        area += del_geo_core::tri2::area(&zero, p0, p1);
+        area = area + del_geo_core::tri2::area(&zero, p0, p1);
     }
     area
 }
@@ -92,18 +91,21 @@ fn test_cog_() {
 /// star shape
 pub fn from_pentagram<Real>(center: &[Real], scale: Real) -> Vec<Real>
 where
-    Real: num_traits::Float + 'static + Copy,
-    f64: AsPrimitive<Real>,
-    usize: AsPrimitive<Real>,
+    Real: num_traits::Float + num_traits::FloatConst,
 {
-    let dt: Real = (std::f64::consts::PI / 5_f64).as_();
-    let hp: Real = (std::f64::consts::FRAC_PI_2).as_();
-    let ratio = (2f64 / (3f64 + 5f64.sqrt())).as_();
+    let one = Real::one();
+    let two = one + one;
+    let three = two + one;
+    let five = two + three;
+    let dt: Real = Real::PI() / five;
+    let hp: Real = Real::FRAC_PI_2();
+    let ratio = two / (three + five.sqrt());
     let mut xys = Vec::<Real>::new();
     for i in 0..10usize {
         let rad = if i % 2 == 0 { scale } else { ratio * scale };
-        xys.push((dt * i.as_() + hp).cos() * rad + center[0]);
-        xys.push((dt * i.as_() + hp).sin() * rad + center[1]);
+        let i = Real::from(rad).unwrap();
+        xys.push((dt * i + hp).cos() * rad + center[0]);
+        xys.push((dt * i + hp).sin() * rad + center[1]);
     }
     xys
 }
@@ -118,7 +120,7 @@ pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
     vtx2xy
 }
 
-pub fn distance_to_point_<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Real
+pub fn distance_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Real
 where
     Real: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<Real>,
@@ -156,7 +158,7 @@ pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
 /// signed distance function
 /// * `vtx2xy` - flat array of coordinates
 /// * `q` - pont to be evaluated
-pub fn wdw_sdf_(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
+pub fn wdw_sdf(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
     use del_geo_core::vec2;
     let nej = vtx2xy.len() / 2;
     let mut min_dist = -1.0;
@@ -210,12 +212,12 @@ fn test_polygon2_sdf() {
     let vtx2xy = vec![0., 0., 1.0, 0.0, 1.0, 0.2, 0.0, 0.2];
     use del_geo_core::vec2;
     {
-        let (sdf, normal) = wdw_sdf_(&vtx2xy, &[0.01, 0.1]);
+        let (sdf, normal) = wdw_sdf(&vtx2xy, &[0.01, 0.1]);
         assert!((sdf + 0.01).abs() < 1.0e-5);
         assert!(vec2::length(&vec2::sub(&normal, &[-1., 0.])) < 1.0e-5);
     }
     {
-        let (sdf, normal) = wdw_sdf_(&vtx2xy, &[-0.01, 0.1]);
+        let (sdf, normal) = wdw_sdf(&vtx2xy, &[-0.01, 0.1]);
         assert!((sdf - 0.01).abs() < 1.0e-5);
         assert!(vec2::length(&vec2::sub(&normal, &[-1., 0.])) < 1.0e-5);
     }
@@ -244,7 +246,7 @@ where
         for iy in 0..ny {
             let x = base_pos[0] + (ix.as_() + rng.random::<Real>()) * cell_len;
             let y = base_pos[1] + (iy.as_() + rng.random::<Real>()) * cell_len;
-            let is_inside = is_inside_(vtx2xy, &[x, y]);
+            let is_inside = is_inside(vtx2xy, &[x, y]);
             if !is_inside {
                 continue;
             }
