@@ -169,8 +169,89 @@ where
     true
 }
 
+/**
+ * @brief return normal vector towards origin of the closest edge and the starting index
+ * @param simplex
+ */
+fn find_closest_edge<Real>(simplex: &[[Real; 2]]) -> (usize, [Real; 2])
+where
+    Real: num_traits::Float,
+{
+    use del_geo_core::vec2::Vec2;
+    assert!(!simplex.is_empty());
+    let mut min_dist = Real::infinity();
+    let mut min_idx = usize::MAX;
+    let mut ret_normal = [Real::zero(); 2];
+
+    for i in 0..simplex.len() {
+        let j = (i + 1 + simplex.len()) % simplex.len();
+        let edge = simplex[j].sub(&simplex[i]);
+        // we know the simplex is counterclockwise, so origin is always at left
+        let n = [edge[1], -edge[0]].normalize();
+        let dist = n.dot(&simplex[i]);
+        if dist >= min_dist {
+            continue;
+        }
+        min_dist = dist;
+        min_idx = i;
+        ret_normal = n;
+    }
+    (min_idx, ret_normal)
+}
+
+/**
+ * computing maximum penetration depth and its normal for the intersection of convex hulls
+ * @tparam VEC Eigen::Vector2x
+ * @param[out] normalA if we move all the vertices of vtxB with normalA, there is no collision
+ * @param[in] vtxsA coordinates of point set A
+ * @param[in] vtxsB coordinates of point set B
+ * @return Direction (Vector), depth
+ */
+pub fn penetration_between_two_convexhull2s_using_epa<Real>(
+    vtx2xy_a: &[[Real; 2]],
+    vtx2xy_b: &[[Real; 2]],
+    tolerance: Real,
+) -> Option<[Real; 2]>
+where
+    Real: num_traits::Float,
+{
+    use del_geo_core::vec2::Vec2;
+    let mut simplex = find_intersecting_simplex_for_gjk2(vtx2xy_a, vtx2xy_b)?;
+    assert_eq!(simplex.len(), 3);
+
+    {
+        // make the simplex counterclockwise
+        let v01 = simplex[1].sub(&simplex[0]);
+        let v02 = simplex[2].sub(&simplex[0]);
+        if v01[0] * v02[1] - v01[1] * v02[0] < Real::zero() {
+            simplex.swap(2, 1);
+        }
+    }
+
+    let support = |dir: &[Real; 2]| -> Option<[Real; 2]> {
+        let ndir = dir.scale(-Real::one());
+        Some(find_furthest(vtx2xy_a, dir)?.sub(&find_furthest(vtx2xy_b, &ndir)?))
+    };
+
+    loop {
+        let ret = find_closest_edge(&simplex);
+        let iv0 = ret.0;
+        let n = ret.1;
+        let dist = n.dot(&simplex[iv0]);
+        let p = support(&n)?;
+        let d = p.dot(&n);
+        if d - dist < tolerance {
+            let normal_a = n.scale(dist);
+            return Some(normal_a);
+        } else {
+            simplex.insert(iv0 + 1, p);
+        }
+    }
+}
+
 #[test]
 fn test_gjk_sat2test0() {
+    use del_geo_core::vec2::Vec2;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0);
     for _itr in 0..100 {
@@ -192,8 +273,35 @@ fn test_gjk_sat2test0() {
             let is_intersect_gjk = is_intersect_two_convexhull2s_using_gjk(&vtx2xy_a, &vtx2xy_b);
             let is_intersect_sat =
                 intersection_between_two_convexhull2s_using_sat(&vtx2xy_a, &vtx2xy_b);
-            println!("{} {}", is_intersect_sat, is_intersect_gjk);
+            // println!("{} {}", is_intersect_sat, is_intersect_gjk);
             assert_eq!(is_intersect_gjk, is_intersect_sat);
+            if !is_intersect_gjk {
+                continue;
+            }
+            //
+            let Some(normal_a) =
+                penetration_between_two_convexhull2s_using_epa(&vtx2xy_a, &vtx2xy_b, 1.0e-5)
+            else {
+                panic!()
+            };
+            {
+                let vtx2xy_b1: Vec<_> = vtx2xy_b
+                    .iter()
+                    .map(|xy| xy.add(&normal_a.scale(1.002)))
+                    .collect();
+                assert!(!is_intersect_two_convexhull2s_using_gjk(
+                    &vtx2xy_a, &vtx2xy_b1
+                ));
+            }
+            {
+                let vtx2xy_b1: Vec<_> = vtx2xy_b
+                    .iter()
+                    .map(|xy| xy.add(&normal_a.scale(0.998)))
+                    .collect();
+                assert!(is_intersect_two_convexhull2s_using_gjk(
+                    &vtx2xy_a, &vtx2xy_b1
+                ));
+            }
         }
     }
 }
