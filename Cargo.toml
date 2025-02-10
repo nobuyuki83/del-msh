@@ -29,9 +29,7 @@ ordered-float = "4.2.1"
 num-traits = "0.2.19"
 nalgebra = "0.33.0"
 arrayref = "0.3.9"
-itertools = "0.14.0"
 slice-of-array = "0.3.2"
-bindgen_cuda = "0.1.5"
 serde_json = "1.0.133" # from candle core?
 pyo3 = { version = "0.23.4", features = ["extension-module"] }
 numpy = "0.23.0"
