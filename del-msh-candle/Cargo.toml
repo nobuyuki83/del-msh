@@ -17,12 +17,19 @@ arrayref.workspace = true
 serde_json.workspace = true
 del-geo-core.workspace = true
 candle-core.workspace = true
-del-cudarc = { workspace = true, optional = true }
+#del-cudarc = { workspace = true, optional = true }
 
-# for develop/push
+# for develop
+# del-msh-core.workspace = true
+# del-msh-nalgebra.workspace = true
+# del-msh-cudarc = { workspace = true, optional = true }
+# del-cudarc = { path="../../del-cudarc", optional = true}
+
+# for push
 del-msh-core.workspace = true
 del-msh-nalgebra.workspace = true
 del-msh-cudarc = { workspace = true, optional = true }
+del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for delpoy (internal crates must specify version explicitly)
 # del-msh-core = "0.1.37"
