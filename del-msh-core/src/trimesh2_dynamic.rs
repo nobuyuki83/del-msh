@@ -487,7 +487,8 @@ where
         vec![npo, npo + 1, npo + 2]
     };
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) = {
-        let aabb = crate::vtx2vec::aabb2(vtx2xy);
+        use slice_of_array::SliceFlatExt;
+        let aabb = crate::vtx2xy::aabb2(vtx2xy.flat());
         make_super_triangle(
             vtx2xy,
             aabb[0..2].try_into().unwrap(),

@@ -11,15 +11,6 @@ where
     arrayref::array_ref![vtx2xyz, i_vtx * 2, 2]
 }
 
-/*
-pub fn to_navec2<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector2<T>
-where
-    T: Copy + nalgebra::RealField,
-{
-    nalgebra::Vector2::<T>::from_row_slice(&vtx2xyz[i_vtx * 2..(i_vtx + 1) * 2])
-}
- */
-
 pub fn to_vtx2xyz<Real>(vtx2xy: &[Real]) -> Vec<Real>
 where
     Real: num_traits::Zero + Copy,
@@ -99,10 +90,26 @@ where
     aabb
 }
 
-/*
-pub fn to_xy<Real>(vtx2xy: &[Real], i_vtx: usize) -> del_geo_core::vec2::XY<Real> {
-    del_geo_core::vec2::XY {
-        p: arrayref::array_ref![vtx2xy, i_vtx * 2, 2],
-    }
+pub fn normalize<Real>(vtx2xy: &[Real], center_pos: &[Real; 2], size: Real) -> Vec<Real>
+where
+    Real: num_traits::Float,
+{
+    let aabb = aabb2(vtx2xy);
+    let cnt = del_geo_core::aabb2::center(&aabb);
+    let max_edge_size = del_geo_core::aabb2::max_edge_size(&aabb);
+    let tmp = size / max_edge_size;
+    vtx2xy.chunks(2).flat_map(|v| [
+        (v[0] - cnt[0]) * tmp + center_pos[0],
+        (v[1] - cnt[1]) * tmp + center_pos[1]
+    ]).collect()
+        /*
+    let mut vtx2xyz_out = Vec::from(vtx2xy);
+    vtx2xyz_out
+        .iter_mut()
+        .zip(vtx2xy.iter())
+        .for_each(|(o, v)| {
+
+        });
+    vtx2xyz_out
+         */
 }
- */

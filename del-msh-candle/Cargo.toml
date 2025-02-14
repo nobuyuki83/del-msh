@@ -14,10 +14,8 @@ cuda = ["candle-core/cuda", "del-msh-cudarc/cuda", "del-cudarc"]
 rand.workspace = true
 anyhow.workspace = true
 arrayref.workspace = true
-serde_json.workspace = true
 del-geo-core.workspace = true
 candle-core.workspace = true
-#del-cudarc = { workspace = true, optional = true }
 
 # for develop
 # del-msh-core.workspace = true
@@ -35,6 +33,7 @@ del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = tr
 # del-msh-core = "0.1.37"
 # del-msh-cudarc = {  version="=0.1.39", optional = true }
 # del-msh-nalgebra = "0.1.39"
+# del-cudarc
 
 
 [dev-dependencies]

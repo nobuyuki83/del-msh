@@ -11,31 +11,6 @@ where
     res
 }
 
-/*
-pub fn from_array_of_nalgebra<T, const N: usize>(vtx2vecn: &Vec<nalgebra::SVector<T, N>>) -> Vec<T>
-where
-    T: nalgebra::RealField + Copy,
-{
-    let mut res = Vec::<T>::with_capacity(vtx2vecn.len() * N);
-    for vec in vtx2vecn {
-        res.extend(vec.iter());
-    }
-    res
-}
- */
-
-/*
-pub fn to_array_of_nalgebra_vector<T, const N: usize>(vtx2xyz: &[T]) -> Vec<nalgebra::SVector<T, N>>
-where
-    T: nalgebra::RealField,
-{
-    vtx2xyz
-        .chunks(N)
-        .map(|v| nalgebra::SVector::<T, N>::from_row_slice(v))
-        .collect()
-}
- */
-
 pub fn to_xn<T, const N: usize>(vtx2xyz: &[T], i_vtx: usize) -> &[T; N]
 where
     T: num_traits::Float,
