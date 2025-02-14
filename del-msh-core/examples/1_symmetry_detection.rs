@@ -37,7 +37,8 @@ fn main() -> anyhow::Result<()> {
             let t_mat = mat4_col_major::mult_three_mats_col_major(
                 &mat4_col_major::from_translate(&pm),
                 &mat4_col_major::from_mat3_col_major_adding_w(&r_mat),
-                &mat4_col_major::from_translate(&[-pm[0], -pm[1], -pm[2]]));
+                &mat4_col_major::from_translate(&[-pm[0], -pm[1], -pm[2]]),
+            );
             {
                 let p1_j = mat4_col_major::transform_homogeneous(&t_mat, p_i).unwrap();
                 assert!(p1_j.sub(p_j).norm() < 1.0e-5);
