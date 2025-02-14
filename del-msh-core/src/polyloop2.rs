@@ -277,8 +277,8 @@ where
 
 #[test]
 fn test_circle() {
-    let vtx2xy0 = del_msh_nalgebra::polyloop2::from_circle(1.0, 300);
-    let arclen0 = crate::polyloop::arclength::<f32, 2>(vtx2xy0.as_slice());
+    let vtx2xy0 = from_circle(1.0, 300);
+    let arclen0 = crate::polyloop::arclength::<f32, 2>(&vtx2xy0);
     assert!((arclen0 - 2. * std::f32::consts::PI).abs() < 1.0e-3);
     //
     {

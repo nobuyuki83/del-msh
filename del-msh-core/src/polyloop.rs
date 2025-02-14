@@ -79,14 +79,12 @@ where
 
 #[test]
 fn test_cog() {
-    let mut vtx2xy = del_msh_nalgebra::polyloop2::from_circle(1f32, 32);
+    let mut vtx2xy = crate::polyloop2::from_circle(1f32, 32);
     let (x0, y0) = (1.3, 0.5);
-    vtx2xy
-        .view_mut((0, 0), (1, vtx2xy.ncols()))
-        .add_scalar_mut(x0);
-    vtx2xy
-        .view_mut((1, 0), (1, vtx2xy.ncols()))
-        .add_scalar_mut(y0);
+    vtx2xy.chunks_mut(2).for_each(|v| {
+        v[0] += x0;
+        v[1] += y0
+    });
     let cog = cog_as_edges::<f32, 2>(vtx2xy.as_slice());
     assert!(
         del_geo_core::edge::length::<f32, 2>(&[x0, y0], cog.as_slice().try_into().unwrap())
