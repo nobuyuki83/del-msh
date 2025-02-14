@@ -271,7 +271,7 @@ pub fn test_contour() {
     let transform_world2ndc = {
         let ez = dir;
         let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&ez);
-        let m3 = del_geo_core::mat3_col_major::from_column_vectors(&ex, &ey, &ez);
+        let m3 = del_geo_core::mat3_col_major::from_columns(&ex, &ey, &ez);
         let t = del_geo_core::mat4_col_major::from_mat3_col_major_adding_w(&m3);
         del_geo_core::mat4_col_major::transpose(&t)
     };
