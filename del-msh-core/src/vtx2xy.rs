@@ -98,11 +98,16 @@ where
     let cnt = del_geo_core::aabb2::center(&aabb);
     let max_edge_size = del_geo_core::aabb2::max_edge_size(&aabb);
     let tmp = size / max_edge_size;
-    vtx2xy.chunks(2).flat_map(|v| [
-        (v[0] - cnt[0]) * tmp + center_pos[0],
-        (v[1] - cnt[1]) * tmp + center_pos[1]
-    ]).collect()
-        /*
+    vtx2xy
+        .chunks(2)
+        .flat_map(|v| {
+            [
+                (v[0] - cnt[0]) * tmp + center_pos[0],
+                (v[1] - cnt[1]) * tmp + center_pos[1],
+            ]
+        })
+        .collect()
+    /*
     let mut vtx2xyz_out = Vec::from(vtx2xy);
     vtx2xyz_out
         .iter_mut()
