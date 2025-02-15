@@ -1,4 +1,22 @@
-use rand::Rng;
+fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
+    let dist = del_geo_core::vecn::squared_distance(a, b);
+    let dist = dist / (h * h);
+    if dist.abs() > 1. {
+        0.
+    } else {
+        0.75 * (1. - dist)
+    }
+}
+
+fn dw_kernel(a: &[f32; 12], x: &[f32; 12], h: f32) -> [f32; 12] {
+    let dist = del_geo_core::vecn::distance(a, x);
+    if dist.abs() > 1. {
+        [0f32; 12]
+    } else {
+        use del_geo_core::vecn::VecN;
+        a.scale(-1.5 * dist / (h * h))
+    }
+}
 
 fn main() -> anyhow::Result<()> {
     use del_geo_core::vec3::Vec3;
@@ -45,20 +63,25 @@ fn main() -> anyhow::Result<()> {
                 let p1_i = mat4_col_major::transform_homogeneous(&t_mat, p_j).unwrap();
                 assert!(p1_i.sub(p_i).norm() < 1.0e-5);
             }
-            let t_mat = del_geo_core::mat3x4_col_major::from_mat4_col_major(&t_mat);
-            pair2trans.push(t_mat);
+            let affine = del_geo_core::mat3x4_col_major::from_mat4_col_major(&t_mat);
+            pair2trans.push(affine);
         }
     }
-    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
+    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(1);
     let i_pair = rng.random_range(0..pair2trans.len());
     let mut cur_trans = pair2trans[i_pair];
     dbg!(i_pair, cur_trans);
-    // let window_size = hogehoge;
+    let window_size = 0.8;
     // compute density and its gradient
+    let mut density = 0.;
+    let mut dw_density = [0f32; 12];
     for trans in &pair2trans {
-        let dist = del_geo_core::vecn::distance(&cur_trans, trans);
-        dbg!(dist);
+        let w = kernel(&cur_trans, trans, window_size);
+        let dw = dw_kernel(&cur_trans, trans, window_size);
+        density += w;
+        use del_geo_core::vecn::VecN;
+        dw_density.add_in_place(&dw);
     }
-    // gradient descent
+    dbg!(density);
     Ok(())
 }

@@ -13,15 +13,9 @@ where
     ]
 }
 
-/*
-pub fn to_navec3<T>(vtx2xyz: &[T], i_vtx: usize) -> nalgebra::Vector3<T>
-where
-    T: Copy + nalgebra::RealField,
-{
-    nalgebra::Vector3::<T>::from_row_slice(&vtx2xyz[i_vtx * 3..(i_vtx + 1) * 3])
-}
- */
-
+/// 3D Axis-aligned bonding box for 3D points
+/// # Arguments
+/// * eps: T - margin
 pub fn aabb3<T>(vtx2xyz: &[T], eps: T) -> [T; 6]
 where
     T: num_traits::Float,
@@ -32,8 +26,8 @@ where
         let xyz = arrayref::array_ref!(vtx2xyz, 0, 3);
         del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, eps);
     }
-    for i_vtx in 1..vtx2xyz.len() / 3 {
-        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
+    for xyz in vtx2xyz.chunks(3) {
+        let xyz = arrayref::array_ref!(xyz, 0, 3);
         del_geo_core::aabb3::add_point(&mut aabb, xyz, eps);
     }
     assert!(aabb[0] <= aabb[3]);
