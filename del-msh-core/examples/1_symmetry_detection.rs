@@ -1,4 +1,3 @@
-
 fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
     let dist = del_geo_core::vecn::squared_distance(a, b);
     let dist = dist / (h * h);
@@ -86,7 +85,7 @@ fn main() -> anyhow::Result<()> {
             sum_weight += w;
             sum_transf.add_in_place(&trans.scale(w));
         }
-        cur_trans = sum_transf.scale(1.0/sum_weight);
+        cur_trans = sum_transf.scale(1.0 / sum_weight);
         dbg!(cur_trans);
         dbg!(sum_weight);
     }
