@@ -1,3 +1,4 @@
+
 fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
     let dist = del_geo_core::vecn::squared_distance(a, b);
     let dist = dist / (h * h);
@@ -22,13 +23,13 @@ fn main() -> anyhow::Result<()> {
     use del_geo_core::vec3::Vec3;
     use rand::Rng;
     use rand::SeedableRng;
-    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
+    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(6);
     let (tri2vtx, vtx2xyz) = del_msh_core::io_obj::load_tri_mesh::<_, usize, f32>(
         "asset/spot/spot_triangulated.obj",
         None,
     )?;
     let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 3);
-    let num_vtxs = 100;
+    let num_vtxs = 300;
     let mut vtxs2xyz = vec![0f32; num_vtxs * 3];
     for i_vtxs in 0..num_vtxs {
         let r0 = rng.random::<f32>();
@@ -46,6 +47,7 @@ fn main() -> anyhow::Result<()> {
         for j_vtxs in i_vtxs + 1..num_vtxs {
             let p_j = del_msh_core::vtx2xyz::to_vec3(&vtxs2xyz, j_vtxs);
             let pm = del_geo_core::edge3::position_from_ratio(p_i, p_j, 0.5);
+            use del_geo_core::vec3::Vec3;
             let nrm = p_j.sub(p_i).normalize();
             let r_mat = del_geo_core::mat3_col_major::sub(
                 &del_geo_core::mat3_col_major::from_identity(),
@@ -67,21 +69,26 @@ fn main() -> anyhow::Result<()> {
             pair2trans.push(affine);
         }
     }
-    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(1);
-    let i_pair = rng.random_range(0..pair2trans.len());
-    let mut cur_trans = pair2trans[i_pair];
-    dbg!(i_pair, cur_trans);
+    let mut cur_trans = {
+        let mut rng = rand_chacha::ChaChaRng::seed_from_u64(1);
+        let i_pair = rng.random_range(0..pair2trans.len());
+        pair2trans[i_pair]
+    };
     let window_size = 0.8;
-    // compute density and its gradient
-    let mut density = 0.;
-    let mut dw_density = [0f32; 12];
-    for trans in &pair2trans {
-        let w = kernel(&cur_trans, trans, window_size);
-        let dw = dw_kernel(&cur_trans, trans, window_size);
-        density += w;
+    for itr in 0..100 {
         use del_geo_core::vecn::VecN;
-        dw_density.add_in_place(&dw);
+        // compute density and its gradient
+        let mut sum_weight = 0.;
+        let mut sum_transf = [0f32; 12];
+        for trans in &pair2trans {
+            let w = kernel(&cur_trans, trans, window_size);
+            // let dw = dw_kernel(&cur_trans, trans, window_size);
+            sum_weight += w;
+            sum_transf.add_in_place(&trans.scale(w));
+        }
+        cur_trans = sum_transf.scale(1.0/sum_weight);
+        dbg!(cur_trans);
+        dbg!(sum_weight);
     }
-    dbg!(density);
     Ok(())
 }
