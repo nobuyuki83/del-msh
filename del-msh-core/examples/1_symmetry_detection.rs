@@ -8,6 +8,7 @@ fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
     }
 }
 
+/*
 fn dw_kernel(a: &[f32; 12], x: &[f32; 12], h: f32) -> [f32; 12] {
     let dist = del_geo_core::vecn::distance(a, x);
     if dist.abs() > 1. {
@@ -17,9 +18,10 @@ fn dw_kernel(a: &[f32; 12], x: &[f32; 12], h: f32) -> [f32; 12] {
         a.scale(-1.5 * dist / (h * h))
     }
 }
+ */
 
 fn main() -> anyhow::Result<()> {
-    use del_geo_core::vec3::Vec3;
+    // use del_geo_core::vec3::Vec3;
     use rand::Rng;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(6);
@@ -74,7 +76,7 @@ fn main() -> anyhow::Result<()> {
         pair2trans[i_pair]
     };
     let window_size = 0.8;
-    for itr in 0..100 {
+    for _itr in 0..100 {
         use del_geo_core::vecn::VecN;
         // compute density and its gradient
         let mut sum_weight = 0.;
