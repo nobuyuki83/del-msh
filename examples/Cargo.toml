@@ -22,18 +22,15 @@ del-msh-core.workspace = true
 del-geo-core.workspace = true
 del-msh-cudarc = { workspace = true, optional = true }
 
-
 # for develop
-del-cudarc = {path="../../del-cudarc", optional = true}
-del-gl-core = {path = "../../del-gl/del-gl-core"}
-del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
+# del-cudarc = {path="../../del-cudarc", optional = true}
+# del-gl-core = {path = "../../del-gl/del-gl-core"}
+# del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
 
 # for push
-# del-cudarc = {git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
-# del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
-# del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+del-cudarc = {git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
+del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
 
 
 [build-dependencies]
-gl_generator = "0.14"
-cfg_aliases = "0.2.1"
