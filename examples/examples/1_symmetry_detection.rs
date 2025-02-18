@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(6);
     let (tri2vtx, vtx2xyz) = del_msh_core::io_obj::load_tri_mesh::<_, usize, f32>(
-        "asset/spot/spot_triangulated.obj",
+        "../../asset/spot/spot_triangulated.obj",
         None,
     )?;
     let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 3);

@@ -4,7 +4,8 @@ members = [
     "del-msh-core",
     "del-msh-nalgebra",
     "del-msh-cudarc",
-    "del-msh-candle"
+    "del-msh-candle",
+    "examples"
 ]
 exclude = [
     "del-msh-cudarc-kernel"

@@ -5,7 +5,6 @@ use num_traits::AsPrimitive;
 /// generate 3D mesh of open cylinder
 /// * `radius` - radius
 /// * 'length' - length
-#[allow(clippy::identity_op)]
 pub fn cylinder_open_end_yup<T>(
     ndiv_circumference: usize,
     ndiv_side: usize,
@@ -44,7 +43,7 @@ where
             let i2_vtx = i0_vtx + ndiv_circumference;
             let i3_vtx = i1_vtx + ndiv_circumference;
             let i_quad = i_side * ndiv_circumference + i_edge;
-            crate::vtx2xyz::to_vec3_mut(&mut tri2vtx, i_quad * 2 + 0)
+            crate::vtx2xyz::to_vec3_mut(&mut tri2vtx, i_quad * 2)
                 .copy_from_slice(&[i0_vtx, i3_vtx, i1_vtx]);
             crate::vtx2xyz::to_vec3_mut(&mut tri2vtx, i_quad * 2 + 1)
                 .copy_from_slice(&[i0_vtx, i2_vtx, i3_vtx]);
@@ -54,7 +53,7 @@ where
 }
 
 #[test]
-fn test_cylider_open_end_tri3() {
+fn test_cylinder_open_end_tri3() {
     cylinder_open_end_yup::<f32>(32, 16, 1f32, 1f32, true);
     cylinder_open_end_yup::<f64>(32, 16, 1f64, 1f64, true);
 }
