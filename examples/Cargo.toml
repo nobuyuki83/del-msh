@@ -5,32 +5,25 @@ edition.workspace = true
 license.workspace = true
 description.workspace = true
 
-[features]
-cuda = [
-    "dep:del-msh-cudarc",
-    "dep:del-cudarc"]
-
 [dependencies]
+arrayref.workspace = true
+slice-of-array.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 anyhow.workspace = true
-num-traits.workspace = true
-glutin = "0.32.1"
+glutin = "0.32.2"
 glutin-winit = "0.5.0"
-winit = "0.30.5"
+winit = "0.30.9"
 del-msh-core.workspace = true
 del-geo-core.workspace = true
-del-msh-cudarc = { workspace = true, optional = true }
 
 # for develop
-# del-cudarc = {path="../../del-cudarc", optional = true}
-# del-gl-core = {path = "../../del-gl/del-gl-core"}
-# del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
+del-gl-core = {path = "../../del-gl/del-gl-core"} # this is defined here
+del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
 
 # for push
-del-cudarc = {git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
-del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
-del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+# del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
+# del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
 
 
 [build-dependencies]
