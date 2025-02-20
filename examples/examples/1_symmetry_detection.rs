@@ -1,5 +1,3 @@
-
-
 fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
     let dist = del_geo_core::vecn::squared_distance(a, b);
     let dist = dist / (h * h);
@@ -59,7 +57,8 @@ pub fn sym_detector(
         del_msh_core::vtx2xyz::to_vec3_mut(&mut sample2xyz, i_sample).copy_from_slice(&p0);
         del_msh_core::vtx2xyz::to_vec3_mut(&mut sample2nrm, i_sample).copy_from_slice(&n0);
     }
-    let mut pair2trans = Vec::<([f32; 12], usize, usize)>::with_capacity(num_sample * (num_sample - 1));
+    let mut pair2trans =
+        Vec::<([f32; 12], usize, usize)>::with_capacity(num_sample * (num_sample - 1));
     for i_sample in 0..num_sample {
         let p_i = del_msh_core::vtx2xyz::to_vec3(&sample2xyz, i_sample);
         let n_i = del_msh_core::vtx2xyz::to_vec3(&sample2nrm, i_sample);
@@ -76,7 +75,9 @@ pub fn sym_detector(
             );
             {
                 let cos = del_geo_core::mat3_col_major::mult_vec(&r_mat, &n_i).dot(&n_j);
-                if cos < 0.9 { continue; } // filtering out
+                if cos < 0.9 {
+                    continue;
+                } // filtering out
             }
             let t_mat = mat4_col_major::mult_three_mats_col_major(
                 &mat4_col_major::from_translate(&pm),
@@ -116,13 +117,15 @@ pub fn sym_detector(
                 }
             }
             cur_trans = sum_transf.scale(1.0 / sum_weight);
-            if sum_weight < sum_weight_pre * 1.01 { break;}
+            if sum_weight < sum_weight_pre * 1.01 {
+                break;
+            }
             sum_weight_pre = sum_weight_pre;
         }
         dbg!(cur_trans, max_weight_and_pair);
         // TODO: region grow algorithm
     }
-    [0f32;12]
+    [0f32; 12]
 }
 
 fn main() -> anyhow::Result<()> {
@@ -131,7 +134,7 @@ fn main() -> anyhow::Result<()> {
         "asset/spot/spot_triangulated.obj",
         None,
     )
-        .unwrap();
+    .unwrap();
     let affine = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
     dbg!(affine);
     let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&affine);
