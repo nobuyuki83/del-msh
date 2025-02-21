@@ -33,3 +33,72 @@ where
     }
     cov
 }
+
+/// resample the input polyline with a fix interval
+/// the first point of the input point will be preserved
+/// the output polyline will be shorter than the input
+pub fn resample<T, const NDIM: usize>(stroke0: &[[T; NDIM]; NDIM], l: T) -> Vec<[T; NDIM]>
+where
+    T: num_traits::Float + Copy + 'static,
+    f64: AsPrimitive<T>,
+{
+    use del_geo_core::vecn::VecN;
+    if stroke0.is_empty() {
+        return vec![];
+    }
+    let mut stroke = Vec::<[T; NDIM]>::new();
+    stroke.push(stroke0[0]);
+    let mut jcur = 0;
+    let mut rcur: T = 0_f64.as_();
+    let mut lcur = l;
+    loop {
+        if jcur >= stroke0.len() - 1 {
+            break;
+        }
+        let lenj = del_geo_core::vecn::distance(&stroke0[jcur + 1], &stroke0[jcur]);
+        let lenjr = lenj * (1_f64.as_() - rcur);
+        if lenjr > lcur {
+            // put point in this segment
+            rcur = rcur + lcur / lenj;
+            let p = stroke0[jcur]
+                .scale(1_f64.as_() - rcur)
+                .add(&stroke0[jcur + 1].scale(rcur));
+            stroke.push(p);
+            lcur = l;
+        } else {
+            // next segment
+            lcur = lcur - lenjr;
+            rcur = 0_f64.as_();
+            jcur += 1;
+        }
+    }
+    stroke
+}
+
+pub fn resample_preserve_corner<T, const NDIM: usize>(stroke0: &[[T; NDIM]], l: T) -> Vec<[T; NDIM]>
+where
+    T: num_traits::Float + Copy + AsPrimitive<usize>,
+    f64: AsPrimitive<T>,
+    usize: AsPrimitive<T>,
+{
+    use del_geo_core::vecn::VecN;
+    if stroke0.is_empty() {
+        return vec![];
+    }
+    let mut stroke = Vec::<[T; NDIM]>::new();
+    let num_pnt0 = stroke0.len();
+    for i_seg0 in 0..num_pnt0 - 1 {
+        let p0 = stroke0[i_seg0];
+        let q0 = stroke0[i_seg0 + 1];
+        let len = del_geo_core::vecn::distance(&p0, &q0);
+        let np_new: usize = (len / l).as_();
+        let dr = T::one() / (np_new + 1).as_();
+        stroke.push(stroke0[i_seg0]);
+        for ip_new in 1..np_new + 1 {
+            let p_new = p0.add(&q0.sub(&p0).scale(ip_new.as_() * dr));
+            stroke.push(p_new);
+        }
+    }
+    stroke.push(stroke0[stroke0.len() - 1]);
+    stroke
+}

@@ -25,7 +25,6 @@ candle-core.workspace = true
 
 # for push
 del-msh-core.workspace = true
-del-msh-nalgebra.workspace = true
 del-msh-cudarc = { workspace = true, optional = true }
 del-cudarc = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 

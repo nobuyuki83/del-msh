@@ -65,7 +65,7 @@ fn extract_triangles_in_symmetry(
     }
 }
 
-struct DetectedSymmetry {
+pub struct DetectedSymmetry {
     affine: [f32; 12],
     tris: Vec<usize>,
 }

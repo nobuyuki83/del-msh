@@ -66,4 +66,5 @@ pub mod trimesh;
 pub mod trimesh2_dynamic;
 pub mod trimesh_topology;
 pub mod uniform_mesh;
+pub mod voronoi2;
 pub mod vtx2group;
