@@ -1,3 +1,5 @@
+use rand::Rng;
+
 fn kernel(a: &[f32; 12], b: &[f32; 12], h: f32) -> f32 {
     let dist = del_geo_core::vecn::squared_distance(a, b);
     let dist = dist / (h * h);
@@ -32,12 +34,55 @@ fn get_normal_and_origin_from_affine_matrix_of_reflection(
     (n, p)
 }
 
+fn extract_triangles_in_symmetry(
+    tri2flg: &mut [u8],
+    i_tri_start: usize,
+    tri2vtx: &[usize],
+    vtx2xyz: &[f32],
+    affine: &[f32; 12],
+    tri2tri: &[usize],
+) {
+    assert!(i_tri_start < tri2vtx.len() / 3);
+    let mut stack = vec![i_tri_start];
+    while let Some(i_tri) = stack.pop() {
+        if tri2flg[i_tri] != 0 {
+            continue;
+        }
+        let cog = del_msh_core::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).cog();
+        let a_cog = del_geo_core::mat3x4_col_major::transform_affine(affine, &cog);
+        //dbg!(cog, a_cog);
+        // compute distance
+        let dist_a = del_msh_core::trimesh3::distance_to_point3(tri2vtx, vtx2xyz, &a_cog);
+        //dbg!(i_tri, dist_a);
+        if dist_a > 0.03 {
+            tri2flg[i_tri] = 1;
+            continue;
+        }
+        tri2flg[i_tri] = 2;
+        stack.push(tri2tri[i_tri * 3 + 0]);
+        stack.push(tri2tri[i_tri * 3 + 1]);
+        stack.push(tri2tri[i_tri * 3 + 2]);
+    }
+}
+
+struct DetectedSymmetry {
+    affine: [f32; 12],
+    tris: Vec<usize>,
+}
+
 pub fn sym_detector(
     tri2vtx: &[usize],
     vtx2xyz: &[f32],
     i_seed: u64,
     num_sample: usize,
-) -> [f32; 12] {
+) -> Vec<DetectedSymmetry> {
+    let tri2tri = del_msh_core::elem2elem::from_uniform_mesh(
+        &tri2vtx,
+        3,
+        &[0, 2, 4, 6],
+        &[1, 2, 2, 0, 0, 1],
+        vtx2xyz.len() / 3,
+    );
     // use del_geo_core::vec3::Vec3;
     use rand::Rng;
     use rand::SeedableRng;
@@ -45,6 +90,7 @@ pub fn sym_detector(
     let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 3);
     let mut sample2xyz = vec![0f32; num_sample * 3];
     let mut sample2nrm = vec![0f32; num_sample * 3];
+    let mut sample2tri = vec![0usize; num_sample];
     for i_sample in 0..num_sample {
         let r0 = rng.random::<f32>();
         let r1 = rng.random::<f32>();
@@ -56,6 +102,7 @@ pub fn sym_detector(
         let n0 = del_msh_core::trimesh3::to_tri3(&tri2vtx, &vtx2xyz, i_tri).unit_normal();
         del_msh_core::vtx2xyz::to_vec3_mut(&mut sample2xyz, i_sample).copy_from_slice(&p0);
         del_msh_core::vtx2xyz::to_vec3_mut(&mut sample2nrm, i_sample).copy_from_slice(&n0);
+        sample2tri[i_sample] = i_tri;
     }
     let mut pair2trans =
         Vec::<([f32; 12], usize, usize)>::with_capacity(num_sample * (num_sample - 1));
@@ -95,7 +142,8 @@ pub fn sym_detector(
         }
     }
     println!("num pair: {}", pair2trans.len());
-    for _iter in 0..10 {
+    let mut syms = Vec::<DetectedSymmetry>::new();
+    for _iter in 0..30 {
         let (mut cur_trans, _, _) = {
             let i_pair = rng.random_range(0..pair2trans.len());
             pair2trans[i_pair]
@@ -122,10 +170,47 @@ pub fn sym_detector(
             }
             sum_weight_pre = sum_weight_pre;
         }
-        dbg!(cur_trans, max_weight_and_pair);
-        // TODO: region grow algorithm
+        // dbg!(cur_trans, max_weight_and_pair);
+        let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&cur_trans);
+        dbg!(n, p);
+        let i_tri = sample2tri[max_weight_and_pair.1];
+        let j_tri = sample2tri[max_weight_and_pair.2];
+        // region growing algorithm
+        let mut tri2flg = vec![0; tri2vtx.len() / 3];
+        extract_triangles_in_symmetry(
+            &mut tri2flg,
+            i_tri,
+            &tri2vtx,
+            &vtx2xyz,
+            &cur_trans,
+            &tri2tri,
+        );
+        extract_triangles_in_symmetry(
+            &mut tri2flg,
+            j_tri,
+            &tri2vtx,
+            &vtx2xyz,
+            &cur_trans,
+            &tri2tri,
+        );
+        // let num_tri = tri2flg.iter().filter(|&v| *v == 2 ).count();
+        let tris: Vec<_> = tri2flg
+            .iter()
+            .enumerate()
+            .filter(|(i_tri, &v)| v == 2)
+            .map(|(i_tri, v)| i_tri)
+            .collect();
+        if tris.len() == 0 {
+            continue;
+        }
+        let ds = DetectedSymmetry {
+            affine: cur_trans,
+            tris,
+        };
+        syms.push(ds);
     }
-    [0f32; 12]
+    syms.sort_by(|a, b| a.tris.len().cmp(&b.tris.len()).reverse());
+    syms
 }
 
 fn main() -> anyhow::Result<()> {
@@ -135,21 +220,44 @@ fn main() -> anyhow::Result<()> {
         None,
     )
     .unwrap();
-    let affine = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
-    dbg!(affine);
-    let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&affine);
-    dbg!(n, p);
-    let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&n);
-    use slice_of_array::SliceFlatExt;
-    let vtx2xyz = [
-        p.sub(&ex).sub(&ey),
-        p.add(&ex).sub(&ey),
-        p.add(&ex).add(&ey),
-        p.sub(&ex).add(&ey),
-    ]
-    .flat()
-    .to_vec();
-    let tri2vtx = [[0usize, 1, 2], [0, 2, 3]].flat().to_vec();
-    del_msh_core::io_obj::save_tri2vtx_vtx2xyz("hoge.obj", &tri2vtx, &vtx2xyz, 3)?;
+    let vtx2xyz = {
+        use rand::SeedableRng;
+        let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
+        let rot = del_geo_core::mat3_col_major::from_bryant_angles(
+            2.0 * std::f32::consts::PI * rng.random::<f32>(),
+            2.0 * std::f32::consts::PI * rng.random::<f32>(),
+            2.0 * std::f32::consts::PI * rng.random::<f32>(),
+        );
+        del_msh_core::vtx2xyz::transform_linear(&vtx2xyz, &rot)
+    };
+    let syms = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
+    for (i_sym, sym) in syms.iter().enumerate() {
+        // dbg!(sym.tris.len(), sym.affine);
+        let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&sym.affine);
+        // dbg!(n, p);
+        let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&n);
+        use slice_of_array::SliceFlatExt;
+        let vtxq2xyz = [
+            p.sub(&ex).sub(&ey),
+            p.add(&ex).sub(&ey),
+            p.add(&ex).add(&ey),
+            p.sub(&ex).add(&ey),
+        ]
+        .flat()
+        .to_vec();
+        let triq2vtx = [[0usize, 1, 2], [0, 2, 3]].flat().to_vec();
+        let tris2vtx =
+            del_msh_core::extract::from_uniform_mesh_from_list_of_elements(&tri2vtx, 3, &sym.tris);
+        let mut trio2vtxo = vec![];
+        let mut vtxo2xyz = vec![];
+        del_msh_core::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtx, &vtxq2xyz, 3);
+        del_msh_core::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &tris2vtx, &vtx2xyz, 3);
+        del_msh_core::io_obj::save_tri2vtx_vtx2xyz(
+            format!("target/sym_{}.obj", i_sym),
+            &trio2vtxo,
+            &vtxo2xyz,
+            3,
+        )?;
+    }
     Ok(())
 }

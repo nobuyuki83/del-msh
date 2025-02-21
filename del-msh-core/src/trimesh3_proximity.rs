@@ -8,7 +8,7 @@ pub fn contacting_pair<T>(
     threshold: T,
 ) -> (Vec<usize>, Vec<T>)
 where
-    T: Copy + num_traits::Float + 'static,
+    T: Copy + num_traits::Float + 'static + std::fmt::Debug,
     f64: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;

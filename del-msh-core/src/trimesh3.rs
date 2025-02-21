@@ -152,7 +152,7 @@ pub fn distance_to_point3(tri2vtx: &[usize], vtx2xyz: &[f32], q: &[f32; 3]) -> f
         let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, i2);
         let (p012, _r0, _r1) = del_geo_core::tri3::nearest_to_point3(p0, p1, p2, q);
         let dist = p012.sub(q).norm();
-        if dist_min > dist {
+        if dist < dist_min {
             dist_min = dist;
         }
     }

@@ -115,3 +115,17 @@ pub fn from_uniform_mesh_lambda<F: Fn(usize) -> bool>(
     }
     felem2vtx
 }
+
+pub fn from_uniform_mesh_from_list_of_elements(
+    elem2vtx: &[usize],
+    num_node: usize,
+    elems: &[usize],
+) -> Vec<usize> {
+    let mut felem2vtx = Vec::<usize>::with_capacity(elems.len() * num_node);
+    for i_elem in elems {
+        for i_node in 0..num_node {
+            felem2vtx.push(elem2vtx[i_elem * num_node + i_node]);
+        }
+    }
+    felem2vtx
+}
