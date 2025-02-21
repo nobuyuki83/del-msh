@@ -11,19 +11,13 @@ slice-of-array.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 anyhow.workspace = true
-glutin = "0.32.2"
-glutin-winit = "0.5.0"
-winit = "0.30.9"
+glutin.workspace = true
+glutin-winit.workspace = true
+winit.workspace = true
 del-msh-core.workspace = true
 del-geo-core.workspace = true
-
-# for develop
-del-gl-core = {path = "../../del-gl/del-gl-core"} # this is defined here
-del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
-
-# for push
-# del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
-# del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+del-gl-core.workspace = true
+del-gl-winit-glutin.workspace = true
 
 
 [build-dependencies]
