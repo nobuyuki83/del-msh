@@ -42,8 +42,8 @@ where
         return None;
     } // return  if sharing edge, identical triangle
     use crate::vtx2xyz::to_vec3;
-    if icnt0 + icnt1 + icnt2 == 0 {
-        del_geo_core::tri3::is_intersection_tri3(
+    if icnt0 + icnt1 + icnt2 == 0 { // no vertex is shared
+        del_geo_core::tri3::intersection_against_tri3(
             to_vec3(vtx2xyz, i0),
             to_vec3(vtx2xyz, i1),
             to_vec3(vtx2xyz, i2),
@@ -54,7 +54,7 @@ where
     } else {
         // sharing one point
         // compute permutation
-        let is = if icnt0 == 1 {
+        let i_node_shared = if icnt0 == 1 {
             0
         } else if icnt1 == 1 {
             1
@@ -77,7 +77,7 @@ where
             0
         };
         assert_eq!(jcnt0 + jcnt1 + jcnt2, 1);
-        let js = if jcnt0 == 1 {
+        let j_node_shared = if jcnt0 == 1 {
             0
         } else if jcnt1 == 1 {
             1
@@ -86,14 +86,14 @@ where
         };
         let node2vtx_i = [i0, i1, i2];
         let node2vtx_j = [j0, j1, j2];
-        assert_eq!(node2vtx_i[is], node2vtx_j[js]);
-        let res = del_geo_core::tri3::is_intersection_tri3(
-            to_vec3(vtx2xyz, node2vtx_i[(is + 0) % 3]),
-            to_vec3(vtx2xyz, node2vtx_i[(is + 1) % 3]),
-            to_vec3(vtx2xyz, node2vtx_i[(is + 2) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(js + 0) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(js + 1) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(js + 2) % 3]),
+        assert_eq!(node2vtx_i[i_node_shared], node2vtx_j[j_node_shared]);
+        let res = del_geo_core::tri3::intersection_against_tri3(
+            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 0) % 3]),
+            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 1) % 3]),
+            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 2) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 0) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 1) % 3]),
+            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 2) % 3]),
         );
         if let Some(res) = res {
             dbg!(res.0, res.1);

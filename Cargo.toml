@@ -40,16 +40,16 @@ del-msh-cudarc = {path="del-msh-cudarc"}
 del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 
 # for development
-# del-geo-core = { path="../del-geo/del-geo-core"}
-# del-gl-core = {path = "../../del-gl/del-gl-core"} # this is defined here
-# del-gl-winit-glutin = {path = "../../del-gl/del-gl-winit-glutin"}
-# candle-core = { git="https://github.com/huggingface/candle.git" }
+del-geo-core = { path="../del-geo/del-geo-core"}
+del-gl-core = {path = "../del-gl/del-gl-core"} # this is defined here
+del-gl-winit-glutin = {path = "../del-gl/del-gl-winit-glutin"}
+candle-core = { git="https://github.com/huggingface/candle.git" }
 
 # for GitHub push
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
-del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
-candle-core = { git="https://github.com/huggingface/candle.git" }
+# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
+# del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+# candle-core = { git="https://github.com/huggingface/candle.git" }
 
 # for deploy
 # del-geo-core = "=0.1.33"
