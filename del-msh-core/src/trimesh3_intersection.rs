@@ -7,7 +7,6 @@ pub struct IntersectingPair<T> {
     pub p1: [T; 3],
 }
 
-#[allow(clippy::identity_op)]
 fn intersection_of_two_triangles_in_mesh<T>(
     tri2vtx: &[usize],
     vtx2xyz: &[T],
@@ -17,89 +16,70 @@ fn intersection_of_two_triangles_in_mesh<T>(
 where
     T: Copy + num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
-    let i0 = tri2vtx[i_tri * 3 + 0];
-    let i1 = tri2vtx[i_tri * 3 + 1];
-    let i2 = tri2vtx[i_tri * 3 + 2];
-    let j0 = tri2vtx[j_tri * 3 + 0];
-    let j1 = tri2vtx[j_tri * 3 + 1];
-    let j2 = tri2vtx[j_tri * 3 + 2];
-    let icnt0 = if i0 == j0 || i0 == j1 || i0 == j2 {
-        1
-    } else {
-        0
-    };
-    let icnt1 = if i1 == j0 || i1 == j1 || i1 == j2 {
-        1
-    } else {
-        0
-    };
-    let icnt2 = if i2 == j0 || i2 == j1 || i2 == j2 {
-        1
-    } else {
-        0
-    };
-    if icnt0 + icnt1 + icnt2 > 1 {
-        return None;
-    } // return  if sharing edge, identical triangle
     use crate::vtx2xyz::to_vec3;
-    if icnt0 + icnt1 + icnt2 == 0 {
-        // no vertex is shared
-        del_geo_core::tri3::intersection_against_tri3(
-            to_vec3(vtx2xyz, i0),
-            to_vec3(vtx2xyz, i1),
-            to_vec3(vtx2xyz, i2),
-            to_vec3(vtx2xyz, j0),
-            to_vec3(vtx2xyz, j1),
-            to_vec3(vtx2xyz, j2),
-        )
-    } else {
-        // sharing one point
-        // compute permutation
-        let i_node_shared = if icnt0 == 1 {
-            0
-        } else if icnt1 == 1 {
-            1
-        } else {
-            2
-        };
-        let jcnt0 = if j0 == i0 || j0 == i1 || j0 == i2 {
-            1
-        } else {
-            0
-        };
-        let jcnt1 = if j1 == i0 || j1 == i1 || j1 == i2 {
-            1
-        } else {
-            0
-        };
-        let jcnt2 = if j2 == i0 || j2 == i1 || j2 == i2 {
-            1
-        } else {
-            0
-        };
-        assert_eq!(jcnt0 + jcnt1 + jcnt2, 1);
-        let j_node_shared = if jcnt0 == 1 {
-            0
-        } else if jcnt1 == 1 {
-            1
-        } else {
-            2
-        };
-        let node2vtx_i = [i0, i1, i2];
-        let node2vtx_j = [j0, j1, j2];
-        assert_eq!(node2vtx_i[i_node_shared], node2vtx_j[j_node_shared]);
-        let res = del_geo_core::tri3::intersection_against_tri3(
-            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 0) % 3]),
-            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 1) % 3]),
-            to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 2) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 0) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 1) % 3]),
-            to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 2) % 3]),
-        );
-        if let Some(res) = res {
-            dbg!(res.0, res.1);
+    if i_tri == j_tri {
+        return None;
+    }
+    let node2vtx_i = [
+        tri2vtx[i_tri * 3],
+        tri2vtx[i_tri * 3 + 1],
+        tri2vtx[i_tri * 3 + 2],
+    ];
+    let node2vtx_j = [
+        tri2vtx[j_tri * 3],
+        tri2vtx[j_tri * 3 + 1],
+        tri2vtx[j_tri * 3 + 2],
+    ];
+    let icnt0 = node2vtx_j.iter().any(|&j_vtx| j_vtx == node2vtx_i[0]);
+    let icnt1 = node2vtx_j.iter().any(|&j_vtx| j_vtx == node2vtx_i[1]);
+    let icnt2 = node2vtx_j.iter().any(|&j_vtx| j_vtx == node2vtx_i[2]);
+    let num_shared = icnt0 as u8 + icnt1 as u8 + icnt2 as u8;
+    match num_shared {
+        0 => del_geo_core::tri3::intersection_against_tri3(
+            to_vec3(vtx2xyz, node2vtx_i[0]),
+            to_vec3(vtx2xyz, node2vtx_i[1]),
+            to_vec3(vtx2xyz, node2vtx_i[2]),
+            to_vec3(vtx2xyz, node2vtx_j[0]),
+            to_vec3(vtx2xyz, node2vtx_j[1]),
+            to_vec3(vtx2xyz, node2vtx_j[2]),
+        ),
+        1 => {
+            // sharing one point
+            // compute permutation
+            let i_node_shared = if icnt0 {
+                0
+            } else if icnt1 {
+                1
+            } else {
+                2
+            };
+            let jcnt0 = node2vtx_i.iter().any(|&i_vtx| i_vtx == node2vtx_j[0]);
+            let jcnt1 = node2vtx_i.iter().any(|&i_vtx| i_vtx == node2vtx_j[1]);
+            let jcnt2 = node2vtx_i.iter().any(|&i_vtx| i_vtx == node2vtx_j[2]);
+            assert_eq!(jcnt0 as u8 + jcnt1 as u8 + jcnt2 as u8, 1);
+            let j_node_shared = if jcnt0 {
+                0
+            } else if jcnt1 {
+                1
+            } else {
+                2
+            };
+            assert_eq!(node2vtx_i[i_node_shared], node2vtx_j[j_node_shared]);
+            del_geo_core::tri3::intersection_against_tri3_sharing_vtx(
+                to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 1) % 3]),
+                to_vec3(vtx2xyz, node2vtx_i[(i_node_shared + 2) % 3]),
+                to_vec3(vtx2xyz, node2vtx_i[i_node_shared]), // shared vertex
+                to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 1) % 3]),
+                to_vec3(vtx2xyz, node2vtx_j[(j_node_shared + 2) % 3]),
+            )
         }
-        res
+        2 => None,
+        3 => {
+            panic!("no pair of different triangle should share all the three corner vertices");
+        }
+        _ => {
+            unreachable!();
+        }
     }
 }
 
