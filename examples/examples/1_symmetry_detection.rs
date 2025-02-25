@@ -63,7 +63,6 @@ fn extract_triangles_in_symmetry(
     }
 }
 
-
 pub struct DetectedSymmetry {
     affine: [f32; 12],
     tris: Vec<usize>,
@@ -94,7 +93,14 @@ pub fn sym_detector(
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
     let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 3);
-    let mut samples = vec![Sample {xyz: [0f32;3], nrm: [0f32;3], i_tri: 0}; num_sample ];
+    let mut samples = vec![
+        Sample {
+            xyz: [0f32; 3],
+            nrm: [0f32; 3],
+            i_tri: 0
+        };
+        num_sample
+    ];
     for i_sample in 0..num_sample {
         let r0 = rng.random::<f32>();
         let r1 = rng.random::<f32>();
@@ -218,8 +224,8 @@ pub fn sym_detector(
 }
 
 fn main() -> anyhow::Result<()> {
-    use rand::Rng;
     use del_geo_core::vec3::Vec3;
+    use rand::Rng;
     let (tri2vtx, vtx2xyz) = del_msh_core::io_obj::load_tri_mesh::<_, usize, f32>(
         "asset/spot/spot_triangulated.obj",
         None,
@@ -239,7 +245,7 @@ fn main() -> anyhow::Result<()> {
     for (i_sym, sym) in syms.iter().enumerate() {
         let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&sym.affine);
         let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&n);
-        let (triq2vtxq,vtxq2xyz) =  {
+        let (triq2vtxq, vtxq2xyz) = {
             // define square bi-sector plane
             use slice_of_array::SliceFlatExt;
             let vtxq2xyz = [
@@ -248,8 +254,8 @@ fn main() -> anyhow::Result<()> {
                 p.add(&ex).add(&ey),
                 p.sub(&ex).add(&ey),
             ]
-                .flat()
-                .to_vec();
+            .flat()
+            .to_vec();
             let triq2vtxq = [[0usize, 1, 2], [0, 2, 3]].flat().to_vec();
             (triq2vtxq, vtxq2xyz)
         };

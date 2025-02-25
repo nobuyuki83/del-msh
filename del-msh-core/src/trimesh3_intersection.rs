@@ -42,7 +42,8 @@ where
         return None;
     } // return  if sharing edge, identical triangle
     use crate::vtx2xyz::to_vec3;
-    if icnt0 + icnt1 + icnt2 == 0 { // no vertex is shared
+    if icnt0 + icnt1 + icnt2 == 0 {
+        // no vertex is shared
         del_geo_core::tri3::intersection_against_tri3(
             to_vec3(vtx2xyz, i0),
             to_vec3(vtx2xyz, i1),
