@@ -618,3 +618,75 @@ where
     ];
     (tri2vtx, vtx2xyz)
 }
+
+// -----------------------------
+
+pub fn annulus_yup<Real>(
+    r_small: Real,
+    r_large: Real,
+    ndiv_radius: usize,
+    ndiv_theta: usize,
+) -> (Vec<usize>, Vec<Real>)
+where
+    Real: num_traits::Float + num_traits::FloatConst + 'static,
+    usize: AsPrimitive<Real>,
+{
+    let zero = Real::zero();
+    let one = Real::one();
+    let two = one + one;
+    let half = one / two;
+    let mut vtx2xyz = Vec::<Real>::with_capacity((ndiv_radius + 1) * ndiv_theta * 3);
+    {
+        // make coordinates
+        let dr = (r_large - r_small) / ndiv_radius.as_();
+        let dth = two * Real::PI() / ndiv_theta.as_();
+        for ir in 0..=ndiv_radius {
+            for ith in 0..ndiv_theta {
+                let rad = dr * ir.as_() + r_small;
+                let theta = (ith.as_() + (ir % 2).as_() * half) * dth;
+                vtx2xyz.push(rad * theta.cos());
+                vtx2xyz.push(zero);
+                vtx2xyz.push(rad * theta.sin());
+            }
+        }
+    }
+
+    let mut tri2vtx = Vec::<usize>::with_capacity(ndiv_radius * ndiv_theta * 6);
+    for ir in 0..ndiv_radius {
+        #[allow(clippy::identity_op)]
+        for ith in 0..ndiv_theta {
+            let i1 = (ir + 0) * ndiv_theta + (ith + 0) % ndiv_theta;
+            let i2 = (ir + 0) * ndiv_theta + (ith + 1) % ndiv_theta;
+            let i3 = (ir + 1) * ndiv_theta + (ith + 1) % ndiv_theta;
+            let i4 = (ir + 1) * ndiv_theta + (ith + 0) % ndiv_theta;
+            if ir % 2 == 1 {
+                tri2vtx.push(i3);
+                tri2vtx.push(i1);
+                tri2vtx.push(i2);
+                tri2vtx.push(i4);
+                tri2vtx.push(i1);
+                tri2vtx.push(i3);
+            } else {
+                tri2vtx.push(i4);
+                tri2vtx.push(i2);
+                tri2vtx.push(i3);
+                tri2vtx.push(i4);
+                tri2vtx.push(i1);
+                tri2vtx.push(i2);
+            }
+        }
+    }
+    (tri2vtx, vtx2xyz)
+}
+
+#[test]
+fn test_annulus_yup() {
+    let (tri2vtx, vtx2xyz) = annulus_yup(0.3, 0.8, 32, 64);
+    crate::io_obj::save_tri2vtx_vtx2xyz(
+        "../target/annulus.obj",
+        tri2vtx.as_slice(),
+        vtx2xyz.as_slice(),
+        3,
+    )
+    .unwrap();
+}

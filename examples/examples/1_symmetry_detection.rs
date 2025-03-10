@@ -18,14 +18,14 @@ fn get_normal_and_origin_from_affine_matrix_of_reflection(
     // dbg!(rot, transl);
     use del_geo_core::mat3_col_major::Mat3ColMajor;
     let tmp = rot.sub(&del_geo_core::mat3_col_major::from_identity()); // -2{n}{n}^T
-    let (u, s, v) = del_geo_core::mat3_col_major::svd(
+    let (u, _s, _v) = del_geo_core::mat3_col_major::svd(
         &tmp,
         //del_geo_core::mat3_sym::EigenDecompositionModes::Analytic,
         del_geo_core::mat3_sym::EigenDecompositionModes::JacobiNumIter(100),
     )
     .unwrap();
     //dbg!(del_geo_core::mat3_col_major::determinant(&u));
-    let (u0, u1, u2) = del_geo_core::mat3_col_major::to_columns(&u);
+    let (_u0, _u1, u2) = del_geo_core::mat3_col_major::to_columns(&u);
     let n = u2;
     use del_geo_core::vec3::Vec3;
     let p = n.scale(del_geo_core::vec3::dot(&transl, &u2) * 0.5);
@@ -207,8 +207,8 @@ pub fn sym_detector(
         let tris: Vec<_> = tri2flg
             .iter()
             .enumerate()
-            .filter(|(i_tri, &v)| v == 2)
-            .map(|(i_tri, v)| i_tri)
+            .filter(|(_i_tri, &v)| v == 2)
+            .map(|(i_tri, _v)| i_tri)
             .collect();
         if tris.len() == 0 {
             continue;
