@@ -1,4 +1,5 @@
 //! methods that generate the elements adjacent to an element
+use num_traits::AsPrimitive;
 
 pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     let mut face2idx = vec![0; num_node + 1];
@@ -50,14 +51,17 @@ fn test_face2node_of_simplex_element() {
 /// * `vtx2elem` - jagged array value of  element surrounding point
 ///
 ///  triangle: `face2jdx` = \[0,2,4,6]; `jdx2node` = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh_with_vtx2elem(
-    elem2vtx: &[usize],
+pub fn from_uniform_mesh_with_vtx2elem<Index>(
+    elem2vtx: &[Index],
     num_node: usize,
-    vtx2idx: &[usize],
-    idx2elem: &[usize],
+    vtx2idx: &[Index],
+    idx2elem: &[Index],
     face2jdx: &[usize],
     jdx2node: &[usize],
-) -> Vec<usize> {
+) -> Vec<Index>
+where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>
+{
     assert!(!vtx2idx.is_empty());
     let num_vtx = vtx2idx.len() - 1;
     let num_face_par_elem = face2jdx.len() - 1;
@@ -71,7 +75,7 @@ pub fn from_uniform_mesh_with_vtx2elem(
     };
 
     let num_elem = elem2vtx.len() / num_node;
-    let mut elem2elem = vec![usize::MAX; num_elem * num_face_par_elem];
+    let mut elem2elem = vec![Index::max_value(); num_elem * num_face_par_elem];
 
     let mut vtx2flag = vec![0; num_vtx]; // vertex index -> flag
     let mut jdx2vtx = vec![0; num_max_node_on_face]; // face node index -> vertex index
@@ -80,28 +84,29 @@ pub fn from_uniform_mesh_with_vtx2elem(
             for jdx0 in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
                 let i_node0 = jdx2node[jdx0 + face2jdx[i_face]];
                 assert!(i_node0 < num_node);
-                let i_vtx = elem2vtx[i_elem * num_node + i_node0];
+                let i_vtx: usize = elem2vtx[i_elem * num_node + i_node0].as_();
                 assert!(i_vtx < num_vtx);
                 jdx2vtx[jdx0] = i_vtx;
                 vtx2flag[i_vtx] = 1;
             }
             let i_vtx0 = jdx2vtx[0];
             let mut flag0 = false;
-            for &j_elem0 in &idx2elem[vtx2idx[i_vtx0]..vtx2idx[i_vtx0 + 1]] {
+            for &j_elem0 in &idx2elem[vtx2idx[i_vtx0].as_()..vtx2idx[i_vtx0 + 1].as_()] {
+                let j_elem0: usize = j_elem0.as_();
                 if j_elem0 == i_elem {
                     continue;
                 }
                 for j_face in 0..num_face_par_elem {
                     flag0 = true;
                     for &j_node0 in &jdx2node[face2jdx[j_face]..face2jdx[j_face + 1]] {
-                        let j_vtx0 = elem2vtx[j_elem0 * num_node + j_node0];
+                        let j_vtx0: usize = elem2vtx[j_elem0 * num_node + j_node0].as_();
                         if vtx2flag[j_vtx0] == 0 {
                             flag0 = false;
                             break;
                         }
                     }
                     if flag0 {
-                        elem2elem[i_elem * num_face_par_elem + i_face] = j_elem0;
+                        elem2elem[i_elem * num_face_par_elem + i_face] = j_elem0.as_();
                         break;
                     }
                 }
@@ -110,7 +115,7 @@ pub fn from_uniform_mesh_with_vtx2elem(
                 }
             }
             if !flag0 {
-                elem2elem[i_elem * num_face_par_elem + i_face] = usize::MAX;
+                elem2elem[i_elem * num_face_par_elem + i_face] = Index::max_value();
             }
             for ifano in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
                 vtx2flag[jdx2vtx[ifano]] = 0;
@@ -126,13 +131,16 @@ pub fn from_uniform_mesh_with_vtx2elem(
 /// * `num_vtx` - number of vertices
 ///
 ///  triangle: face2idx = \[0,2,4,6]; idx2node = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh(
-    elem2vtx: &[usize],
+pub fn from_uniform_mesh<Index>(
+    elem2vtx: &[Index],
     num_node: usize,
     face2idx: &[usize],
     idx2node: &[usize],
     num_vtx: usize,
-) -> Vec<usize> {
+) -> Vec<Index>
+where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>
+{
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
     from_uniform_mesh_with_vtx2elem(
         elem2vtx,

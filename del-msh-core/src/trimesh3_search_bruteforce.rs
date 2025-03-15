@@ -1,19 +1,24 @@
 //! methods for query computation on 3D triangle mesh
 
-pub fn first_intersection_ray(
-    ray_org: &[f32; 3],
-    ray_dir: &[f32; 3],
-    tri2vtx: &[usize],
-    vtx2xyz: &[f32],
-) -> Option<(f32, usize)> {
-    let mut hit_pos = Vec::<(f32, usize)>::new();
+pub fn first_intersection_ray<Index, Real>(
+    ray_org: &[Real; 3],
+    ray_dir: &[Real; 3],
+    tri2vtx: &[Index],
+    vtx2xyz: &[Real],
+) -> Option<(Real, Index)>
+where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
+    Real: num_traits::Float
+{
+    use num_traits::AsPrimitive;
+    let mut hit_pos = Vec::<(Real, Index)>::new();
     for i_tri in 0..tri2vtx.len() / 3 {
         let Some(t) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
         else {
             continue;
         };
-        hit_pos.push((t, i_tri));
+        hit_pos.push((t, i_tri.as_()));
     }
     if hit_pos.is_empty() {
         return None;

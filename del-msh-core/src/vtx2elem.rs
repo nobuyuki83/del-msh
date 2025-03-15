@@ -51,7 +51,7 @@ pub fn from_uniform_mesh<Index>(
     num_vtx: usize,
 ) -> (Vec<Index>, Vec<Index>)
 where
-    Index: num_traits::PrimInt + std::ops::AddAssign + AsPrimitive<usize>,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
     let num_elem = elem2vtx.len() / num_node;
@@ -61,12 +61,12 @@ where
         for i_node in 0..num_node {
             let i_vtx: usize = elem2vtx[i_elem * num_node + i_node].as_();
             assert!(i_vtx < num_vtx);
-            vtx2idx[i_vtx + 1] += Index::one();
+            vtx2idx[i_vtx + 1] = vtx2idx[i_vtx + 1] + Index::one();
         }
     }
     for i_vtx in 0..num_vtx {
         let tmp = vtx2idx[i_vtx];
-        vtx2idx[i_vtx + 1] += tmp;
+        vtx2idx[i_vtx + 1] = vtx2idx[i_vtx + 1] + tmp;
     }
     let num_vtx2elem: usize = vtx2idx[num_vtx].as_();
     let mut idx2elem = vec![Index::zero(); num_vtx2elem];
@@ -75,7 +75,7 @@ where
             let i_vtx0: usize = elem2vtx[i_elem * num_node + i_node].as_();
             let iv2e: usize = vtx2idx[i_vtx0].as_();
             idx2elem[iv2e] = i_elem.as_();
-            vtx2idx[i_vtx0] += Index::one();
+            vtx2idx[i_vtx0] = vtx2idx[i_vtx0] + Index::one();
         }
     }
     for i_vtx in (1..num_vtx).rev() {

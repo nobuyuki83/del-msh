@@ -29,11 +29,13 @@ impl PartialEq for Node {
 /// * `idx_elm_kernel` - index of element where distance is zero
 /// * `elem2elem_adj` - index of adjacent element for each element
 /// * `num_elem` - number of elements in the mesh
-pub fn elem2dist_for_uniform_mesh(
+pub fn elem2dist_for_uniform_mesh<Index>(
     idx_elem_kernel: usize,
-    elem2elem_adj: &[usize],
+    elem2elem_adj: &[Index],
     num_elem: usize,
-) -> Vec<usize> {
+) -> Vec<usize>
+where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>
+{
     let num_edge = elem2elem_adj.len() / num_elem;
     assert_eq!(elem2elem_adj.len(), num_edge * num_elem);
     let mut elem2order = vec![usize::MAX; num_elem];
@@ -56,16 +58,16 @@ pub fn elem2dist_for_uniform_mesh(
         count += 1;
         for i_edge in 0..num_edge {
             let i_elm1 = elem2elem_adj[i_elm0 * num_edge + i_edge];
-            if i_elm1 == usize::MAX {
+            if i_elm1 == Index::max_value() {
                 continue;
             }
             let i_dist1 = i_dist0 + 1;
-            if i_dist1 >= elem2dist[i_elm1] {
+            if i_dist1 >= elem2dist[i_elm1.as_()] {
                 continue;
             }
-            elem2dist[i_elm1] = i_dist1; // Found the shortest path so far
+            elem2dist[i_elm1.as_()] = i_dist1; // Found the shortest path so far
             que.push(Node {
-                ind: i_elm1,
+                ind: i_elm1.as_(),
                 dist: i_dist1,
             }); // candidate of shortest path
         }
