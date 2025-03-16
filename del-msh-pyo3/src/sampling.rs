@@ -14,9 +14,5 @@ pub fn sample_uniformly_trimesh(
     val01_a: f32,
     val01_b: f32,
 ) -> (usize, f32, f32) {
-    del_msh_core::trimesh::sample_uniformly(
-        cumsum_tri2area.as_slice().unwrap(),
-        val01_a,
-        val01_b,
-    )
+    del_msh_core::trimesh::sample_uniformly(cumsum_tri2area.as_slice().unwrap(), val01_a, val01_b)
 }

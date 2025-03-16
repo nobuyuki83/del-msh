@@ -5,7 +5,8 @@ pub fn unidex_vertex_attribute_for_triangle_mesh<Index>(
     vtx2val: &[f32],
     num_val: usize,
 ) -> Vec<f32>
-where Index: num_traits::AsPrimitive<usize>
+where
+    Index: num_traits::AsPrimitive<usize>,
 {
     let num_tri = tri2vtx.len() / 3;
     let mut tri2node2val = vec![0_f32; num_tri * 3 * num_val];

@@ -319,8 +319,7 @@ fn test_voronoi_concave() {
     let vtxl2xy = vec![
         0.0, 0.0, 1.0, 0.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.5, 1.0, 0.5, 1.0, 1.0, 0.0, 1.0,
     ];
-    let site2xy =
-        crate::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 30, &mut reng);
+    let site2xy = crate::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         // save boundary loop and input points
@@ -359,8 +358,7 @@ fn test_voronoi_convex() {
     use del_geo_core::vec2::Vec2;
     let mut reng = rand::rng();
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    let site2xy =
-        crate::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 30, &mut reng);
+    let site2xy = crate::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 30, &mut reng);
     let num_site = site2xy.len() / 2;
     {
         let mut vtxl2xy = vtxl2xy.clone();

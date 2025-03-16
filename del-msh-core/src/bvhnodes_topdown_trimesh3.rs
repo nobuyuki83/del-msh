@@ -205,8 +205,13 @@ where
     usize: AsPrimitive<T>,
 {
     let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(3);
-    let tri2tri =
-        crate::elem2elem::from_uniform_mesh::<usize>(tri2vtx, 3, &face2idx, &idx2node, vtx2xyz.len() / 3);
+    let tri2tri = crate::elem2elem::from_uniform_mesh::<usize>(
+        tri2vtx,
+        3,
+        &face2idx,
+        &idx2node,
+        vtx2xyz.len() / 3,
+    );
     let tri2center = crate::elem2center::from_uniform_mesh_as_points(tri2vtx, 3, vtx2xyz, 3);
     from_uniform_mesh_with_elem2elem_elem2center(&tri2tri, 3, &tri2center)
 }

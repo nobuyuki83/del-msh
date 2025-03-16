@@ -59,8 +59,9 @@ pub fn from_uniform_mesh_with_vtx2elem<Index>(
     face2jdx: &[usize],
     jdx2node: &[usize],
 ) -> Vec<Index>
-where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
-    usize: num_traits::AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
 {
     assert!(!vtx2idx.is_empty());
     let num_vtx = vtx2idx.len() - 1;
@@ -138,8 +139,9 @@ pub fn from_uniform_mesh<Index>(
     idx2node: &[usize],
     num_vtx: usize,
 ) -> Vec<Index>
-where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
-    usize: num_traits::AsPrimitive<Index>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
 {
     let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
     from_uniform_mesh_with_vtx2elem(

@@ -132,8 +132,7 @@ fn test_backward() -> anyhow::Result<()> {
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     // let mut reng = rand::thread_rng();
-    let site2xy0 =
-        del_msh_core::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 10, &mut reng);
+    let site2xy0 = del_msh_core::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 10, &mut reng);
     let site2xy0 = {
         candle_core::Var::from_slice(
             &site2xy0,

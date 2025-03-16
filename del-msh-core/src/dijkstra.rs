@@ -34,7 +34,8 @@ pub fn elem2dist_for_uniform_mesh<Index>(
     elem2elem_adj: &[Index],
     num_elem: usize,
 ) -> Vec<usize>
-where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
 {
     let num_edge = elem2elem_adj.len() / num_elem;
     assert_eq!(elem2elem_adj.len(), num_edge * num_elem);

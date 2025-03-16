@@ -14,12 +14,12 @@ pub fn make_super_triangle<T>(
     max_xy: &[T; 2],
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
-    T: num_traits::Float
+    T: num_traits::Float,
 {
     let one = T::one();
     let two = one + one;
     let three = two + one;
-    let four  = two + two;
+    let four = two + two;
     let six = three + three;
     let half = one / two;
     // super triangle
@@ -487,7 +487,7 @@ pub fn triangulate_single_connected_shape<Real>(
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
     Real: num_traits::Float + std::fmt::Display + std::fmt::Debug + 'static,
-    f64: AsPrimitive<Real>
+    f64: AsPrimitive<Real>,
 {
     let point_idx_to_delete = {
         // vertices of the super triangle are to be deleted

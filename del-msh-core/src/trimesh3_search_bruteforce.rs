@@ -6,9 +6,10 @@ pub fn first_intersection_ray<Index, Real>(
     tri2vtx: &[Index],
     vtx2xyz: &[Real],
 ) -> Option<(Real, Index)>
-where Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<Index>,
-    Real: num_traits::Float
+    Real: num_traits::Float,
 {
     use num_traits::AsPrimitive;
     let mut hit_pos = Vec::<(Real, Index)>::new();
