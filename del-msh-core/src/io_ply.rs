@@ -1,3 +1,5 @@
+//! methods for Ply file formats
+
 use std::io::Read;
 enum Format {
     Ascii,

@@ -331,3 +331,59 @@ where
         edge_length_internal,
     )
 }
+
+pub fn poisson_disk_sampling<RNG>(
+    vtxl2xy: &[f32],
+    radius: f32,
+    num_iteration: usize,
+    reng: &mut RNG,
+) -> Vec<f32>
+where
+    RNG: rand::Rng,
+{
+    use del_geo_core::vec2::Vec2;
+    let (tri2vtx, vtx2xyz) =
+        crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(vtxl2xy, -1., -1.);
+    let tri2cumarea = crate::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 2);
+    let mut vtx2vectwo: Vec<[f32; 2]> = vec![];
+    for _iter in 0..num_iteration {
+        let (i_tri, r0, r1) = crate::trimesh::sample_uniformly(&tri2cumarea, reng.random(), reng.random());
+        let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(
+            &tri2vtx, &vtx2xyz, i_tri, r0, r1,
+        );
+        let mut is_near = false;
+        for pos0 in &vtx2vectwo {
+            // TODO: use kd-tree to accelerate this process
+            if pos0.sub(&pos).norm() > radius {
+                continue;
+            }
+            is_near = true;
+            break;
+        }
+        if is_near {
+            continue;
+        }
+        vtx2vectwo.push(pos);
+    }
+    use slice_of_array::SliceFlatExt;
+    vtx2vectwo.flat().to_vec()
+}
+
+#[test]
+fn test_poisson_disk_sampling() {
+    let mut reng = rand::rng();
+    let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    let vtx2xy = poisson_disk_sampling(&vtxl2xy, 0.1, 2000, &mut reng);
+    {
+        // write boundary and
+        let mut vtxl2xy = vtxl2xy.clone();
+        vtxl2xy.extend(vtx2xy);
+        crate::io_obj::save_edge2vtx_vtx2xyz(
+            "../target/poisson_disk.obj",
+            &[0, 1, 1, 2, 2, 3, 3, 0],
+            &vtxl2xy,
+            2,
+        )
+            .unwrap();
+    }
+}

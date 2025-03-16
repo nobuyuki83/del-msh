@@ -1,15 +1,27 @@
+//! 2D triangle mesh with dynamic topology change for meshing, re-meshing
+
 use num_traits::AsPrimitive;
 
-/// Returns tri2vtx, tri2tri, vtx2tri
+/// make a large triangle that surrounds input 2d points
+///
+/// # Returns
+/// * `tri2vtx` -
+/// * `tri2tri` - index of adjacent triangle for each triangle edge
+/// * `vtx2tri` -
 pub fn make_super_triangle<T>(
     vtx2xy: &mut Vec<[T; 2]>,
     min_xy: &[T; 2],
     max_xy: &[T; 2],
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
-    T: num_traits::Float + 'static + Copy,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float
 {
+    let one = T::one();
+    let two = one + one;
+    let three = two + one;
+    let four  = two + two;
+    let six = three + three;
+    let half = one / two;
     // super triangle
     let mut vtx2tri = vec![usize::MAX; vtx2xy.len()];
     //
@@ -24,19 +36,19 @@ where
         (
             max_len,
             [
-                (min_xy[0] + max_xy[0]) * 0.5_f64.as_(),
-                (min_xy[1] + max_xy[1]) * 0.5_f64.as_(),
+                (min_xy[0] + max_xy[0]) * half,
+                (min_xy[1] + max_xy[1]) * half,
             ],
         )
     };
-    let tri_len: T = max_len * 4_f64.as_();
-    let tmp_len: T = tri_len * (3.0_f64.sqrt() / 6.0_f64).as_();
+    let tri_len: T = max_len * four;
+    let tmp_len: T = tri_len * three.sqrt() / six;
     let npo = vtx2xy.len();
     //
     vtx2xy.resize(npo + 3, [T::zero(); 2]);
-    vtx2xy[npo] = [center[0], center[1] + 2_f64.as_() * tmp_len];
-    vtx2xy[npo + 1] = [center[0] - 0.5_f64.as_() * tri_len, center[1] - tmp_len];
-    vtx2xy[npo + 2] = [center[0] + 0.5_f64.as_() * tri_len, center[1] - tmp_len];
+    vtx2xy[npo] = [center[0], center[1] + two * tmp_len];
+    vtx2xy[npo + 1] = [center[0] - half * tri_len, center[1] - tmp_len];
+    vtx2xy[npo + 2] = [center[0] + half * tri_len, center[1] - tmp_len];
     //
     vtx2tri.resize(npo + 3, 0);
     //
@@ -112,8 +124,7 @@ pub fn should_flip<T>(
     vtx2xy: &[[T; 2]],
 ) -> bool
 where
-    T: num_traits::Float + 'static + Copy + std::fmt::Display + std::fmt::Debug,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
     if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() / 3 {
         return false;
@@ -137,10 +148,10 @@ where
     let area_diamond = a_i0_i1_i2 + a_j0_i2_i1;
     let a_i0_i1_j0 = del_geo_core::tri2::area(&pi0, &pi1, &pj0);
     let a_i0_j0_i2 = del_geo_core::tri2::area(&pi0, &pj0, &pi2);
-    if a_i0_i1_j0 < area_diamond * 1.0e-3f64.as_() {
+    if a_i0_i1_j0 < area_diamond * T::epsilon() {
         return false;
     }
-    if a_i0_j0_i2 < area_diamond * 1.0e-3f64.as_() {
+    if a_i0_j0_i2 < area_diamond * T::epsilon() {
         return false;
     }
     let cc = del_geo_core::tri2::circumcenter(&pi0, &pi1, &pi2);
@@ -159,8 +170,7 @@ pub fn delaunay_around_point<T>(
     vtx2tri: &mut [usize],
     vtx2xy: &[[T; 2]],
 ) where
-    T: num_traits::Float + 'static + Copy + std::fmt::Debug + std::fmt::Display,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + std::fmt::Debug + std::fmt::Display,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     assert!(i_vtx0 < vtx2tri.len());
@@ -235,8 +245,7 @@ fn find_edge_point_across_edge<T>(
     vtx2xy: &[[T; 2]],
 ) -> Option<(usize, usize, usize, T)>
 where
-    T: num_traits::Float + 'static + Copy + std::fmt::Debug,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + std::fmt::Debug,
 {
     let i_tri_ini = vtx2tri[ipo0];
     let i_node_ini = crate::trimesh_topology::find_node(ipo0, tri2vtx, i_tri_ini);
@@ -252,14 +261,14 @@ where
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
-            if area0 > -(1.0e-20_f64.as_()) {
+            if area0 > -T::epsilon() {
                 let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
                 );
-                if area1 > -(1.0e-20_f64.as_()) {
-                    assert!(area0 + area1 > 1.0e-20_f64.as_());
+                if area1 > -T::epsilon() {
+                    assert!(area0 + area1 > T::epsilon());
                     let ratio = area0 / (area0 + area1);
                     return Some((i_tri_cur, i2_node, i3_node, ratio));
                 }
@@ -304,14 +313,14 @@ where
                 &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
                 &vtx2xy[ipo1],
             );
-            if area0 > (-1.0e-20_f64).as_() {
+            if area0 > -T::epsilon() {
                 let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
                     &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
                 );
-                if area1 > (-1.0e-20_f64).as_() {
-                    assert!(area0 + area1 > 1.0e-20_f64.as_());
+                if area1 > -T::epsilon() {
+                    assert!(area0 + area1 > T::epsilon());
                     let ratio = area0 / (area0 + area1);
                     return Some((i_tri_cur, i2_node, i3_node, ratio));
                 }
@@ -349,8 +358,7 @@ pub fn enforce_edge<T>(
     i1_vtx: usize,
     vtx2xy: &[[T; 2]],
 ) where
-    T: num_traits::Float + 'static + Copy + std::fmt::Debug,
-    f64: AsPrimitive<T>,
+    T: num_traits::Float + std::fmt::Debug,
 {
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     assert!(i0_vtx < vtx2tri.len());
@@ -388,25 +396,25 @@ pub fn enforce_edge<T>(
             else {
                 panic!();
             };
-            assert!(ratio > (-1.0e-20_f64).as_());
+            assert!(ratio > -T::epsilon());
             // assert!( ratio < 1_f64.as_() + 1.0e-20_f64.as_());
             assert!(
                 del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i0_node]],
                     &vtx2xy[i1_vtx]
-                ) > 1.0e-20_f64.as_()
+                ) > T::epsilon()
             );
             assert!(
                 del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[i1_vtx],
                     &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]
-                ) > 1.0e-20_f64.as_()
+                ) > T::epsilon()
             );
-            if ratio < 1.0e-20_f64.as_() {
+            if ratio < T::epsilon() {
                 panic!();
-            } else if ratio > 1.0_f64.as_() - 1.0e-10_f64.as_() {
+            } else if ratio > T::one() - T::epsilon() {
                 panic!();
             } else {
                 let ied0 = 3 - i0_node - i1_node;
@@ -478,8 +486,8 @@ pub fn triangulate_single_connected_shape<Real>(
     idx2vtx: &[usize],
 ) -> (Vec<usize>, Vec<usize>, Vec<usize>)
 where
-    Real: num_traits::Float + Copy + 'static + std::fmt::Display + std::fmt::Debug,
-    f64: AsPrimitive<Real>,
+    Real: num_traits::Float + std::fmt::Display + std::fmt::Debug + 'static,
+    f64: AsPrimitive<Real>
 {
     let point_idx_to_delete = {
         // vertices of the super triangle are to be deleted

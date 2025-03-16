@@ -1,3 +1,5 @@
+//! methods for making cluster
+
 pub fn from_vtx2vtx(vtx2idx: &[usize], idx2vtx: &[usize], num_cluster: usize) -> Vec<usize> {
     let num_vtx = vtx2idx.len() - 1;
     let mut vtx2group = vec![0; num_vtx];

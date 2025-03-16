@@ -1,3 +1,4 @@
+//! reading Nastran file
 use num_traits::AsPrimitive;
 
 fn parse(s: &str) -> f32 {

@@ -105,7 +105,7 @@ pub fn sym_detector(
         let r0 = rng.random::<f32>();
         let r1 = rng.random::<f32>();
         let (i_tri, r0, r1) =
-            del_msh_core::sampling::sample_uniformly_trimesh(&tri2cumsumarea, r0, r1);
+            del_msh_core::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
         let p0 = del_msh_core::trimesh::position_from_barycentric_coordinate::<_, 3>(
             &tri2vtx, &vtx2xyz, i_tri, r0, r1,
         );

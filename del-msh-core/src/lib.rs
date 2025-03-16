@@ -29,7 +29,6 @@ pub mod dijkstra;
 pub mod elem2center;
 pub mod elem2group;
 pub mod extract;
-pub mod sampling;
 pub mod transform;
 pub mod unindex;
 

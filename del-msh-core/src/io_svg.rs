@@ -1,3 +1,5 @@
+//! methods for SVG file format
+
 pub fn svg_outline_path_from_shape(s0: &str) -> Vec<String> {
     let s0 = s0.as_bytes();
     let mut imark = 0;

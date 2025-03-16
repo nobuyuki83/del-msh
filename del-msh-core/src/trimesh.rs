@@ -57,3 +57,25 @@ where
 {
     tri2cumsumarea_with_condition(tri2vtx, vtx2xyz, num_dim, |_itri| true)
 }
+
+/// sample points uniformly inside triangle mesh
+/// * val01_a - uniformly sampled float value [0,1]
+/// * val01_b - uniformly sampled float value [0,1]
+/// # Return
+/// (i_tri: usize, r0: Real, r1: Real)
+pub fn sample_uniformly<Real>(
+    tri2cumsumarea: &[Real],
+    val01_a: Real,
+    val01_b: Real,
+) -> (usize, Real, Real)
+where
+    Real: num_traits::Float + std::fmt::Debug,
+{
+    let (i_tri_l, r0, _p0) = crate::cumsum::sample(tri2cumsumarea, val01_a);
+    if r0 + val01_b > Real::one() {
+        let r0a = r0;
+        let r1a = val01_b;
+        return (i_tri_l, Real::one() - r1a, Real::one() - r0a);
+    }
+    (i_tri_l, r0, val01_b)
+}

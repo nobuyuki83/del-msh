@@ -1,4 +1,4 @@
-//! methods for all kinds of mesh
+//! methods for mapping data on vertex
 
 use num_traits::AsPrimitive;
 
