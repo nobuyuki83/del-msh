@@ -120,24 +120,50 @@ pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
     vtx2xy
 }
 
-pub fn distance_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Real
+pub fn distance_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Option<Real>
 where
-    Real: num_traits::Float + Copy + 'static,
-    f64: AsPrimitive<Real>,
+    Real: num_traits::Float + std::fmt::Debug + 'static,
+    usize: AsPrimitive<Real>,
+{
+    let (local_coord, pos) = nearest_to_point(vtx2xy, g)?;
+    let dist = del_geo_core::edge2::length(&pos, g);
+    Some(dist)
+}
+
+pub fn nearest_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Option<(Real, [Real; 2])>
+where
+    Real: num_traits::Float + std::fmt::Debug + 'static,
+    usize: AsPrimitive<Real>,
 {
     // visit all the boudnary
     let np = vtx2xy.len() / 2;
-    let mut dist_min = Real::max_value();
+    let mut dist_min: Option<Real> = None;
+    let mut p_near = [Real::zero(), Real::zero()];
+    let mut i_edge_min = usize::MAX;
+    let mut ratio_min = Real::zero();
     for ip in 0..np {
         let jp = (ip + 1) % np;
         let pi = crate::vtx2xy::to_vec2(vtx2xy, ip);
         let pj = crate::vtx2xy::to_vec2(vtx2xy, jp);
-        let (dist, _p_near) = del_geo_core::edge2::nearest_point2(pi, pj, g);
-        if dist < dist_min {
-            dist_min = dist;
-        }
+        let (ratio, pos) = del_geo_core::edge2::nearest_to_point(pi, pj, g);
+        let dist = del_geo_core::edge2::length(&pos, g);
+        let is_update = if let Some(dist_min) = dist_min {
+            dist < dist_min
+        } else {
+            true
+        };
+        if is_update {
+            dist_min = Some(dist);
+            p_near = pos;
+            i_edge_min = ip;
+            ratio_min = ratio;
+        };
     }
-    dist_min
+    if let Some(dist_min) = dist_min {
+        Some((i_edge_min.as_() + ratio_min, p_near))
+    } else {
+        None
+    }
 }
 
 pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
@@ -169,7 +195,7 @@ pub fn wdw_sdf(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
         let ps = arrayref::array_ref!(vtx2xy, (iej % nej) * 2, 2);
         let pe = arrayref::array_ref!(vtx2xy, ((iej + 1) % nej) * 2, 2);
         winding_number += del_geo_core::edge2::winding_number(ps, pe, q);
-        let (_rm, pm) = del_geo_core::edge2::nearest_point2(ps, pe, q);
+        let (_rm, pm) = del_geo_core::edge2::nearest_to_point(ps, pe, q);
         let dist0 = del_geo_core::edge2::length(&pm, q);
         if min_dist > 0. && dist0 > min_dist {
             continue;

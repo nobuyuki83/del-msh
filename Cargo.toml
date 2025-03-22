@@ -42,7 +42,7 @@ del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
 # for development
 # del-geo-core = { path="../del-geo/del-geo-core"}
 # del-gl-core = {path = "../del-gl/del-gl-core"} # this is defined here
-# del-gl-winit-glutin = {path = "../del-gl/del-gl-winit-glutin"}
+ #del-gl-winit-glutin = {path = "../del-gl/del-gl-winit-glutin"}
 # candle-core = { git="https://github.com/huggingface/candle.git" }
 
 # for GitHub push
