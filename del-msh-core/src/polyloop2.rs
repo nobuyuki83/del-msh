@@ -159,7 +159,7 @@ where
             ratio_min = ratio;
         };
     }
-    dist_min.map(|_dist_min| (i_edge_min.as_() + ratio_min, p_near) )
+    dist_min.map(|_dist_min| (i_edge_min.as_() + ratio_min, p_near))
 }
 
 pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
