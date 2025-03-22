@@ -125,7 +125,7 @@ where
     Real: num_traits::Float + std::fmt::Debug + 'static,
     usize: AsPrimitive<Real>,
 {
-    let (local_coord, pos) = nearest_to_point(vtx2xy, g)?;
+    let (_local_coord, pos) = nearest_to_point(vtx2xy, g)?;
     let dist = del_geo_core::edge2::length(&pos, g);
     Some(dist)
 }
@@ -159,11 +159,7 @@ where
             ratio_min = ratio;
         };
     }
-    if let Some(dist_min) = dist_min {
-        Some((i_edge_min.as_() + ratio_min, p_near))
-    } else {
-        None
-    }
+    dist_min.map(|_dist_min| (i_edge_min.as_() + ratio_min, p_near) )
 }
 
 pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
