@@ -95,6 +95,28 @@ where
     )
 }
 
+
+/// the center is the origin
+pub fn from_circle(rad: f32, n: usize) -> (Vec<usize>, Vec<f32>){
+    let num_vtx = n + 1;
+    let mut vtx2xy = Vec::<f32>::with_capacity(num_vtx * 2);
+    vtx2xy.push(0f32);
+    vtx2xy.push(0f32);
+    for i in 0..n {
+        let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
+        vtx2xy.push( rad * theta.cos() );
+        vtx2xy.push( rad * theta.sin() );
+    }
+    let mut tri2vtx = Vec::<usize>::with_capacity(n * 3);
+    for i in 0..n {
+        tri2vtx.push( 0 );
+        tri2vtx.push( i+1 );
+        tri2vtx.push( (i+1)%n+1 );
+    }
+    (tri2vtx, vtx2xy)
+}
+
+
 // ------------------------------
 // below: nalgebra dependent
 

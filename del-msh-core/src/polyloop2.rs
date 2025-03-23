@@ -20,7 +20,7 @@ where
     wn
 }
 
-pub fn is_inside<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+pub fn is_include_a_point<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
 where
     Real: num_traits::Float + num_traits::FloatConst,
 {
@@ -31,6 +31,57 @@ where
         return true;
     }
     false
+}
+
+pub fn is_include_polyloop2<Real>(vtx2xy_outside: &[Real], vtx2xy_inside: &[Real]) -> bool
+where
+    Real: num_traits::Float + num_traits::FloatConst + std::fmt::Debug,
+{
+    dbg!("todo: make");
+    let mut is_out = false;
+    let one = Real::one();
+    let thres = one / (one + one + one + one + one);
+    for xy_in in vtx2xy_inside.chunks(2) {
+        let xy_in = [xy_in[0], xy_in[1]];
+        let wn = winding_number(vtx2xy_outside, &xy_in);
+        if (wn - one).abs() > thres {
+            is_out = true
+        }
+    }
+    is_out
+}
+
+pub fn maximum_penetration_of_included_point2s<Real>(vtx2xy_outside: &[Real], vtx2xy_inside: &[Real]) -> Option<([Real;2], [Real;2])>
+where
+    Real: num_traits::Float + num_traits::FloatConst + 'static + std::fmt::Debug,
+    usize: AsPrimitive<Real>,
+{
+    let zero = Real::zero();
+    let one = Real::one();
+    let thres = one / (one + one + one + one + one);
+    let mut dist_min: Option<Real> = None;
+    let mut pos_outside_min = [zero;2];
+    let mut pos_inside_min = [zero;2];
+    for xy_in in vtx2xy_inside.chunks(2) {
+        let xy_in = [xy_in[0], xy_in[1]];
+        let wn = winding_number(vtx2xy_outside, &xy_in);
+        if (wn - one).abs() < thres { continue; }
+        let (_lcoord, po) = nearest_to_point(vtx2xy_outside, &xy_in).unwrap();
+        let dist = del_geo_core::edge2::length(&xy_in, &po);
+        let is_update = if let Some(dist_min) = dist_min {
+            dist > dist_min
+        }
+        else {
+            true
+        };
+        if is_update {
+            dist_min = Some(dist);
+            pos_outside_min = po;
+            pos_inside_min = xy_in;
+        }
+    }
+    let _dist_min = dist_min?;
+    Some((pos_outside_min, pos_inside_min))
 }
 
 /// area
@@ -268,7 +319,7 @@ where
         for iy in 0..ny {
             let x = base_pos[0] + (ix.as_() + rng.random::<Real>()) * cell_len;
             let y = base_pos[1] + (iy.as_() + rng.random::<Real>()) * cell_len;
-            let is_inside = is_inside(vtx2xy, &[x, y]);
+            let is_inside = is_include_a_point(vtx2xy, &[x, y]);
             if !is_inside {
                 continue;
             }
