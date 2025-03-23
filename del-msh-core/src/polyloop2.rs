@@ -51,7 +51,10 @@ where
     is_out
 }
 
-pub fn maximum_penetration_of_included_point2s<Real>(vtx2xy_outside: &[Real], vtx2xy_inside: &[Real]) -> Option<([Real;2], [Real;2])>
+pub fn maximum_penetration_of_included_point2s<Real>(
+    vtx2xy_outside: &[Real],
+    vtx2xy_inside: &[Real],
+) -> Option<([Real; 2], [Real; 2])>
 where
     Real: num_traits::Float + num_traits::FloatConst + 'static + std::fmt::Debug,
     usize: AsPrimitive<Real>,
@@ -60,18 +63,19 @@ where
     let one = Real::one();
     let thres = one / (one + one + one + one + one);
     let mut dist_min: Option<Real> = None;
-    let mut pos_outside_min = [zero;2];
-    let mut pos_inside_min = [zero;2];
+    let mut pos_outside_min = [zero; 2];
+    let mut pos_inside_min = [zero; 2];
     for xy_in in vtx2xy_inside.chunks(2) {
         let xy_in = [xy_in[0], xy_in[1]];
         let wn = winding_number(vtx2xy_outside, &xy_in);
-        if (wn - one).abs() < thres { continue; }
+        if (wn - one).abs() < thres {
+            continue;
+        }
         let (_lcoord, po) = nearest_to_point(vtx2xy_outside, &xy_in).unwrap();
         let dist = del_geo_core::edge2::length(&xy_in, &po);
         let is_update = if let Some(dist_min) = dist_min {
             dist > dist_min
-        }
-        else {
+        } else {
             true
         };
         if is_update {
