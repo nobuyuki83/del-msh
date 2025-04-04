@@ -41,28 +41,41 @@ where
         let (x, _) = del_geo_core::vec3::basis_xy_from_basis_z(&v01);
         vtx2bin[0..3].copy_from_slice(&x);
     }
-    for iseg1 in 1..num_vtx - 1 {
-        let iv0 = iseg1 - 1;
-        let iv1 = iseg1;
-        let iv2 = iseg1 + 1;
-        let iseg0 = iseg1 - 1;
+    for i_seg1 in 1..num_vtx - 1 {
+        let iv0 = i_seg1 - 1;
+        let iv1 = i_seg1;
+        let iv2 = i_seg1 + 1;
+        let i_seg0 = i_seg1 - 1;
         let p0 = arrayref::array_ref![vtx2xyz, iv0 * 3, 3];
         let p1 = arrayref::array_ref![vtx2xyz, iv1 * 3, 3];
         let p2 = arrayref::array_ref![vtx2xyz, iv2 * 3, 3];
         let v01 = p1.sub(p0);
         let v12 = p2.sub(p1);
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
-        let b01: &[T; 3] = arrayref::array_ref![vtx2bin, iseg0 * 3, 3];
+        let b01: &[T; 3] = arrayref::array_ref![vtx2bin, i_seg0 * 3, 3];
         let b12: [T; 3] = del_geo_core::mat3_col_major::mult_vec(&rot, b01);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, iseg1).copy_from_slice(&b12);
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, i_seg1).copy_from_slice(&b12);
     }
     {
-        let a: &[T; 3] = &vtx2bin[(num_vtx - 2) * 3..(num_vtx - 1) * 3]
-            .try_into()
-            .unwrap();
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(a);
+        let a: [T; 3] = crate::vtx2xyz::to_vec3(&vtx2bin, num_vtx - 2).to_owned();
+        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(&a);
     }
     vtx2bin
+}
+
+#[test]
+fn test_vtx2framex() {
+    let num_vtx = 10usize;
+    let length = 3.0f64;
+    let vtx2xyz: Vec<f64> = (0..num_vtx)
+        .flat_map(|i_vtx| [0., i_vtx as f64 / num_vtx as f64 * length, 0.])
+        .collect();
+    let vtx2framex = vtx2framex(&vtx2xyz);
+    vtx2framex.chunks(3).for_each(|v| {
+        let v = [v[0], v[1], v[2]];
+        let len = del_geo_core::vec3::norm(&v);
+        assert!((len - 1.0).abs() < 1.0e-8);
+    });
 }
 
 pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
@@ -144,6 +157,39 @@ where
         crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(&c1);
     }
     (vtx2nrm, vtx2bin)
+}
+
+pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
+    vtx2xyz: &mut [T],
+    vtxl2xyz: &[T],
+    rad: T,
+) where
+    T: num_traits::Float + num_traits::FloatConst + 'static,
+    usize: AsPrimitive<T>,
+{
+    use del_geo_core::vec3::Vec3;
+    let one = T::one();
+    let two = one + one;
+    let pi = T::PI();
+    let num_vtxl = vtxl2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len() / 3;
+    let ndiv_circum = num_vtx / num_vtxl;
+    let vtxl2framex = vtx2framex(vtxl2xyz);
+    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
+    for i_vtxl in 0..num_vtxl {
+        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, i_vtxl);
+        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, i_vtxl);
+        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, i_vtxl);
+        for ic in 0..ndiv_circum {
+            let theta = two * pi * ic.as_() / ndiv_circum.as_();
+            let ay = ey.scale(rad * num_traits::Float::cos(theta));
+            let ax = ex.scale(rad * num_traits::Float::sin(theta));
+            let q = p0.add(&ay).add(&ax);
+            vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 1] = q[1];
+            vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 2] = q[2];
+        }
+    }
 }
 
 #[allow(clippy::identity_op)]

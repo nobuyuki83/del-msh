@@ -2,6 +2,43 @@
 
 use num_traits::AsPrimitive;
 
+/// this function is for external allocation of memory
+pub fn cylinder_open_end_number_of_tri_and_vtx(
+    ndiv_circumference: usize,
+    ndiv_side: usize,
+) -> (usize, usize) {
+    let num_vtx = ndiv_circumference * (ndiv_side + 1);
+    let num_tri = ndiv_side * ndiv_circumference * 2;
+    (num_tri, num_vtx)
+}
+
+pub fn cylinder_open_end_set_topology<Index>(tri2vtx: &mut [Index], num_vtxc: usize)
+where
+    Index: num_traits::PrimInt + 'static,
+    usize: AsPrimitive<Index>,
+{
+    let ndiv_side = num_vtxc - 1;
+    let ndiv_circumference = tri2vtx.len() / (2 * 3 * ndiv_side);
+    assert_eq!(tri2vtx.len() / 6, ndiv_side * ndiv_circumference);
+    for i_side in 0..ndiv_side {
+        for i_edge in 0..ndiv_circumference {
+            let i0_vtx = i_side * ndiv_circumference + i_edge;
+            let i1_vtx = i_side * ndiv_circumference + (i_edge + 1) % ndiv_circumference;
+            let i2_vtx = i0_vtx + ndiv_circumference;
+            let i3_vtx = i1_vtx + ndiv_circumference;
+            let i_quad = i_side * ndiv_circumference + i_edge;
+            let (i0_vtx, i1_vtx, i2_vtx, i3_vtx) =
+                (i0_vtx.as_(), i1_vtx.as_(), i2_vtx.as_(), i3_vtx.as_());
+            tri2vtx[(i_quad * 2) * 3] = i0_vtx;
+            tri2vtx[(i_quad * 2) * 3 + 1] = i3_vtx;
+            tri2vtx[(i_quad * 2) * 3 + 2] = i1_vtx;
+            tri2vtx[(i_quad * 2 + 1) * 3] = i0_vtx;
+            tri2vtx[(i_quad * 2 + 1) * 3 + 1] = i2_vtx;
+            tri2vtx[(i_quad * 2 + 1) * 3 + 2] = i3_vtx;
+        }
+    }
+}
+
 /// generate 3D mesh of open cylinder
 /// * `radius` - radius
 /// * 'length' - length
@@ -17,7 +54,8 @@ where
     usize: AsPrimitive<T>,
 {
     assert!(ndiv_circumference > 2);
-    let num_vtx = ndiv_circumference * (ndiv_side + 1);
+    let (num_tri, num_vtx) = cylinder_open_end_number_of_tri_and_vtx(ndiv_circumference, ndiv_side);
+    //
     let mut vtx2xyz = vec![T::zero(); num_vtx * 3];
     let two = T::one() + T::one();
     let half = T::one() / two;
@@ -34,21 +72,8 @@ where
         }
     }
     // ------------------------------------
-    let num_tri = ndiv_side * ndiv_circumference * 2;
     let mut tri2vtx = vec![0usize; num_tri * 3];
-    for i_side in 0..ndiv_side {
-        for i_edge in 0..ndiv_circumference {
-            let i0_vtx = i_side * ndiv_circumference + i_edge;
-            let i1_vtx = i_side * ndiv_circumference + (i_edge + 1) % ndiv_circumference;
-            let i2_vtx = i0_vtx + ndiv_circumference;
-            let i3_vtx = i1_vtx + ndiv_circumference;
-            let i_quad = i_side * ndiv_circumference + i_edge;
-            crate::vtx2xyz::to_vec3_mut(&mut tri2vtx, i_quad * 2)
-                .copy_from_slice(&[i0_vtx, i3_vtx, i1_vtx]);
-            crate::vtx2xyz::to_vec3_mut(&mut tri2vtx, i_quad * 2 + 1)
-                .copy_from_slice(&[i0_vtx, i2_vtx, i3_vtx]);
-        }
-    }
+    cylinder_open_end_set_topology::<usize>(&mut tri2vtx, ndiv_side + 1);
     (tri2vtx, vtx2xyz)
 }
 
