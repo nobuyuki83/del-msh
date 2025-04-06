@@ -199,14 +199,11 @@ where
     (min_idx, ret_normal)
 }
 
-/**
- * computing maximum penetration depth and its normal for the intersection of convex hulls
- * @tparam VEC Eigen::Vector2x
- * @param[out] normalA if we move all the vertices of vtxB with normalA, there is no collision
- * @param[in] vtxsA coordinates of point set A
- * @param[in] vtxsB coordinates of point set B
- * @return Direction (Vector), depth
- */
+
+/// computing maximum penetration depth and its normal for the intersection of convex hulls
+/// normalA if we move all the vertices of vtxB with normalA, there is no collision
+/// vtx2xy_a coordinates of point set A
+/// vtx2xy_b coordinates of point set B
 pub fn penetration_between_two_convexhull2s_using_epa<Real>(
     vtx2xy_a: &[[Real; 2]],
     vtx2xy_b: &[[Real; 2]],

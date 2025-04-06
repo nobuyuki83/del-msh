@@ -59,8 +59,8 @@ where
 }
 
 /// sample points uniformly inside triangle mesh
-/// * val01_a - uniformly sampled float value [0,1]
-/// * val01_b - uniformly sampled float value [0,1]
+/// * val01_a - uniformly sampled float value `[0,1]`
+/// * val01_b - uniformly sampled float value `[0,1]`
 /// # Return
 /// (i_tri: usize, r0: Real, r1: Real)
 pub fn sample_uniformly<Real>(
