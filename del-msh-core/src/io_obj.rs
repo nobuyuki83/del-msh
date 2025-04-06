@@ -321,6 +321,22 @@ where
     Ok(())
 }
 
+fn write_vtx2nrm<Real>(file: &mut std::io::BufWriter<File>, vtx2nrm: &[Real]) -> anyhow::Result<()>
+where
+    Real: std::fmt::Display,
+{
+    for i_vtx in 0..vtx2nrm.len() / 3 {
+        writeln!(
+            file,
+            "vn {} {} {}",
+            vtx2nrm[i_vtx * 3],
+            vtx2nrm[i_vtx * 3 + 1],
+            vtx2nrm[i_vtx * 3 + 2]
+        )?;
+    }
+    Ok(())
+}
+
 fn write_vtx2xyz_vtx2rgb<Real>(
     file: &mut std::io::BufWriter<File>,
     vtx2xyz: &[Real],
@@ -417,6 +433,30 @@ where
             tri2vtx[i_tri * 3 + 1] + Index::one(),
             tri2vtx[i_tri * 3 + 2] + Index::one()
         )?;
+    }
+    Ok(())
+}
+
+pub fn save_tri2vtx_vtx2xyz_vtx2nrm<Path, Index, Real>(
+    filepath: Path,
+    tri2vtx: &[Index],
+    vtx2xyz: &[Real],
+    vtx2nrm: &[Real],
+) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+    Index: num_traits::PrimInt + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, 3)?;
+    write_vtx2nrm(&mut file, vtx2nrm)?;
+    for i_tri in 0..tri2vtx.len() / 3 {
+        let i0 = tri2vtx[i_tri * 3] + Index::one();
+        let i1 = tri2vtx[i_tri * 3 + 1] + Index::one();
+        let i2 = tri2vtx[i_tri * 3 + 2] + Index::one();
+        writeln!(file, "f {}//{} {}//{} {}//{}", i0, i0, i1, i1, i2, i2)?;
     }
     Ok(())
 }

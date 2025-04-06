@@ -185,7 +185,7 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
             let ay = ey.scale(rad * num_traits::Float::cos(theta));
             let ax = ex.scale(rad * num_traits::Float::sin(theta));
             let q = p0.add(&ay).add(&ax);
-            vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3] = q[0];
             vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 1] = q[1];
             vtx2xyz[(i_vtxl * ndiv_circum + ic) * 3 + 2] = q[2];
         }

@@ -2,8 +2,11 @@
 
 use num_traits::AsPrimitive;
 
-pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
-    let mut vtx2nrm = vec![0_f64; vtx2xyz.len()];
+pub fn vtx2normal<Real>(tri2vtx: &[usize], vtx2xyz: &[Real]) -> Vec<Real>
+where
+    Real: num_traits::Float,
+{
+    let mut vtx2nrm = vec![Real::zero(); vtx2xyz.len()];
     for node2vtx in tri2vtx.chunks(3) {
         let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
         let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);
@@ -11,9 +14,9 @@ pub fn vtx2normal(tri2vtx: &[usize], vtx2xyz: &[f64]) -> Vec<f64> {
         let p2 = arrayref::array_ref!(vtx2xyz, i2 * 3, 3);
         let (un, _area) = del_geo_core::tri3::unit_normal_area(p0, p1, p2);
         for &i_vtx in &node2vtx[0..3] {
-            vtx2nrm[i_vtx * 3] += un[0];
-            vtx2nrm[i_vtx * 3 + 1] += un[1];
-            vtx2nrm[i_vtx * 3 + 2] += un[2];
+            vtx2nrm[i_vtx * 3] = vtx2nrm[i_vtx * 3] + un[0];
+            vtx2nrm[i_vtx * 3 + 1] = vtx2nrm[i_vtx * 3 + 1] + un[1];
+            vtx2nrm[i_vtx * 3 + 2] = vtx2nrm[i_vtx * 3 + 2] + un[2];
         }
     }
     for v in vtx2nrm.chunks_mut(3) {
