@@ -199,7 +199,6 @@ where
     (min_idx, ret_normal)
 }
 
-
 /// computing maximum penetration depth and its normal for the intersection of convex hulls
 /// normalA if we move all the vertices of vtxB with normalA, there is no collision
 /// vtx2xy_a coordinates of point set A
