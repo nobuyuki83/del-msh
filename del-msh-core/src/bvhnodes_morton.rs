@@ -288,7 +288,7 @@ fn morton_code_find_split(idx2morton: &[u32], i_mc_start: usize, i_mc_end: usize
     assert!(i_mc_start <= i_mc_end);
     let mut step: usize = i_mc_end - i_mc_start;
     while step > 1 {
-        step = (step + 1) / 2; // half step
+        step = step.div_ceil(2); // (step + 1) / 2; // half step
         let i_mc_new: usize = i_mc_split + step; // proposed new position
         if i_mc_new >= i_mc_end {
             continue;

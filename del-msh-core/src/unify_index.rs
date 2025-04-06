@@ -3,7 +3,7 @@
 use num_traits::AsPrimitive;
 
 /// * Returns
-///     (tri2uni, uni2vtxa, uni2vtxb)
+///   - (tri2uni, uni2vtxa, uni2vtxb)
 pub fn unify_two_indices_of_triangle_mesh<Index>(
     tri2vtxa: &[Index],
     tri2vtxb: &[Index],
