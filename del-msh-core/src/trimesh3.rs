@@ -53,6 +53,60 @@ fn test_vtx2area() {
     assert!((total_area - std::f64::consts::PI * 4.0).abs() < 1.0e-2);
 }
 
+pub fn vtx2curvature_gaussian<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
+where
+    T: num_traits::Float + std::fmt::Debug + num_traits::FloatConst,
+{
+    let two_pi = T::PI() * (T::one() + T::one());
+    let num_vtx = vtx2xyz.len() / 3;
+    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, 3, num_vtx);
+    let mut vtx2curv = vec![T::zero(); num_vtx];
+    let mut total_area = T::zero();
+    for i_vtx in 0..num_vtx {
+        let mut sum_angle = T::zero();
+        let mut sum_area = T::zero();
+        for i_tri in &idx2tri[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+            let i_node = crate::tri2vtx::find_node_tri(&tri2vtx[i_tri * 3..i_tri * 3 + 3], i_vtx);
+            assert_eq!(tri2vtx[i_tri * 3 + i_node], i_vtx);
+            let i0_vtx = tri2vtx[i_tri * 3 + (i_node + 2) % 3];
+            let i1_vtx = tri2vtx[i_tri * 3 + i_node];
+            let i2_vtx = tri2vtx[i_tri * 3 + (i_node + 1) % 3];
+            let p0 = arrayref::array_ref!(vtx2xyz, i0_vtx * 3, 3);
+            let p1 = arrayref::array_ref!(vtx2xyz, i1_vtx * 3, 3);
+            let p2 = arrayref::array_ref!(vtx2xyz, i2_vtx * 3, 3);
+            let angle = del_geo_core::tri3::angle(p0, p1, p2);
+            sum_angle = sum_angle + angle;
+            let area = del_geo_core::tri3::area_for_2nd_node_mixed(p0, p1, p2);
+            sum_area = sum_area + area;
+        }
+        vtx2curv[i_vtx] = (two_pi - sum_angle) / sum_area;
+        total_area = total_area + sum_area;
+    }
+    dbg!(total_area);
+    vtx2curv
+}
+
+#[test]
+fn test_vtx2curvature_gaussian() {
+    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(1_f32, 0.3f32, 32, 32);
+    let vtx2curv = vtx2curvature_gaussian(&tri2vtx, &vtx2xyz);
+    let map = del_canvas::colormap::COLORMAP_JET;
+    let vtx2rgb = vtx2curv
+        .iter()
+        .flat_map(|&c| del_canvas::colormap::apply_colormap(c, -1., 1., map))
+        .collect::<Vec<f32>>();
+    crate::io_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
+        "../target/curvature.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        &vtx2rgb,
+    )
+    .unwrap()
+}
+
+// above: vtx2*** methods
+// ----------------------------------------
+
 pub fn to_corner_points<Index, Real>(
     tri2vtx: &[Index],
     vtx2xyz: &[Real],
@@ -72,7 +126,7 @@ where
     )
 }
 
-// above: vtx2*** method
+// above: to*** methods
 // -------------------------
 
 pub fn tri2normal<T, U>(tri2vtx: &[U], vtx2xyz: &[T]) -> Vec<T>
@@ -177,10 +231,13 @@ pub fn distance_to_points3(tri2vtx: &[usize], vtx2xyz: &[f32], hv2xyz: &[f32]) -
     max_dist
 }
 
-pub fn area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> f32 {
-    let mut sum_area = 0f32;
+pub fn area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> T
+where
+    T: num_traits::Float,
+{
+    let mut sum_area = T::zero();
     for i_tri in 0..tri2vtx.len() / 3 {
-        sum_area += to_tri3(tri2vtx, vtx2xyz, i_tri).area();
+        sum_area = sum_area + to_tri3(tri2vtx, vtx2xyz, i_tri).area();
     }
     sum_area
 }
