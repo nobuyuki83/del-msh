@@ -60,7 +60,7 @@ impl candle_core::InplaceOp3 for Layer {
         assert!(device_elem2vtx.same_device(device_vtx2pos));
         assert!(device_elem2vtx.same_device(device_elem2center));
         del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(
-            device_elem2vtx,
+            &device_elem2vtx.cuda_stream(),
             elem2vtx,
             vtx2pos,
             elem2center,

@@ -51,7 +51,6 @@ impl CustomOp1 for Layer {
         vtx2xyz: &CudaStorage,
         l_vtx2xyz: &Layout,
     ) -> candle_core::Result<(CudaStorage, Shape)> {
-        use candle_core::cuda_backend::cudarc::driver::DeviceSlice; // for CudaSlice::len
         use candle_core::cuda_backend::WrapErr;
         let device = &vtx2xyz.device;
         let num_edge = self.edge2vtx.dim(0)?;
@@ -92,7 +91,7 @@ impl CustomOp1 for Layer {
         assert_eq!(l_transform_world2ndc.dims(), &[16]);
         let vtx2xyz = vtx2xyz.as_cuda_slice::<f32>()?;
         let edge2vtx_contour = del_msh_cudarc::edge2vtx_contour::fwd(
-            device,
+            &device.cuda_stream(),
             tri2vtx,
             vtx2xyz,
             edge2vtx,

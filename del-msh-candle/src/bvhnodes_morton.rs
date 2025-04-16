@@ -37,47 +37,49 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         _l_sorted_morton_code: &Layout,
         vtx2pos: &CudaStorage,
         l_vtx2pos: &Layout,
-    ) -> candle_core::Result<()> {
+    ) -> candle_core::error::Result<()> {
         use candle_core::backend::BackendDevice;
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
         get_cuda_slice_from_storage_u32!(
             sorted_morton_code,
-            device_sorted_morton_code,
+            dev_sorted_morton_code,
             sorted_morton_code
         );
-        get_cuda_slice_from_storage_f32!(vtx2pos, device_vtx2pos, vtx2pos);
-        assert!(device_sorted_morton_code.same_device(device_vtx2pos));
-        let aabb = del_msh_cudarc::vtx2xyz::to_aabb3(device_sorted_morton_code, vtx2pos).w()?;
+        get_cuda_slice_from_storage_f32!(vtx2pos, stream_vtx2pos, vtx2pos);
+        assert!(dev_sorted_morton_code.same_device(stream_vtx2pos));
+        let aabb =
+            del_msh_cudarc::vtx2xyz::to_aabb3(&dev_sorted_morton_code.cuda_stream(), vtx2pos)
+                .w()?;
         let transform_cntr2uni = {
-            let aabb_cpu = device_sorted_morton_code.dtoh_sync_copy(&aabb).w()?;
+            let aabb_cpu = dev_sorted_morton_code.memcpy_dtov(&aabb)?;
             let aabb_cpu = arrayref::array_ref!(&aabb_cpu, 0, 6);
             let transform_cntr2uni_cpu =
                 del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(aabb_cpu);
-            device_sorted_morton_code
-                .htod_copy(transform_cntr2uni_cpu.to_vec())
-                .w()?
+            dev_sorted_morton_code.memcpy_stod(&transform_cntr2uni_cpu)?
         };
         let num_vtx = l_vtx2pos.dim(0)?;
         let (mut idx2vtx, mut idx2morton) = sorted_morton_code.split_at_mut(num_vtx);
         let (mut idx2morton, mut vtx2morton) = idx2morton.split_at_mut(num_vtx);
         del_msh_cudarc::bvhnodes_morton::vtx2morton(
-            device_sorted_morton_code,
+            &dev_sorted_morton_code.cuda_stream(),
             vtx2pos,
             &transform_cntr2uni,
             &mut vtx2morton,
         )
         .w()?;
-        del_cudarc::util::set_consecutive_sequence(device_sorted_morton_code, &mut idx2vtx).w()?;
+        del_cudarc::util::set_consecutive_sequence(
+            &dev_sorted_morton_code.cuda_stream(),
+            &mut idx2vtx,
+        )
+        .w()?;
         del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(
-            device_sorted_morton_code,
+            &dev_sorted_morton_code.cuda_stream(),
             &mut vtx2morton,
             &mut idx2vtx,
         )
         .w()?;
-        device_sorted_morton_code
-            .dtod_copy(&vtx2morton, &mut idx2morton)
-            .w()?;
+        dev_sorted_morton_code.memcpy_dtod(&vtx2morton, &mut idx2morton)?;
         Ok(())
     }
 }
@@ -133,7 +135,7 @@ impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
         let idx2vtx = sorted_morton_code.slice(0..num_vtx);
         let idx2morton = sorted_morton_code.slice(num_vtx..num_vtx * 2);
         del_msh_cudarc::bvhnodes_morton::from_sorted_morton_codes(
-            device_bvhnodes,
+            &device_bvhnodes.cuda_stream(),
             &mut bvhnodes.slice_mut(0..),
             &idx2morton,
             &idx2vtx,

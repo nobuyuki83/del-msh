@@ -1,39 +1,50 @@
-use cudarc::driver::{CudaDevice, CudaSlice};
+use cudarc::driver::{CudaSlice, CudaStream, PushKernelArg};
 use del_cudarc::cudarc;
 
 pub fn vtx2morton(
-    dev: &std::sync::Arc<CudaDevice>,
+    stream: &std::sync::Arc<CudaStream>,
     vtx2xyz: &CudaSlice<f32>,
     transform_xyz2uni: &CudaSlice<f32>,
     vtx2morton: &mut cudarc::driver::CudaViewMut<u32>,
-) -> std::result::Result<(), cudarc::driver::DriverError> {
-    use cudarc::driver::DeviceSlice;
+) -> Result<(), cudarc::driver::DriverError> {
     let num_vtx = vtx2xyz.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_vtx as u32);
-    let param = (num_vtx, vtx2xyz, transform_xyz2uni, vtx2morton);
-    let func =
-        del_cudarc::get_or_load_func(dev, "vtx2morton", del_msh_cudarc_kernel::BVHNODES_MORTON)?;
-    use cudarc::driver::LaunchAsync;
-    unsafe { func.launch(cfg, param) }?;
+    let func = del_cudarc::get_or_load_func(
+        stream.context(),
+        "vtx2morton",
+        del_msh_cudarc_kernel::BVHNODES_MORTON,
+    )?;
+    let mut builder = stream.launch_builder(&func);
+    builder.arg(&num_vtx);
+    builder.arg(vtx2xyz);
+    builder.arg(transform_xyz2uni);
+    builder.arg(vtx2morton);
+    unsafe { builder.launch(cfg) }?;
+    //let param = (num_vtx, vtx2xyz, transform_xyz2uni, vtx2morton);
+    //unsafe { func.launch(cfg, param) }?;
     Ok(())
 }
 
 pub fn from_sorted_morton_codes(
-    dev: &std::sync::Arc<CudaDevice>,
+    stream: &std::sync::Arc<CudaStream>,
     bvnodes: &mut cudarc::driver::CudaViewMut<u32>,
     idx2morton: &cudarc::driver::CudaView<u32>,
     idx2tri: &cudarc::driver::CudaView<u32>,
-) -> std::result::Result<(), cudarc::driver::DriverError> {
-    use cudarc::driver::DeviceSlice;
+) -> Result<(), cudarc::driver::DriverError> {
     let num_leaf = idx2morton.len();
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_leaf as u32);
-    let param = (num_leaf, bvnodes, idx2morton, idx2tri);
     let func = del_cudarc::get_or_load_func(
-        dev,
+        stream.context(),
         "kernel_MortonCode_BVHTopology",
         del_msh_cudarc_kernel::BVHNODES_MORTON,
     )?;
-    use cudarc::driver::LaunchAsync;
-    unsafe { func.launch(cfg, param) }?;
+    let mut builder = stream.launch_builder(&func);
+    builder.arg(&num_leaf);
+    builder.arg(bvnodes);
+    builder.arg(idx2morton);
+    builder.arg(idx2tri);
+    unsafe { builder.launch(cfg) }?;
+    //unsafe { func.launch(cfg, param) }?;
+    //let param = (num_leaf, bvnodes, idx2morton, idx2tri);
     Ok(())
 }

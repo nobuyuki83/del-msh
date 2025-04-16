@@ -1,18 +1,27 @@
-use cudarc::driver::{CudaDevice, CudaSlice, DeviceSlice};
+use cudarc::driver::{CudaSlice, CudaStream, PushKernelArg};
 use del_cudarc::cudarc;
 
 pub fn tri2cntr_from_trimesh3(
-    dev: &std::sync::Arc<CudaDevice>,
+    stream: &std::sync::Arc<CudaStream>,
     tri2vtx: &CudaSlice<u32>,
     vtx2xyz: &CudaSlice<f32>,
     tri2cntr: &mut CudaSlice<f32>,
-) -> std::result::Result<(), cudarc::driver::DriverError> {
+) -> Result<(), cudarc::driver::DriverError> {
     let num_tri = tri2vtx.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_tri as u32);
-    let param = (tri2cntr, num_tri as u32, tri2vtx, vtx2xyz);
-    let from_trimsh =
-        del_cudarc::get_or_load_func(dev, "tri2cntr", del_msh_cudarc_kernel::BVHNODES_MORTON)?;
-    use cudarc::driver::LaunchAsync;
-    unsafe { from_trimsh.launch(cfg, param) }?;
+    let from_trimsh = del_cudarc::get_or_load_func(
+        stream.context(),
+        "tri2cntr",
+        del_msh_cudarc_kernel::BVHNODES_MORTON,
+    )?;
+    let num_tri = num_tri as u32;
+    let mut builder = stream.launch_builder(&from_trimsh);
+    builder.arg(tri2cntr);
+    builder.arg(&num_tri);
+    builder.arg(tri2vtx);
+    builder.arg(vtx2xyz);
+    unsafe { builder.launch(cfg) }?;
+    // let param = (tri2cntr, num_tri as u32, tri2vtx, vtx2xyz);
+    //unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
 }

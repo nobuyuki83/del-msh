@@ -76,11 +76,11 @@ impl candle_core::InplaceOp3 for Layer {
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
         use std::ops::Deref;
-        get_cuda_slice_from_storage_f32!(bvhnode2aabb, device_bvhnode2aabb, bvhnode2aabb);
-        get_cuda_slice_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
-        get_cuda_slice_from_storage_u32!(bvhnodes, device_bvhnodes, bvhnodes);
-        assert!(device_bvhnode2aabb.same_device(device_vtx2xyz));
-        assert!(device_bvhnode2aabb.same_device(device_bvhnodes));
+        get_cuda_slice_from_storage_f32!(bvhnode2aabb, dev_bvhnode2aabb, bvhnode2aabb);
+        get_cuda_slice_from_storage_f32!(vtx2xyz, dev_vtx2xyz, vtx2xyz);
+        get_cuda_slice_from_storage_u32!(bvhnodes, dev_bvhnodes, bvhnodes);
+        assert!(dev_bvhnode2aabb.same_device(dev_vtx2xyz));
+        assert!(dev_bvhnode2aabb.same_device(dev_bvhnodes));
         get_cuda_slice_and_storage_and_layout_from_tensor!(
             tri2vtx,
             s_tri2vtx,
@@ -90,7 +90,7 @@ impl candle_core::InplaceOp3 for Layer {
         );
         assert_eq!(l_tri2vtx.dims(), &[num_tri, 3]);
         del_msh_cudarc::bvhnode2aabb::from_trimesh3_with_bvhnodes(
-            device_bvhnode2aabb,
+            &dev_bvhnode2aabb.cuda_stream(),
             tri2vtx,
             vtx2xyz,
             &bvhnodes.slice(..),
