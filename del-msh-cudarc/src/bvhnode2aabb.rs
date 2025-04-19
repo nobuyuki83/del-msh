@@ -1,5 +1,5 @@
 use cudarc::driver::PushKernelArg;
-use del_cudarc::cudarc;
+use del_cudarc_safe::cudarc;
 
 pub fn from_trimesh3_with_bvhnodes(
     stream: &std::sync::Arc<cudarc::driver::CudaStream>,
@@ -14,7 +14,7 @@ pub fn from_trimesh3_with_bvhnodes(
     let num_branch = num_tri - 1;
     let mut bvhbranch2flag = stream.alloc_zeros::<u32>(num_branch)?;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_tri as u32);
-    let from_trimsh = del_cudarc::get_or_load_func(
+    let from_trimsh = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "from_trimesh3",
         del_msh_cudarc_kernel::BVHNODE2AABB,

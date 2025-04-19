@@ -1,5 +1,5 @@
 use cudarc::driver::{CudaSlice, CudaStream, PushKernelArg};
-use del_cudarc::cudarc;
+use del_cudarc_safe::cudarc;
 
 pub fn tri2cntr_from_trimesh3(
     stream: &std::sync::Arc<CudaStream>,
@@ -9,7 +9,7 @@ pub fn tri2cntr_from_trimesh3(
 ) -> Result<(), cudarc::driver::DriverError> {
     let num_tri = tri2vtx.len() / 3;
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_tri as u32);
-    let from_trimsh = del_cudarc::get_or_load_func(
+    let from_trimsh = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "tri2cntr",
         del_msh_cudarc_kernel::BVHNODES_MORTON,

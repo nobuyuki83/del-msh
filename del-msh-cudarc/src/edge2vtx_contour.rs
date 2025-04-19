@@ -1,5 +1,5 @@
 use cudarc::driver::{CudaSlice, PushKernelArg};
-use del_cudarc::cudarc;
+use del_cudarc_safe::cudarc;
 
 pub fn fwd(
     stream: &std::sync::Arc<cudarc::driver::CudaStream>,
@@ -20,7 +20,7 @@ pub fn fwd(
     let edge2flg = {
         let mut edge2flg = stream.alloc_zeros::<u32>(num_edge + 1)?;
         let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_edge as u32);
-        let func = del_cudarc::get_or_load_func(
+        let func = del_cudarc_safe::get_or_load_func(
             stream.context(),
             "edge2vtx_contour_set_flag",
             del_msh_cudarc_kernel::EDGE2VTX,
@@ -51,6 +51,6 @@ pub fn fwd(
         edge2flg
     };
     let edge2vtx_contour =
-        del_cudarc::get_flagged_element::get_flagged_element(stream, edge2vtx, &edge2flg)?;
+        del_cudarc_safe::get_flagged_element::get_flagged_element(stream, edge2vtx, &edge2flg)?;
     Ok(edge2vtx_contour)
 }

@@ -68,12 +68,12 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
             &mut vtx2morton,
         )
         .w()?;
-        del_cudarc::util::set_consecutive_sequence(
+        del_cudarc_safe::util::set_consecutive_sequence(
             &dev_sorted_morton_code.cuda_stream(),
             &mut idx2vtx,
         )
         .w()?;
-        del_cudarc::sort_by_key_u32::radix_sort_by_key_u32(
+        del_cudarc_safe::sort_by_key_u32::radix_sort_by_key_u32(
             &dev_sorted_morton_code.cuda_stream(),
             &mut vtx2morton,
             &mut idx2vtx,

@@ -1,5 +1,5 @@
 use cudarc::driver::{CudaSlice, CudaStream, PushKernelArg};
-use del_cudarc::cudarc;
+use del_cudarc_safe::cudarc;
 
 pub fn to_aabb3(
     stream: &std::sync::Arc<CudaStream>,
@@ -15,7 +15,7 @@ pub fn to_aabb3(
         }
     };
     let aabb = stream.memcpy_stod(&[f32::MAX, f32::MAX, f32::MAX, f32::MIN, f32::MIN, f32::MIN])?;
-    let func = del_cudarc::get_or_load_func(
+    let func = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "kernel_MinMax_TPB256",
         del_msh_cudarc_kernel::AABB3_FROM_VTX2XYZ,
