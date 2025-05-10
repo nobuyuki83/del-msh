@@ -63,7 +63,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install twine      
           twine upload all_wheels/**/*.whl all_wheels/**/*.tar.gz
-          env:
+        env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
