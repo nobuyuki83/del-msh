@@ -61,7 +61,9 @@ jobs:
       - name: Upload to PyPI
         run: |
           python -m pip install --upgrade pip
-          pip install twine      
+          pip install twine
+          pip install pkginfo
+          python -m pkginfo all_wheels/**/*.whl
           twine upload all_wheels/**/*.whl all_wheels/**/*.tar.gz
         env:
           TWINE_USERNAME: __token__
