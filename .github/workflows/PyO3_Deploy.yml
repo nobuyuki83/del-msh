@@ -43,7 +43,7 @@ jobs:
       run: pip install maturin
     - name: Build macOS universal2 wheel
       run: |
-        maturin build --release -o dist --sdist --universal2 -m del-msh-pyo3/Cargo.toml
+        maturin build --release -o dist --sdist -m del-msh-pyo3/Cargo.toml
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
