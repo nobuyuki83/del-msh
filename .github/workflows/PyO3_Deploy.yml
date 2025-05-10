@@ -57,7 +57,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: wheels
+          path: all_wheels
       - name: Publish to PyPI
         uses: messense/maturin-action@v1
         env:
