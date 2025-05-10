@@ -18,7 +18,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: wheels-linux
         path: dist
 
   windows:
@@ -32,7 +32,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: wheels-windows
         path: dist
 
   macos:
@@ -46,7 +46,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels
+        name: wheels-macos
         path: dist
 
   release:
