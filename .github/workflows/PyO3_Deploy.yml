@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: messense/maturin-action@v1
+    - uses: messense/maturin-action@v1.38
       with:
         manylinux: auto
         command: build
         args: --release --sdist -o dist --find-interpreter -m del-msh-pyo3/Cargo.toml
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: dist
@@ -25,12 +25,12 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: messense/maturin-action@v1
+    - uses: messense/maturin-action@v1.38
       with:
         command: build
         args: --release -o dist --find-interpreter -m del-msh-pyo3/Cargo.toml
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: dist
@@ -39,12 +39,12 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: messense/maturin-action@v1
+    - uses: messense/maturin-action@v1.38
       with:
         command: build
         args: --release -o dist --universal2 --find-interpreter -m del-msh-pyo3/Cargo.toml
     - name: Upload wheels
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: wheels
         path: dist
