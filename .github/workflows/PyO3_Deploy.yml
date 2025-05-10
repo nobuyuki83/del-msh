@@ -58,15 +58,30 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: all_wheels
+      - name: Flatten all wheels into dist/
+        run: |
+          mkdir dist
+          find all_wheels -name '*.whl' -exec cp {} dist/ \;
+          find all_wheels -name '*.tar.gz' -exec cp {} dist/ \;
+      - name: Check wheels
+        run: |
+          pip install twine
+          twine check dist/*
       - name: Upload to PyPI
         run: |
-          python -m pip install --upgrade pip
-          pip install twine
-          twine upload all_wheels/**/*.whl all_wheels/**/*.tar.gz
+          twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-
+#      - name: Upload to PyPI
+#        run: |
+#          python -m pip install --upgrade pip
+#          pip install twine
+#          twine upload all_wheels/**/*.whl all_wheels/**/*.tar.gz
+#        env:
+#          TWINE_USERNAME: __token__
+#          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+#
 #      - name: Publish to PyPI
 #        uses: messense/maturin-action@v1
 #        env:
