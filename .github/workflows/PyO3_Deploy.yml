@@ -42,7 +42,7 @@ jobs:
     - uses: PyO3/maturin-action@v1
       with:
         command: build
-        args: --release -o dist -- -m del-msh-pyo3/Cargo.toml --universal2
+        args: --release -o dist -m del-msh-pyo3/Cargo.toml
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
