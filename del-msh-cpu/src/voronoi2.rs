@@ -437,7 +437,7 @@ fn test_voronoi_sites_on_edge() {
         let mut bedge2xymp = vec![0f32; bedge2vtx.len()];
         for (i_bedge, node2vtx) in bedge2vtx.chunks(2).enumerate() {
             let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-            bedge2xymp[(i_bedge * 2)] = (vtx2xy[(i0_vtx * 2)] + vtx2xy[(i1_vtx * 2)]) * 0.5;
+            bedge2xymp[i_bedge * 2] = (vtx2xy[i0_vtx * 2] + vtx2xy[i1_vtx * 2]) * 0.5;
             bedge2xymp[i_bedge * 2 + 1] = (vtx2xy[i0_vtx * 2 + 1] + vtx2xy[i1_vtx * 2 + 1]) * 0.5;
         }
         bedge2xymp

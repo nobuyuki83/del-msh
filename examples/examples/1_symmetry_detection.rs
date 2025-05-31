@@ -57,7 +57,7 @@ fn extract_triangles_in_symmetry(
             continue;
         }
         tri2flg[i_tri] = 2;
-        stack.push(tri2tri[(i_tri * 3)]);
+        stack.push(tri2tri[i_tri * 3]);
         stack.push(tri2tri[i_tri * 3 + 1]);
         stack.push(tri2tri[i_tri * 3 + 2]);
     }
