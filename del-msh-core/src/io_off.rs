@@ -34,12 +34,14 @@ where
 
 /// load OFF file and output triangle mesh
 /// * `file_path` - path to the file
-pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, T>(file_path: P) -> (Vec<usize>, Vec<T>)
+pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(file_path: P) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
 where
-    T: std::str::FromStr,
-    <T as std::str::FromStr>::Err: std::fmt::Debug,
+    Real: std::str::FromStr,
+    <Real as std::str::FromStr>::Err: std::fmt::Debug,
+    Index: num_traits::PrimInt + 'static,
+    usize: num_traits::AsPrimitive<Index>,
 {
-    let file = std::fs::File::open(file_path).expect("file not found.");
+    let file = std::fs::File::open(file_path)?;
     let mut reader = std::io::BufReader::new(file);
     use std::io::BufRead;
     let mut line = String::new();
@@ -49,24 +51,24 @@ where
     line.clear();
     assert_eq!(strs[0], "OFF");
     use std::str::FromStr;
-    let num_vtx = usize::from_str(strs[1]).unwrap();
-    let num_elem = usize::from_str(strs[2]).unwrap();
+    let num_vtx = usize::from_str(strs[1])?;
+    let num_elem = usize::from_str(strs[2])?;
     // dbg!(num_vtx, num_elem);
-    let mut vtx2xyz = Vec::<T>::with_capacity(num_vtx * 3);
+    let mut vtx2xyz = Vec::<Real>::with_capacity(num_vtx * 3);
     for _i_vtx in 0..num_vtx {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();
         let strs: Vec<_> = strs.split_whitespace().collect();
         line.clear();
         assert_eq!(strs.len(), 3);
-        let x = T::from_str(strs[0]).unwrap();
-        let y = T::from_str(strs[1]).unwrap();
-        let z = T::from_str(strs[2]).unwrap();
+        let x = Real::from_str(strs[0]).unwrap();
+        let y = Real::from_str(strs[1]).unwrap();
+        let z = Real::from_str(strs[2]).unwrap();
         vtx2xyz.push(x);
         vtx2xyz.push(y);
         vtx2xyz.push(z);
     }
-    let mut elem2vtx = Vec::<usize>::with_capacity(num_elem * 3);
+    let mut elem2vtx = Vec::<Index>::with_capacity(num_elem * 3);
     for _i_elem in 0..num_elem {
         let _ = reader.read_line(&mut line);
         let strs = line.clone();
@@ -77,9 +79,10 @@ where
         let i0 = usize::from_str(strs[1]).unwrap();
         let i1 = usize::from_str(strs[2]).unwrap();
         let i2 = usize::from_str(strs[3]).unwrap();
-        elem2vtx.push(i0);
-        elem2vtx.push(i1);
-        elem2vtx.push(i2);
+        use num_traits::AsPrimitive;
+        elem2vtx.push(i0.as_());
+        elem2vtx.push(i1.as_());
+        elem2vtx.push(i2.as_());
     }
-    (elem2vtx, vtx2xyz)
+    Ok((elem2vtx, vtx2xyz))
 }
