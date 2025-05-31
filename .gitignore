@@ -77,4 +77,4 @@ docs/_build/
 .python-version
 
 .ipynb_checkpoints
-del-msh-cudarc-kernel/target/
+del-msh-cuda-kernel/target/

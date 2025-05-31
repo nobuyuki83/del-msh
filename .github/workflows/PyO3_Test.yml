@@ -20,17 +20,17 @@ jobs:
           components: clippy
       - name: Run check
         run: |
-          cd del-msh-pyo3
+          cd del-msh-numpy
           cargo check
       - name: Run test
         run: |
-          cd del-msh-pyo3          
+          cd del-msh-numpy         
           cargo test
       - name: Setup Python
         uses: actions/setup-python@v2
       - name: test
         run: |
-          cd del-msh-pyo3
+          cd del-msh-numpy
           python3 -m venv venv
           source venv/bin/activate
           echo "VIRTUAL ENV:" $VIRTUAL_ENV

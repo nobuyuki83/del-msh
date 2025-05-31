@@ -13,8 +13,8 @@ arrayref.workspace = true
 del-geo-core.workspace = true
 
 # for develop
-# del-msh-core.workspace = true
-# del-msh-cudarc-kernel = { workspace = true, optional = true }
+# del-msh-cpu.workspace = true
+# del-msh-cuda-kernel = { workspace = true, optional = true }
 # del-cudarc = { path="../../del-cudarc", optional = true}
 
 # for push
@@ -23,5 +23,5 @@ del-msh-cudarc-kernel = { workspace = true, optional = true }
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for deploy (internal crates must be specified locally)
-# del-msh-core = "=0.1.37"
-# del-msh-cudarc-kernel = {  version = "=0.1.0", optional = true }
+# del-msh-cpu = "=0.1.37"
+# del-msh-cuda-kernel = {  version = "=0.1.0", optional = true }

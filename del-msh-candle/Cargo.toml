@@ -18,7 +18,7 @@ del-geo-core.workspace = true
 candle-core.workspace = true
 
 # for develop
-# del-msh-core.workspace = true
+# del-msh-cpu.workspace = true
 # del-msh-nalgebra.workspace = true
 # del-msh-cudarc = { workspace = true, optional = true }
 # del-cudarc = { path="../../del-cudarc", optional = true}
@@ -29,7 +29,7 @@ del-msh-cudarc = { workspace = true, optional = true }
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for delpoy (internal crates must specify version explicitly)
-# del-msh-core = "0.1.37"
+# del-msh-cpu = "0.1.37"
 # del-msh-cudarc = {  version="=0.1.39", optional = true }
 # del-msh-nalgebra = "0.1.39"
 # del-cudarc

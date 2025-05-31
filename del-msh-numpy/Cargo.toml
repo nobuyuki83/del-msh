@@ -18,4 +18,4 @@ del-geo-core.workspace = true
 del-msh-core.workspace = true
 
 # for deploy
-# del-msh-core = "0.1.36"
+# del-msh-cpu = "0.1.36"
