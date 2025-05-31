@@ -130,7 +130,7 @@ fn test_convex_hull2() {
                 let p = &vtx2xy[i_vtx];
                 use slice_of_array::SliceFlatExt;
                 let polygon = polygon.flat();
-                let wn = crate::polyloop2::winding_number(&polygon, p);
+                let wn = crate::polyloop2::winding_number(polygon, p);
                 assert!((wn - 1.0).abs() < 1.0e-5);
             }
         }

@@ -341,7 +341,7 @@ fn test_voronoi_concave() {
         for i_site in 0..num_site {
             let vtxc2xy = &site2cell[i_site].vtx2xy;
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy, 2);
         }
         crate::io_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_cells.obj",
@@ -380,7 +380,7 @@ fn test_voronoi_convex() {
         for i_site in 0..num_site {
             let vtxc2xy = &site2cell[i_site].vtx2xy;
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, &vtxc2xy, 2);
+            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy, 2);
         }
         let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_cells.obj",
@@ -417,7 +417,7 @@ fn test_voronoi_convex() {
         crate::io_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_indexed.obj",
             &edge2vtxc,
-            &vtxc2xy,
+            vtxc2xy,
             2,
         )
         .unwrap();
@@ -437,7 +437,7 @@ fn test_voronoi_sites_on_edge() {
         let mut bedge2xymp = vec![0f32; bedge2vtx.len()];
         for (i_bedge, node2vtx) in bedge2vtx.chunks(2).enumerate() {
             let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-            bedge2xymp[i_bedge * 2 + 0] = (vtx2xy[i0_vtx * 2 + 0] + vtx2xy[i1_vtx * 2 + 0]) * 0.5;
+            bedge2xymp[(i_bedge * 2)] = (vtx2xy[(i0_vtx * 2)] + vtx2xy[(i1_vtx * 2)]) * 0.5;
             bedge2xymp[i_bedge * 2 + 1] = (vtx2xy[i0_vtx * 2 + 1] + vtx2xy[i1_vtx * 2 + 1]) * 0.5;
         }
         bedge2xymp

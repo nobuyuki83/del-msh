@@ -12,8 +12,8 @@ fn get_normal_and_origin_from_affine_matrix_of_reflection(
     affine: &[f32; 12],
 ) -> ([f32; 3], [f32; 3]) {
     let (rot, transl): ([f32; 9], [f32; 3]) = (
-        arrayref::array_ref!(affine, 0, 9).clone(),
-        arrayref::array_ref!(affine, 9, 3).clone(),
+        *arrayref::array_ref!(affine, 0, 9),
+        *arrayref::array_ref!(affine, 9, 3),
     );
     // dbg!(rot, transl);
     use del_geo_core::mat3_col_major::Mat3ColMajor;
@@ -57,7 +57,7 @@ fn extract_triangles_in_symmetry(
             continue;
         }
         tri2flg[i_tri] = 2;
-        stack.push(tri2tri[i_tri * 3 + 0]);
+        stack.push(tri2tri[(i_tri * 3)]);
         stack.push(tri2tri[i_tri * 3 + 1]);
         stack.push(tri2tri[i_tri * 3 + 2]);
     }
@@ -82,7 +82,7 @@ pub fn sym_detector(
     num_sample: usize,
 ) -> Vec<DetectedSymmetry> {
     let tri2tri = del_msh_core::elem2elem::from_uniform_mesh(
-        &tri2vtx,
+        tri2vtx,
         3,
         &[0, 2, 4, 6],
         &[1, 2, 2, 0, 0, 1],
@@ -92,7 +92,7 @@ pub fn sym_detector(
     use rand::Rng;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
-    let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 3);
+    let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz, 3);
     let mut samples = vec![
         Sample {
             xyz: [0f32; 3],
@@ -106,9 +106,9 @@ pub fn sym_detector(
         let r1 = rng.random::<f32>();
         let (i_tri, r0, r1) = del_msh_core::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
         let p0 = del_msh_core::trimesh::position_from_barycentric_coordinate::<_, 3>(
-            &tri2vtx, &vtx2xyz, i_tri, r0, r1,
+            tri2vtx, vtx2xyz, i_tri, r0, r1,
         );
-        let n0 = del_msh_core::trimesh3::to_tri3(&tri2vtx, &vtx2xyz, i_tri).unit_normal();
+        let n0 = del_msh_core::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).unit_normal();
         samples[i_sample].xyz.copy_from_slice(&p0);
         samples[i_sample].nrm.copy_from_slice(&n0);
         samples[i_sample].i_tri = i_tri;
@@ -186,22 +186,8 @@ pub fn sym_detector(
         let j_tri = samples[max_weight_and_pair.2].i_tri;
         // region growing algorithm
         let mut tri2flg = vec![0; tri2vtx.len() / 3];
-        extract_triangles_in_symmetry(
-            &mut tri2flg,
-            i_tri,
-            &tri2vtx,
-            &vtx2xyz,
-            &cur_trans,
-            &tri2tri,
-        );
-        extract_triangles_in_symmetry(
-            &mut tri2flg,
-            j_tri,
-            &tri2vtx,
-            &vtx2xyz,
-            &cur_trans,
-            &tri2tri,
-        );
+        extract_triangles_in_symmetry(&mut tri2flg, i_tri, tri2vtx, vtx2xyz, &cur_trans, &tri2tri);
+        extract_triangles_in_symmetry(&mut tri2flg, j_tri, tri2vtx, vtx2xyz, &cur_trans, &tri2tri);
         // let num_tri = tri2flg.iter().filter(|&v| *v == 2 ).count();
         let tris: Vec<_> = tri2flg
             .iter()
@@ -209,7 +195,7 @@ pub fn sym_detector(
             .filter(|(_i_tri, &v)| v == 2)
             .map(|(i_tri, _v)| i_tri)
             .collect();
-        if tris.len() == 0 {
+        if tris.is_empty() {
             continue;
         }
         let ds = DetectedSymmetry {

@@ -34,7 +34,9 @@ where
 
 /// load OFF file and output triangle mesh
 /// * `file_path` - path to the file
-pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(file_path: P) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
+pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
+    file_path: P,
+) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
 where
     Real: std::str::FromStr,
     <Real as std::str::FromStr>::Err: std::fmt::Debug,

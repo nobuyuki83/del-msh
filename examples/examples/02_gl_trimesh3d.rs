@@ -6,22 +6,22 @@ struct MyViewTrg {
 
 impl del_gl_winit_glutin::viewer3d_for_gl_renderer::GlRenderer for MyViewTrg {
     fn draw(&mut self, gl: &gl::Gl, cam_model: &[f32; 16], cam_projection: &[f32; 16]) {
-        self.drawer.draw(&gl, &cam_model, &cam_projection);
+        self.drawer.draw(gl, cam_model, cam_projection);
     }
 
     fn initialize(&mut self, gl: &gl::Gl) {
-        self.drawer.compile_shader(&gl);
+        self.drawer.compile_shader(gl);
         let (tri2vtx, vtx2xyz) = {
             let mut obj = del_msh_core::io_obj::WavefrontObj::<usize, f32>::new();
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };
         let edge2vtx = del_msh_core::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
-        self.drawer.update_vertex(&gl, &vtx2xyz, 3);
+        self.drawer.update_vertex(gl, &vtx2xyz, 3);
         self.drawer
-            .add_element(&gl, gl::TRIANGLES, &tri2vtx, [1.0, 0.0, 0.0]);
+            .add_element(gl, gl::TRIANGLES, &tri2vtx, [1.0, 0.0, 0.0]);
         self.drawer
-            .add_element(&gl, gl::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+            .add_element(gl, gl::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
     }
 }
 

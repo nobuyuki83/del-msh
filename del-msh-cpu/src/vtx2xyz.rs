@@ -115,7 +115,6 @@ fn test_obb3() {
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaCha20Rng::seed_from_u64(0);
     let vtx2xyz0: Vec<f32> = (0..10000)
-        .into_iter()
         .flat_map(|_v| del_geo_core::aabb3::sample(&aabb3, &mut reng))
         .collect();
     let obb0 = obb3(&vtx2xyz0);

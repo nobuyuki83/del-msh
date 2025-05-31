@@ -98,7 +98,9 @@ pub fn load_off_as_triangle_mesh(
     py: Python,
     path_file: String,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
-    let Ok((tri2vtx, vtx2xyz)) = del_msh_core::io_off::load_as_tri_mesh(path_file) else {todo!()};
+    let Ok((tri2vtx, vtx2xyz)) = del_msh_core::io_off::load_as_tri_mesh(path_file) else {
+        todo!()
+    };
     (
         numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
             .unwrap()

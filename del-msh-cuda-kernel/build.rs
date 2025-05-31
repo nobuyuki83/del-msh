@@ -12,7 +12,11 @@ fn main() {
     std::fs::create_dir_all(&path_out_dir).unwrap();
     del_geo_cpp_headers::HEADERS.write_files(&path_out_dir);
     // dbg!("hoge");
-    let glob_input = path_out_dir.join("*.h").into_os_string().into_string().unwrap();
+    let glob_input = path_out_dir
+        .join("*.h")
+        .into_os_string()
+        .into_string()
+        .unwrap();
     let builder = bindgen_cuda::Builder::default().include_paths_glob(&glob_input);
     //let path_out_dir = std::path::Path::new(&path_out_dir).join("cpp_headers").join("del_geo");
     //let builder = bindgen_cuda::Builder::default().include_paths(vec!(path_out_dir));
