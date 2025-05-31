@@ -10,7 +10,7 @@ cargo --version
 ```bash
 git clone https://github.com/nobuyuki83/del-msh.git
 cd del-msh
-cargo test del-msh-core --release
+cargo test del-msh-cpu --release
 ```
 
 3. running the demos

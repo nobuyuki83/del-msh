@@ -1,13 +1,13 @@
 [workspace]
 members = [
-    "del-msh-pyo3",
-    "del-msh-core",
+    "del-msh-numpy",
+    "del-msh-cpu",
     "del-msh-cudarc",
     "del-msh-candle",
     "examples"
 ]
 exclude = [
-    "del-msh-cudarc-kernel"
+    "del-msh-cuda-kernel"
 ]
 resolver = "2"
 
@@ -35,9 +35,9 @@ glutin-winit = "0.5.0"
 winit = "0.30.9"
 
 # internal
-del-msh-core = {path="del-msh-core"}
+del-msh-core = {path= "del-msh-cpu" }
 del-msh-cudarc = {path="del-msh-cudarc"}
-del-msh-cudarc-kernel = {path="del-msh-cudarc-kernel"}
+del-msh-cudarc-kernel = {path= "del-msh-cuda-kernel" }
 
 # for development
 # del-geo-core = { path="../del-geo/del-geo-core"}
