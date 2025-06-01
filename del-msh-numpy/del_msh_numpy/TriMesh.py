@@ -3,7 +3,7 @@ import typing
 import numpy
 import numpy.typing
 
-import del_msh
+import del_msh_numpy
 
 # ------------------------------
 # below: vtx2***
@@ -15,14 +15,14 @@ def vtx2vtx(
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
-    from .del_msh import vtx2vtx_trimesh
+    from .del_msh_numpy import vtx2vtx_trimesh
     return vtx2vtx_trimesh(tri2vtx, num_vtx, is_self)
 
 
 def vtx2area(
         tri2vtx: numpy.typing.NDArray,
         vtx2xyz: numpy.typing.NDArray):
-   from .del_msh import vtx2area_from_uniformmesh
+   from .del_msh_numpy import vtx2area_from_uniformmesh
    return vtx2area_from_uniformmesh(tri2vtx, vtx2xyz)
 
 # above: vtx2***
@@ -42,7 +42,7 @@ def edge2vtx(
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
     assert not numpy.isfortran(tri2vtx)
-    from .del_msh import edge2vtx_uniform_mesh
+    from .del_msh_numpy import edge2vtx_uniform_mesh
     return edge2vtx_uniform_mesh(tri2vtx, num_vtx)
 
 
@@ -52,7 +52,7 @@ def boundaryedge2vtx(
    assert len(tri2vtx.shape) == 2
    assert tri2vtx.shape[1] == 3
    assert not numpy.isfortran(tri2vtx)
-   from .del_msh import boundaryedge2vtx_triangle_mesh
+   from .del_msh_numpy import boundaryedge2vtx_triangle_mesh
    return boundaryedge2vtx_triangle_mesh(tri2vtx, num_vtx)
 
 
@@ -64,14 +64,14 @@ def tri2tri(
         tri2vtx: numpy.typing.NDArray,
         num_vtx: int) \
         -> numpy.typing.NDArray:
-    from .del_msh import elem2elem_uniform_mesh_polygon_indexing
+    from .del_msh_numpy import elem2elem_uniform_mesh_polygon_indexing
     return elem2elem_uniform_mesh_polygon_indexing(tri2vtx, num_vtx)
 
 
 def tri2distance(
         idx_tri: int,
         tri2tri: numpy.typing.NDArray) -> numpy.typing.NDArray:
-    from .del_msh import topological_distance_on_uniform_mesh
+    from .del_msh_numpy import topological_distance_on_uniform_mesh
     return topological_distance_on_uniform_mesh(idx_tri, tri2tri)
 
 
@@ -86,14 +86,14 @@ def tri2area(
     :return:
     """
     assert vtx2xyz.shape[1] == 2 or vtx2xyz.shape[1] == 3, "the dimension should be 2 or 3"
-    from .del_msh import areas_of_triangles_of_mesh
+    from .del_msh_numpy import areas_of_triangles_of_mesh
     return areas_of_triangles_of_mesh(tri2vtx, vtx2xyz)
 
 
 def tri2circumcenter(
         tri2vtx: numpy.typing.NDArray,
         vtx2xyz: numpy.typing.NDArray):
-   from .del_msh import circumcenters_of_triangles_of_mesh
+   from .del_msh_numpy import circumcenters_of_triangles_of_mesh
    return circumcenters_of_triangles_of_mesh(tri2vtx, vtx2xyz)
 
 # above: tri2***
@@ -106,7 +106,7 @@ def torus(
         ndiv_major_radius=32,
         ndiv_minor_radius=32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh import torus_meshtri3
+    from .del_msh_numpy import torus_meshtri3
     return torus_meshtri3(major_radius, minor_radius, ndiv_major_radius, ndiv_minor_radius)
 
 
@@ -117,7 +117,7 @@ def capsule(
         ndiv_height: int = 32,
         ndiv_longtitude: int = 32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh import capsule_meshtri3
+    from .del_msh_numpy import capsule_meshtri3
     return capsule_meshtri3(radius, height, ndiv_theta, ndiv_longtitude, ndiv_height)
 
 
@@ -129,7 +129,7 @@ def cylinder(
         is_closed_end = True,
         is_center = True) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-   from .del_msh import cylinder_closed_end_meshtri3
+   from .del_msh_numpy import cylinder_closed_end_meshtri3
    return cylinder_closed_end_meshtri3(
         radius, height,
         ndiv_circumference, ndiv_height,
@@ -142,7 +142,7 @@ def sphere(
         ndiv_latitude: int = 32,
         ndiv_longtitude: int = 32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh import sphere_meshtri3
+    from .del_msh_numpy import sphere_meshtri3
     return sphere_meshtri3(radius, ndiv_latitude, ndiv_longtitude)
 
 
@@ -153,7 +153,7 @@ def hemisphere(
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
     assert ndiv_longtitude > 0
     assert ndiv_latitude > 2
-    from .del_msh import trimesh3_hemisphere_zup
+    from .del_msh_numpy import trimesh3_hemisphere_zup
     return trimesh3_hemisphere_zup(radius, ndiv_longtitude, ndiv_latitude)
 
 
@@ -165,7 +165,7 @@ def load_wavefront_obj(
         path_file: str,
         is_centerize=False,
         normalized_size: typing.Optional[float] = None):
-    from .del_msh import load_wavefront_obj_as_triangle_mesh
+    from .del_msh_numpy import load_wavefront_obj_as_triangle_mesh
     tri2vtx, vtx2xyz = load_wavefront_obj_as_triangle_mesh(path_file)
     if is_centerize:
         vtx2xyz[:] -= (vtx2xyz.max(axis=0) + vtx2xyz.min(axis=0)) * 0.5
@@ -176,7 +176,7 @@ def load_wavefront_obj(
 
 def load_nastran(
         path_file: str):
-    from .del_msh import load_nastran_as_triangle_mesh
+    from .del_msh_numpy import load_nastran_as_triangle_mesh
     return load_nastran_as_triangle_mesh(path_file)
 
 
@@ -184,7 +184,7 @@ def load_off(
         path_file: str,
         is_centerize=False,
         normalized_size: typing.Optional[float] = None):
-    from .del_msh import load_off_as_triangle_mesh
+    from .del_msh_numpy import load_off_as_triangle_mesh
     tri2vtx, vtx2xyz = load_off_as_triangle_mesh(path_file)
     if is_centerize:
         vtx2xyz[:] -= (vtx2xyz.max(axis=0) + vtx2xyz.min(axis=0)) * 0.5
@@ -201,7 +201,7 @@ def unindexing(
         tri2vtx: numpy.typing.NDArray,
         vtx2xyz: numpy.typing.NDArray) \
         -> numpy.typing.NDArray:
-    from .del_msh import unidex_vertex_attribute_for_triangle_mesh
+    from .del_msh_numpy import unidex_vertex_attribute_for_triangle_mesh
     return unidex_vertex_attribute_for_triangle_mesh(tri2vtx, vtx2xyz)
 
 
@@ -239,7 +239,7 @@ def sample(
         cumsum_area: numpy.ndarray,
         r0: float,
         r1: float):
-    from .del_msh import sample_uniformly_trimesh
+    from .del_msh_numpy import sample_uniformly_trimesh
     return sample_uniformly_trimesh(cumsum_area, r0, r1)
 
 
@@ -273,11 +273,11 @@ def bvhnodes_tri(
     """
     if is_morton:
         tri2center = (vtx2xyz[tri2vtx[:, 0], :] + vtx2xyz[tri2vtx[:, 1], :] + vtx2xyz[tri2vtx[:, 2], :]) / 3
-        del_msh.fit_into_unit_cube(tri2center)  # fit the points inside unit cube [0,1]^3
-        from .del_msh import build_bvh_topology_morton
+        del_msh_numpy.fit_into_unit_cube(tri2center)  # fit the points inside unit cube [0,1]^3
+        from .del_msh_numpy import build_bvh_topology_morton
         return build_bvh_topology_morton(tri2center)
     else:
-        from .del_msh import build_bvh_topology_topdown
+        from .del_msh_numpy import build_bvh_topology_topdown
         return build_bvh_topology_topdown(tri2vtx, vtx2xyz)
 
 
@@ -287,7 +287,7 @@ def aabbs_tri(
         bvhnodes: numpy.typing.NDArray,
         aabbs=None,
         i_bvhnode_root=0):
-    from del_msh.BVH import aabb_uniform_mesh
+    from del_msh_numpy.BVH import aabb_uniform_mesh
     return aabb_uniform_mesh(tri2vtx, vtx2xyz0, bvhnodes, aabbs, i_bvhnode_root)
 
 
@@ -299,16 +299,16 @@ def bvhnodes_vtxedgetri(
     vtx2center = vtx2xyz.copy()
     edge2center = (vtx2xyz[edge2vtx[:, 0], :] + vtx2xyz[edge2vtx[:, 1], :]) / 2
     tri2center = (vtx2xyz[tri2vtx[:, 0], :] + vtx2xyz[tri2vtx[:, 1], :] + vtx2xyz[tri2vtx[:, 2], :]) / 3
-    del_msh.fit_into_unit_cube(vtx2center)
-    del_msh.fit_into_unit_cube(edge2center)
-    del_msh.fit_into_unit_cube(tri2center)
-    from .del_msh import build_bvh_topology_morton
+    del_msh_numpy.fit_into_unit_cube(vtx2center)
+    del_msh_numpy.fit_into_unit_cube(edge2center)
+    del_msh_numpy.fit_into_unit_cube(tri2center)
+    from .del_msh_numpy import build_bvh_topology_morton
     bvhnodes_vtx = build_bvh_topology_morton(vtx2center)
     bvhnodes_edge = build_bvh_topology_morton(edge2center)
     bvhnodes_tri = build_bvh_topology_morton(tri2center)
     # print(vtx2xyz.shape, edge2vtx.shape, tri2vtx.shape)
     # print(bvhnodes_vtx.shape, bvhnodes_edge.shape, bvhnodes_tri.shape)
-    from .del_msh import shift_bvhnodes
+    from .del_msh_numpy import shift_bvhnodes
     shift_bvhnodes(bvhnodes_edge, bvhnodes_vtx.shape[0], 0)
     shift_bvhnodes(bvhnodes_tri, bvhnodes_vtx.shape[0] + bvhnodes_edge.shape[0], 0)
     bvhnodes = numpy.vstack([bvhnodes_vtx, bvhnodes_edge, bvhnodes_tri])
@@ -334,7 +334,7 @@ def aabb_vtxedgetri(
     :return:
     """
     assert len(roots) == 3
-    from del_msh.BVH import aabb_uniform_mesh
+    from del_msh_numpy.BVH import aabb_uniform_mesh
     # vertex
     aabbs = aabb_uniform_mesh(
         numpy.zeros((0, 0), dtype=numpy.uint64), vtx2xyz0, bvhnodes,
@@ -362,7 +362,7 @@ def ccd_intersection_time(
         bvhnodes: typing.Optional[numpy.typing.NDArray] = None,
         aabbs: typing.Optional[numpy.typing.NDArray] = None,
         roots: typing.Optional[typing.List[int]] = None):
-    from .del_msh import ccd_intersection_time
+    from .del_msh_numpy import ccd_intersection_time
     if not bvhnodes is None:
         assert bvhnodes.shape[0] == aabbs.shape[0]
         assert vtx2xyz0.shape == vtx2xyz1.shape
@@ -390,7 +390,7 @@ def first_intersection_ray(
     :param vtx2xyz: vertex positions
     :return: position and triangle index
     """
-    from .del_msh import first_intersection_ray_meshtri3
+    from .del_msh_numpy import first_intersection_ray_meshtri3
     return first_intersection_ray_meshtri3(src, dir, tri2vtx, vtx2xyz)
 
 
@@ -399,7 +399,7 @@ def pick_vertex(
         vtx2xyz: numpy.typing.NDArray,
         src: numpy.typing.NDArray,
         dir: numpy.typing.NDArray):
-    from .del_msh import pick_vertex_meshtri3
+    from .del_msh_numpy import pick_vertex_meshtri3
     return pick_vertex_meshtri3(tri2vtx, vtx2xyz, src, dir)
 
 
@@ -410,7 +410,7 @@ def self_intersection(
         aabbs: typing.Optional[numpy.typing.NDArray] = None,
         i_bvhnode_root: typing.Optional[int] = 0):
     if vtx2xyz.shape[1] == 3:
-        from .del_msh import intersection_trimesh3
+        from .del_msh_numpy import intersection_trimesh3
         if bvhnodes is None:
             return intersection_trimesh3(
                 tri2vtx, vtx2xyz,
@@ -430,7 +430,7 @@ def contacting_pair(
         vtx2xyz: numpy.typing.NDArray,
         edge2vtx: numpy.typing.NDArray,
         threshold: float):
-    from .del_msh import contacting_pair
+    from .del_msh_numpy import contacting_pair
     return contacting_pair(tri2vtx, vtx2xyz, edge2vtx, threshold)
 
 # above: search intersection

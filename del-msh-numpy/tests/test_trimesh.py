@@ -1,6 +1,6 @@
 import math
 import numpy
-from del_msh import TriMesh
+from del_msh_numpy import TriMesh
 
 
 def test_01():

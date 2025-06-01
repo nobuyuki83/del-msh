@@ -1,6 +1,6 @@
 import numpy
 import numpy.typing
-from del_msh import PolyLoop, TriMesh
+from del_msh_numpy import PolyLoop, TriMesh
 
 
 def do_many_thing_for_polyloop(vtxi2xyi: numpy.typing.NDArray):

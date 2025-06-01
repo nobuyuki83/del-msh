@@ -24,7 +24,7 @@ mod vtx2area;
 /* ------------------------ */
 
 #[pyo3::pymodule]
-#[pyo3(name = "del_msh")]
+#[pyo3(name = "del_msh_numpy")]
 fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     topology::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;

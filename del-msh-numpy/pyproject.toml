@@ -3,8 +3,8 @@ requires = ["maturin>=0.14"]
 build-backend = "maturin"
 
 [project]
-version = "0.1.39"
-name = "del-msh"
+version = "0.1.40"
+name = "del-msh-numpy"
 license = "MIT"
 requires-python = ">=3.7"
 classifiers = [

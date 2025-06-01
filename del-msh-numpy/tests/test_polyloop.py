@@ -1,6 +1,6 @@
 import math
 import numpy
-from del_msh import PolyLoop, TriMesh
+from del_msh_numpy import PolyLoop, TriMesh
 
 
 def test_01():

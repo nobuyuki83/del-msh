@@ -2,7 +2,7 @@ import math
 #
 import numpy
 #
-from del_msh import TriMesh, BVH
+from del_msh_numpy import TriMesh, BVH
 
 
 def test_tri_self_intersection():

@@ -45,10 +45,10 @@ def aabb_uniform_mesh(
     if vtx2xyz1 is None:
         vtx2xyz1 = numpy.zeros((0, 0), dtype=vtx2xyz0.dtype)
     if vtx2xyz0.dtype == numpy.float32:
-        from .del_msh import build_bvh_geometry_aabb_uniformmesh_f32
+        from .del_msh_numpy import build_bvh_geometry_aabb_uniformmesh_f32
         build_bvh_geometry_aabb_uniformmesh_f32(aabbs, bvhnodes, elem2vtx, vtx2xyz0, root, vtx2xyz1)
     elif vtx2xyz0.dtype == numpy.float64:
-        from .del_msh import build_bvh_geometry_aabb_uniformmesh_f64
+        from .del_msh_numpy import build_bvh_geometry_aabb_uniformmesh_f64
         build_bvh_geometry_aabb_uniformmesh_f64(aabbs, bvhnodes, elem2vtx, vtx2xyz0, root, vtx2xyz1)
     else:
         pass

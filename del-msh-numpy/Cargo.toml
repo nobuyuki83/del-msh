@@ -1,11 +1,11 @@
 [package]
-name = "del-msh-pyo3"
+name = "del-msh-numpy"
 version = {workspace = true}
 edition = {workspace = true}
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "del_msh"
+name = "del_msh_numpy"
 crate-type = ["cdylib"]
 
 [dependencies]
