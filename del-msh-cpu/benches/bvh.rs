@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use del_msh_core::bvhnodes_morton::from_vtx2xyz;
+use del_msh_cpu::bvhnodes_morton::from_vtx2xyz;
 
 fn bvh_morton(c: &mut Criterion) {
     let num_vtx = 100000;
