@@ -33,4 +33,4 @@ jobs:
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: |
-        cargo publish --package del-msh-core
+        cargo publish --package del-msh-cpu
