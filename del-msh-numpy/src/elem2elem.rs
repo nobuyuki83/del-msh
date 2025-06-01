@@ -27,8 +27,8 @@ fn elem2elem_uniform_mesh_polygon_indexing<'a>(
 ) -> Bound<'a, numpy::PyArray2<usize>> {
     assert!(elem2vtx.is_c_contiguous());
     let num_node = elem2vtx.shape()[1];
-    let (face2idx, idx2node) = del_msh_core::elem2elem::face2node_of_polygon_element(num_node);
-    let elem2elem = del_msh_core::elem2elem::from_uniform_mesh(
+    let (face2idx, idx2node) = del_msh_cpu::elem2elem::face2node_of_polygon_element(num_node);
+    let elem2elem = del_msh_cpu::elem2elem::from_uniform_mesh(
         elem2vtx.as_slice().unwrap(),
         num_node,
         &face2idx,
@@ -49,8 +49,8 @@ fn elem2elem_uniform_mesh_simplex_indexing<'a>(
 ) -> Bound<'a, numpy::PyArray2<usize>> {
     assert!(elem2vtx.is_c_contiguous());
     let num_node = elem2vtx.shape()[1];
-    let (face2idx, idx2node) = del_msh_core::elem2elem::face2node_of_simplex_element(num_node);
-    let elsuel = del_msh_core::elem2elem::from_uniform_mesh(
+    let (face2idx, idx2node) = del_msh_cpu::elem2elem::face2node_of_simplex_element(num_node);
+    let elsuel = del_msh_cpu::elem2elem::from_uniform_mesh(
         elem2vtx.as_slice().unwrap(),
         num_node,
         &face2idx,

@@ -98,9 +98,9 @@ impl candle_core::CustomOp1 for Layer {
 
 #[test]
 fn test_backward() -> anyhow::Result<()> {
-    let (tri2vtx, vtx2xyz0) = del_msh_core::trimesh3_primitive::sphere_yup::<u32, f32>(0.8, 32, 32);
+    let (tri2vtx, vtx2xyz0) = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.8, 32, 32);
     let vtx2vtx =
-        del_msh_core::vtx2vtx::from_uniform_mesh::<u32>(&tri2vtx, 3, vtx2xyz0.len() / 3, false);
+        del_msh_cpu::vtx2vtx::from_uniform_mesh::<u32>(&tri2vtx, 3, vtx2xyz0.len() / 3, false);
 
     let num_vtx = vtx2xyz0.len() / 3;
     let vtx2xyz0 = candle_core::Var::from_vec(vtx2xyz0, (num_vtx, 3), &Cpu)?;

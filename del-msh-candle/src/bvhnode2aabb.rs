@@ -36,7 +36,7 @@ impl candle_core::InplaceOp3 for Layer {
         let num_node = self.tri2vtx.dims2()?.1;
         get_cpu_slice_and_storage_from_tensor!(tri2vtx, s_tri2vtx, self.tri2vtx, u32);
         match num_dim {
-            3 => del_msh_core::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
+            3 => del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
                 bvhnode2aabb,
                 0,
                 bvhnodes,
@@ -44,7 +44,7 @@ impl candle_core::InplaceOp3 for Layer {
                 vtx2xyz,
                 None,
             ),
-            2 => del_msh_core::bvhnode2aabb2::update_for_uniform_mesh_with_bvh(
+            2 => del_msh_cpu::bvhnode2aabb2::update_for_uniform_mesh_with_bvh(
                 bvhnode2aabb,
                 0,
                 bvhnodes,
@@ -163,7 +163,7 @@ impl BvhForTriMesh {
 #[allow(unused_variables)]
 fn test() -> anyhow::Result<()> {
     let (tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
+        del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let (tri2vtx, vtx2xyz) = {
         let num_tri = tri2vtx.len() / 3;
         let tri2vtx =

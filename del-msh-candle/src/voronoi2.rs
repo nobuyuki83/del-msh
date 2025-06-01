@@ -22,7 +22,7 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
         let num_vtxv = self.vtxv2info.len();
         let mut vtxv2xy = vec![0f32; num_vtxv * 2];
         for i_vtxv in 0..num_vtxv {
-            let cc = del_msh_core::voronoi2::position_of_voronoi_vertex(
+            let cc = del_msh_cpu::voronoi2::position_of_voronoi_vertex(
                 &self.vtxv2info[i_vtxv],
                 &self.vtxl2xy,
                 site2xy,
@@ -81,15 +81,15 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
                 assert!(info[0] < num_vtxl);
                 let i1_loop = info[0];
                 let i2_loop = (i1_loop + 1) % num_vtxl;
-                let l1 = del_msh_core::vtx2xy::to_vec2(&self.vtxl2xy, i1_loop);
-                let l2 = del_msh_core::vtx2xy::to_vec2(&self.vtxl2xy, i2_loop);
+                let l1 = del_msh_cpu::vtx2xy::to_vec2(&self.vtxl2xy, i1_loop);
+                let l2 = del_msh_cpu::vtx2xy::to_vec2(&self.vtxl2xy, i2_loop);
                 let i0_site = info[1];
                 let i1_site = info[2];
-                let s0 = del_msh_core::vtx2xy::to_vec2(site2xy, i0_site);
-                let s1 = del_msh_core::vtx2xy::to_vec2(site2xy, i1_site);
+                let s0 = del_msh_cpu::vtx2xy::to_vec2(site2xy, i0_site);
+                let s1 = del_msh_cpu::vtx2xy::to_vec2(site2xy, i1_site);
                 let (_r, drds0, drds1) =
                     del_geo_core::line2::dw_intersection_against_bisector(l1, &l2.sub(l1), s0, s1);
-                let dv = del_msh_core::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
+                let dv = del_msh_cpu::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
                 {
                     let ds0 = drds0.transpose().mult_vec(dv);
                     dw_site2xy[i0_site * 2 + 0] += ds0[0];
@@ -103,11 +103,11 @@ impl candle_core::CustomOp1 for crate::voronoi2::Layer {
             } else {
                 // circumference of three voronoi vtx
                 let idx_site = [info[1], info[2], info[3]];
-                let s0 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[0]);
-                let s1 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[1]);
-                let s2 = del_msh_core::vtx2xy::to_vec2(site2xy, idx_site[2]);
+                let s0 = del_msh_cpu::vtx2xy::to_vec2(site2xy, idx_site[0]);
+                let s1 = del_msh_cpu::vtx2xy::to_vec2(site2xy, idx_site[1]);
+                let s2 = del_msh_cpu::vtx2xy::to_vec2(site2xy, idx_site[2]);
                 let (_v, dvds) = del_geo_core::tri2::wdw_circumcenter(s0, s1, s2);
-                let dv = del_msh_core::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
+                let dv = del_msh_cpu::vtx2xy::to_vec2(dw_vtxv2xy, i_vtxv);
                 for i_node in 0..3 {
                     let ds0 = dvds[i_node].transpose().mult_vec(dv);
                     let is0 = idx_site[i_node];
@@ -132,7 +132,7 @@ fn test_backward() -> anyhow::Result<()> {
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
     let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
     // let mut reng = rand::thread_rng();
-    let site2xy0 = del_msh_core::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 10, &mut reng);
+    let site2xy0 = del_msh_cpu::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 10, &mut reng);
     let site2xy0 = {
         candle_core::Var::from_slice(
             &site2xy0,
@@ -147,12 +147,12 @@ fn test_backward() -> anyhow::Result<()> {
         let mut vtx2xy = vtxv2xy0.clone().flatten_all()?.to_vec1::<f32>()?;
         let site2xy = site2xy0.clone().flatten_all()?.to_vec1::<f32>()?;
         vtx2xy.extend(site2xy);
-        let edge2vtxv = del_msh_core::edge2vtx::from_polygon_mesh(
+        let edge2vtxv = del_msh_cpu::edge2vtx::from_polygon_mesh(
             &voronoi_info0.site2idx,
             &voronoi_info0.idx2vtxv,
             vtx2xy.len() / 2,
         );
-        del_msh_core::io_obj::save_edge2vtx_vtx2xyz(
+        del_msh_cpu::io_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi0.obj",
             &edge2vtxv,
             &vtx2xy,
@@ -208,18 +208,18 @@ pub fn voronoi<F>(
 where
     F: Fn(usize) -> bool,
 {
-    let site2cell = del_msh_core::voronoi2::voronoi_cells(
+    let site2cell = del_msh_cpu::voronoi2::voronoi_cells(
         vtxl2xy,
         &site2xy.flatten_all().unwrap().to_vec1::<f32>().unwrap(),
         &site2isalive,
     );
-    let voronoi_mesh = del_msh_core::voronoi2::indexing(&site2cell);
+    let voronoi_mesh = del_msh_cpu::voronoi2::indexing(&site2cell);
     let site2_to_voronoi2 = crate::voronoi2::Layer {
         vtxl2xy: Vec::<f32>::from(vtxl2xy),
         vtxv2info: voronoi_mesh.vtxv2info.clone(),
     };
     let vtxv2xy = site2xy.apply_op1(site2_to_voronoi2).unwrap();
-    let idx2site = del_msh_core::elem2elem::from_polygon_mesh(
+    let idx2site = del_msh_cpu::elem2elem::from_polygon_mesh(
         &voronoi_mesh.site2idx,
         &voronoi_mesh.idx2vtxv,
         vtxv2xy.dims2().unwrap().0,

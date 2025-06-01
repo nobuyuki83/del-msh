@@ -1,5 +1,5 @@
 [package]
-name = "del-msh-cudarc-kernel"
+name = "del-msh-cuda-kernel"
 description = "hogehoge"
 publish = true
 version = "0.1.0"

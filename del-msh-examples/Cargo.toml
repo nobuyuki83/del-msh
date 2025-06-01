@@ -1,5 +1,5 @@
 [package]
-name = "examples-gl"
+name = "del-msh-examples"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,7 +14,7 @@ anyhow.workspace = true
 glutin.workspace = true
 glutin-winit.workspace = true
 winit.workspace = true
-del-msh-core.workspace = true
+del-msh-cpu.workspace = true
 del-geo-core.workspace = true
 del-gl-core.workspace = true
 del-gl-winit-glutin.workspace = true

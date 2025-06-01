@@ -28,12 +28,12 @@ fn intersection_trimesh3<'a>(
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     let bvhnodes = bvhnodes.as_slice().unwrap();
     let aabbs = aabbs.as_slice().unwrap();
-    type TriPair = del_msh_core::trimesh3_intersection::IntersectingPair<f32>;
+    type TriPair = del_msh_cpu::trimesh3_intersection::IntersectingPair<f32>;
     let pairs = if bvhnodes.is_empty() {
-        del_msh_core::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz)
+        del_msh_cpu::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz)
     } else {
         let mut pairs = Vec::<TriPair>::new();
-        del_msh_core::trimesh3_intersection::search_with_bvh_inside_branch(
+        del_msh_cpu::trimesh3_intersection::search_with_bvh_inside_branch(
             &mut pairs,
             tri2vtx,
             vtx2xyz,
@@ -83,13 +83,13 @@ fn ccd_intersection_time<'a>(
     let bvhnodes = bvhnodes.as_slice().unwrap();
     let aabbs = aabbs.as_slice().unwrap();
     let (intersecting_pair, intersecting_time) = if bvhnodes.is_empty() {
-        del_msh_core::trimesh3_intersection_time::search_brute_force(
+        del_msh_cpu::trimesh3_intersection_time::search_brute_force(
             edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1, 1.0e-8f32,
         )
     } else {
         assert_eq!(bvhnodes.len() * 2, aabbs.len());
         assert_eq!(roots.len(), 3);
-        del_msh_core::trimesh3_intersection_time::search_with_bvh(
+        del_msh_cpu::trimesh3_intersection_time::search_with_bvh(
             edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, aabbs,
         )
     };
@@ -116,7 +116,7 @@ fn contacting_pair<'a>(
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     let edge2vtx = edge2vtx.as_slice().unwrap();
     let (contacting_pair, contacting_coord) =
-        del_msh_core::trimesh3_proximity::contacting_pair(tri2vtx, vtx2xyz, edge2vtx, threshold);
+        del_msh_cpu::trimesh3_proximity::contacting_pair(tri2vtx, vtx2xyz, edge2vtx, threshold);
     (
         numpy::ndarray::Array2::from_shape_vec((contacting_pair.len() / 3, 3), contacting_pair)
             .unwrap()

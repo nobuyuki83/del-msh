@@ -20,7 +20,7 @@ impl candle_core::CustomOp1 for crate::polygonmesh2_to_cogs::Layer {
         assert_eq!(layout.shape().dims2()?.1, 2);
         let vtx2xy = storage.as_slice::<f32>()?;
         // TODO: from_polygon_mesh_as_faces
-        let elem2cog = del_msh_core::elem2center::from_polygon_mesh_as_points(
+        let elem2cog = del_msh_cpu::elem2center::from_polygon_mesh_as_points(
             &self.elem2idx,
             &self.idx2vtx,
             vtx2xy,

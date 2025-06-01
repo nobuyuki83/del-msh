@@ -46,11 +46,11 @@ fn extract_triangles_in_symmetry(
         if tri2flg[i_tri] != 0 {
             continue;
         }
-        let cog = del_msh_core::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).cog();
+        let cog = del_msh_cpu::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).cog();
         let a_cog = del_geo_core::mat3x4_col_major::transform_affine(affine, &cog);
         //dbg!(cog, a_cog);
         // compute distance
-        let dist_a = del_msh_core::trimesh3::distance_to_point3(tri2vtx, vtx2xyz, &a_cog);
+        let dist_a = del_msh_cpu::trimesh3::distance_to_point3(tri2vtx, vtx2xyz, &a_cog);
         //dbg!(i_tri, dist_a);
         if dist_a > 0.03 {
             tri2flg[i_tri] = 1;
@@ -81,7 +81,7 @@ pub fn sym_detector(
     i_seed: u64,
     num_sample: usize,
 ) -> Vec<DetectedSymmetry> {
-    let tri2tri = del_msh_core::elem2elem::from_uniform_mesh(
+    let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
         tri2vtx,
         3,
         &[0, 2, 4, 6],
@@ -92,7 +92,7 @@ pub fn sym_detector(
     use rand::Rng;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
-    let tri2cumsumarea = del_msh_core::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz, 3);
+    let tri2cumsumarea = del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz, 3);
     let mut samples = vec![
         Sample {
             xyz: [0f32; 3],
@@ -104,11 +104,11 @@ pub fn sym_detector(
     for i_sample in 0..num_sample {
         let r0 = rng.random::<f32>();
         let r1 = rng.random::<f32>();
-        let (i_tri, r0, r1) = del_msh_core::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
-        let p0 = del_msh_core::trimesh::position_from_barycentric_coordinate::<_, 3>(
+        let (i_tri, r0, r1) = del_msh_cpu::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
+        let p0 = del_msh_cpu::trimesh::position_from_barycentric_coordinate::<_, 3>(
             tri2vtx, vtx2xyz, i_tri, r0, r1,
         );
-        let n0 = del_msh_core::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).unit_normal();
+        let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).unit_normal();
         samples[i_sample].xyz.copy_from_slice(&p0);
         samples[i_sample].nrm.copy_from_slice(&n0);
         samples[i_sample].i_tri = i_tri;
@@ -211,7 +211,7 @@ pub fn sym_detector(
 fn main() -> anyhow::Result<()> {
     use del_geo_core::vec3::Vec3;
     use rand::Rng;
-    let (tri2vtx, vtx2xyz) = del_msh_core::io_obj::load_tri_mesh::<_, usize, f32>(
+    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_obj::load_tri_mesh::<_, usize, f32>(
         "asset/spot/spot_triangulated.obj",
         None,
     )
@@ -224,7 +224,7 @@ fn main() -> anyhow::Result<()> {
             2.0 * std::f32::consts::PI * rng.random::<f32>(),
             2.0 * std::f32::consts::PI * rng.random::<f32>(),
         );
-        del_msh_core::vtx2xyz::transform_linear(&vtx2xyz, &rot)
+        del_msh_cpu::vtx2xyz::transform_linear(&vtx2xyz, &rot)
     };
     let syms = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
     for (i_sym, sym) in syms.iter().enumerate() {
@@ -245,12 +245,12 @@ fn main() -> anyhow::Result<()> {
             (triq2vtxq, vtxq2xyz)
         };
         let tris2vtx =
-            del_msh_core::extract::from_uniform_mesh_from_list_of_elements(&tri2vtx, 3, &sym.tris);
+            del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(&tri2vtx, 3, &sym.tris);
         let mut trio2vtxo = vec![];
         let mut vtxo2xyz = vec![];
-        del_msh_core::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
-        del_msh_core::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &tris2vtx, &vtx2xyz, 3);
-        del_msh_core::io_obj::save_tri2vtx_vtx2xyz(
+        del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
+        del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &tris2vtx, &vtx2xyz, 3);
+        del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(
             format!("target/sym_{}.obj", i_sym),
             &trio2vtxo,
             &vtxo2xyz,

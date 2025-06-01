@@ -90,10 +90,9 @@ where
 fn test_vtx2curvature_gaussian() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(1_f32, 0.3f32, 32, 32);
     let vtx2curv = vtx2curvature_gaussian(&tri2vtx, &vtx2xyz);
-    let map = del_canvas::colormap::COLORMAP_JET;
     let vtx2rgb = vtx2curv
         .iter()
-        .flat_map(|&c| del_canvas::colormap::apply_colormap(c, -1., 1., map))
+        .flat_map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
         .collect::<Vec<f32>>();
     crate::io_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/curvature.obj",

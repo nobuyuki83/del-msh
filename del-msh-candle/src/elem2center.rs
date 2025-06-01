@@ -27,7 +27,7 @@ impl candle_core::InplaceOp3 for Layer {
             CpuStorage::F32(vec) => vec,
             _ => panic!(),
         };
-        del_msh_core::elem2center::update_from_uniform_mesh_as_points(
+        del_msh_cpu::elem2center::update_from_uniform_mesh_as_points(
             elem2center,
             elem2vtx,
             num_node,
@@ -75,7 +75,7 @@ impl candle_core::InplaceOp3 for Layer {
 fn test() -> anyhow::Result<()> {
     use candle_core::{Device, Tensor};
     let (tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
+        del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let (tri2vtx, vtx2xyz) = {
         let num_tri = tri2vtx.len() / 3;
         let tri2vtx = Tensor::from_vec(tri2vtx, (num_tri, 3), &Device::Cpu)?;

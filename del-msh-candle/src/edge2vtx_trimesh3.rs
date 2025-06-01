@@ -31,7 +31,7 @@ impl CustomOp1 for Layer {
             f32
         );
         let transform_world2ndc = arrayref::array_ref![transform_world2ndc, 0, 16];
-        let edge2vtx_contour = del_msh_core::edge2vtx::contour_for_triangle_mesh::<u32>(
+        let edge2vtx_contour = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
             tri2vtx,
             vtx2xyz,
             transform_world2ndc,
@@ -111,12 +111,12 @@ impl CustomOp1 for Layer {
 fn test_contour() -> candle_core::Result<()> {
     use candle_core::Device::Cpu;
     let (tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
+        del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let num_tri = tri2vtx.len() / 3;
     let num_vtx = vtx2xyz.len() / 3;
-    let edge2vtx = del_msh_core::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
+    let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
     let num_edge = edge2vtx.len() / 2;
-    let edge2tri = del_msh_core::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+    let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
     //
     let img_asp = 1.5;
     let _img_shape = (((16 * 6) as f32 * img_asp) as usize, 16 * 6);

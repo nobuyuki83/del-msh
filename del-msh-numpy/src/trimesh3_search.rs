@@ -24,7 +24,7 @@ fn first_intersection_ray_meshtri3<'a>(
 ) -> (Bound<'a, PyArray1<f32>>, i64) {
     let ray_org = src.as_slice().unwrap().try_into().unwrap();
     let ray_dir = dir.as_slice().unwrap().try_into().unwrap();
-    let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
+    let res = del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
         ray_org,
         ray_dir,
         tri2vtx.as_slice().unwrap(),
@@ -57,7 +57,7 @@ fn pick_vertex_meshtri3<'a>(
 ) -> i64 {
     let ray_org = src.as_slice().unwrap().try_into().unwrap();
     let ray_dir = dir.as_slice().unwrap().try_into().unwrap();
-    let res = del_msh_core::trimesh3_search_bruteforce::first_intersection_ray(
+    let res = del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
         ray_org,
         ray_dir,
         tri2vtx.as_slice().unwrap(),

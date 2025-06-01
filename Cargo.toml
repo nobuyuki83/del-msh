@@ -4,7 +4,7 @@ members = [
     "del-msh-cpu",
     "del-msh-cudarc",
     "del-msh-candle",
-    "examples"
+    "del-msh-examples"
 ]
 exclude = [
     "del-msh-cuda-kernel"
@@ -12,7 +12,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.39"
+version = "0.1.40"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -35,9 +35,9 @@ glutin-winit = "0.5.0"
 winit = "0.30.9"
 
 # internal
-del-msh-core = {path= "del-msh-cpu" }
+del-msh-cpu = {path= "del-msh-cpu" }
 del-msh-cudarc = {path="del-msh-cudarc"}
-del-msh-cudarc-kernel = {path= "del-msh-cuda-kernel" }
+del-msh-cuda-kernel = {path= "del-msh-cuda-kernel" }
 
 # for development
 # del-geo-core = { path="../del-geo/del-geo-core"}
@@ -57,7 +57,7 @@ del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
 del-geo-core = "=0.1.34"
 # del-cudarc = "=0.1.2"
 candle-core = "=0.9.0"
-del-canvas = "=0.1.5"
+del-canvas = "=0.1.7"
 
 
 

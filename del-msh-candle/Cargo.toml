@@ -24,7 +24,7 @@ candle-core.workspace = true
 # del-cudarc = { path="../../del-cudarc", optional = true}
 
 # for push
-del-msh-core.workspace = true
+del-msh-cpu.workspace = true
 del-msh-cudarc = { workspace = true, optional = true }
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 

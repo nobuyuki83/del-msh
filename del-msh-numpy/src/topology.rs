@@ -20,7 +20,7 @@ fn triangles_from_polygon_mesh<'a>(
     elem2idx: PyReadonlyArray1<'a, usize>,
     idx2vtx: PyReadonlyArray1<'a, usize>,
 ) -> Bound<'a, PyArray2<usize>> {
-    let (tri2vtx, _) = del_msh_core::tri2vtx::from_polygon_mesh(
+    let (tri2vtx, _) = del_msh_cpu::tri2vtx::from_polygon_mesh(
         elem2idx.as_slice().unwrap(),
         idx2vtx.as_slice().unwrap(),
     );
@@ -38,7 +38,7 @@ fn vtx2vtx_trimesh<'a>(
 ) -> (Bound<'a, PyArray1<usize>>, Bound<'a, PyArray1<usize>>) {
     assert_eq!(tri2vtx.shape()[1], 3);
     let (vtx2idx, idx2vtx) =
-        del_msh_core::vtx2vtx::from_uniform_mesh(tri2vtx.as_slice().unwrap(), 3, num_vtx, is_self);
+        del_msh_cpu::vtx2vtx::from_uniform_mesh(tri2vtx.as_slice().unwrap(), 3, num_vtx, is_self);
     (
         numpy::ndarray::Array1::from_vec(vtx2idx).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(idx2vtx).into_pyarray(py),
@@ -52,15 +52,15 @@ fn group_connected_element_uniform_polygon_mesh<'a>(
     num_vtx: usize,
 ) -> (usize, Bound<'a, PyArray1<usize>>) {
     let num_node = elem2vtx.shape()[1];
-    let (face2idx, idx2node) = del_msh_core::elem2elem::face2node_of_polygon_element(num_node);
-    let elem2adjelem = del_msh_core::elem2elem::from_uniform_mesh(
+    let (face2idx, idx2node) = del_msh_cpu::elem2elem::face2node_of_polygon_element(num_node);
+    let elem2adjelem = del_msh_cpu::elem2elem::from_uniform_mesh(
         elem2vtx.as_slice().unwrap(),
         num_node,
         &face2idx,
         &idx2node,
         num_vtx,
     );
-    let (num_group, elem2group) = del_msh_core::elem2group::from_uniform_mesh_with_elem2elem(
+    let (num_group, elem2group) = del_msh_cpu::elem2group::from_uniform_mesh_with_elem2elem(
         elem2vtx.as_slice().unwrap(),
         num_node,
         &elem2adjelem,

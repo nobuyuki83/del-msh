@@ -1,5 +1,5 @@
 [package]
-name = "del-msh-core"
+name = "del-msh-cpu"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -19,7 +19,7 @@ del-geo-core.workspace = true
 rand_chacha = {workspace = true}
 criterion = "0.5.1"
 # del-msh-nalgebra = {workspace = true}
-del-canvas = {workspace = true}
+# del-canvas = {workspace = true}
 
 [[bench]]
 name = "bvh"

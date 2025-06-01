@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-cuda = ["dep:del-msh-cudarc-kernel", "dep:del-cudarc-safe"]
+cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-safe"]
 
 [dependencies]
 arrayref.workspace = true
@@ -18,8 +18,8 @@ del-geo-core.workspace = true
 # del-cudarc = { path="../../del-cudarc", optional = true}
 
 # for push
-del-msh-core.workspace = true
-del-msh-cudarc-kernel = { workspace = true, optional = true }
+del-msh-cpu.workspace = true
+del-msh-cuda-kernel = { workspace = true, optional = true }
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for deploy (internal crates must be specified locally)

@@ -15,7 +15,7 @@ num-traits.workspace = true
 del-geo-core.workspace = true
 
 # for develop/push
-del-msh-core.workspace = true
+del-msh-cpu.workspace = true
 
 # for deploy
 # del-msh-cpu = "0.1.36"

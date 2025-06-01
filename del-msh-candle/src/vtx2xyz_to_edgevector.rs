@@ -75,7 +75,7 @@ impl candle_core::CustomOp1 for Layer {
 fn edge_length_constraint() -> anyhow::Result<()> {
     let num_vtx = 16;
     let edge_length = 2.0f32 * std::f32::consts::PI / num_vtx as f32;
-    let vtx2xy = del_msh_core::polyloop2::from_circle(1.0, num_vtx);
+    let vtx2xy = del_msh_cpu::polyloop2::from_circle(1.0, num_vtx);
     let vtx2xy = candle_core::Var::from_slice(
         vtx2xy.as_slice(),
         candle_core::Shape::from((vtx2xy.len() / 2, 2)),
@@ -88,7 +88,7 @@ fn edge_length_constraint() -> anyhow::Result<()> {
         vtx2xy.shape(),
         &candle_core::Device::Cpu,
     )?)?;
-    let edge2vtx = del_msh_core::polyloop::edge2vtx(num_vtx);
+    let edge2vtx = del_msh_cpu::polyloop::edge2vtx(num_vtx);
     for iter in 0..100 {
         let render = crate::vtx2xyz_to_edgevector::Layer {
             edge2vtx: edge2vtx.clone(),
@@ -112,7 +112,7 @@ fn edge_length_constraint() -> anyhow::Result<()> {
         let _ = vtx2xy.set(&vtx2xy.as_tensor().sub(&(dw_vtx2xyz * 0.1)?)?);
         {
             let vtx2xy: Vec<_> = vtx2xy.flatten_all()?.to_vec1::<f32>()?;
-            del_msh_core::io_obj::save_vtx2xyz_as_polyloop(
+            del_msh_cpu::io_obj::save_vtx2xyz_as_polyloop(
                 format!("../target/polyloop_{}.obj", iter),
                 &vtx2xy,
                 2,

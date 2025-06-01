@@ -24,7 +24,7 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         assert_eq!(morton_data.len(), num_vtx * 3);
         let (idx2vtx, idx2morton) = morton_data.split_at_mut(num_vtx);
         let (idx2morton, vtx2morton) = idx2morton.split_at_mut(num_vtx);
-        del_msh_core::bvhnodes_morton::update_sorted_morton_code(
+        del_msh_cpu::bvhnodes_morton::update_sorted_morton_code(
             idx2vtx, idx2morton, vtx2morton, vtx2pos, num_dim,
         );
         Ok(())
@@ -108,7 +108,7 @@ impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
         let morton_data = morton_data.as_slice::<u32>()?;
         let (idx2vtx, idx2morton) = morton_data.split_at(num_vtx);
         let (idx2morton, _vtx2morton) = idx2morton.split_at(num_vtx);
-        del_msh_core::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2vtx, idx2morton);
+        del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2vtx, idx2morton);
         Ok(())
     }
 
@@ -196,7 +196,7 @@ fn test_from_vtx2xyz() -> anyhow::Result<()> {
     bvhnodes.inplace_op2(&sorted_morton_code, &BvhNodesFromSortedMortonCode {})?;
     {
         let bvhnodes = bvhnodes.flatten_all()?.to_vec1::<u32>()?;
-        del_msh_core::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
+        del_msh_cpu::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
     }
     Ok(())
 }
@@ -205,7 +205,7 @@ fn test_from_vtx2xyz() -> anyhow::Result<()> {
 #[allow(unused_variables)]
 fn test_from_trimesh3() -> anyhow::Result<()> {
     let (tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
+        del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.0, 0.3, 32, 32);
     let (tri2vtx, vtx2xyz) = {
         let num_tri = tri2vtx.len() / 3;
         let tri2vtx =
