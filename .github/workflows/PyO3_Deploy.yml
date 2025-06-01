@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: PyO3/maturin-action@v1
+    - uses: PyO3/maturin-action@v1.27.0
       with:
-        manylinux: auto
+        manylinux: 2014
         command: build
         args: --release --sdist -o dist -m del-msh-numpy/Cargo.toml
     - name: Upload wheels
@@ -25,7 +25,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: PyO3/maturin-action@v1
+    - uses: PyO3/maturin-action@v1.27.0
       with:
         command: build
         args: --release -o dist -m del-msh-numpy/Cargo.toml
