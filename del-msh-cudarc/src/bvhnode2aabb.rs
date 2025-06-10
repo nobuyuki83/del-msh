@@ -17,7 +17,7 @@ pub fn from_trimesh3_with_bvhnodes(
     let from_trimsh = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "from_trimesh3",
-        del_msh_cudarc_kernel::BVHNODE2AABB,
+        del_msh_cuda_kernel::BVHNODE2AABB,
     )?;
     let num_tri = num_tri as u32;
     let mut builder = stream.launch_builder(&from_trimsh);

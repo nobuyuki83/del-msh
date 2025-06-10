@@ -66,3 +66,7 @@ pub mod trimesh_topology;
 pub mod uniform_mesh;
 pub mod voronoi2;
 pub mod vtx2group;
+
+pub mod silhouette;
+pub mod trimesh3_raycast;
+pub mod grid2;

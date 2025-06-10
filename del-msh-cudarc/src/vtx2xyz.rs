@@ -18,7 +18,7 @@ pub fn to_aabb3(
     let func = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "kernel_MinMax_TPB256",
-        del_msh_cudarc_kernel::AABB3_FROM_VTX2XYZ,
+        del_msh_cuda_kernel::AABB3_FROM_VTX2XYZ,
     )?;
     let mut builder = stream.launch_builder(&func);
     let num_vtx = num_vtx as u32;
@@ -34,7 +34,7 @@ pub fn to_aabb3(
 #[test]
 fn test_to_aabb3() -> Result<(), cudarc::driver::DriverError> {
     let (_tri2vtx, vtx2xyz) =
-        del_msh_core::trimesh3_primitive::torus_zup::<u32, f32>(2.0, 1.0, 32, 32);
+        del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(2.0, 1.0, 32, 32);
     let ctx = cudarc::driver::CudaContext::new(0)?;
     let stream = ctx.default_stream();
     let vtx2xyz = stream.memcpy_stod(&vtx2xyz)?;

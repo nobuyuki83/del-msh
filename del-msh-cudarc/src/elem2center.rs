@@ -12,7 +12,7 @@ pub fn tri2cntr_from_trimesh3(
     let from_trimsh = del_cudarc_safe::get_or_load_func(
         stream.context(),
         "tri2cntr",
-        del_msh_cudarc_kernel::BVHNODES_MORTON,
+        del_msh_cuda_kernel::BVHNODES_MORTON,
     )?;
     let num_tri = num_tri as u32;
     let mut builder = stream.launch_builder(&from_trimsh);

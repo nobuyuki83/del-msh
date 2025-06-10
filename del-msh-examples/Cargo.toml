@@ -11,13 +11,26 @@ slice-of-array.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 anyhow.workspace = true
-glutin.workspace = true
-glutin-winit.workspace = true
-winit.workspace = true
 del-msh-cpu.workspace = true
 del-geo-core.workspace = true
-del-gl-core.workspace = true
-del-gl-winit-glutin.workspace = true
+rayon.workspace = true
+
+# crates specific to this crate
+glutin = "0.32.2"
+glutin-winit = "0.5.0"
+winit = "0.30.9"
+
+# for develop
+del-canvas = {path = "../../del-canvas"}
+
+# for github push
+del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
+del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+
+# for deploy
+# del-canvas = "0.1.7"
+
+
 
 
 [build-dependencies]

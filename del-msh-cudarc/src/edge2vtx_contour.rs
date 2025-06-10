@@ -23,7 +23,7 @@ pub fn fwd(
         let func = del_cudarc_safe::get_or_load_func(
             stream.context(),
             "edge2vtx_contour_set_flag",
-            del_msh_cudarc_kernel::EDGE2VTX,
+            del_msh_cuda_kernel::EDGE2VTX,
         )?;
         let mut builder = stream.launch_builder(&func);
         builder.arg(&num_edge);
