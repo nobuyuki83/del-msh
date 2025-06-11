@@ -14,3 +14,12 @@ pub mod bvhnode2aabb;
 
 #[cfg(feature = "cuda")]
 pub mod edge2vtx_contour;
+
+#[cfg(feature = "cuda")]
+pub mod pix2depth;
+
+#[cfg(feature = "cuda")]
+pub mod pix2tri;
+
+#[cfg(feature = "cuda")]
+pub mod silhouette;

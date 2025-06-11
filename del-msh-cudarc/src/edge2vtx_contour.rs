@@ -35,19 +35,6 @@ pub fn fwd(
         builder.arg(transform_world2ndc);
         builder.arg(&transform_ndc2world);
         unsafe { builder.launch(cfg) }?;
-        /*
-        unsafe { func.launch(cfg, param) }?;
-        let param = (
-            num_edge,
-            &mut edge2flg,
-            edge2vtx,
-            edge2tri,
-            tri2vtx,
-            vtx2xyz,
-            transform_world2ndc,
-            &transform_ndc2world,
-        );
-         */
         edge2flg
     };
     let edge2vtx_contour =

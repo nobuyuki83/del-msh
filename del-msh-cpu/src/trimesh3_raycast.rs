@@ -18,7 +18,11 @@ pub fn update_pix2tri<Index>(
         let i_w = i_pix - i_h * img_shape.0;
         //
         let (ray_org, ray_dir) =
-            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate((i_w, i_h), &img_shape, transform_ndc2world);
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
+                (i_w, i_h),
+                &img_shape,
+                transform_ndc2world,
+            );
         if let Some((_t, i_tri)) = crate::search_bvh3::first_intersection_ray(
             &ray_org,
             &ray_dir,
@@ -52,12 +56,17 @@ pub fn render_depth_bvh(
     bvhnodes: &[usize],
     bvhnode2aabb: &[f32],
 ) {
-    let transform_world2ndc: [f32; 16] = del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
+    let transform_world2ndc: [f32; 16] =
+        del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
     let (width, height) = image_size;
     for ih in 0..height {
         for iw in 0..width {
             let (ray_org, ray_dir) =
-                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate((iw, ih), &image_size, transform_ndc2world);
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
+                    (iw, ih),
+                    &image_size,
+                    transform_ndc2world,
+                );
             let mut hits = vec![];
             crate::search_bvh3::intersections_ray(
                 &mut hits,
@@ -135,7 +144,11 @@ where
     for ih in 0..height {
         for iw in 0..width {
             let (ray_org, ray_dir) =
-                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate((iw, ih), &img_shape, transform_ndc2world);
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
+                    (iw, ih),
+                    &img_shape,
+                    transform_ndc2world,
+                );
             let i_tri = pix2tri[ih * width + iw];
             if i_tri == Index::max_value() {
                 continue;
