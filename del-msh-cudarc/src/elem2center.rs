@@ -21,7 +21,5 @@ pub fn tri2cntr_from_trimesh3(
     builder.arg(tri2vtx);
     builder.arg(vtx2xyz);
     unsafe { builder.launch(cfg) }?;
-    // let param = (tri2cntr, num_tri as u32, tri2vtx, vtx2xyz);
-    //unsafe { from_trimsh.launch(cfg, param) }?;
     Ok(())
 }

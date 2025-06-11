@@ -25,18 +25,27 @@ pub fn fwd(
         }
     };
     let num_tri = tri2vtx.len() / 3;
-    let func = del_cudarc_safe::get_or_load_func(stream.context(), "fwd_pix2tri", del_msh_cuda_kernel::PIX2TRI)?;
-    use del_cudarc_safe::cudarc::driver::PushKernelArg;
-    let mut builder = stream.launch_builder(&func);
-    builder.arg(pix2tri);
-    builder.arg(num_tri as u32);
-    builder.arg(tri2vtx);
-    builder.arg(vtx2xyz);
-    builder.arg(img_shape.0 as u32);
-    builder.arg(img_shape.1 as u32);
-    builder.arg(transform_ndc2world);
-    builder.arg(bvhnodes);
-    builder.arg(bvhnode2aabb);
-    unsafe { builder.launch(cfg) }?;
+    let func = del_cudarc_safe::get_or_load_func(
+        stream.context(),
+        "pix_to_tri",
+        del_msh_cuda_kernel::PIX2TRI,
+    )?;
+    {
+        use del_cudarc_safe::cudarc::driver::PushKernelArg;
+        let mut builder = stream.launch_builder(&func);
+        let num_tri = num_tri as u32;
+        let img_width = img_shape.0 as u32;
+        let img_height = img_shape.1 as u32;
+        builder.arg(pix2tri);
+        builder.arg(&num_tri);
+        builder.arg(tri2vtx);
+        builder.arg(vtx2xyz);
+        builder.arg(&img_width);
+        builder.arg(&img_height);
+        builder.arg(transform_ndc2world);
+        builder.arg(bvhnodes);
+        builder.arg(bvhnode2aabb);
+        unsafe { builder.launch(cfg) }?;
+    }
     Ok(())
 }

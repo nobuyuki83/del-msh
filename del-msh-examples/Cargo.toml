@@ -5,6 +5,9 @@ edition.workspace = true
 license.workspace = true
 description.workspace = true
 
+[features]
+cuda = ["del-msh-cudarc/cuda", "dep:del-cudarc-safe", "dep:del-msh-cuda-kernel"]
+
 [dependencies]
 arrayref.workspace = true
 slice-of-array.workspace = true
@@ -19,6 +22,10 @@ rayon.workspace = true
 glutin = "0.32.2"
 glutin-winit = "0.5.0"
 winit = "0.30.9"
+
+del-msh-cudarc = {workspace = true, optional = true}
+del-msh-cuda-kernel = {workspace = true, optional = true}
+del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for develop
 del-canvas = {path = "../../del-canvas"}

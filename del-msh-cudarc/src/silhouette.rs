@@ -29,17 +29,22 @@ pub fn remove_alias(
         "silhouette_fwd",
         del_msh_cuda_kernel::SILHOUETTE,
     )?;
-    use del_cudarc_safe::cudarc::driver::PushKernelArg;
-    let mut builder = stream.launch_builder(&func);
-    builder.arg(&(num_edge as u32));
-    builder.arg(edge2vtx_contour);
-    builder.arg(&(img_shape.0 as u32));
-    builder.arg(&(img_shape.1 as u32));
-    builder.arg(pix2occu);
-    builder.arg(pix2tri);
-    builder.arg(vtx2xyz);
-    builder.arg(transform_world2pix);
-    unsafe { builder.launch(cfg) }?;
+    {
+        use del_cudarc_safe::cudarc::driver::PushKernelArg;
+        let mut builder = stream.launch_builder(&func);
+        let num_edge = num_edge as u32;
+        let img_width = img_shape.0 as u32;
+        let img_height = img_shape.1 as u32;
+        builder.arg(&num_edge);
+        builder.arg(edge2vtx_contour);
+        builder.arg(&img_width);
+        builder.arg(&img_height);
+        builder.arg(pix2occu);
+        builder.arg(pix2tri);
+        builder.arg(vtx2xyz);
+        builder.arg(transform_world2pix);
+        unsafe { builder.launch(cfg) }?;
+    }
     Ok(())
 }
 
@@ -68,17 +73,22 @@ pub fn backward_wrt_vtx2xyz(
         "silhouette_bwd",
         del_msh_cuda_kernel::SILHOUETTE,
     )?;
-    use del_cudarc_safe::cudarc::driver::PushKernelArg;
-    let mut builder = stream.launch_builder(&func);
-    builder.arg(num_edge as u32);
-    builder.arg(edge2vtx_contour);
-    builder.arg(vtx2xyz);
-    builder.arg(dldw_vtx2xyz);
-    builder.arg(&(img_shape.0 as u32));
-    builder.arg(&(img_shape.1 as u32));
-    builder.arg(dldw_pix2occl);
-    builder.arg(pix2tri);
-    builder.arg(transform_world2pix);
-    unsafe { builder.launch(cfg) }?;
+    {
+        use del_cudarc_safe::cudarc::driver::PushKernelArg;
+        let mut builder = stream.launch_builder(&func);
+        let num_edge = num_edge as u32;
+        let img_width = img_shape.0 as u32;
+        let img_height = img_shape.1 as u32;
+        builder.arg(&num_edge);
+        builder.arg(edge2vtx_contour);
+        builder.arg(vtx2xyz);
+        builder.arg(dldw_vtx2xyz);
+        builder.arg(&img_width);
+        builder.arg(&img_height);
+        builder.arg(dldw_pix2occl);
+        builder.arg(pix2tri);
+        builder.arg(transform_world2pix);
+        unsafe { builder.launch(cfg) }?;
+    }
     Ok(())
 }

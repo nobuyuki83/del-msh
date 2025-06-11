@@ -20,8 +20,6 @@ pub fn vtx2morton(
     builder.arg(transform_xyz2uni);
     builder.arg(vtx2morton);
     unsafe { builder.launch(cfg) }?;
-    //let param = (num_vtx, vtx2xyz, transform_xyz2uni, vtx2morton);
-    //unsafe { func.launch(cfg, param) }?;
     Ok(())
 }
 
@@ -38,13 +36,13 @@ pub fn from_sorted_morton_codes(
         "kernel_MortonCode_BVHTopology",
         del_msh_cuda_kernel::BVHNODES_MORTON,
     )?;
-    let mut builder = stream.launch_builder(&func);
-    builder.arg(&num_leaf);
-    builder.arg(bvnodes);
-    builder.arg(idx2morton);
-    builder.arg(idx2tri);
-    unsafe { builder.launch(cfg) }?;
-    //unsafe { func.launch(cfg, param) }?;
-    //let param = (num_leaf, bvnodes, idx2morton, idx2tri);
+    {
+        let mut builder = stream.launch_builder(&func);
+        builder.arg(&num_leaf);
+        builder.arg(bvnodes);
+        builder.arg(idx2morton);
+        builder.arg(idx2tri);
+        unsafe { builder.launch(cfg) }?;
+    }
     Ok(())
 }

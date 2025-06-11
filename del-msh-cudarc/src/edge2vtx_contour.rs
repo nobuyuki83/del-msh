@@ -25,16 +25,18 @@ pub fn fwd(
             "edge2vtx_contour_set_flag",
             del_msh_cuda_kernel::EDGE2VTX,
         )?;
-        let mut builder = stream.launch_builder(&func);
-        builder.arg(&num_edge);
-        builder.arg(&mut edge2flg);
-        builder.arg(edge2vtx);
-        builder.arg(edge2tri);
-        builder.arg(tri2vtx);
-        builder.arg(vtx2xyz);
-        builder.arg(transform_world2ndc);
-        builder.arg(&transform_ndc2world);
-        unsafe { builder.launch(cfg) }?;
+        {
+            let mut builder = stream.launch_builder(&func);
+            builder.arg(&num_edge);
+            builder.arg(&mut edge2flg);
+            builder.arg(edge2vtx);
+            builder.arg(edge2tri);
+            builder.arg(tri2vtx);
+            builder.arg(vtx2xyz);
+            builder.arg(transform_world2ndc);
+            builder.arg(&transform_ndc2world);
+            unsafe { builder.launch(cfg) }?;
+        }
         edge2flg
     };
     let edge2vtx_contour =

@@ -19,29 +19,18 @@ pub fn from_trimesh3_with_bvhnodes(
         "from_trimesh3",
         del_msh_cuda_kernel::BVHNODE2AABB,
     )?;
-    let num_tri = num_tri as u32;
-    let mut builder = stream.launch_builder(&from_trimsh);
-    builder.arg(bvhnode2aabb);
-    builder.arg(&mut bvhbranch2flag);
-    builder.arg(&num_bvhnode);
-    builder.arg(bvhnodes);
-    builder.arg(&num_tri);
-    builder.arg(tri2vtx);
-    builder.arg(vtx2xyz);
-    builder.arg(&(0.));
-    unsafe { builder.launch(cfg) }?;
-    /*
-    let param = (
-        bvhnode2aabb,
-        &mut bvhbranch2flag,
-        num_bvhnode,
-        bvhnodes,
-        num_tri as u32,
-        tri2vtx,
-        vtx2xyz,
-        0.,
-    );
-    unsafe { from_trimsh.launch(cfg, param) }?;
-     */
+    {
+        let mut builder = stream.launch_builder(&from_trimsh);
+        let num_tri = num_tri as u32;
+        builder.arg(bvhnode2aabb);
+        builder.arg(&mut bvhbranch2flag);
+        builder.arg(&num_bvhnode);
+        builder.arg(bvhnodes);
+        builder.arg(&num_tri);
+        builder.arg(tri2vtx);
+        builder.arg(vtx2xyz);
+        builder.arg(&(0.));
+        unsafe { builder.launch(cfg) }?;
+    }
     Ok(())
 }
