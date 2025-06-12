@@ -28,11 +28,12 @@ del-msh-cuda-kernel = {workspace = true, optional = true}
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for develop
-del-canvas = {path = "../../del-canvas"}
+# del-canvas = {path = "../../del-canvas"}
 
 # for github push
 del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
 del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
+del-canvas = {git = "https://github.com/nobuyuki83/del-canvas.git"}
 
 # for deploy
 # del-canvas = "0.1.7"
