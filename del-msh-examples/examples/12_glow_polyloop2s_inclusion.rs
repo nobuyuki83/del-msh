@@ -139,7 +139,7 @@ impl MyApp {
                 ];
                 match self.picked_object {
                     VtxInside(i_vtx) => {
-                        geo.vtx2xy_inside[(i_vtx * 2)] = pos1_ndc[0];
+                        geo.vtx2xy_inside[i_vtx * 2] = pos1_ndc[0];
                         geo.vtx2xy_inside[i_vtx * 2 + 1] = pos1_ndc[1];
                         self.is_updated_geometry = true;
                     }
