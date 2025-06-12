@@ -47,10 +47,10 @@ impl MyApp {
             .as_ref()
             .expect("You need to run eframe with the glow backend");
         let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
-        drawer.compile_shader(&gl);
-        drawer.set_vtx2xyz(&gl, &vtx2xyz, 3);
-        drawer.add_elem2vtx(&gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
-        drawer.add_elem2vtx(&gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.8, 0.8]);
+        drawer.compile_shader(gl);
+        drawer.set_vtx2xyz(gl, &vtx2xyz, 3);
+        drawer.add_elem2vtx(gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+        drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.8, 0.8]);
         Self {
             drawer: Arc::new(Mutex::new(drawer)),
             // mat_modelview: del_geo_core::mat4_col_major::from_identity(),
@@ -85,8 +85,8 @@ impl MyApp {
         let ctx = ui.ctx();
         if ctx.input(|i| i.pointer.button_down(egui::PointerButton::Primary) && i.modifiers.alt) {
             let xy = response.drag_motion();
-            let dx = 2.0 * xy.x / rect.width() as f32;
-            let dy = -2.0 * xy.y / rect.height() as f32;
+            let dx = 2.0 * xy.x / rect.width();
+            let dy = -2.0 * xy.y / rect.height();
             self.trackball.camera_rotation(dx, dy);
         }
     }

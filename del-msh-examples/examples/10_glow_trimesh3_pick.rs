@@ -49,20 +49,20 @@ impl MyApp {
         };
         let drawer_mesh = {
             let mut drawer_mesh = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
-            drawer_mesh.compile_shader(&gl);
+            drawer_mesh.compile_shader(gl);
             let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
-            drawer_mesh.set_vtx2xyz(&gl, &vtx2xyz, 3);
-            drawer_mesh.add_elem2vtx(&gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
-            drawer_mesh.add_elem2vtx(&gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
+            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz, 3);
+            drawer_mesh.add_elem2vtx(gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+            drawer_mesh.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
         };
         let drawer_sphere = {
             let mut drawer_sphere = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
-            drawer_sphere.compile_shader(&gl);
+            drawer_sphere.compile_shader(gl);
             let (tri2vtx, vtx2xyz) =
                 del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.1, 32, 32);
-            drawer_sphere.set_vtx2xyz(&gl, &vtx2xyz, 3);
-            drawer_sphere.add_elem2vtx(&gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.5, 0.5]);
+            drawer_sphere.set_vtx2xyz(gl, &vtx2xyz, 3);
+            drawer_sphere.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.5, 0.5]);
             drawer_sphere
         };
         Self {
@@ -149,8 +149,8 @@ impl MyApp {
         }
         if ctx.input(|i| i.pointer.button_down(egui::PointerButton::Primary) && i.modifiers.alt) {
             let xy = response.drag_motion();
-            let dx = 2.0 * xy.x / rect.width() as f32;
-            let dy = -2.0 * xy.y / rect.height() as f32;
+            let dx = 2.0 * xy.x / rect.width();
+            let dy = -2.0 * xy.y / rect.height();
             self.trackball.camera_rotation(dx, dy);
         }
     }

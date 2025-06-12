@@ -53,17 +53,17 @@ impl MyApp {
             .as_ref()
             .expect("You need to run eframe with the glow backend");
         let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz_vtx2uv::Drawer::new();
-        drawer.compile_shader(&gl);
-        drawer.update_vtx2xyz(&gl, &vtx2xyz, 3);
-        drawer.set_vtx2uv(&gl, &vtx2uv);
-        drawer.add_elem2vtx(&gl, glow::LINES, &edge2vtx, None);
-        drawer.add_elem2vtx(&gl, glow::TRIANGLES, &tri2vtx, None);
+        drawer.compile_shader(gl);
+        drawer.update_vtx2xyz(gl, &vtx2xyz, 3);
+        drawer.set_vtx2uv(gl, &vtx2uv);
+        drawer.add_elem2vtx(gl, glow::LINES, &edge2vtx, None);
+        drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, None);
         //
         let id_tex = unsafe {
             // gl.enable(glow::TEXTURE_2D);
             // gl.active_texture(glow::TEXTURE0);
             let id_tex = gl.create_texture().unwrap();
-            gl.bind_texture(glow::TEXTURE_2D, id_tex.try_into().unwrap());
+            gl.bind_texture(glow::TEXTURE_2D, id_tex.into());
             // gl.pixel_store_i32(glow::UNPACK_ALIGNMENT, 1);
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
@@ -114,8 +114,8 @@ impl MyApp {
         let ctx = ui.ctx();
         if ctx.input(|i| i.pointer.button_down(egui::PointerButton::Primary) && i.modifiers.alt) {
             let xy = response.drag_motion();
-            let dx = 2.0 * xy.x / rect.width() as f32;
-            let dy = -2.0 * xy.y / rect.height() as f32;
+            let dx = 2.0 * xy.x / rect.width();
+            let dy = -2.0 * xy.y / rect.height();
             self.trackball.camera_rotation(dx, dy);
         }
     }

@@ -63,7 +63,7 @@ impl MyApp {
             .expect("You need to run eframe with the glow backend");
         let drawer_edge = {
             let mut drawer_mesh = del_glow::drawer_edge2::Drawer::new();
-            drawer_mesh.compile_shader(&gl);
+            drawer_mesh.compile_shader(gl);
             drawer_mesh
         };
         Self {
@@ -117,10 +117,8 @@ impl MyApp {
                     })
                 {
                     self.picked_object = VtxInside(i_vtx);
-                } else {
-                    if del_msh_cpu::polyloop2::is_include_a_point(&geo.vtx2xy_inside, &pos_ndc) {
-                        self.picked_object = FaceInside;
-                    }
+                } else if del_msh_cpu::polyloop2::is_include_a_point(&geo.vtx2xy_inside, &pos_ndc) {
+                    self.picked_object = FaceInside;
                 }
             }
         }
@@ -141,7 +139,7 @@ impl MyApp {
                 ];
                 match self.picked_object {
                     VtxInside(i_vtx) => {
-                        geo.vtx2xy_inside[i_vtx * 2 + 0] = pos1_ndc[0];
+                        geo.vtx2xy_inside[(i_vtx * 2)] = pos1_ndc[0];
                         geo.vtx2xy_inside[i_vtx * 2 + 1] = pos1_ndc[1];
                         self.is_updated_geometry = true;
                     }

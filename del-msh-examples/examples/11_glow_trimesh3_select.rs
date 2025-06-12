@@ -67,19 +67,19 @@ impl MyApp {
             .expect("You need to run eframe with the glow backend");
         let drawer_edge = {
             let mut drawer_mesh = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
-            drawer_mesh.compile_shader(&gl);
+            drawer_mesh.compile_shader(gl);
             let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
-            drawer_mesh.set_vtx2xyz(&gl, &vtx2xyz, 3);
-            drawer_mesh.add_elem2vtx(&gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz, 3);
+            drawer_mesh.add_elem2vtx(gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
             // drawer_mesh.add_element(&gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
         };
         let drawer_tri = {
             let mut drawer_tri = del_glow::drawer_tri2node2xyz_tri2node2rgb::Drawer::new();
-            drawer_tri.compile_shader(&gl);
-            drawer_tri.update_tri2node2xyz(&gl, &tri2node2xyz);
+            drawer_tri.compile_shader(gl);
+            drawer_tri.update_tri2node2xyz(gl, &tri2node2xyz);
             let tri2node2rgb = vec![0.9; num_tri * 9];
-            drawer_tri.update_tri2node2rgb(&gl, &tri2node2rgb);
+            drawer_tri.update_tri2node2rgb(gl, &tri2node2rgb);
             drawer_tri
         };
         Self {
@@ -215,9 +215,9 @@ impl MyApp {
         let response = ui.interact(rect, id, egui::Sense::click_and_drag());
         if ctx.input(|i| i.pointer.button_down(egui::PointerButton::Primary) && i.modifiers.alt) {
             let xy = response.drag_motion();
-            let dx = 2.0 * xy.x / rect.width() as f32;
-            let dy = -2.0 * xy.y / rect.height() as f32;
-            self.trackball.camera_rotation(dx as f32, dy as f32);
+            let dx = 2.0 * xy.x / rect.width();
+            let dy = -2.0 * xy.y / rect.height();
+            self.trackball.camera_rotation(dx, dy);
         }
     }
     fn custom_painting(&mut self, ui: &mut egui::Ui, rect: egui::Rect) {
