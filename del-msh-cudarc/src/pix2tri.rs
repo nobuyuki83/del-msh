@@ -8,7 +8,7 @@ pub fn fwd(
     img_shape: (usize, usize),
     pix2tri: &mut CudaSlice<u32>,
     tri2vtx: &CudaSlice<u32>,
-    vtx2xyz: &CudaSlice<f32>,
+    vtx2xyz: &CudaSlice<f32>, 
     bvhnodes: &CudaSlice<u32>,
     bvhnode2aabb: &CudaSlice<f32>,
     transform_ndc2world: &CudaSlice<f32>,
