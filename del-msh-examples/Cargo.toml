@@ -17,6 +17,9 @@ anyhow.workspace = true
 del-msh-cpu.workspace = true
 del-geo-core.workspace = true
 rayon.workspace = true
+eframe = "0.31.1"
+env_logger = "0.11.8"
+image = "0.25.6"
 
 # crates specific to this crate
 glutin = "0.32.2"
@@ -29,11 +32,13 @@ del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional
 
 # for develop
 # del-canvas = {path = "../../del-canvas"}
+# del-glow = {path="../../del-glow"}
 
 # for github push
 del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
 del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
 del-canvas = {git = "https://github.com/nobuyuki83/del-canvas.git"}
+del-glow = {git = "https://github.com/nobuyuki83/del-glow.git"}
 
 # for deploy
 # del-canvas = "0.1.7"
