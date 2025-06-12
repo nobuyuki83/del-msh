@@ -73,7 +73,7 @@ fn main() -> anyhow::Result<()> {
             &pix2tri,
         );
         for i_pix in 0..img_shape.0 * img_shape.1 {
-            img_data[i_pix][0] = img_data_nrm[(i_pix * 3)];
+            img_data[i_pix][0] = img_data_nrm[i_pix * 3];
             img_data[i_pix][1] = img_data_nrm[i_pix * 3 + 1];
             img_data[i_pix][2] = img_data_nrm[i_pix * 3 + 2];
         }
