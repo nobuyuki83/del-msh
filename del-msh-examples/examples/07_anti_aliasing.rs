@@ -21,13 +21,13 @@ fn write_silhouette_on_magnified_image(
                 del_geo_core::mat4_col_major::from_mat3_col_major_adding_z(&transform_ndc2pix);
             del_geo_core::mat4_col_major::mult_mat_col_major(
                 &transform_ndc2pix,
-                &transform_world2ndc,
+                transform_world2ndc,
             )
         };
         for node2vtx in edge2vtx_contour.chunks(2) {
             let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-            let p0 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i0_vtx as usize).p;
-            let p1 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i1_vtx as usize).p;
+            let p0 = del_msh_cpu::vtx2xyz::to_xyz(vtx2xyz, i0_vtx as usize).p;
+            let p1 = del_msh_cpu::vtx2xyz::to_xyz(vtx2xyz, i1_vtx as usize).p;
             use del_geo_core::vec3::Vec3;
             let q0 = p0
                 .transform_homogeneous(&transform_world2pix_hires)
@@ -175,10 +175,7 @@ fn main() -> anyhow::Result<()> {
         use rand::Rng;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
-        let img_data_trg: Vec<f32> = (0..pix2tri.len())
-            .into_iter()
-            .map(|_i| rng.random::<f32>())
-            .collect();
+        let img_data_trg: Vec<f32> = (0..pix2tri.len()).map(|_i| rng.random::<f32>()).collect();
         let loss = img_data
             .iter()
             .zip(img_data_trg.iter())
