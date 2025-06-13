@@ -15,7 +15,7 @@ fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([550.0, 600.0]),
         multisampling: 4,
-        depth_buffer: 32,
+        depth_buffer: 24,
         renderer: eframe::Renderer::Glow,
         ..Default::default()
     };
