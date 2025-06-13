@@ -313,9 +313,9 @@ mod tests {
         img_shape: (usize, usize),
         transform_ndc2world: &Tensor,
     ) -> candle_core::Result<Tensor> {
-        let tri2vtx = tri2vtx.to_device(&device)?;
-        let vtx2xyz = vtx2xyz.to_device(&device)?;
-        let transform_ndc2world = transform_ndc2world.to_device(&device)?;
+        let tri2vtx = tri2vtx.to_device(device)?;
+        let vtx2xyz = vtx2xyz.to_device(device)?;
+        let transform_ndc2world = transform_ndc2world.to_device(device)?;
         let bvhdata = crate::bvhnode2aabb::BvhForTriMesh::from_trimesh(&tri2vtx, &vtx2xyz)?;
         let pix2tri = crate::pix2tri::from_trimesh3(
             &tri2vtx,

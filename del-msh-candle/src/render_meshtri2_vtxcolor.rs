@@ -206,15 +206,15 @@ fn test_optimize_vtxcolor() -> anyhow::Result<()> {
             bvhdata.compute(&tri2vtx, &vtx2xy)?;
             (bvhdata.bvhnodes, bvhdata.bvhnode2aabb)
         };
-        let pix2tri = crate::raycast_trimesh::raycast2(
+
+        crate::raycast_trimesh::raycast2(
             &tri2vtx,
             &vtx2xy,
             &bvhnodes,
             &aabbs,
             &img_shape,
             &transform_xy2pix,
-        )?;
-        pix2tri
+        )?
     };
     let vtx2color = {
         use rand::Rng;
