@@ -174,7 +174,7 @@ fn test_optimize_vtxcolor() -> anyhow::Result<()> {
     let img_shape = (img_trg.dims3().unwrap().1, img_trg.dims3().unwrap().0);
     // transformation from xy to pixel coordinate
     let transform_xy2pix: [f32; 9] =
-        del_geo_core::mat3_col_major::transform_world2pix_ortho_preserve_asp(
+        del_geo_core::mat3_col_major::from_transform_world2pix_ortho_preserve_asp(
             &img_shape,
             &[0.0, 0.0, 1.0, 1.0],
         );
