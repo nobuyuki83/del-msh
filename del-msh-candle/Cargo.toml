@@ -15,6 +15,7 @@ rand.workspace = true
 anyhow.workspace = true
 arrayref.workspace = true
 del-geo-core.workspace = true
+rayon.workspace = true
 candle-core.workspace = true
 
 # for develop
@@ -37,3 +38,5 @@ del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional
 
 [dev-dependencies]
 rand_chacha.workspace = true
+del-canvas = "0.1.7"
+image = "0.25.6"

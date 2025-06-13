@@ -56,3 +56,10 @@ pub mod edge2vtx_trimesh3;
 pub mod polygonmesh2_to_cogs;
 pub mod voronoi2;
 pub mod vtx2xyz_to_edgevector;
+
+pub mod laplacian_smoothing;
+pub mod pix2depth;
+pub mod pix2tri;
+pub mod raycast_trimesh;
+pub mod render_meshtri2_vtxcolor;
+pub mod silhouette;
