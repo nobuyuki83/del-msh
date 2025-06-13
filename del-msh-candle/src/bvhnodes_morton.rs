@@ -41,12 +41,12 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         use candle_core::backend::BackendDevice;
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
-        get_cuda_slice_from_storage_u32!(
+        get_cuda_slice_device_from_storage_u32!(
             sorted_morton_code,
             dev_sorted_morton_code,
             sorted_morton_code
         );
-        get_cuda_slice_from_storage_f32!(vtx2pos, stream_vtx2pos, vtx2pos);
+        get_cuda_slice_device_from_storage_f32!(vtx2pos, stream_vtx2pos, vtx2pos);
         assert!(dev_sorted_morton_code.same_device(stream_vtx2pos));
         let aabb =
             del_msh_cudarc::vtx2xyz::to_aabb3(&dev_sorted_morton_code.cuda_stream(), vtx2pos)
@@ -123,10 +123,10 @@ impl candle_core::InplaceOp2 for BvhNodesFromSortedMortonCode {
         use candle_core::backend::BackendDevice;
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
-        get_cuda_slice_from_storage_u32!(bvhnodes, device_bvhnodes, bvhnodes);
+        get_cuda_slice_device_from_storage_u32!(bvhnodes, device_bvhnodes, bvhnodes);
         let num_vtx = l_morton_data.dim(0)? / 3;
         assert_eq!(l_bvhnodes.dims(), &[num_vtx * 2 - 1, 3]);
-        get_cuda_slice_from_storage_u32!(
+        get_cuda_slice_device_from_storage_u32!(
             sorted_morton_code,
             device_sorted_morton_code,
             sorted_morton_code

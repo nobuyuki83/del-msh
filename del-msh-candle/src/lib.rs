@@ -20,7 +20,7 @@ macro_rules! get_cuda_slice_and_storage_and_layout_from_tensor {
 }
 
 #[cfg(feature = "cuda")]
-macro_rules! get_cuda_slice_from_storage_u32 {
+macro_rules! get_cuda_slice_device_from_storage_u32 {
     ($slice: ident, $device: ident, $storage: expr) => {
         let CudaStorage { slice, device } = $storage;
         let ($slice, $device) = match slice {
@@ -31,7 +31,7 @@ macro_rules! get_cuda_slice_from_storage_u32 {
 }
 
 #[cfg(feature = "cuda")]
-macro_rules! get_cuda_slice_from_storage_f32 {
+macro_rules! get_cuda_slice_device_from_storage_f32 {
     ($slice: ident, $device: ident, $storage: expr) => {
         let CudaStorage { slice, device } = $storage;
         let ($slice, $device) = match slice {

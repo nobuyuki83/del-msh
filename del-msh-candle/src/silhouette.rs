@@ -75,12 +75,8 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
         assert!(self.edge2vtx_contour.device().is_cuda());
         assert!(self.transform_world2pix.device().is_cuda());
         assert!(self.pix2tri.device().is_cuda());
-        get_cuda_slice_and_device_from_storage_f32!(vtx2xyz, _dev_vtx2xyy, vtx2xyz);
-        get_cuda_slice_and_device_from_storage_f32!(
-            dldw_pix2occl,
-            _dev_dldw_pix2occl,
-            dldw_pix2occul
-        );
+        get_cuda_slice_device_from_storage_f32!(vtx2xyz, _dev_vtx2xyy, vtx2xyz);
+        get_cuda_slice_device_from_storage_f32!(dldw_pix2occl, _dev_dldw_pix2occl, dldw_pix2occul);
         get_cuda_slice_and_storage_and_layout_from_tensor!(
             edge2vtx_contour,
             s_edge2vtx_contour,
@@ -103,9 +99,9 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
             self.pix2tri,
             u32
         );
-        get_cuda_slice_and_device_from_storage_f32!(dldw_vtx2xyz, dev_dldw_vtx2xyz, dldw_vtx2xyz);
-        del_raycast_cudarc::silhouette::backward_wrt_vtx2xyz(
-            dev_dldw_vtx2xyz,
+        get_cuda_slice_device_from_storage_f32!(dldw_vtx2xyz, dev_dldw_vtx2xyz, dldw_vtx2xyz);
+        del_msh_cudarc::silhouette::backward_wrt_vtx2xyz(
+            &dev_dldw_vtx2xyz.cuda_stream(),
             edge2vtx_contour,
             vtx2xyz,
             &mut dldw_vtx2xyz.slice_mut(..),
@@ -209,10 +205,14 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
         );
         let vtx2xyz = vtx2xyz.as_cuda_slice()?;
         //let img = candle_core::cuda_backend::cua
-        let mut pix2occu =
-            del_raycast_cudarc::silhouette::compute_with_alias(device, img_shape, pix2tri).w()?;
-        del_raycast_cudarc::silhouette::remove_alias(
-            device,
+        let mut pix2occu = del_msh_cudarc::silhouette::compute_with_alias(
+            &device.cuda_stream(),
+            img_shape,
+            pix2tri,
+        )
+        .w()?;
+        del_msh_cudarc::silhouette::remove_alias(
+            &device.cuda_stream(),
             edge2vtx_contour,
             img_shape,
             &mut pix2occu,
@@ -376,8 +376,7 @@ fn test_cpu() -> anyhow::Result<()> {
             let transform_ndc2world = transform_ndc2world.to_device(&device)?;
             let transform_world2ndc = transform_world2ndc.to_device(&device)?;
             let transform_world2pix = transform_world2pix.to_device(&device)?;
-            let bvhdata =
-                del_msh_candle::bvhnode2aabb::BvhForTriMesh::from_trimesh(&tri2vtx, &vtx2xyz)?;
+            let bvhdata = crate::bvhnode2aabb::BvhForTriMesh::from_trimesh(&tri2vtx, &vtx2xyz)?;
             let pix2tri_cpu = pix2tri.flatten_all()?.to_vec1::<u32>()?;
             let pix2tri = Tensor::zeros((img_shape.1, img_shape.0), DType::U32, &device)?;
             let layer = crate::pix2tri::Pix2Tri {
@@ -395,7 +394,7 @@ fn test_cpu() -> anyhow::Result<()> {
                     // println!("{} {}", a, b);
                 });
             let edge2vtx_contour_cpu = edge2vtx_contour.flatten_all()?.to_vec1::<u32>()?;
-            let layer_contour = del_msh_candle::edge2vtx_trimesh3::Layer {
+            let layer_contour = crate::edge2vtx_trimesh3::Layer {
                 tri2vtx: tri2vtx.clone(),
                 edge2vtx: edge2vtx.clone(),
                 edge2tri: edge2tri.clone(),

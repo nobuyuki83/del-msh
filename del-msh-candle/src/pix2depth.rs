@@ -132,13 +132,13 @@ impl candle_core::InplaceOp3 for BackwardPix2Depth {
             self.transform_ndc2world,
             f32
         );
-        get_cuda_slice_and_device_from_storage_f32!(dw_vtx2xyz, device_dw_vtx2xyz, dw_vtx2xyz);
-        get_cuda_slice_and_device_from_storage_u32!(tri2vtx, device_tri2vtx, tri2vtx);
-        get_cuda_slice_and_device_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
+        get_cuda_slice_device_from_storage_f32!(dw_vtx2xyz, device_dw_vtx2xyz, dw_vtx2xyz);
+        get_cuda_slice_device_from_storage_u32!(tri2vtx, device_tri2vtx, tri2vtx);
+        get_cuda_slice_device_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
         assert!(device_dw_vtx2xyz.same_device(device_tri2vtx));
         assert!(device_dw_vtx2xyz.same_device(device_vtx2xyz));
-        del_raycast_cudarc::pix2depth::bwd_wrt_vtx2xyz(
-            device_dw_vtx2xyz,
+        del_msh_cudarc::pix2depth::bwd_wrt_vtx2xyz(
+            &device_dw_vtx2xyz.cuda_stream(),
             img_shape,
             &mut dw_vtx2xyz.slice_mut(..),
             pix2tri,
@@ -264,9 +264,9 @@ impl candle_core::CustomOp1 for Pix2Depth {
             f32
         );
         // let mut pix2depth = unsafe { device.alloc::<f32>(img_shape.0 * img_shape.1) }.w()?;
-        let mut pix2depth = device.alloc_zeros::<f32>(img_shape.0 * img_shape.1).w()?;
-        del_raycast_cudarc::pix2depth::fwd(
-            device,
+        let mut pix2depth = device.alloc_zeros::<f32>(img_shape.0 * img_shape.1)?;
+        del_msh_cudarc::pix2depth::fwd(
+            &device.cuda_stream(),
             img_shape,
             &mut pix2depth,
             pix2tri,

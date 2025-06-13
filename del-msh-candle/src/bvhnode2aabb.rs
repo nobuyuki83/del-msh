@@ -76,9 +76,9 @@ impl candle_core::InplaceOp3 for Layer {
         use candle_core::cuda_backend::CudaStorageSlice;
         use candle_core::cuda_backend::WrapErr;
         use std::ops::Deref;
-        get_cuda_slice_from_storage_f32!(bvhnode2aabb, dev_bvhnode2aabb, bvhnode2aabb);
-        get_cuda_slice_from_storage_f32!(vtx2xyz, dev_vtx2xyz, vtx2xyz);
-        get_cuda_slice_from_storage_u32!(bvhnodes, dev_bvhnodes, bvhnodes);
+        get_cuda_slice_device_from_storage_f32!(bvhnode2aabb, dev_bvhnode2aabb, bvhnode2aabb);
+        get_cuda_slice_device_from_storage_f32!(vtx2xyz, dev_vtx2xyz, vtx2xyz);
+        get_cuda_slice_device_from_storage_u32!(bvhnodes, dev_bvhnodes, bvhnodes);
         assert!(dev_bvhnode2aabb.same_device(dev_vtx2xyz));
         assert!(dev_bvhnode2aabb.same_device(dev_bvhnodes));
         get_cuda_slice_and_storage_and_layout_from_tensor!(

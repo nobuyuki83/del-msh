@@ -6,6 +6,7 @@ fn main() {
     println!("cargo:rerun-if-changed=src/edge2vtx.cu");
     println!("cargo:rerun-if-changed=src/silhouette.cu");
     println!("cargo:rerun-if-changed=src/pix2depth.cu");
+    println!("cargo:rerun-if-changed=src/laplacian_smoothing_jacobi.cu");
     //
     let path_out_dir = std::env::var("OUT_DIR").unwrap();
     //let path_out_dir = std::path::Path::new(&path_out_dir).join("cpp_headers").join("del_geo");

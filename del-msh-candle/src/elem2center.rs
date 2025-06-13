@@ -54,9 +54,9 @@ impl candle_core::InplaceOp3 for Layer {
         let _num_node = l_elem2vtx.dim(1)?;
         let num_dim = l_vtx2pos.dim(1)?;
         assert_eq!(l_elem2center.dims(), &[num_elem, num_dim]);
-        get_cuda_slice_from_storage_u32!(elem2vtx, device_elem2vtx, elem2vtx);
-        get_cuda_slice_from_storage_f32!(vtx2pos, device_vtx2pos, vtx2pos);
-        get_cuda_slice_from_storage_f32!(elem2center, device_elem2center, elem2center);
+        get_cuda_slice_device_from_storage_u32!(elem2vtx, device_elem2vtx, elem2vtx);
+        get_cuda_slice_device_from_storage_f32!(vtx2pos, device_vtx2pos, vtx2pos);
+        get_cuda_slice_device_from_storage_f32!(elem2center, device_elem2center, elem2center);
         assert!(device_elem2vtx.same_device(device_vtx2pos));
         assert!(device_elem2vtx.same_device(device_elem2center));
         del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(

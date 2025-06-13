@@ -77,9 +77,9 @@ impl candle_core::InplaceOp3 for Pix2Tri {
         assert_eq!(l_vtx2xyz.dim(1)?, 3); // todo: implement 2D
         use candle_core::cuda_backend::WrapErr;
         let img_shape = (l_pix2tri.dim(1)?, l_pix2tri.dim(0)?);
-        get_cuda_slice_and_device_from_storage_u32!(pix2tri, device_pix2tri, pix2tri);
-        get_cuda_slice_and_device_from_storage_u32!(tri2vtx, device_tri2vtx, tri2vtx);
-        get_cuda_slice_and_device_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
+        get_cuda_slice_device_from_storage_u32!(pix2tri, device_pix2tri, pix2tri);
+        get_cuda_slice_device_from_storage_u32!(tri2vtx, device_tri2vtx, tri2vtx);
+        get_cuda_slice_device_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
         assert!(device_pix2tri.same_device(device_tri2vtx));
         assert!(device_pix2tri.same_device(device_vtx2xyz));
         //
@@ -104,8 +104,8 @@ impl candle_core::InplaceOp3 for Pix2Tri {
             self.transform_ndc2world,
             f32
         );
-        del_raycast_cudarc::pix2tri::fwd(
-            device_pix2tri,
+        del_msh_cudarc::pix2tri::fwd(
+            &device_pix2tri.cuda_stream(),
             img_shape,
             pix2tri,
             tri2vtx,

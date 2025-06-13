@@ -23,3 +23,6 @@ pub mod pix2tri;
 
 #[cfg(feature = "cuda")]
 pub mod silhouette;
+
+#[cfg(feature = "cuda")]
+pub mod laplacian_smoothing_jacobi;

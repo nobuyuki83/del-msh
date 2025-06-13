@@ -130,7 +130,7 @@ impl CustomOp1 for LaplacianSmoothing {
         device.memcpy_dtod(vtx2trgs, &mut vtx2vars)?;
         let mut vtx2vars_tmp = unsafe { device.alloc::<f32>(num_dof)? }; // this is a temp buffer
         for _iter in 0..self.num_iter {
-            del_fem_cudarc::laplacian_smoothing_jacobi::solve(
+            del_msh_cudarc::laplacian_smoothing_jacobi::solve(
                 &device.cuda_stream(),
                 vtx2idx,
                 idx2vtx,
@@ -140,7 +140,7 @@ impl CustomOp1 for LaplacianSmoothing {
                 vtx2trgs,
             )
             .w()?;
-            del_fem_cudarc::laplacian_smoothing_jacobi::solve(
+            del_msh_cudarc::laplacian_smoothing_jacobi::solve(
                 &device.cuda_stream(),
                 vtx2idx,
                 idx2vtx,
