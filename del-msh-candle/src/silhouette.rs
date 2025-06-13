@@ -307,8 +307,8 @@ fn test_cpu() -> anyhow::Result<()> {
             img_shape,
             &img_trg,
         )?;
-        let img_trg = Tensor::from_vec(img_trg, (img_shape.1, img_shape.0), &Device::Cpu)?;
-        img_trg
+
+        Tensor::from_vec(img_trg, (img_shape.1, img_shape.0), &Device::Cpu)?
     };
     // ---------------------------------------------------
     for iter in 0..300 {
