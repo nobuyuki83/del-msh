@@ -1,5 +1,3 @@
-use slice_of_array::{SliceFlatExt, SliceNestExt};
-
 pub trait SignedDistanceField3 {
     fn sdf(&self, x: f64, y: f64, z: f64) -> f64;
 }
@@ -91,7 +89,7 @@ pub fn make_child_tree<S: SignedDistanceField3>(
         need_child = true; // 上限を超えているので細分化を許可
     } else {
         // 最小絶対距離が閾値より大きいならメッシュは無い
-        let mut min_dist = [
+        let min_dist = [
             va111, va100, va210, va120, va010, va001, va201, va221, va021, va101, va211, va121,
             va011, va102, va212, va122, va012, va110, va112,
         ]
