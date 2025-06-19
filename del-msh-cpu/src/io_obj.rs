@@ -569,6 +569,30 @@ where
     Ok(())
 }
 
+// ------------------------/
+
+pub fn save_tri2xyz<Path, Real>(filepath: Path, tri2xyz: &[Real]) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file  not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, tri2xyz, 3)?;
+    // let num_vtx = vtx2xyz.len() / num_dim;
+    let num_tri = tri2xyz.len() / 9;
+    for i_tri in 0..num_tri {
+        writeln!(
+            file,
+            "f {} {} {}",
+            i_tri * 3 + 1,
+            i_tri * 3 + 2,
+            i_tri * 3 + 3
+        )?;
+    }
+    Ok(())
+}
+
 // -------------------------
 // below: private functions
 
