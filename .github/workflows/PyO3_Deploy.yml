@@ -19,6 +19,20 @@ jobs:
       run: pip install maturin
     - name: Build wheels for Python 3.8–3.12
       run: |
+        docker run --rm -v "$(pwd)":/dist quay.io/pypa/manylinux2014_x86_64 /bin/bash -c '
+        set -ex
+        cd /io
+        for PYBIN in /opt/python/cp3[8-9]*/bin /opt/python/cp310*/bin /opt/python/cp311*/bin /opt/python/cp312*/bin; do
+          "$PYBIN/pip" install -U pip setuptools wheel maturin
+          "$PYBIN/maturin" build \
+            --sdist \
+            --release \
+            --interpreter "$PYBIN/python" \
+            -o io/dist \
+            -m del-msh-numpy/Cargo.toml
+        done
+
+      run: |
         for PYBIN in \
           /opt/python/cp38-cp38/bin/python \
           /opt/python/cp39-cp39/bin/python \
