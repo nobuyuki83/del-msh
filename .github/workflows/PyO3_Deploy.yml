@@ -21,6 +21,8 @@ jobs:
         for PY in 3.10 3.11 3.12 3.13; do
           maturin build --sdist --release --manylinux 2014 --interpreter python${PY} -o dist -m del-msh-numpy/Cargo.toml
         done
+      env:
+        DOCKER_CLI_EXPERIMENTAL: enabled
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
