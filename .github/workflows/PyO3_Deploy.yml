@@ -19,7 +19,13 @@ jobs:
       run: pip install maturin
     - name: Build wheels for Python 3.8–3.12
       run: |
-        for PYBIN in /opt/python/cp31[0-3]*/bin/python; do
+        for PYBIN in \
+          /opt/python/cp38-cp38/bin/python \
+          /opt/python/cp39-cp39/bin/python \
+          /opt/python/cp310-cp310/bin/python \
+          /opt/python/cp311-cp311/bin/python \
+          /opt/python/cp312-cp312/bin/python \
+          /opt/python/cp312-cp313/bin/python; do
           echo "▶ Building for $PYBIN"
           maturin build \
             --sdist \
