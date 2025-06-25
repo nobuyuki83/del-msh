@@ -19,7 +19,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: PyO3/maturin-action@v1.27.0
       with:
-        manylinux: 2014
+        manylinux: off
         command: build
         args: --release --sdist -o dist -m del-msh-numpy/Cargo.toml --interpreter python
     - name: Upload wheels
