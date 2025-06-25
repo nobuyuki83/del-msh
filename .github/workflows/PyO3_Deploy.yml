@@ -9,7 +9,7 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/pypa/manylinux2014_x86_6
+      image: quay.io/pypa/manylinux2014_x86_64
       options: --priviledged
     steps:
     - uses: actions/checkout@v4
