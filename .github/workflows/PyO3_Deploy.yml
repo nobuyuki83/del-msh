@@ -22,7 +22,7 @@ jobs:
         docker run --rm -v "$(pwd)":/io quay.io/pypa/manylinux2014_x86_64 /bin/bash -c "
         set -ex
         cd /io
-        for PYBIN in /opt/python/cp3[8-9]*/bin /opt/python/cp310*/bin /opt/python/cp311*/bin /opt/python/cp312*/bin; do
+        for PYBIN in /opt/python/cp310*/bin /opt/python/cp311*/bin /opt/python/cp312*/bin /opt/python/cp313*/bin; do
           \{$PYBIN}/pip install -U pip setuptools wheel maturin
           \{$PYBIN}/maturin build \
             --sdist \
