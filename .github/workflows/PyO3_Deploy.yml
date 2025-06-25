@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/pypa/manylinux2014_x86_64
-      options: --priviledged
+      options: --privileged
     steps:
     - uses: actions/checkout@v4
-    - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-    - name: Build wheels for Python 3.8 - 3.12
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - name: Install maturin
+      run: pip install maturin
+    - name: Build wheels for Python 3.8–3.12
       run: |
-        source $HOME/.cargo/env
-        for PYBIN in /opt/python/cp31[0-3]*/bin/python; do
-          echo "Building for $PYBIN"
-          "$PYBIN" -m pip install --upgrade pip setuptools maturin
-          "$PYBIN" -m maturin build --sdist --release --manylinux 2014 --interpreter "$PYBIN" -o dist -m del-msh-numpy/Cargo.toml
+        for PY in 3.8 3.9 3.10 3.11 3.12; do
+          maturin build --sdist --release --manylinux 2014 --interpreter python${PY} -o dist -m del-msh-numpy/Cargo.toml
         done
     - name: Upload wheels
       uses: actions/upload-artifact@v4
