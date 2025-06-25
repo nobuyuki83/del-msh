@@ -9,6 +9,8 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
+    - name: Check Docker
+      run: docker --version
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
@@ -22,7 +24,7 @@ jobs:
           maturin build --sdist --release --manylinux 2014 --interpreter python${PY} -o dist -m del-msh-numpy/Cargo.toml
         done
       env:
-        DOCKER_CLI_EXPERIMENTAL: enabled
+        MATURIN_DOCKER: "1"        
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
