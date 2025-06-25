@@ -23,11 +23,11 @@ jobs:
         set -ex
         cd /io
         for PYBIN in /opt/python/cp310*/bin /opt/python/cp311*/bin /opt/python/cp312*/bin /opt/python/cp313*/bin; do
-          \{$PYBIN}/pip install -U pip setuptools wheel maturin
-          \{$PYBIN}/maturin build \
+          \${PYBIN}/pip install -U pip setuptools wheel maturin
+          \${PYBIN}/maturin build \
             --sdist \
             --release \
-            --interpreter \{$PYBIN}/python \
+            --interpreter \${PYBIN}/python \
             -o /io/dist \
             -m del-msh-numpy/Cargo.toml
         done
