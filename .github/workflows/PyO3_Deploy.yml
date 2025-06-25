@@ -8,24 +8,25 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    container:
+      image: quay.io/pypa/manylinux2014_x86_6
+      options: --priviledged
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: PyO3/maturin-action@v1.27.0
-      with:
-        manylinux: off
-        command: build
-        args: --release --sdist -o dist -m del-msh-numpy/Cargo.toml --interpreter python
+    - uses: actions/checkout@v4
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Build wheels for Python 3.8 - 3.12
+      run: |
+        source $HOME/.cargo/env
+        for PYBIN in /opt/python/cp31[0-3]*/bin/python; do
+          echo "Building for $PYBIN"
+          "$PYBIN" -m pip install --upgrade pip setuptools maturin
+          "$PYBIN" -m maturin build --sdist --release --manylinux 2014 --interpreter "$PYBIN" -o dist -m del-msh-numpy/Cargo.toml
+        done
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: wheels-linux-${{ matrix.python-version }}
+        name: wheels-linux
         path: dist
 
   windows:
