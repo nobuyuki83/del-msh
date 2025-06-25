@@ -31,26 +31,6 @@ jobs:
             -o io/dist \
             -m del-msh-numpy/Cargo.toml
         done
-
-      run: |
-        for PYBIN in \
-          /opt/python/cp38-cp38/bin/python \
-          /opt/python/cp39-cp39/bin/python \
-          /opt/python/cp310-cp310/bin/python \
-          /opt/python/cp311-cp311/bin/python \
-          /opt/python/cp312-cp312/bin/python \
-          /opt/python/cp312-cp313/bin/python; do
-          echo "▶ Building for $PYBIN"
-          maturin build \
-            --sdist \
-            --release \
-            --manylinux 2014 \
-            --interpreter $PYBIN \
-            -o dist \
-            -m del-msh-numpy/Cargo.toml
-        done
-      env:
-        MATURIN_DOCKER: "1"
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
