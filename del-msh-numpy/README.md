@@ -10,6 +10,6 @@ Look [python demos](https://github.com/nobuyuki83/python_graphics_demos) for the
 ## Install 
 
 ```shell
-pip install del-msh
+pip install del-msh-numpy
 ```
 
