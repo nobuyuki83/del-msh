@@ -8,9 +8,6 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/pypa/manylinux2014_x86_64
-      options: --privileged
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
