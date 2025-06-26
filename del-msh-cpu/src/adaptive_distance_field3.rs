@@ -1,20 +1,21 @@
-pub trait SignedDistanceField3<Real>
-{
+pub trait SignedDistanceField3<Real> {
     fn sdf(&self, x: Real, y: Real, z: Real) -> Real;
 }
 
 #[derive(Clone, Debug)]
 pub struct Node<Real>
-    where Real: num_traits::Float
+where
+    Real: num_traits::Float,
 {
-    cent: [Real; 3],         // セル中心座標
-    hw: Real,                // half-width
-    corner_dist: [Real; 8],  // 8 コーナーの SDF 値
+    cent: [Real; 3],        // セル中心座標
+    hw: Real,               // half-width
+    corner_dist: [Real; 8], // 8 コーナーの SDF 値
     child_idxs: [usize; 8], // 子ノードのインデックス (-1: なし)
 }
 
 impl<Real> Node<Real>
-where Real:num_traits::Float
+where
+    Real: num_traits::Float,
 {
     /// 8 頂点の SDF を一括で計算
     pub fn set_corner_dist<S: SignedDistanceField3<Real>>(&mut self, ct: &S) {
@@ -40,9 +41,9 @@ pub fn make_child_tree<Real, S: SignedDistanceField3<Real>>(
     i_node: usize,
     min_hw: Real,
     max_hw: Real,
-)
-where Real: num_traits::Float + 'static,
-      f64: num_traits::AsPrimitive<Real>
+) where
+    Real: num_traits::Float + 'static,
+    f64: num_traits::AsPrimitive<Real>,
 {
     let zero = Real::zero();
     let one = Real::one();
@@ -155,7 +156,15 @@ where Real: num_traits::Float + 'static,
             check!(va112 - interp4(p_dist[4], p_dist[5], p_dist[6], p_dist[7]));
 
             // 立方体中心
-            let center_interp = one8th * (p_dist[0] + p_dist[1] + p_dist[2] + p_dist[3] + p_dist[4] + p_dist[5] + p_dist[6] + p_dist[7]);
+            let center_interp = one8th
+                * (p_dist[0]
+                    + p_dist[1]
+                    + p_dist[2]
+                    + p_dist[3]
+                    + p_dist[4]
+                    + p_dist[5]
+                    + p_dist[6]
+                    + p_dist[7]);
             check!(va111 - center_interp);
         }
     }
@@ -168,7 +177,8 @@ where Real: num_traits::Float + 'static,
     nodes[i_node].child_idxs = [usize::MAX; 8]; // まず -1 で初期化
     use del_geo_core::vec3::Vec3;
     for i_node_hex in 0..8 {
-        let offset = del_geo_core::vec3::cast::<f64, Real>( &del_geo_core::hex::HEX_SIGN[i_node_hex] );
+        let offset =
+            del_geo_core::vec3::cast::<f64, Real>(&del_geo_core::hex::HEX_SIGN[i_node_hex]);
         let p_dist = &nodes[i_node].corner_dist; // distances of parent node
         let c_dist = match i_node_hex {
             0 => [p_dist[0], va100, va110, va010, va001, va101, va111, va011],
@@ -200,8 +210,7 @@ where Real: num_traits::Float + 'static,
 #[test]
 fn hoge() {
     struct Sphere {}
-    impl SignedDistanceField3<f64> for Sphere
-    {
+    impl SignedDistanceField3<f64> for Sphere {
         fn sdf(&self, x: f64, y: f64, z: f64) -> f64 {
             0.33 - (x * x + y * y + z * z).sqrt()
         }
