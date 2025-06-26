@@ -1,23 +1,25 @@
-pub trait SignedDistanceField3 {
-    fn sdf(&self, x: f64, y: f64, z: f64) -> f64;
+pub trait SignedDistanceField3<Real>
+{
+    fn sdf(&self, x: Real, y: Real, z: Real) -> Real;
 }
 
 #[derive(Clone, Debug)]
-pub struct Node {
-    cent: [f64; 3],         // セル中心座標
-    hw: f64,                // half-width
-    corner_dist: [f64; 8],  // 8 コーナーの SDF 値
+pub struct Node<Real>
+    where Real: num_traits::Float
+{
+    cent: [Real; 3],         // セル中心座標
+    hw: Real,                // half-width
+    corner_dist: [Real; 8],  // 8 コーナーの SDF 値
     child_idxs: [usize; 8], // 子ノードのインデックス (-1: なし)
 }
 
-impl Node {
+impl<Real> Node<Real>
+where Real:num_traits::Float
+{
     /// 8 頂点の SDF を一括で計算
-    pub fn set_corner_dist<S: SignedDistanceField3>(&mut self, ct: &S) {
-        // (+x,+y,+z) の順にビット演算で頂点を列挙しても良いが、
-        // C++ の並びをそのまま踏襲
+    pub fn set_corner_dist<S: SignedDistanceField3<Real>>(&mut self, ct: &S) {
         let [cx, cy, cz] = self.cent;
         let hw = self.hw;
-
         self.corner_dist = [
             ct.sdf(cx - hw, cy - hw, cz - hw),
             ct.sdf(cx + hw, cy - hw, cz - hw),
@@ -32,15 +34,26 @@ impl Node {
 }
 
 /// 必要に応じて 8 分木を細分化
-pub fn make_child_tree<S: SignedDistanceField3>(
+pub fn make_child_tree<Real, S: SignedDistanceField3<Real>>(
     ct: &S,
-    nodes: &mut Vec<Node>, // 生成した子ノードを push するバッファ
+    nodes: &mut Vec<Node<Real>>, // 生成した子ノードを push するバッファ
     i_node: usize,
-    min_hw: f64,
-    max_hw: f64,
-) {
+    min_hw: Real,
+    max_hw: Real,
+)
+where Real: num_traits::Float + 'static,
+      f64: num_traits::AsPrimitive<Real>
+{
+    let zero = Real::zero();
+    let one = Real::one();
+    let half = Real::one() / (Real::one() + Real::one());
+    let one4th = half * half;
+    let one5th = one / (one + one + one + one + one);
+    let one8th = one4th * one4th;
+    let one_point_eight = one + one - one5th;
+    let zero_point_eight = one - one5th;
     // ───────── step-0: 早期終了１ ─────────
-    if nodes[i_node].hw * 0.5 < min_hw {
+    if nodes[i_node].hw * half < min_hw {
         nodes[i_node].child_idxs[0] = usize::MAX;
         return;
     }
@@ -56,36 +69,36 @@ pub fn make_child_tree<S: SignedDistanceField3>(
     }
 
     // Edges
-    let va100 = sdf!(0.0, -hw, -hw);
-    let va210 = sdf!(hw, 0.0, -hw);
-    let va120 = sdf!(0.0, hw, -hw);
-    let va010 = sdf!(-hw, 0.0, -hw);
+    let va100 = sdf!(zero, -hw, -hw);
+    let va210 = sdf!(hw, zero, -hw);
+    let va120 = sdf!(zero, hw, -hw);
+    let va010 = sdf!(-hw, zero, -hw);
 
-    let va001 = sdf!(-hw, -hw, 0.0);
-    let va201 = sdf!(hw, -hw, 0.0);
-    let va221 = sdf!(hw, hw, 0.0);
-    let va021 = sdf!(-hw, hw, 0.0);
+    let va001 = sdf!(-hw, -hw, zero);
+    let va201 = sdf!(hw, -hw, zero);
+    let va221 = sdf!(hw, hw, zero);
+    let va021 = sdf!(-hw, hw, zero);
 
-    let va102 = sdf!(0.0, -hw, hw);
-    let va212 = sdf!(hw, 0.0, hw);
-    let va122 = sdf!(0.0, hw, hw);
-    let va012 = sdf!(-hw, 0.0, hw);
+    let va102 = sdf!(zero, -hw, hw);
+    let va212 = sdf!(hw, zero, hw);
+    let va122 = sdf!(zero, hw, hw);
+    let va012 = sdf!(-hw, zero, hw);
 
     // Faces
-    let va101 = sdf!(0.0, -hw, 0.0);
-    let va211 = sdf!(hw, 0.0, 0.0);
-    let va121 = sdf!(0.0, hw, 0.0);
-    let va011 = sdf!(-hw, 0.0, 0.0);
-    let va110 = sdf!(0.0, 0.0, -hw);
-    let va112 = sdf!(0.0, 0.0, hw);
+    let va101 = sdf!(zero, -hw, zero);
+    let va211 = sdf!(hw, zero, zero);
+    let va121 = sdf!(zero, hw, zero);
+    let va011 = sdf!(-hw, zero, zero);
+    let va110 = sdf!(zero, zero, -hw);
+    let va112 = sdf!(zero, zero, hw);
 
     // Center
-    let va111 = sdf!(0.0, 0.0, 0.0);
+    let va111 = sdf!(zero, zero, zero);
 
     // ───────── step-2: 細かくし過ぎを抑制 ─────────
     let mut need_child = false;
 
-    if nodes[i_node].hw * 0.5 > max_hw {
+    if nodes[i_node].hw * half > max_hw {
         need_child = true; // 上限を超えているので細分化を許可
     } else {
         // 最小絶対距離が閾値より大きいならメッシュは無い
@@ -95,9 +108,9 @@ pub fn make_child_tree<S: SignedDistanceField3>(
         ]
         .iter()
         .map(|v| v.abs())
-        .fold(f64::INFINITY, f64::min);
+        .fold(Real::infinity(), Real::min);
 
-        if min_dist > hw * 1.8 {
+        if min_dist > hw * one_point_eight {
             nodes[i_node].child_idxs[0] = usize::MAX;
             return;
         }
@@ -106,12 +119,12 @@ pub fn make_child_tree<S: SignedDistanceField3>(
             need_child = true;
         } else {
             // ───────── step-3: 補間誤差チェック ─────────
-            let interp = |v0, v1| 0.5 * (v0 + v1);
-            let interp4 = |v0, v1, v2, v3| 0.25 * (v0 + v1 + v2 + v3);
+            let interp = |v0, v1| half * (v0 + v1);
+            let interp4 = |v0, v1, v2, v3| one4th * (v0 + v1 + v2 + v3);
 
             macro_rules! check {
                 ($cond:expr) => {{
-                    if ($cond).abs() > min_hw * 0.8 {
+                    if ($cond).abs() > min_hw * zero_point_eight {
                         need_child = true;
                     }
                 }};
@@ -142,7 +155,7 @@ pub fn make_child_tree<S: SignedDistanceField3>(
             check!(va112 - interp4(p_dist[4], p_dist[5], p_dist[6], p_dist[7]));
 
             // 立方体中心
-            let center_interp = 0.125 * p_dist.iter().sum::<f64>();
+            let center_interp = one8th * (p_dist[0] + p_dist[1] + p_dist[2] + p_dist[3] + p_dist[4] + p_dist[5] + p_dist[6] + p_dist[7]);
             check!(va111 - center_interp);
         }
     }
@@ -153,8 +166,9 @@ pub fn make_child_tree<S: SignedDistanceField3>(
     }
     // eight children
     nodes[i_node].child_idxs = [usize::MAX; 8]; // まず -1 で初期化
+    use del_geo_core::vec3::Vec3;
     for i_node_hex in 0..8 {
-        let offset = del_geo_core::hex::HEX_SIGN[i_node_hex];
+        let offset = del_geo_core::vec3::cast::<f64, Real>( &del_geo_core::hex::HEX_SIGN[i_node_hex] );
         let p_dist = &nodes[i_node].corner_dist; // distances of parent node
         let c_dist = match i_node_hex {
             0 => [p_dist[0], va100, va110, va010, va001, va101, va111, va011],
@@ -167,10 +181,9 @@ pub fn make_child_tree<S: SignedDistanceField3>(
             7 => [va011, va111, va121, va021, va012, va112, va122, p_dist[7]],
             _ => unreachable!(),
         };
-        use del_geo_core::vec3::Vec3;
         let child = Node {
-            cent: offset.scale(hw * 0.5).add(&[cx, cy, cz]),
-            hw: hw * 0.5,
+            cent: offset.scale(hw * half).add(&[cx, cy, cz]),
+            hw: hw * half,
             corner_dist: c_dist,
             child_idxs: [usize::MAX; 8],
         };
@@ -187,13 +200,14 @@ pub fn make_child_tree<S: SignedDistanceField3>(
 #[test]
 fn hoge() {
     struct Sphere {}
-    impl SignedDistanceField3 for Sphere {
+    impl SignedDistanceField3<f64> for Sphere
+    {
         fn sdf(&self, x: f64, y: f64, z: f64) -> f64 {
             0.33 - (x * x + y * y + z * z).sqrt()
         }
     }
 
-    let hoge = Sphere {};
+    let sphere = Sphere {};
     let hw = 1.0;
     let cent = [0., 0., 0.];
     let corner_dist = {
@@ -202,7 +216,7 @@ fn hoge() {
             let d = del_geo_core::hex::HEX_SIGN[i_node];
             use del_geo_core::vec3::Vec3;
             let pos = d.scale(hw).add(&cent);
-            let dist = hoge.sdf(pos[0], pos[1], pos[2]);
+            let dist = sphere.sdf(pos[0], pos[1], pos[2]);
             corner_dist[i_node] = dist;
         }
         corner_dist
@@ -214,7 +228,7 @@ fn hoge() {
         corner_dist,
     };
     let mut nodes = vec![node0];
-    make_child_tree(&hoge, &mut nodes, 0, 0.05, 0.26);
+    make_child_tree(&sphere, &mut nodes, 0, 0.05, 0.26);
     dbg!(nodes.len());
 
     let mut tri2xyz = vec![];
@@ -226,6 +240,6 @@ fn hoge() {
     }
     {
         use slice_of_array::SliceFlatExt;
-        crate::io_obj::save_tri2xyz("../target/sdf.obj", tri2xyz.flat());
+        crate::io_obj::save_tri2xyz("../target/sdf.obj", tri2xyz.flat()).unwrap();
     }
 }
