@@ -93,7 +93,10 @@ impl MyApp {
         let z_flip = del_geo_core::mat4_col_major::from_diagonal(1., 1., -1., 1.);
         let mat_projection_for_opengl =
             del_geo_core::mat4_col_major::mult_mat_col_major(&z_flip, &mat_projection);
-        let mvp = del_geo_core::mat4_col_major::mult_mat_col_major(&mat_projection_for_opengl, &mat_modelview);
+        let mvp = del_geo_core::mat4_col_major::mult_mat_col_major(
+            &mat_projection_for_opengl,
+            &mat_modelview,
+        );
         let drawer = self.drawer.clone();
         let callback = egui::PaintCallback {
             rect,
@@ -103,9 +106,7 @@ impl MyApp {
                     gl.clear(glow::DEPTH_BUFFER_BIT);
                     gl.enable(glow::DEPTH_TEST);
                 }
-                drawer
-                    .lock()
-                    .draw(painter.gl(), &mvp);
+                drawer.lock().draw(painter.gl(), &mvp);
             })),
         };
         ui.painter().add(callback);
