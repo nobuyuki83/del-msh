@@ -102,3 +102,18 @@ where
     stroke.push(stroke0[stroke0.len() - 1]);
     stroke
 }
+
+pub fn vtx2vtx_rods(hair2rootvtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
+    let num_vtx = hair2rootvtx[hair2rootvtx.len() - 1];
+    let mut elem2vtx = vec![];
+    for i_hair in 0..hair2rootvtx.len() - 1 {
+        let i_vtx_root = hair2rootvtx[i_hair];
+        let num_elem = hair2rootvtx[i_hair + 1] - i_vtx_root - 2; // number of rod elements
+        for i_elem in 0..num_elem {
+            elem2vtx.push(i_vtx_root + i_elem + 0);
+            elem2vtx.push(i_vtx_root + i_elem + 1);
+            elem2vtx.push(i_vtx_root + i_elem + 2);
+        }
+    }
+    crate::vtx2vtx::from_uniform_mesh(&elem2vtx, 3, num_vtx, false)
+}

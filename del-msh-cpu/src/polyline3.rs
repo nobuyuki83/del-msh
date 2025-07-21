@@ -192,7 +192,6 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
     }
 }
 
-#[allow(clippy::identity_op)]
 pub fn to_trimesh3_capsule<T>(
     vtxl2xyz: &[T],
     ndiv_circum: usize,
@@ -297,6 +296,37 @@ where
         vtx2xyz[(np - 1) * 3 + 0] = q[0];
         vtx2xyz[(np - 1) * 3 + 1] = q[1];
         vtx2xyz[(np - 1) * 3 + 2] = q[2];
+    }
+    (tri2vtx, vtx2xyz)
+}
+
+pub fn to_trimesh3_ribbon<T>(vtxl2xyz: &[T], vtxl2framex: &[T], width: T) -> (Vec<usize>, Vec<T>)
+where
+    T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
+    usize: AsPrimitive<T>,
+{
+    use del_geo_core::vec3::Vec3;
+    use slice_of_array::SliceNestExt;
+    let vtxl2xyz: &[[T; 3]] = vtxl2xyz.nest();
+    let vtxl2framex: &[[T; 3]] = vtxl2framex.nest();
+    let num_vtxl = vtxl2xyz.len();
+    let mut vtx2xyz = vec![T::zero(); num_vtxl * 2 * 3];
+    {
+        let vtx2xyz: &mut [[T; 3]] = vtx2xyz.nest_mut();
+        for i_vtxl in 0..num_vtxl {
+            vtx2xyz[i_vtxl * 2] = vtxl2xyz[i_vtxl];
+            vtx2xyz[i_vtxl * 2 + 1] = vtxl2xyz[i_vtxl].add(&vtxl2framex[i_vtxl].scale(width));
+        }
+    }
+    let num_tri = (num_vtxl - 1) * 2;
+    let mut tri2vtx = vec![0; num_tri * 3];
+    for i_vtxl in 0..num_vtxl - 1 {
+        tri2vtx[i_vtxl * 6] = i_vtxl * 2;
+        tri2vtx[i_vtxl * 6 + 1] = i_vtxl * 2 + 1;
+        tri2vtx[i_vtxl * 6 + 2] = i_vtxl * 2 + 2;
+        tri2vtx[i_vtxl * 6 + 3] = i_vtxl * 2 + 1;
+        tri2vtx[i_vtxl * 6 + 4] = i_vtxl * 2 + 3;
+        tri2vtx[i_vtxl * 6 + 5] = i_vtxl * 2 + 2;
     }
     (tri2vtx, vtx2xyz)
 }

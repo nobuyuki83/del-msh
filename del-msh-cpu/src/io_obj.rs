@@ -479,7 +479,6 @@ where
     Ok(())
 }
 
-#[allow(clippy::identity_op)]
 pub fn save_vtx2xyz_as_polyloop<Path, Real>(
     filepath: Path,
     vtx2xyz: &[Real],
@@ -516,6 +515,29 @@ where
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
+        writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
+    }
+    Ok(())
+}
+
+// ------------------------
+
+pub fn save_vtx2xyz_as_polyline<Path, Real>(
+    filepath: Path,
+    vtx2xyz: &[Real],
+    num_dim: usize,
+) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    let num_vtx = vtx2xyz.len() / num_dim;
+    for i_vtx in 0..num_vtx - 1 {
+        let i0 = i_vtx;
+        let i1 = i_vtx + 1;
         writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
     }
     Ok(())

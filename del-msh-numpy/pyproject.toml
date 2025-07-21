@@ -6,7 +6,7 @@ build-backend = "maturin"
 version = "0.1.41"
 name = "del-msh-numpy"
 license = "MIT"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
