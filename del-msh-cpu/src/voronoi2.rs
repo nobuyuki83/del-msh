@@ -117,7 +117,7 @@ pub fn cut_polygon_by_line(
                 is_inside = true;
             }
             let d1 = depth(p1);
-            assert_ne!(d0 * d0, 0., "{} {}", d0, d1);
+            assert_ne!(d0 * d0, 0., "{d0} {d1}");
             if d0 * d1 > 0. {
                 continue;
             }

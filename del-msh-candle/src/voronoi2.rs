@@ -186,7 +186,7 @@ fn test_backward() -> anyhow::Result<()> {
             let loss1 = loss1.to_vec0::<f32>()?;
             let val0 = (loss1 - loss0) / eps;
             let val1 = dw_site2xy[i_site * 2 + i_dim];
-            assert!((val0 - val1).abs() < 5.0e-2, "diff {} {}", val0, val1);
+            assert!((val0 - val1).abs() < 5.0e-2, "diff {val0} {val1}");
         }
     }
     Ok(())

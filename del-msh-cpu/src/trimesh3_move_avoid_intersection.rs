@@ -46,7 +46,7 @@ fn wdw_proximity<T>(
                 &q1.scale(prox_param[iprox * 4 + 3]),
             );
             let dist1 = pc.sub(&qc).norm();
-            println!("  proximity edge {}", dist1);
+            println!("  proximity edge {dist1}");
             assert!(dist1 <= dist0);
             let eng1 = barrier(dist1);
             let deng1 = diff_barrier(dist1);
@@ -78,7 +78,7 @@ fn wdw_proximity<T>(
                 &p2.scale(prox_param[iprox * 4 + 2]),
             );
             let dist1 = pc.sub(q0).norm();
-            println!("  proximity face {}", dist1);
+            println!("  proximity face {dist1}");
             assert!(dist1 <= dist0);
             let eng1 = barrier(dist1);
             let deng1 = diff_barrier(dist1);
@@ -229,7 +229,7 @@ pub fn match_vtx2xyz_while_avoid_collision(
                 break;
             }
             coeff *= 0.5;
-            println!("divide coeff {}", coeff);
+            println!("divide coeff {coeff}");
         }
     }
     vtx2xyz

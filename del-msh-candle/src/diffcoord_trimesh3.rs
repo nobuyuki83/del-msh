@@ -142,9 +142,7 @@ fn test_backward() -> anyhow::Result<()> {
             let val_ana = dw_vtx2xyz[i_vtx * 3 + i_dim];
             assert!(
                 (val_num - val_ana).abs() < 0.01 * (val_ana.abs() + 0.1),
-                "{} {}",
-                val_ana,
-                val_num
+                "{val_ana} {val_num}"
             );
         }
     }

@@ -91,7 +91,7 @@ pub fn add_points_to_mesh<T>(
             ),
         ];
         let area_sum: T = areas[0] + areas[1] + areas[2];
-        assert!(area_sum > T::zero(), "area_sum={}", area_sum);
+        assert!(area_sum > T::zero(), "area_sum={area_sum}");
         let (&area_min, iedge) = areas
             .iter()
             .zip(0..)
@@ -143,8 +143,8 @@ where
     let pi2 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 2) % 3]];
     let a_i0_i1_i2 = del_geo_core::tri2::area(&pi0, &pi1, &pi2);
     let a_j0_i2_i1 = del_geo_core::tri2::area(&pj0, &pi2, &pi1);
-    assert!(a_i0_i1_i2 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
-    assert!(a_j0_i2_i1 > T::zero(), "{} {}", a_i0_i1_i2, a_j0_i2_i1);
+    assert!(a_i0_i1_i2 > T::zero(), "{a_i0_i1_i2} {a_j0_i2_i1}");
+    assert!(a_j0_i2_i1 > T::zero(), "{a_i0_i1_i2} {a_j0_i2_i1}");
     let area_diamond = a_i0_i1_i2 + a_j0_i2_i1;
     let a_i0_i1_j0 = del_geo_core::tri2::area(&pi0, &pi1, &pj0);
     let a_i0_j0_i2 = del_geo_core::tri2::area(&pi0, &pj0, &pi2);
@@ -809,7 +809,7 @@ fn test_square() {
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, -1., -1.);
             let res = crate::io_obj::save_tri2vtx_vtx2xyz(
-                format!("../target/a{}.obj", i_loop),
+                format!("../target/a{i_loop}.obj"),
                 &tri2vtx,
                 &vtx2xy,
                 2,
@@ -819,7 +819,7 @@ fn test_square() {
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
             let res = crate::io_obj::save_tri2vtx_vtx2xyz(
-                format!("../target/b{}.obj", i_loop),
+                format!("../target/b{i_loop}.obj"),
                 &tri2vtx,
                 &vtx2xy,
                 2,

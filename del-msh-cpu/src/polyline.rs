@@ -110,7 +110,7 @@ pub fn vtx2vtx_rods(hair2rootvtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
         let i_vtx_root = hair2rootvtx[i_hair];
         let num_elem = hair2rootvtx[i_hair + 1] - i_vtx_root - 2; // number of rod elements
         for i_elem in 0..num_elem {
-            elem2vtx.push(i_vtx_root + i_elem + 0);
+            elem2vtx.push(i_vtx_root + i_elem);
             elem2vtx.push(i_vtx_root + i_elem + 1);
             elem2vtx.push(i_vtx_root + i_elem + 2);
         }

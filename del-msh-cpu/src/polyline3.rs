@@ -247,7 +247,7 @@ where
             let ay = ey.scale(c0 * num_traits::Float::cos(theta));
             let ax = ex.scale(c0 * num_traits::Float::sin(theta));
             let q = p0.add(&az).add(&ay).add(&ax);
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3] = q[0];
             vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 1] = q[1];
             vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 2] = q[2];
         }
@@ -261,7 +261,7 @@ where
             let ay = ey.scale(r * num_traits::Float::cos(theta));
             let ax = ex.scale(r * num_traits::Float::sin(theta));
             let q = p0.add(&ay).add(&ax);
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 0] = q[0];
+            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3] = q[0];
             vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 1] = q[1];
             vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 2] = q[2];
         }
@@ -279,8 +279,7 @@ where
             let ay = ey.scale(c0 * num_traits::Float::cos(theta));
             let ax = ex.scale(c0 * num_traits::Float::sin(theta));
             let q = p0.add(&az).add(&ax).add(&ay);
-            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 0] =
-                q[0];
+            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3] = q[0];
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 1] =
                 q[1];
             vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] =
@@ -293,7 +292,7 @@ where
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let q = p0.add(&ez.scale(r));
         let np = vtx2xyz.len() / 3;
-        vtx2xyz[(np - 1) * 3 + 0] = q[0];
+        vtx2xyz[(np - 1) * 3] = q[0];
         vtx2xyz[(np - 1) * 3 + 1] = q[1];
         vtx2xyz[(np - 1) * 3 + 2] = q[2];
     }
