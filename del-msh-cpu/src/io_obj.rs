@@ -456,7 +456,7 @@ where
         let i0 = tri2vtx[i_tri * 3] + Index::one();
         let i1 = tri2vtx[i_tri * 3 + 1] + Index::one();
         let i2 = tri2vtx[i_tri * 3 + 2] + Index::one();
-        writeln!(file, "f {}//{} {}//{} {}//{}", i0, i0, i1, i1, i2, i2)?;
+        writeln!(file, "f {i0}//{i0} {i1}//{i1} {i2}//{i2}")?;
     }
     Ok(())
 }

@@ -245,10 +245,7 @@ fn test_optimize_vtxcolor() -> anyhow::Result<()> {
         if i_itr % 10 == 0 {
             let img_out_vec: Vec<f32> = img_out.flatten_all()?.to_vec1()?;
             del_canvas::write_png_from_float_image_grayscale(
-                format!(
-                    "../target/render_meshtri2_vtxcolor-test_optimize_vtxcolor_{}.png",
-                    i_itr
-                ),
+                format!("../target/render_meshtri2_vtxcolor-test_optimize_vtxcolor_{i_itr}.png"),
                 img_shape,
                 &img_out_vec,
             )?;

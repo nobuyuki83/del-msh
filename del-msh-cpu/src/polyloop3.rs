@@ -229,7 +229,7 @@ pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(filepath: P, vtx2xyz: &[f32
     }
     write!(file, "l ").expect("fail");
     for i in 1..vtx2xyz.len() / 3 + 1 {
-        write!(file, "{} ", i).expect("fail");
+        write!(file, "{i} ").expect("fail");
     }
     writeln!(file, "1").expect("fail");
 }
@@ -323,7 +323,7 @@ where
         assert_eq!(ied.as_(), r);
         return *crate::vtx2xyz::to_vec3(vtx2xyz, 0);
     }
-    assert!(ied < ned, "{}, {}, {}", r, ied, ned);
+    assert!(ied < ned, "{r}, {ied}, {ned}");
     let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ied);
     let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, (ied + 1) % ned);
     let r0 = r - ied.as_();

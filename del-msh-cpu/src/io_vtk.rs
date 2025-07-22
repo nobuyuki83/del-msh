@@ -21,10 +21,10 @@ where
     use std::io::Write;
     let np = vtx2xyz.len() / ndim;
     writeln!(file, "# vtk DataFile Version 2.0")?;
-    writeln!(file, "{}", name)?;
+    writeln!(file, "{name}")?;
     writeln!(file, "ASCII")?;
     writeln!(file, "DATASET UNSTRUCTURED_GRID")?;
-    writeln!(file, "POINTS {} float", np)?;
+    writeln!(file, "POINTS {np} float")?;
     if ndim == 3 {
         for xyz in vtx2xyz.chunks(3) {
             writeln!(file, "{} {} {}", xyz[0], xyz[1], xyz[2])?;
@@ -57,17 +57,17 @@ pub fn write_vtk_cells(
     use std::io::Write;
     writeln!(file, "CELLS {} {}", nelem, nelem * (num_node + 1))?;
     for av in elem2vtx.chunks(num_node) {
-        write!(file, "{}", num_node)?;
+        write!(file, "{num_node}")?;
         for v in av {
-            write!(file, " {}", v)?;
+            write!(file, " {v}")?;
         }
         writeln!(file)?;
     }
-    writeln!(file, "CELL_TYPES {}", nelem)?;
+    writeln!(file, "CELL_TYPES {nelem}")?;
     {
         let id_elem = vtk_elem_type as usize;
         for _ in 0..nelem {
-            writeln!(file, "{}", id_elem)?;
+            writeln!(file, "{id_elem}")?;
         }
     }
     Ok(())

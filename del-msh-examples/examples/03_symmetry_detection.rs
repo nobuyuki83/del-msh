@@ -251,7 +251,7 @@ fn main() -> anyhow::Result<()> {
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &tris2vtx, &vtx2xyz, 3);
         del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(
-            format!("target/sym_{}.obj", i_sym),
+            format!("target/sym_{i_sym}.obj"),
             &trio2vtxo,
             &vtxo2xyz,
             3,

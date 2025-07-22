@@ -9,7 +9,7 @@ where
     use std::io::Write;
     let num_tri = tri2vtx.len() / 3;
     let num_vtx = vtx2xyz.len() / 3;
-    writeln!(file, "OFF {} {} 0", num_vtx, num_tri).expect("fail");
+    writeln!(file, "OFF {num_vtx} {num_tri} 0").expect("fail");
     for i_vtx in 0..num_vtx {
         writeln!(
             file,

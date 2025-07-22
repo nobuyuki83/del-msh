@@ -338,14 +338,14 @@ mod tests {
             dbg!(img_shape);
         }
          */
-        println!("render depth start: {:?}", device);
+        println!("render depth start: {device:?}");
         let render = crate::pix2depth::Pix2Depth {
             tri2vtx: tri2vtx.clone(),
             pix2tri: pix2tri.clone(),
             transform_ndc2world: transform_ndc2world.clone(),
         };
         let a = Ok(vtx2xyz.apply_op1(render)?);
-        println!("render depth end: {:?}", device);
+        println!("render depth end: {device:?}");
         a
     }
 
@@ -557,7 +557,7 @@ mod tests {
                 let vtx2xyz = vtx2xyz.flatten_all()?.to_vec1::<f32>()?;
                 let tri2vtx = tri2vtx.flatten_all()?.to_vec1::<u32>()?;
                 del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(
-                    format!("../target/hoge_{}.obj", itr),
+                    format!("../target/hoge_{itr}.obj"),
                     &tri2vtx,
                     &vtx2xyz,
                     3,
