@@ -137,7 +137,7 @@ pub fn sym_detector(
             }
             let t_mat = mat4_col_major::mult_three_mats_col_major(
                 &mat4_col_major::from_translate(&pm),
-                &mat4_col_major::from_mat3_col_major_adding_w(&r_mat),
+                &mat4_col_major::from_mat3_col_major_adding_w(&r_mat, 1.0),
                 &mat4_col_major::from_translate(&pm.scale(-1f32)),
             );
             {
