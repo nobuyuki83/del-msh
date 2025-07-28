@@ -76,6 +76,15 @@ pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
     edge2vtx
 }
 
+pub fn from_polyline(num_vtx: usize) -> Vec<usize> {
+    let mut edge2vtx = Vec::<usize>::with_capacity((num_vtx - 1) * 2);
+    for i in 0..num_vtx - 1 {
+        edge2vtx.push(i);
+        edge2vtx.push(i + 1);
+    }
+    edge2vtx
+}
+
 // -----------
 
 pub fn contour_for_triangle_mesh<INDEX>(
