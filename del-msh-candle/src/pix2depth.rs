@@ -21,8 +21,8 @@ pub fn update_bwd_wrt_vtx2xyz(
         }
         let (ray_org, ray_dir) =
             del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                (i_pix % width, i_pix / width),
-                &(width, height),
+                ((i_pix % width) as f32, (i_pix / width) as f32),
+                &(width as f32, height as f32),
                 transform_ndc2world,
             );
         let i_tri = i_tri as usize;
@@ -194,8 +194,8 @@ impl candle_core::CustomOp1 for Pix2Depth {
             }
             let (ray_org, ray_dir) =
                 del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (i_w, i_h),
-                    &img_shape,
+                    (i_w as f32, i_h as f32),
+                    &(img_shape.0 as f32, img_shape.1 as f32),
                     transform_ndc2world,
                 );
             let tri = del_msh_cpu::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize);

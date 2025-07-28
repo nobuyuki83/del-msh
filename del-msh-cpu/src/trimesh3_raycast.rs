@@ -19,8 +19,8 @@ pub fn update_pix2tri<Index>(
         //
         let (ray_org, ray_dir) =
             del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                (i_w, i_h),
-                &img_shape,
+                (i_w as f32, i_h as f32),
+                &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
         if let Some((_t, i_tri)) = crate::search_bvh3::first_intersection_ray(
@@ -63,8 +63,8 @@ pub fn render_depth_bvh(
         for iw in 0..width {
             let (ray_org, ray_dir) =
                 del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (iw, ih),
-                    &image_size,
+                    (iw as f32, ih as f32),
+                    &(image_size.0 as f32, image_size.1 as f32),
                     transform_ndc2world,
                 );
             let mut hits = vec![];
@@ -145,8 +145,8 @@ where
         for iw in 0..width {
             let (ray_org, ray_dir) =
                 del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (iw, ih),
-                    &img_shape,
+                    (iw as f32, ih as f32),
+                    &(img_shape.0 as f32, img_shape.1 as f32),
                     transform_ndc2world,
                 );
             let i_tri = pix2tri[ih * width + iw];

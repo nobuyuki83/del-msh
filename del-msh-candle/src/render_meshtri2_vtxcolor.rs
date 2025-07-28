@@ -161,7 +161,7 @@ impl candle_core::CustomOp1 for Layer {
 #[test]
 fn test_optimize_vtxcolor() -> anyhow::Result<()> {
     let img_trg = {
-        let (img_trg, (width, height), depth) =
+        let (img_trg, (width, height), _depth) =
             del_canvas::load_image_as_float_array("../asset/tesla.png").unwrap();
         let img_trg: Vec<f32> = img_trg.chunks(3).map(|v| v[0]).collect(); // grayscale
         Tensor::from_vec(
