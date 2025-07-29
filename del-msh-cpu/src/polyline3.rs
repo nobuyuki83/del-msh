@@ -1,7 +1,5 @@
 //! methods related to 3D polyline
 
-use num_traits::AsPrimitive;
-
 /// the center of gravity
 pub fn cog<T>(vtx2xyz: &[T]) -> [T; 3]
 where
@@ -165,9 +163,10 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
     rad: T,
 ) where
     T: num_traits::Float + num_traits::FloatConst + 'static,
-    usize: AsPrimitive<T>,
+    usize: num_traits::AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
+    use num_traits::AsPrimitive;
     let one = T::one();
     let two = one + one;
     let pi = T::PI();
@@ -200,9 +199,10 @@ pub fn to_trimesh3_capsule<T>(
 ) -> (Vec<usize>, Vec<T>)
 where
     T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
-    usize: AsPrimitive<T>,
+    usize: num_traits::AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
+    use num_traits::AsPrimitive;
     assert!(ndiv_circum > 2);
     let num_vtxl = vtxl2xyz.len() / 3;
     let vtxl2framex = vtx2framex(vtxl2xyz);
@@ -302,7 +302,7 @@ where
 pub fn to_trimesh3_ribbon<T>(vtxl2xyz: &[T], vtxl2framex: &[T], width: T) -> (Vec<usize>, Vec<T>)
 where
     T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
-    usize: AsPrimitive<T>,
+    usize: num_traits::AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
     use slice_of_array::SliceNestExt;
@@ -385,9 +385,10 @@ pub fn contacting_pair(poly2vtx: &[usize], vtx2xyz: &[f32], dist0: f32) -> (Vec<
 
 pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> [T; 3]
 where
-    T: num_traits::Float + AsPrimitive<usize>,
-    usize: AsPrimitive<T>,
+    T: num_traits::Float + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<T>,
 {
+    use num_traits::AsPrimitive;
     let ied: usize = r.as_();
     let ned = vtx2xyz.len() / 3 - 1;
     // dbg!(r, ied, ned);
@@ -402,7 +403,7 @@ where
 pub fn smooth<T>(vtx2xyz: &[T], r: T, num_iter: usize) -> Vec<T>
 where
     T: num_traits::Float + Copy + 'static,
-    f64: AsPrimitive<T>,
+    f64: num_traits::AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
     let one = T::one();
@@ -505,4 +506,39 @@ fn test_reduce() -> anyhow::Result<()> {
     let vtx2xyz_reduced = reduce(&vtx2xyz, 0.01);
     crate::io_obj::save_vtx2xyz_as_polyloop("../target/reduce_polyline.obj", &vtx2xyz_reduced, 3)?;
     Ok(())
+}
+
+pub fn helix<T>(num_points: usize, elen: T, rad0: T, pitch: T) -> Vec<T>
+where
+    T: num_traits::Float + num_traits::FloatConst + 'static,
+    usize: num_traits::AsPrimitive<T>,
+{
+    use num_traits::AsPrimitive;
+    let one = T::one();
+    let two = one + one;
+    let dangle = {
+        let tmp = pitch / (two * T::PI());
+        let tmp2 = tmp * tmp;
+        let mut dangle = elen / (rad0 * rad0 + tmp2).sqrt();
+        for _itr in 0..10 {
+            let elen0 = (two * rad0 * rad0 * (one - dangle.cos()) + tmp2 * dangle * dangle).sqrt();
+            let df = (rad0 * rad0 * dangle.sin() + dangle * tmp2) / elen0;
+            let f = elen0 - elen;
+            dangle = dangle - f / df;
+        }
+        dangle
+    };
+    let mut vtx2xyz = Vec::with_capacity(num_points * 3);
+    for ip in 0..num_points {
+        let angle = ip.as_() * dangle;
+        let pos = [
+            pitch * angle / (two * T::PI()),
+            rad0 * angle.cos(),
+            rad0 * angle.sin(),
+        ];
+        vtx2xyz.push(pos[0]);
+        vtx2xyz.push(pos[1]);
+        vtx2xyz.push(pos[2]);
+    }
+    vtx2xyz
 }

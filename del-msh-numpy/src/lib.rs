@@ -12,6 +12,7 @@ mod gradient_distance_extension;
 mod io;
 mod kdtree;
 mod mesh_intersection;
+mod polyline;
 mod polyloop;
 mod primitive;
 mod sampling;
@@ -20,7 +21,6 @@ mod trimesh3_search;
 mod unify_index;
 mod unindex;
 mod vtx2area;
-
 /* ------------------------ */
 
 #[pyo3::pymodule]
@@ -38,6 +38,7 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     extract::add_functions(_py, m)?;
     trimesh3_search::add_functions(_py, m)?;
     dtri::add_functions(_py, m)?;
+    polyline::add_functions(_py, m)?;
     polyloop::add_functions(_py, m)?;
     bvh::add_functions(_py, m)?;
     kdtree::add_functions(_py, m)?;
