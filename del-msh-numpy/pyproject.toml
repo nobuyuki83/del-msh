@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [tool.maturin]
-sdist-include = ["LICENSE", "Readme.md"]
+sdist-include = ["Readme.md"]
