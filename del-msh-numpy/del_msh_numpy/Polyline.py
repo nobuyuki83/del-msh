@@ -15,3 +15,6 @@ def vtx2vtx_rods(hair2root):
     return polyline_vtx2vtx_rods(hair2root)
 
 
+def save_wavefront_obj(vtx2xyz, path: str):
+    from .del_msh_numpy import polyline_save_wavefront_obj
+    polyline_save_wavefront_obj(vtx2xyz, path)
