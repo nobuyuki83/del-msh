@@ -49,7 +49,7 @@ pub fn update_pix2tri<Index>(
 
 pub fn render_depth_bvh(
     image_size: (usize, usize),
-    img_data: &mut [f32],
+    pix2depth: &mut [f32],
     transform_ndc2world: &[f32; 16],
     tri2vtx: &[usize],
     vtx2xyz: &[f32],
@@ -89,7 +89,7 @@ pub fn render_depth_bvh(
                 del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &pos)
                     .unwrap();
             let depth_ndc = (ndc[2] + 1f32) * 0.5f32;
-            img_data[ih * width + iw] = depth_ndc;
+            pix2depth[ih * width + iw] = depth_ndc;
         }
     }
 }

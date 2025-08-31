@@ -24,7 +24,9 @@ def test_02():
     bvhnodes = TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
     assert bvhnodes.shape[1] == 3
     bvhnode2aabb = BVH.aabb_uniform_mesh(tri2vtx, vtx2xyz, bvhnodes, aabbs=None, vtx2xyz1=None)
+    assert bvhnode2aabb.shape[1] == 6
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
+    #
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint64)
     Raycast.pix2tri(
         pix2tri,
@@ -41,4 +43,16 @@ def test_02():
     #
     from PIL import Image
     img = Image.fromarray((mask.astype(numpy.uint8) * 255))
-    img.save("../target/hoge.png")
+    img.save("../target/pix2tri.png")
+    #
+    #
+    pix2depth = numpy.zeros(shape=(300, 300), dtype=numpy.float32)
+    Raycast.pix2depth(
+        pix2depth,
+        tri2vtx=tri2vtx,
+        vtx2xyz=vtx2xyz,
+        bvhnodes=bvhnodes,
+        bvhnode2aabb=bvhnode2aabb,
+        transform_ndc2world = transform_ndc2world)
+    img = Image.fromarray((pix2depth * 255.).astype(numpy.uint8))
+    img.save("../target/pix2depth.png")
