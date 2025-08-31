@@ -17,6 +17,7 @@ mod polyloop;
 mod primitive;
 mod sampling;
 mod topology;
+mod trimesh3_raycast;
 mod trimesh3_search;
 mod unify_index;
 mod unindex;
@@ -26,6 +27,7 @@ mod vtx2area;
 #[pyo3::pymodule]
 #[pyo3(name = "del_msh_numpy")]
 fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+    trimesh3_raycast::add_functions(_py, m)?;
     topology::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
     elem2elem::add_functions(_py, m)?;
