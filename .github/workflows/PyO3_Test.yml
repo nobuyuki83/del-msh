@@ -27,7 +27,9 @@ jobs:
           cd del-msh-numpy         
           cargo test
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: test
         run: |
           cd del-msh-numpy
@@ -42,4 +44,5 @@ jobs:
           pip3 list
           echo "test library using pytest"
           pip3 install pytest
+          pip3 install bpy
           python3 -m pytest

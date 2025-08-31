@@ -54,9 +54,6 @@ fn polyline_vtx2vtx_rods<'a>(
 }
 
 #[pyfunction]
-fn polyline_save_wavefront_obj(
-    py: Python,
-    vtx2xyz: numpy::PyReadonlyArray2<f32>,
-    path: String) {
+fn polyline_save_wavefront_obj(_py: Python, vtx2xyz: numpy::PyReadonlyArray2<f32>, path: String) {
     del_msh_cpu::io_obj::save_vtx2xyz_as_polyline(path, vtx2xyz.as_slice().unwrap(), 3).unwrap();
 }
