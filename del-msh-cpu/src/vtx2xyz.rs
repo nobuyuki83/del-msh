@@ -283,7 +283,7 @@ where
 
 // ------------------------------------------------
 
-pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<Real> {
+pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<'_, Real> {
     del_geo_core::vec3::XYZ {
         p: arrayref::array_ref![vtx2xyz, i_vtx * 3, 3],
     }
