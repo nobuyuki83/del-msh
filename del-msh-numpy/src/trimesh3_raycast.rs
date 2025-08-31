@@ -19,7 +19,7 @@ pub fn trimesh3_raycast_update_pix2tri<'a>(
 ) {
     assert!(pix2tri.is_c_contiguous());
     //
-    assert!(tri2vtx.is_c_contiguous() );
+    assert!(tri2vtx.is_c_contiguous());
     assert_eq!(tri2vtx.shape()[1], 3);
     let num_tri = tri2vtx.shape()[0];
     //
