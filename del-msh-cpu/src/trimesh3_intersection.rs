@@ -150,7 +150,6 @@ pub fn search_with_bvh_between_branches<T>(
             };
             pairs.push(itp);
         } else {
-            return;
         }
     }
 }
