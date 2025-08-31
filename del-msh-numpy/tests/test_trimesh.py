@@ -1,8 +1,7 @@
 import math
 import numpy
 from del_msh_numpy import TriMesh
-#
-import bpy
+
 
 
 def test_01():
@@ -21,6 +20,3 @@ def test_01():
     sample = TriMesh.sample(cumsum_areas, 0.5, 0.1)
     samples2xyz = TriMesh.sample_many(tri2vtx, vtx2xyz, num_sample=1000)
 
-
-def test_02():
-    tri2vtx, vtx2xyz = TriMesh.torus()
