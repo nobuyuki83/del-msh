@@ -44,5 +44,6 @@ jobs:
           pip3 list
           echo "test library using pytest"
           pip3 install pytest
+          pip3 install pillow
           pip3 install bpy
           python3 -m pytest

@@ -33,7 +33,7 @@ pub fn trimesh3_raycast_update_pix2tri<'a>(
     assert!(bvhnode2aabb.is_c_contiguous());
     assert_eq!(bvhnode2aabb.shape()[1], 6);
     use numpy::PyUntypedArrayMethods;
-    let img_shape = (pix2tri.shape()[1] as usize, pix2tri.shape()[0] as usize);
+    let img_shape = (pix2tri.shape()[1], pix2tri.shape()[0]);
     let transform_ndc2world = arrayref::array_ref![transform_ndc2world.as_slice().unwrap(), 0, 16];
     del_msh_cpu::trimesh3_raycast::update_pix2tri(
         pix2tri.as_slice_mut().unwrap(),
