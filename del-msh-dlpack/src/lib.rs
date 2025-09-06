@@ -28,7 +28,7 @@ pub fn get_managed_tensor_from_pyany<'a>(
         ));
     }
     let tensor = unsafe { &(*ptr).dl_tensor };
-    Ok(&tensor)
+    Ok(tensor)
 }
 
 pub unsafe fn is_c_contiguous(shape: *const i64, strides: *const i64, ndim: i32) -> bool {
