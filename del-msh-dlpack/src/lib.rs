@@ -90,7 +90,6 @@ pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a 
     Some((s, sh.to_vec()))
 }
 
-
 ///
 /// # Safety
 pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
