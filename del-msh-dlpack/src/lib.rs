@@ -12,6 +12,7 @@ mod trimesh3_raycast;
 fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // m.add_function(wrap_pyfunction!(solve, m)?)?;
     trimesh3_raycast::add_functions(_py, m)?;
+    edge2vtx::add_functions(_py, m)?;
     Ok(())
 }
 
@@ -28,9 +29,11 @@ pub fn get_managed_tensor_from_pyany<'a>(
         ));
     }
     let tensor = unsafe { &(*ptr).dl_tensor };
-    Ok(&tensor)
+    Ok(tensor)
 }
 
+///
+/// # Safety
 pub unsafe fn is_c_contiguous(shape: *const i64, strides: *const i64, ndim: i32) -> bool {
     // スカラーや 0/1 長次元のみ → 連続扱い（strides が何でも OK）
     if ndim <= 0 {
@@ -61,18 +64,17 @@ pub unsafe fn is_c_contiguous(shape: *const i64, strides: *const i64, ndim: i32)
     true
 }
 
+///
+/// # Safety
 pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a [T], Vec<i64>)> {
     assert!(is_c_contiguous(t.shape, t.strides, t.ndim));
     if t.shape.is_null() || t.ndim < 0 {
         return None;
     }
     let sh = slice::from_raw_parts(t.shape, t.ndim as usize); // ← ここでスライス化
-    let Some(len) = sh
+    let len = sh
         .iter()
-        .try_fold(1usize, |acc, &d| acc.checked_mul(d as usize))
-    else {
-        return None;
-    };
+        .try_fold(1usize, |acc, &d| acc.checked_mul(d as usize))?;
     let s = if t.data.is_null() {
         assert_eq!(len, 0, "null なら len==0 である必要があります");
         &[]
@@ -88,6 +90,9 @@ pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a 
     Some((s, sh.to_vec()))
 }
 
+
+///
+/// # Safety
 pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
     t: &dlpack::Tensor,
 ) -> Option<(&'a mut [T], Vec<i64>)> {
@@ -96,12 +101,9 @@ pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
         return None;
     }
     let sh = slice::from_raw_parts(t.shape, t.ndim as usize); // ← ここでスライス化
-    let Some(len) = sh
+    let len = sh
         .iter()
-        .try_fold(1usize, |acc, &d| acc.checked_mul(d as usize))
-    else {
-        return None;
-    };
+        .try_fold(1usize, |acc, &d| acc.checked_mul(d as usize))?;
     let s = if t.data.is_null() {
         assert_eq!(len, 0, "null なら len==0 である必要があります");
         slice::from_raw_parts_mut(std::ptr::NonNull::<T>::dangling().as_ptr(), 0)

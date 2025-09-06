@@ -7,8 +7,8 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 }
 
 #[pyo3::pyfunction]
-pub fn trimesh3_raycast_update_pix2tri<'a>(
-    _py: Python<'a>,
+pub fn trimesh3_raycast_update_pix2tri(
+    _py: Python<'_>,
     pix2tri: &Bound<'_, PyAny>,
     tri2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
