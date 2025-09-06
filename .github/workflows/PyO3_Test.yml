@@ -62,5 +62,5 @@ jobs:
           echo "test library using pytest"
           pip3 install pytest
           pip3 install pillow
-          pip3 install bpy
+          pip3 install del-msh-numpy
           python3 -m pytest
