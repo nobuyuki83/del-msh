@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "del-msh-numpy",
+    "del-msh-dlpack",
     "del-msh-cpu",
     "del-msh-cudarc",
     "del-msh-candle",

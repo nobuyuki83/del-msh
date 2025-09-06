@@ -106,8 +106,8 @@ def torus(
         ndiv_major_radius=32,
         ndiv_minor_radius=32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh_numpy import torus_meshtri3
-    return torus_meshtri3(major_radius, minor_radius, ndiv_major_radius, ndiv_minor_radius)
+    from .del_msh_numpy import trimesh3_primitive_torus_zup
+    return trimesh3_primitive_torus_zup(major_radius, minor_radius, ndiv_major_radius, ndiv_minor_radius)
 
 
 def capsule(
@@ -117,8 +117,8 @@ def capsule(
         ndiv_height: int = 32,
         ndiv_longtitude: int = 32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh_numpy import capsule_meshtri3
-    return capsule_meshtri3(radius, height, ndiv_theta, ndiv_longtitude, ndiv_height)
+    from .del_msh_numpy import trimesh3_primitive_capsule_yup
+    return trimesh3_primitive_capsule_yup(radius, height, ndiv_theta, ndiv_longtitude, ndiv_height)
 
 
 def cylinder(
@@ -129,8 +129,8 @@ def cylinder(
         is_closed_end = True,
         is_center = True) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-   from .del_msh_numpy import cylinder_closed_end_meshtri3
-   return cylinder_closed_end_meshtri3(
+   from .del_msh_numpy import trimesh3_primitive_cylinder_yup
+   return trimesh3_primitive_cylinder_yup(
         radius, height,
         ndiv_circumference, ndiv_height,
         is_closed_end,
@@ -142,8 +142,8 @@ def sphere(
         ndiv_latitude: int = 32,
         ndiv_longtitude: int = 32) \
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
-    from .del_msh_numpy import sphere_meshtri3
-    return sphere_meshtri3(radius, ndiv_latitude, ndiv_longtitude)
+    from .del_msh_numpy import trimesh3_primitive_sphere_yup
+    return trimesh3_primitive_sphere_yup(radius, ndiv_latitude, ndiv_longtitude)
 
 
 def hemisphere(
@@ -153,8 +153,8 @@ def hemisphere(
         -> (numpy.typing.NDArray, numpy.typing.NDArray):
     assert ndiv_longtitude > 0
     assert ndiv_latitude > 2
-    from .del_msh_numpy import trimesh3_hemisphere_zup
-    return trimesh3_hemisphere_zup(radius, ndiv_longtitude, ndiv_latitude)
+    from .del_msh_numpy import trimesh3_primitive_hemisphere_zup
+    return trimesh3_primitive_hemisphere_zup(radius, ndiv_longtitude, ndiv_latitude)
 
 
 # above: primitive
