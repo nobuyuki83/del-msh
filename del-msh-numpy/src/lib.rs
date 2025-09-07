@@ -14,9 +14,10 @@ mod kdtree;
 mod mesh_intersection;
 mod polyline;
 mod polyloop;
-mod primitive;
 mod sampling;
 mod topology;
+mod trimesh3_primitive;
+mod trimesh3_raycast;
 mod trimesh3_search;
 mod unify_index;
 mod unindex;
@@ -26,13 +27,14 @@ mod vtx2area;
 #[pyo3::pymodule]
 #[pyo3(name = "del_msh_numpy")]
 fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
+    trimesh3_raycast::add_functions(_py, m)?;
     topology::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
     elem2elem::add_functions(_py, m)?;
     unify_index::add_functions(_py, m)?;
     unindex::add_functions(_py, m)?;
     dijkstra::add_functions(_py, m)?;
-    primitive::add_functions(_py, m)?;
+    trimesh3_primitive::add_functions(_py, m)?;
     io::add_functions(_py, m)?;
     sampling::add_functions(_py, m)?;
     extract::add_functions(_py, m)?;

@@ -108,6 +108,7 @@ jobs:
       - name: Check wheels
         run: |
           pip install twine
+          pip install --upgrade twine
           twine check dist/*
       - name: Upload to PyPI
         run: |

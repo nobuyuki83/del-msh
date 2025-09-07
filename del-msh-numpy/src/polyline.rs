@@ -7,6 +7,7 @@ pub fn add_functions(_py: pyo3::Python, m: &Bound<pyo3::types::PyModule>) -> pyo
     m.add_function(wrap_pyfunction!(polyline_vtx2xyz_from_helix, m)?)?;
     m.add_function(wrap_pyfunction!(polyline_vtx2framex_from_vtx2xyz, m)?)?;
     m.add_function(wrap_pyfunction!(polyline_vtx2vtx_rods, m)?)?;
+    m.add_function(wrap_pyfunction!(polyline_save_wavefront_obj, m)?)?;
     Ok(())
 }
 
@@ -50,4 +51,9 @@ fn polyline_vtx2vtx_rods<'a>(
 ) -> (Bound<'a, PyArray1<usize>>, Bound<'a, PyArray1<usize>>) {
     let (vtx2idx, idx2vtx) = del_msh_cpu::polyline::vtx2vtx_rods(hair2root.as_slice().unwrap());
     (vtx2idx.into_pyarray(py), idx2vtx.into_pyarray(py))
+}
+
+#[pyfunction]
+fn polyline_save_wavefront_obj(_py: Python, vtx2xyz: numpy::PyReadonlyArray2<f32>, path: String) {
+    del_msh_cpu::io_obj::save_vtx2xyz_as_polyline(path, vtx2xyz.as_slice().unwrap(), 3).unwrap();
 }

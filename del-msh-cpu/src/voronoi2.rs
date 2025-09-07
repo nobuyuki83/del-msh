@@ -295,20 +295,20 @@ pub fn position_of_voronoi_vertex(info: &[usize; 4], vtxl2xy: &[f32], site2xy: &
         let l2 = crate::vtx2xy::to_vec2(vtxl2xy, i2_loop);
         let s1 = &crate::vtx2xy::to_vec2(site2xy, info[1]);
         let s2 = &crate::vtx2xy::to_vec2(site2xy, info[2]);
-        return del_geo_core::line2::intersection(
+        del_geo_core::line2::intersection(
             l1,
             &l2.sub(l1),
             &s1.add(s2).scale(0.5),
             &del_geo_core::vec2::rotate90(&s2.sub(s1)),
-        );
+        )
     } else {
         // three points
         assert_eq!(info[0], usize::MAX);
-        return del_geo_core::tri2::circumcenter(
+        del_geo_core::tri2::circumcenter(
             crate::vtx2xy::to_vec2(site2xy, info[1]),
             crate::vtx2xy::to_vec2(site2xy, info[2]),
             crate::vtx2xy::to_vec2(site2xy, info[3]),
-        );
+        )
     }
 }
 

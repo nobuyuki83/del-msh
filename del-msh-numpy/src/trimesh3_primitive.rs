@@ -3,16 +3,16 @@ use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, Bound, PyResult, Python
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(wrap_pyfunction!(torus_meshtri3, m)?)?;
-    m.add_function(wrap_pyfunction!(capsule_meshtri3, m)?)?;
-    m.add_function(wrap_pyfunction!(cylinder_closed_end_meshtri3, m)?)?;
-    m.add_function(wrap_pyfunction!(sphere_meshtri3, m)?)?;
-    m.add_function(wrap_pyfunction!(trimesh3_hemisphere_zup, m)?)?;
+    m.add_function(wrap_pyfunction!(trimesh3_primitive_torus_zup, m)?)?;
+    m.add_function(wrap_pyfunction!(trimesh3_primitive_capsule_yup, m)?)?;
+    m.add_function(wrap_pyfunction!(trimesh3_primitive_cylinder_yup, m)?)?;
+    m.add_function(wrap_pyfunction!(trimesh3_primitive_sphere_yup, m)?)?;
+    m.add_function(wrap_pyfunction!(trimesh3_primitive_hemisphere_zup, m)?)?;
     Ok(())
 }
 
 #[pyfunction]
-fn torus_meshtri3(
+fn trimesh3_primitive_torus_zup(
     py: Python,
     radius: f64,
     radius_tube: f64,
@@ -27,7 +27,7 @@ fn torus_meshtri3(
 }
 
 #[pyfunction]
-fn capsule_meshtri3(
+fn trimesh3_primitive_capsule_yup(
     py: Python,
     r: f64,
     l: f64,
@@ -50,7 +50,7 @@ fn capsule_meshtri3(
 }
 
 #[pyfunction]
-fn cylinder_closed_end_meshtri3(
+fn trimesh3_primitive_cylinder_yup(
     py: Python,
     radius: f64,
     length: f64,
@@ -90,7 +90,7 @@ fn cylinder_closed_end_meshtri3(
 }
 
 #[pyfunction]
-fn sphere_meshtri3(
+fn trimesh3_primitive_sphere_yup(
     py: Python,
     r: f32,
     nr: usize,
@@ -103,7 +103,7 @@ fn sphere_meshtri3(
 }
 
 #[pyfunction]
-fn trimesh3_hemisphere_zup(
+fn trimesh3_primitive_hemisphere_zup(
     py: Python,
     r: f32,
     nr: usize,

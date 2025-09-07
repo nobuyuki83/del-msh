@@ -1,23 +1,9 @@
 import math
+import os.path
+
 import numpy
-from del_msh_numpy import TriMesh, BVH, Raycast
-
-def test_01():
-    tri2vtx, vtx2xyz = TriMesh.capsule()
-    tri2vtx, vtx2xyz = TriMesh.torus()
-    tri2vtx, vtx2xyz = TriMesh.sphere()
-    tri2node2xyz = TriMesh.unindexing(tri2vtx, vtx2xyz)
-    edge2vtx = TriMesh.edge2vtx(tri2vtx, vtx2xyz.shape[0])
-    vtx2idx, idx2vtx = TriMesh.vtx2vtx(tri2vtx, vtx2xyz.shape[0])
-    tri2tri = TriMesh.tri2tri(tri2vtx, vtx2xyz.shape[0])
-    tri2dist = TriMesh.tri2distance(0, tri2tri)
-    assert tri2dist[0] == 0
-    areas = TriMesh.tri2area(tri2vtx, vtx2xyz)
-    assert math.fabs(areas.sum() - 4. * math.pi) < 0.1
-    cumsum_areas = numpy.cumsum(numpy.append(numpy.zeros(1, dtype=numpy.float32), areas))
-    sample = TriMesh.sample(cumsum_areas, 0.5, 0.1)
-    samples2xyz = TriMesh.sample_many(tri2vtx, vtx2xyz, num_sample=1000)
-
+from del_msh_numpy import TriMesh, BVH
+from del_msh_dlpack import Raycast
 
 def test_02():
     '''
@@ -31,6 +17,7 @@ def test_02():
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
     #
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint64)
+
     Raycast.pix2tri(
         pix2tri,
         tri2vtx,
@@ -38,17 +25,24 @@ def test_02():
         bvhnodes,
         bvhnode2aabb,
         transform_ndc2world)
+
     mask = pix2tri != numpy.iinfo(numpy.uint64).max
     num_true = numpy.count_nonzero(mask)
     ratio0 = float(num_true)/float(mask.shape[0]*mask.shape[1])
     ratio1 = 0.8*0.8*numpy.pi*0.25
     assert abs(ratio0-ratio1) < 0.00013
-    #
+
+    from pathlib import Path
+    path = Path(__file__).resolve().parent.parent.parent
+    print(path.resolve() )
+
     from PIL import Image
     img = Image.fromarray((mask.astype(numpy.uint8) * 255))
-    img.save("../target/del_msh_numpy__pix2tri.png")
+    file_path = path /  'target/del_msh_delpack__pix2tri.png'
+    img.save(file_path)
     #
-    #
+
+    '''
     pix2depth = numpy.zeros(shape=(300, 300), dtype=numpy.float32)
     Raycast.pix2depth(
         pix2depth,
@@ -59,3 +53,13 @@ def test_02():
         transform_ndc2world = transform_ndc2world)
     img = Image.fromarray((pix2depth * 255.).astype(numpy.uint8))
     img.save("../target/del_msh_numpy__pix2depth.png")
+    '''
+
+def test_01():
+    '''
+    test raycast
+    '''
+    tri2vtx, vtx2xyz = TriMesh.torus(0.8, 64, 32)
+    #edge2vtx = TriMesh.edge2vtx(tri2vtx, vtx2xyz.shape[0])
+    #TriMesh.edge2tri()
+    #print(edge2vtx.shape)

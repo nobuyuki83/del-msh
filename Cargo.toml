@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "del-msh-numpy",
+    "del-msh-dlpack",
     "del-msh-cpu",
     "del-msh-cudarc",
     "del-msh-candle",
@@ -12,7 +13,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.41"
+version = "0.1.43"
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -46,14 +47,19 @@ del-geo-core = { path="../del-geo/del-geo-core"}
 
 # for GitHub push
 # del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+candle-core = "=0.9.0"
+del-cudarc = "=0.1.2"
+#del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 # candle-core = { git="https://github.com/huggingface/candle.git" }
-# del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
+del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
 
 # for deploy
-# del-geo-core = "=0.1.35"
 # del-cudarc = "=0.1.2"
-candle-core = "=0.9.0"
-del-canvas = "=0.1.7"
+# candle-core = "=0.9.0"
+# del-geo-core = "=0.1.36"
+# del-canvas = "=0.1.7"
+
+
 
 
 

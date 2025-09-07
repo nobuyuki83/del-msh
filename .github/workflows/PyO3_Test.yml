@@ -27,8 +27,10 @@ jobs:
           cd del-msh-numpy         
           cargo test
       - name: Setup Python
-        uses: actions/setup-python@v2
-      - name: test
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # for bpy (blender python)
+      - name: test_numpy
         run: |
           cd del-msh-numpy
           python3 -m venv venv
@@ -42,4 +44,23 @@ jobs:
           pip3 list
           echo "test library using pytest"
           pip3 install pytest
+          pip3 install pillow
+          pip3 install bpy
+          python3 -m pytest
+      - name: test_dlpack
+        run: |
+          cd del-msh-dlpack
+          python3 -m venv venv
+          source venv/bin/activate
+          echo "VIRTUAL ENV:" $VIRTUAL_ENV
+          echo "install maturin"
+          pip3 install maturin
+          maturin build --release
+          echo "install library using maturin"
+          maturin develop --release
+          pip3 list
+          echo "test library using pytest"
+          pip3 install pytest
+          pip3 install pillow
+          pip3 install del-msh-numpy
           python3 -m pytest

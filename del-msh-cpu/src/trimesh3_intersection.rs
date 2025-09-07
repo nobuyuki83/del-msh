@@ -149,8 +149,6 @@ pub fn search_with_bvh_between_branches<T>(
                 p1,
             };
             pairs.push(itp);
-        } else {
-            return;
         }
     }
 }
