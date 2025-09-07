@@ -4,6 +4,12 @@ from del_msh_numpy import TriMesh, BVH, Raycast
 
 def test_01():
     tri2vtx, vtx2xyz = TriMesh.capsule()
+    #
+    TriMesh.save_wavefront_obj(tri2vtx, vtx2xyz, "../target/hogehoge.obj")
+    tri2vtx1, vtx2xyz1 = TriMesh.load_wavefront_obj("../target/hogehoge.obj")
+    assert tri2vtx.shape == tri2vtx1.shape
+    assert vtx2xyz.shape == vtx2xyz1.shape
+    #
     tri2vtx, vtx2xyz = TriMesh.torus()
     tri2vtx, vtx2xyz = TriMesh.sphere()
     tri2node2xyz = TriMesh.unindexing(tri2vtx, vtx2xyz)
