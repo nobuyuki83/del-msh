@@ -174,6 +174,19 @@ def load_wavefront_obj(
     return tri2vtx, vtx2xyz
 
 
+def save_wavefront_obj(
+        tri2vtx: numpy.typing.NDArray,
+        vtx2xyz: numpy.typing.NDArray,
+        path_file: str,
+):
+    from .del_msh_numpy import save_wavefront_obj_for_uniform_mesh
+    assert tri2vtx.dtype == numpy.uintp
+    if vtx2xyz.dtype != numpy.float32:
+        vtx2xyz = vtx2xyz.astype(numpy.float32)
+    save_wavefront_obj_for_uniform_mesh(path_file, tri2vtx, vtx2xyz)
+
+
+
 def load_nastran(
         path_file: str):
     from .del_msh_numpy import load_nastran_as_triangle_mesh
