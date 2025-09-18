@@ -214,8 +214,8 @@ pub fn laplacian_smoothing<const NDIM: usize>(
     assert_eq!(vtx2lhs_tmp.len(), num_vtx * NDIM);
     let func_upd = |i_vtx: usize, lhs_next: &mut [f32], vtx2lhs_prev: &[f32]| {
         let mut rhs: [f32; NDIM] = std::array::from_fn(|i| vtx2rhs[i_vtx * NDIM + i]);
-        for &j_vtx in &idx2vtx[vtx2idx[i_vtx] as usize..vtx2idx[i_vtx + 1] as usize] {
-            let j_vtx = j_vtx as usize;
+        for &j_vtx in &idx2vtx[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+            let j_vtx = j_vtx;
             for i in 0..NDIM {
                 rhs[i] += lambda * vtx2lhs_prev[j_vtx * NDIM + i];
             }
@@ -231,11 +231,11 @@ pub fn laplacian_smoothing<const NDIM: usize>(
         vtx2lhs_tmp
             .par_chunks_mut(NDIM)
             .enumerate()
-            .for_each(|(i_vtx, lhs1)| func_upd(i_vtx, lhs1, &vtx2lhs));
+            .for_each(|(i_vtx, lhs1)| func_upd(i_vtx, lhs1, vtx2lhs));
         vtx2lhs
             .par_chunks_mut(NDIM)
             .enumerate()
-            .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, &vtx2lhs_tmp));
+            .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, vtx2lhs_tmp));
     }
 }
 
@@ -249,8 +249,8 @@ pub fn compute_residual_norm_of_laplacian_smoothing<const NDIM: usize>(
     let num_vtx = vtx2rhs.len() / 3;
     let func_res = |i_vtx: usize| -> f32 {
         let mut res: [f32; NDIM] = std::array::from_fn(|i| vtx2rhs[i_vtx * NDIM + i]);
-        for &j_vtx in &idx2vtx[vtx2idx[i_vtx] as usize..vtx2idx[i_vtx + 1] as usize] {
-            let j_vtx = j_vtx as usize;
+        for &j_vtx in &idx2vtx[vtx2idx[i_vtx]..vtx2idx[i_vtx + 1]] {
+            let j_vtx = j_vtx;
             for i in 0..NDIM {
                 res[i] += lambda * vtx2lhs[j_vtx * NDIM + i];
             }
