@@ -69,6 +69,7 @@ pub unsafe fn is_c_contiguous(shape: *const i64, strides: *const i64, ndim: i32)
 ///
 /// # Safety
 pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a [T], Vec<i64>)> {
+    assert_eq!(mem::size_of::<T>() * 8, t.dtype.bits as usize);
     assert!(is_c_contiguous(t.shape, t.strides, t.ndim));
     if t.shape.is_null() || t.ndim < 0 {
         return None;

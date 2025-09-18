@@ -197,7 +197,7 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
     (vtx2kdx, kdx2vtx)
 }
 
-/// \[I + lambda * L\] {vtx2vars} = {vtx2trgs}
+/// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
 /// L = \[..-1,..,valence, ..,-1 \]
 pub fn laplacian_smoothing<const NDIM: usize>(
     vtx2idx: &[usize],
@@ -279,7 +279,9 @@ fn test_laplacian_smoothing() {
     };
     let lambda = 1f32;
     let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
-    let res0 = compute_residual_norm_of_laplacian_smoothing::<3>(&vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda);
+    let res0 = compute_residual_norm_of_laplacian_smoothing::<3>(
+        &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
+    );
     assert!(res0 > 1000.);
     {
         let mut vtx2lhs_tmp = vtx2lhs.clone();
@@ -293,7 +295,9 @@ fn test_laplacian_smoothing() {
             &mut vtx2lhs_tmp,
         );
     }
-    let res1 = compute_residual_norm_of_laplacian_smoothing::<3>(&vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda);
+    let res1 = compute_residual_norm_of_laplacian_smoothing::<3>(
+        &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
+    );
     assert!(res1 < 1.0e-9);
     dbg!(res0, res1);
 }

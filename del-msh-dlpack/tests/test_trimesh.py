@@ -55,11 +55,5 @@ def test_02():
     img.save("../target/del_msh_numpy__pix2depth.png")
     '''
 
-def test_01():
-    '''
-    test raycast
-    '''
-    tri2vtx, vtx2xyz = TriMesh.torus(0.8, 64, 32)
-    #edge2vtx = TriMesh.edge2vtx(tri2vtx, vtx2xyz.shape[0])
-    #TriMesh.edge2tri()
-    #print(edge2vtx.shape)
+
+
