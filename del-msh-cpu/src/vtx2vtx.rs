@@ -233,11 +233,11 @@ pub fn laplacian_smoothing<const NDIM: usize, IDX>(
         vtx2lhs_tmp
             .par_chunks_mut(NDIM)
             .enumerate()
-            .for_each(|(i_vtx, lhs1)| func_upd(i_vtx, lhs1, &vtx2lhs));
+            .for_each(|(i_vtx, lhs1)| func_upd(i_vtx, lhs1, vtx2lhs));
         vtx2lhs
             .par_chunks_mut(NDIM)
             .enumerate()
-            .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, &vtx2lhs_tmp));
+            .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, vtx2lhs_tmp));
     }
 }
 
