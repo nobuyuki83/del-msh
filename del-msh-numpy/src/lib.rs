@@ -22,6 +22,7 @@ mod trimesh3_search;
 mod unify_index;
 mod unindex;
 mod vtx2area;
+mod vtx2vtx;
 /* ------------------------ */
 
 #[pyo3::pymodule]
@@ -47,6 +48,7 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     mesh_intersection::add_functions(_py, m)?;
     gradient_distance_extension::add_functions(_py, m)?;
     vtx2area::add_functions(_py, m)?;
+    vtx2vtx::add_functions(_py, m)?;
 
     #[pyfn(m)]
     pub fn areas_of_triangles_of_mesh<'a>(

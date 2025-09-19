@@ -120,3 +120,130 @@ pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
     };
     Some((s, sh.to_vec()))
 }
+
+/// Rust側の所有物をまとめておき、deleterで回収する用
+#[repr(C)]
+struct DlpackContext<T> {
+    data_owner: *mut Vec<T>, // 実データ
+    shape_owner: *mut [i64], // 形状配列（Box<[i64]>）
+                             // strides を持たせたい場合は *mut [i64] を追加
+}
+
+extern "C" fn dl_managed_tensor_deleter<T>(m: *mut dlpack::ManagedTensor) {
+    if m.is_null() {
+        return;
+    }
+    unsafe {
+        // manager_ctx を回収
+        let ctx = (*m).manager_ctx as *mut DlpackContext<T>;
+        if !ctx.is_null() {
+            let ctx_box = Box::from_raw(ctx);
+            if !ctx_box.data_owner.is_null() {
+                let _ = Box::from_raw(ctx_box.data_owner); // drop
+            }
+            if !ctx_box.shape_owner.is_null() {
+                let _ = Box::from_raw(ctx_box.shape_owner); // drop
+            }
+        }
+        let _ = Box::from_raw(m); // DLManagedTensor 自体を解放
+    }
+}
+
+/// PyCapsule のデストラクタ
+/// - まだ消費されていない（名前が "dltensor"）場合のみ、DLManagedTensor.deleter を呼ぶ
+unsafe extern "C" fn capsule_destructor(capsule: *mut pyo3::ffi::PyObject) {
+    let name = std::ffi::CString::new("dltensor").unwrap();
+    let ptr = pyo3::ffi::PyCapsule_GetPointer(capsule, name.as_ptr());
+    if ptr.is_null() {
+        pyo3::ffi::PyErr_Clear(); // ← これが肝心（例外を外へ漏らさない）
+        return;
+    }
+    let m = ptr as *mut dlpack::ManagedTensor;
+    if !m.is_null() {
+        let deleter = (*m).deleter;
+        deleter(m);
+    }
+}
+
+trait ToDataTypeCode {
+    fn category() -> dlpack::DataTypeCode;
+}
+
+impl ToDataTypeCode for u32 {
+    fn category() -> dlpack::DataTypeCode {
+        dlpack::data_type_codes::UINT
+    }
+}
+
+impl ToDataTypeCode for u64 {
+    fn category() -> dlpack::DataTypeCode {
+        dlpack::data_type_codes::UINT
+    }
+}
+
+impl ToDataTypeCode for f32 {
+    fn category() -> dlpack::DataTypeCode {
+        dlpack::data_type_codes::FLOAT
+    }
+}
+
+fn make_capsule_from_vec<T>(py: Python, shape_vec: Vec<i64>, mut data: Vec<T>) -> pyo3::PyObject
+where
+    T: ToDataTypeCode,
+{
+    // 生ポインタ
+    let data_ptr = data.as_mut_ptr() as *mut std::os::raw::c_void;
+    let ndim = shape_vec.len();
+
+    // shape を Box<[i64]> にして保持
+    let shape_boxed: Box<[i64]> = shape_vec.into_boxed_slice();
+    let shape_ptr = shape_boxed.as_ptr() as *mut i64;
+
+    // 所有権を raw に移しておく（deleter で回収）
+    let data_owner = Box::into_raw(Box::new(data));
+    let shape_owner = Box::into_raw(shape_boxed);
+
+    // 2) manager_ctx
+    let ctx = DlpackContext {
+        data_owner,
+        shape_owner,
+    };
+    let ctx_ptr = Box::into_raw(Box::new(ctx)) as *mut std::os::raw::c_void;
+
+    // 3) DLManagedTensor を構築（C連続: strides=NULL）
+    let managed = Box::new(dlpack::ManagedTensor {
+        manager_ctx: ctx_ptr,
+        deleter: dl_managed_tensor_deleter::<T>,
+        dl_tensor: dlpack::Tensor {
+            data: data_ptr,
+            ctx: dlpack::Context {
+                device_type: dlpack::device_type_codes::CPU,
+                device_id: 0,
+            },
+            ndim: ndim as i32,
+            dtype: dlpack::DataType {
+                code: T::category(), // f32
+                bits: (std::mem::size_of::<T>() * 8) as u8,
+                lanes: 1,
+            },
+            shape: shape_ptr,
+            strides: std::ptr::null_mut(),
+            byte_offset: 0,
+        },
+    });
+
+    // 4) PyCapsule("dltensor") を作成（消費側に所有権移譲）
+    let raw_managed = Box::into_raw(managed);
+    // let name = std::ffi::CString::new("dltensor").unwrap();
+    let name_ptr: *const std::ffi::c_char = b"dltensor\0".as_ptr() as *const std::ffi::c_char;
+    let capsule = unsafe {
+        let cap_ptr = pyo3::ffi::PyCapsule_New(
+            raw_managed as *mut std::os::raw::c_void,
+            // name.as_ptr() as *const std::os::raw::c_char,
+            name_ptr,
+            Some(capsule_destructor),
+        );
+        pyo3::PyObject::from_owned_ptr(py, cap_ptr)
+    };
+    capsule
+}

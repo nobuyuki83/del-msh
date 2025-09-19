@@ -1,6 +1,6 @@
 //! methods that generate vertices connected to a vertex
 
-use num_traits::AsPrimitive;
+use num_traits::{AsPrimitive, PrimInt};
 
 /// point surrounding point for mesh
 /// * `elem2vtx` - map element to vertex: list of vertex index for each element
@@ -199,28 +199,30 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
 
 /// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
 /// L = \[..-1,..,valence, ..,-1 \]
-pub fn laplacian_smoothing<const NDIM: usize>(
-    vtx2idx: &[usize],
-    idx2vtx: &[usize],
+pub fn laplacian_smoothing<const NDIM: usize, IDX>(
+    vtx2idx: &[IDX],
+    idx2vtx: &[IDX],
     lambda: f32,
     vtx2lhs: &mut [f32],
     vtx2rhs: &[f32],
     num_iter: usize,
     vtx2lhs_tmp: &mut [f32],
-) {
+) where
+    IDX: num_traits::PrimInt + AsPrimitive<usize> + AsPrimitive<f32> + std::marker::Sync,
+{
     let num_vtx = vtx2idx.len() - 1;
     assert_eq!(vtx2lhs.len(), num_vtx * NDIM);
     assert_eq!(vtx2rhs.len(), num_vtx * NDIM);
     assert_eq!(vtx2lhs_tmp.len(), num_vtx * NDIM);
     let func_upd = |i_vtx: usize, lhs_next: &mut [f32], vtx2lhs_prev: &[f32]| {
         let mut rhs: [f32; NDIM] = std::array::from_fn(|i| vtx2rhs[i_vtx * NDIM + i]);
-        for &j_vtx in &idx2vtx[vtx2idx[i_vtx] as usize..vtx2idx[i_vtx + 1] as usize] {
-            let j_vtx = j_vtx as usize;
+        for &j_vtx in &idx2vtx[vtx2idx[i_vtx].as_()..vtx2idx[i_vtx + 1].as_()] {
+            let j_vtx: usize = j_vtx.as_();
             for i in 0..NDIM {
                 rhs[i] += lambda * vtx2lhs_prev[j_vtx * NDIM + i];
             }
         }
-        let valence = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]) as f32;
+        let valence: f32 = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]).as_();
         let inv_dia = 1f32 / (1f32 + lambda * valence);
         for i in 0..NDIM {
             lhs_next[i] = rhs[i] * inv_dia;
@@ -239,23 +241,26 @@ pub fn laplacian_smoothing<const NDIM: usize>(
     }
 }
 
-pub fn compute_residual_norm_of_laplacian_smoothing<const NDIM: usize>(
-    vtx2idx: &[usize],
-    idx2vtx: &[usize],
+pub fn compute_residual_norm_of_laplacian_smoothing<const NDIM: usize, IDX>(
+    vtx2idx: &[IDX],
+    idx2vtx: &[IDX],
     vtx2rhs: &[f32],
     vtx2lhs: &[f32],
     lambda: f32,
-) -> f32 {
+) -> f32
+where
+    IDX: PrimInt + AsPrimitive<usize> + AsPrimitive<f32>,
+{
     let num_vtx = vtx2rhs.len() / 3;
     let func_res = |i_vtx: usize| -> f32 {
         let mut res: [f32; NDIM] = std::array::from_fn(|i| vtx2rhs[i_vtx * NDIM + i]);
-        for &j_vtx in &idx2vtx[vtx2idx[i_vtx] as usize..vtx2idx[i_vtx + 1] as usize] {
-            let j_vtx = j_vtx as usize;
+        for &j_vtx in &idx2vtx[vtx2idx[i_vtx].as_()..vtx2idx[i_vtx + 1].as_()] {
+            let j_vtx: usize = j_vtx.as_();
             for i in 0..NDIM {
                 res[i] += lambda * vtx2lhs[j_vtx * NDIM + i];
             }
         }
-        let valence = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]) as f32;
+        let valence: f32 = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]).as_();
         for i in 0..NDIM {
             res[i] -= (1f32 + lambda * valence) * vtx2lhs[i_vtx * NDIM + i];
         }
@@ -279,13 +284,13 @@ fn test_laplacian_smoothing() {
     };
     let lambda = 1f32;
     let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
-    let res0 = compute_residual_norm_of_laplacian_smoothing::<3>(
+    let res0 = compute_residual_norm_of_laplacian_smoothing::<3, usize>(
         &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
     );
     assert!(res0 > 1000.);
     {
         let mut vtx2lhs_tmp = vtx2lhs.clone();
-        laplacian_smoothing::<3>(
+        laplacian_smoothing::<3, usize>(
             &vtx2idx,
             &idx2vtx,
             lambda,
@@ -295,7 +300,7 @@ fn test_laplacian_smoothing() {
             &mut vtx2lhs_tmp,
         );
     }
-    let res1 = compute_residual_norm_of_laplacian_smoothing::<3>(
+    let res1 = compute_residual_norm_of_laplacian_smoothing::<3, usize>(
         &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
     );
     assert!(res1 < 1.0e-9);

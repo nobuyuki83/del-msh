@@ -1,9 +1,10 @@
 use crate::slice_shape_from_tensor;
-use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
+use pyo3::{pyfunction, types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_laplacian_smoothing, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_from_uniform_mesh, m)?)?;
     Ok(())
 }
 
@@ -29,25 +30,23 @@ fn vtx2vtx_laplacian_smoothing(
     let vtx2lhs_shape = unsafe { std::slice::from_raw_parts(vtx2lhs.shape, vtx2lhs.ndim as usize) };
     let num_vtx = vtx2idx_shape[0] - 1;
     let num_dim = vtx2lhs_shape[1];
-    assert_eq!(vtx2idx.dtype.code, 1);
-    assert_eq!(vtx2idx.dtype.bits, 64);
-    assert_eq!(idx2vtx.dtype.code, 1);
-    assert_eq!(idx2vtx.dtype.bits, 64);
-    assert_eq!(vtx2lhs.dtype.code, 2);
+    assert_eq!(vtx2idx.dtype.code, dlpack::data_type_codes::UINT);
+    assert_eq!(vtx2idx.dtype.bits, 32, "index type must be u32");
+    assert_eq!(idx2vtx.dtype.code, dlpack::data_type_codes::UINT);
+    assert_eq!(idx2vtx.dtype.bits, 32, "index type must be u32");
+    assert_eq!(vtx2lhs.dtype.code, dlpack::data_type_codes::FLOAT);
     assert_eq!(vtx2lhs.dtype.bits, 32);
-    assert_eq!(vtx2rhs.dtype.code, 2);
+    assert_eq!(vtx2rhs.dtype.code, dlpack::data_type_codes::FLOAT);
     assert_eq!(vtx2rhs.dtype.bits, 32);
-    assert_eq!(vtx2lhstmp.dtype.code, 2);
+    assert_eq!(vtx2lhstmp.dtype.code, dlpack::data_type_codes::FLOAT);
     assert_eq!(vtx2lhstmp.dtype.bits, 32);
 
     match vtx2idx.ctx.device_type {
         dlpack::device_type_codes::CPU => {
             use crate::slice_shape_from_tensor_mut;
-            let (vtx2idx, vtx2idx_sh) =
-                unsafe { slice_shape_from_tensor::<usize>(vtx2idx).unwrap() };
+            let (vtx2idx, vtx2idx_sh) = unsafe { slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
             assert_eq!(vtx2idx_sh, vec!(num_vtx + 1));
-            let (idx2vtx, idx2vtx_sh) =
-                unsafe { slice_shape_from_tensor::<usize>(idx2vtx).unwrap() };
+            let (idx2vtx, idx2vtx_sh) = unsafe { slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
             assert_eq!(idx2vtx_sh.len(), 1);
             let (vtx2rhs, vtx2rhs_sh) = unsafe { slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
             assert_eq!(vtx2rhs_sh, vec!(num_vtx, num_dim));
@@ -57,7 +56,7 @@ fn vtx2vtx_laplacian_smoothing(
             let (vtx2lhstmp, vtx2lhstmp_sh) =
                 unsafe { slice_shape_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
             assert_eq!(vtx2lhstmp_sh, vec!(num_vtx, num_dim));
-            del_msh_cpu::vtx2vtx::laplacian_smoothing::<3>(
+            del_msh_cpu::vtx2vtx::laplacian_smoothing::<3, u32>(
                 vtx2idx, idx2vtx, lambda, vtx2lhs, vtx2rhs, num_iter, vtx2lhstmp,
             );
         }
@@ -105,4 +104,53 @@ fn vtx2vtx_laplacian_smoothing(
         _ => println!("Unknown device type {}", vtx2idx.ctx.device_type),
     }
     Ok(())
+}
+
+#[pyfunction]
+fn vtx2vtx_from_uniform_mesh<'a>(
+    py: Python<'a>,
+    elem2vtx: &Bound<'_, PyAny>,
+    num_vtx: usize,
+    is_self: bool,
+) -> PyResult<(pyo3::PyObject, pyo3::PyObject)> {
+    let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
+    match elem2vtx.ctx.device_type {
+        dlpack::device_type_codes::CPU => {
+            if elem2vtx.dtype.code == dlpack::data_type_codes::UINT && elem2vtx.dtype.bits == 64 {
+                let (elem2vtx, elem2vtx_sh) =
+                    unsafe { crate::slice_shape_from_tensor::<u64>(elem2vtx).unwrap() };
+                let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
+                    elem2vtx,
+                    elem2vtx_sh[1] as usize,
+                    num_vtx,
+                    is_self,
+                );
+                let vtx2idx_cap =
+                    crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
+                let idx2vtx_cap =
+                    crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
+                return Ok((vtx2idx_cap, idx2vtx_cap));
+            } else if elem2vtx.dtype.code == dlpack::data_type_codes::UINT
+                && elem2vtx.dtype.bits == 32
+            {
+                let (elem2vtx, elem2vtx_sh) =
+                    unsafe { crate::slice_shape_from_tensor::<u32>(elem2vtx).unwrap() };
+                let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
+                    elem2vtx,
+                    elem2vtx_sh[1] as usize,
+                    num_vtx,
+                    is_self,
+                );
+                let vtx2idx_cap =
+                    crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
+                let idx2vtx_cap =
+                    crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
+                return Ok((vtx2idx_cap, idx2vtx_cap));
+            }
+        }
+        _ => {
+            todo!()
+        }
+    }
+    todo!();
 }
