@@ -236,7 +236,8 @@ where
     let raw_managed = Box::into_raw(managed);
     // let name = std::ffi::CString::new("dltensor").unwrap();
     let name_ptr: *const std::ffi::c_char = b"dltensor\0".as_ptr() as *const std::ffi::c_char;
-    let capsule = unsafe {
+
+    unsafe {
         let cap_ptr = pyo3::ffi::PyCapsule_New(
             raw_managed as *mut std::os::raw::c_void,
             // name.as_ptr() as *const std::os::raw::c_char,
@@ -244,6 +245,5 @@ where
             Some(capsule_destructor),
         );
         pyo3::PyObject::from_owned_ptr(py, cap_ptr)
-    };
-    capsule
+    }
 }
