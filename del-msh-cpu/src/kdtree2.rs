@@ -36,6 +36,7 @@ pub fn construct_kdtree<Real>(
         return;
     }
 
+    #[allow(clippy::manual_is_multiple_of)]
     if i_depth % 2 == 0 {
         // sort by x-coordinate
         points[idx_point_begin..idx_point_end].sort_by(|a, b| a.0[0].partial_cmp(&b.0[0]).unwrap());
@@ -94,6 +95,7 @@ pub fn find_edges<Real>(
     }
     let ivtx = nodes[idx_node * 3 + 0];
     let pos = &vtx2xy[ivtx * 2..(ivtx + 1) * 2];
+    #[allow(clippy::manual_is_multiple_of)]
     if i_depth % 2 == 0 {
         edge2xy.push(pos[0]);
         edge2xy.push(min[1]);
@@ -179,6 +181,7 @@ where
         *pos_near = (pos, ivtx); // update the nearest position
     }
 
+    #[allow(clippy::manual_is_multiple_of)]
     if branch.i_depth % 2 == 0 {
         // division in x direction
         if pos_in[0] < pos[0] {
