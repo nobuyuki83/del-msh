@@ -14,6 +14,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 /// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
 /// where L = \[ .., -1, .., valence, ..,-1, .. \]
 #[pyo3::pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn vtx2vtx_laplacian_smoothing(
     _py: Python,
     vtx2idx: &Bound<'_, PyAny>,

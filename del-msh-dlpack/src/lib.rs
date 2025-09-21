@@ -235,7 +235,7 @@ where
     // 4) PyCapsule("dltensor") を作成（消費側に所有権移譲）
     let raw_managed = Box::into_raw(managed);
     // let name = std::ffi::CString::new("dltensor").unwrap();
-    let name_ptr: *const std::ffi::c_char = b"dltensor\0".as_ptr() as *const std::ffi::c_char;
+    let name_ptr: *const std::ffi::c_char = c"dltensor".as_ptr() as *const std::ffi::c_char;
 
     unsafe {
         let cap_ptr = pyo3::ffi::PyCapsule_New(
