@@ -23,7 +23,7 @@ fn vtx2vtx_laplacian_smoothing(
     vtx2rhs: &Bound<'_, PyAny>,
     num_iter: usize,
     vtx2lhstmp: &Bound<'_, PyAny>,
-    stream_ptr: u64
+    stream_ptr: u64,
 ) -> PyResult<()> {
     let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
@@ -80,7 +80,9 @@ fn vtx2vtx_laplacian_smoothing(
                 del_msh_cuda_kernel::VTX2VTX,
                 "laplacian_smoothing",
             );
-            unsafe { del_cudarc_sys::cuInit(0); }
+            unsafe {
+                del_cudarc_sys::cuInit(0);
+            }
             assert_eq!(std::mem::size_of::<usize>(), 8);
             let stream = stream_ptr as usize as *mut std::ffi::c_void as CUstream;
             assert_eq!(vtx2idx.byte_offset, 0);
@@ -120,7 +122,9 @@ fn vtx2vtx_laplacian_smoothing(
                 let res_sync = del_cudarc_sys::cuStreamSynchronize(stream);
                 if res_sync != del_cudarc_sys::CUresult::CUDA_SUCCESS {
                     // エラー名を引いてログに出すのも良い
-                    return Err(pyo3::exceptions::PyRuntimeError::new_err("stream sync failed"));
+                    return Err(pyo3::exceptions::PyRuntimeError::new_err(
+                        "stream sync failed",
+                    ));
                 }
             }
             unsafe {
@@ -166,7 +170,9 @@ fn vtx2vtx_multiply_graph_laplacian(
             let (vtx2lhs, vtx2lhs_sh) =
                 unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
             assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
-            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs);
+            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(
+                vtx2idx, idx2vtx, vtx2rhs, vtx2lhs,
+            );
             Ok(())
         }
         _ => {
