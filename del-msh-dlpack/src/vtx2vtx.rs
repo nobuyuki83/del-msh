@@ -85,7 +85,7 @@ fn vtx2vtx_laplacian_smoothing(
                 del_cudarc_sys::cuInit(0);
             }
             assert_eq!(std::mem::size_of::<usize>(), 8);
-            let stream = stream_ptr as usize as *mut std::ffi::c_void as CUstream;
+            let stream = stream_ptr as usize as *mut std::ffi::c_void as del_cudarc_sys::CUstream;
             assert_eq!(vtx2idx.byte_offset, 0);
             assert_eq!(idx2vtx.byte_offset, 0);
             assert_eq!(vtx2lhstmp.byte_offset, 0);
