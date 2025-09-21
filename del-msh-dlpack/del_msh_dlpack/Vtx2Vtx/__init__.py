@@ -7,7 +7,8 @@ def laplacian_smoothing(
     vtx2lhs,
     vtx2rhs,
     num_iter: int,
-    vtx2lhs_tmp):
+    vtx2lhs_tmp,
+    stream_ptr=0):
     """Solve the linear system from screened Poisson equation using Jacobi method:
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
@@ -20,7 +21,8 @@ def laplacian_smoothing(
         vtx2lhs,
         vtx2rhs,
         num_iter,
-        vtx2lhs_tmp)
+        vtx2lhs_tmp,
+        stream_ptr)
 
 
 def multiply_graph_laplacian(

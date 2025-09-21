@@ -5,7 +5,7 @@
 extern "C" {
 
 __global__
-void laplacian_smoothing_jacobi(
+void laplacian_smoothing(
     const uint32_t num_vtx,
     const uint32_t *vtx2idx,
     const uint32_t *idx2vtx,
@@ -16,7 +16,6 @@ void laplacian_smoothing_jacobi(
 {
     int i_vtx = blockDim.x * blockIdx.x + threadIdx.x;
     if (i_vtx >= num_vtx) { return; }
-    //
     float rhs[3] = {
         vtx2trgs[i_vtx*3+0],
         vtx2trgs[i_vtx*3+1],

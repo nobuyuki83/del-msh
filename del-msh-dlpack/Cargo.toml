@@ -8,7 +8,7 @@ name = "del_msh_dlpack"
 crate-type = ["cdylib"]
 
 [features]
-cuda = ["dep:del-cudarc-sys"]
+cuda = ["dep:del-cudarc-sys", "dep:del-msh-cuda-kernel"]
 
 [dependencies]
 pyo3.workspace = true
@@ -19,7 +19,7 @@ arrayref.workspace = true
 # for develop
 # del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
 # del-cudarc-kernel = { path = "../../del-cudarc/del-cudarc-kernel", optional = true}
-# del-fem-cuda-kernel = { path="../del-fem-cuda-kernel", optional = true }
+del-msh-cuda-kernel = { path="../del-msh-cuda-kernel", optional = true }
 
 # for push
 del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}

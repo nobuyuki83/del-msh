@@ -1,4 +1,3 @@
-use del_msh_cpu::vtx2vtx;
 use pyo3::{pyfunction, types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -24,6 +23,7 @@ fn vtx2vtx_laplacian_smoothing(
     vtx2rhs: &Bound<'_, PyAny>,
     num_iter: usize,
     vtx2lhstmp: &Bound<'_, PyAny>,
+    stream_ptr: u64
 ) -> PyResult<()> {
     let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
@@ -45,8 +45,14 @@ fn vtx2vtx_laplacian_smoothing(
     assert_eq!(vtx2rhs.dtype.bits, 32);
     assert_eq!(vtx2lhstmp.dtype.code, dlpack::data_type_codes::FLOAT);
     assert_eq!(vtx2lhstmp.dtype.bits, 32);
+    //
+    let device_type = vtx2idx.ctx.device_type;
+    assert_eq!(idx2vtx.ctx.device_type, device_type);
+    assert_eq!(vtx2rhs.ctx.device_type, device_type);
+    assert_eq!(vtx2lhs.ctx.device_type, device_type);
+    assert_eq!(vtx2lhstmp.ctx.device_type, device_type);
 
-    match vtx2idx.ctx.device_type {
+    match device_type {
         dlpack::device_type_codes::CPU => {
             let (vtx2idx, vtx2idx_sh) =
                 unsafe { crate::slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
@@ -69,12 +75,19 @@ fn vtx2vtx_laplacian_smoothing(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            println!("GPU_{}", vtx2idx.ctx.device_id);
+            // println!("GPU_{}", vtx2idx.ctx.device_id);
             let (function, _module) = del_cudarc_sys::load_function_in_module(
-                del_msh_cuda_kernel::LAPLACIAN_SMOOTHING_JACOBI,
-                "laplacian_smoothing_jacobi",
+                del_msh_cuda_kernel::VTX2VTX,
+                "laplacian_smoothing",
             );
-            let stream = del_cudarc_sys::create_stream_in_current_context();
+            unsafe { del_cudarc_sys::cuInit(0); }
+            assert_eq!(std::mem::size_of::<usize>(), 8);
+            let stream = stream_ptr as usize as *mut std::ffi::c_void as CUstream;
+            assert_eq!(vtx2idx.byte_offset, 0);
+            assert_eq!(idx2vtx.byte_offset, 0);
+            assert_eq!(vtx2lhstmp.byte_offset, 0);
+            assert_eq!(vtx2lhs.byte_offset, 0);
+            assert_eq!(vtx2rhs.byte_offset, 0);
             for _itr in 0..num_iter {
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -83,8 +96,8 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);
                     builder.arg_data(&vtx2lhstmp.data);
-                    builder.arg_data(&vtx2xyz.data);
-                    builder.arg_data(&rhs.data);
+                    builder.arg_data(&vtx2lhs.data);
+                    builder.arg_data(&vtx2rhs.data);
                     unsafe {
                         builder.launch_kernel(function, num_vtx as u32);
                     }
@@ -95,16 +108,22 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&vtx2idx.data);
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);
-                    builder.arg_data(&vtx2xyz.data);
+                    builder.arg_data(&vtx2lhs.data);
                     builder.arg_data(&vtx2lhstmp.data);
-                    builder.arg_data(&rhs.data);
+                    builder.arg_data(&vtx2rhs.data);
                     unsafe {
                         builder.launch_kernel(function, num_vtx as u32);
                     }
                 }
             }
             unsafe {
-                del_cudarc_sys::cuStreamSynchronize(stream);
+                let res_sync = del_cudarc_sys::cuStreamSynchronize(stream);
+                if res_sync != del_cudarc_sys::CUresult::CUDA_SUCCESS {
+                    // エラー名を引いてログに出すのも良い
+                    return Err(pyo3::exceptions::PyRuntimeError::new_err("stream sync failed"));
+                }
+            }
+            unsafe {
                 del_cudarc_sys::cuStreamDestroy_v2(stream);
             }
         }
@@ -147,7 +166,7 @@ fn vtx2vtx_multiply_graph_laplacian(
             let (vtx2lhs, vtx2lhs_sh) =
                 unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
             assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
-            vtx2vtx::multiply_graph_laplacian::<3, u32>(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs);
+            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs);
             Ok(())
         }
         _ => {
