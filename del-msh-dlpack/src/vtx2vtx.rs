@@ -1,14 +1,20 @@
 use crate::slice_shape_from_tensor;
+use del_msh_cpu::uniform_mesh::vtx2vtx;
+use del_msh_cpu::vtx2vtx;
 use pyo3::{pyfunction, types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_laplacian_smoothing, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_multiply_graph_laplacian, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_from_uniform_mesh, m)?)?;
     Ok(())
 }
 
-/// Pythonから渡された PyCapsule を Rust 側で読み取る
+/// Solve the linear system from screened Poisson equation using Jacobi method:
+///
+/// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
+/// where L = \[ .., -1, .., valence, ..,-1, .. \]
 #[pyo3::pyfunction]
 fn vtx2vtx_laplacian_smoothing(
     _py: Python,
@@ -43,18 +49,20 @@ fn vtx2vtx_laplacian_smoothing(
 
     match vtx2idx.ctx.device_type {
         dlpack::device_type_codes::CPU => {
-            use crate::slice_shape_from_tensor_mut;
-            let (vtx2idx, vtx2idx_sh) = unsafe { slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
+            let (vtx2idx, vtx2idx_sh) =
+                unsafe { crate::slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
             assert_eq!(vtx2idx_sh, vec!(num_vtx + 1));
-            let (idx2vtx, idx2vtx_sh) = unsafe { slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
+            let (idx2vtx, idx2vtx_sh) =
+                unsafe { crate::slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
             assert_eq!(idx2vtx_sh.len(), 1);
-            let (vtx2rhs, vtx2rhs_sh) = unsafe { slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
+            let (vtx2rhs, vtx2rhs_sh) =
+                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
             assert_eq!(vtx2rhs_sh, vec!(num_vtx, num_dim));
             let (vtx2lhs, vtx2lhs_sh) =
-                unsafe { slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
+                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
             assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
             let (vtx2lhstmp, vtx2lhstmp_sh) =
-                unsafe { slice_shape_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
+                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
             assert_eq!(vtx2lhstmp_sh, vec!(num_vtx, num_dim));
             del_msh_cpu::vtx2vtx::laplacian_smoothing::<3, u32>(
                 vtx2idx, idx2vtx, lambda, vtx2lhs, vtx2rhs, num_iter, vtx2lhstmp,
@@ -104,6 +112,49 @@ fn vtx2vtx_laplacian_smoothing(
         _ => println!("Unknown device type {}", vtx2idx.ctx.device_type),
     }
     Ok(())
+}
+
+/// Solve the linear system from screened Poisson equation using Jacobi method:
+///
+/// {vtx2lhs} = L * {vtx2rhs}
+/// where L = \[ .., -1, .., valence, ..,-1, .. \]
+#[pyo3::pyfunction]
+fn vtx2vtx_multiply_graph_laplacian(
+    _py: Python,
+    vtx2idx: &Bound<'_, PyAny>,
+    idx2vtx: &Bound<'_, PyAny>,
+    vtx2rhs: &Bound<'_, PyAny>,
+    vtx2lhs: &Bound<'_, PyAny>,
+) -> PyResult<()> {
+    let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
+    let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
+    let vtx2rhs = crate::get_managed_tensor_from_pyany(vtx2rhs)?;
+    let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
+    let vtx2idx_sh = unsafe { std::slice::from_raw_parts(vtx2idx.shape, vtx2idx.ndim as usize) };
+    let vtx2lhs_sh = unsafe { std::slice::from_raw_parts(vtx2lhs.shape, vtx2lhs.ndim as usize) };
+    let num_vtx = vtx2idx_sh[0] - 1;
+    let num_dim = vtx2lhs_sh[1];
+    match vtx2idx.ctx.device_type {
+        dlpack::device_type_codes::CPU => {
+            let (vtx2idx, vtx2idx_sh) =
+                unsafe { crate::slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
+            assert_eq!(vtx2idx_sh, vec!(num_vtx + 1));
+            let (idx2vtx, idx2vtx_sh) =
+                unsafe { crate::slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
+            assert_eq!(idx2vtx_sh.len(), 1);
+            let (vtx2rhs, vtx2rhs_sh) =
+                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
+            assert_eq!(vtx2rhs_sh, vec!(num_vtx, num_dim));
+            let (vtx2lhs, vtx2lhs_sh) =
+                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
+            assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
+            vtx2vtx::multiply_graph_laplacian::<3, u32>(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs);
+            Ok(())
+        }
+        _ => {
+            todo!()
+        }
+    }
 }
 
 #[pyfunction]

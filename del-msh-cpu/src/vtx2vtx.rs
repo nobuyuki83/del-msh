@@ -241,32 +241,31 @@ pub fn laplacian_smoothing<const NDIM: usize, IDX>(
     }
 }
 
-pub fn compute_residual_norm_of_laplacian_smoothing<const NDIM: usize, IDX>(
+pub fn multiply_graph_laplacian<const NDIM: usize, IDX>(
     vtx2idx: &[IDX],
     idx2vtx: &[IDX],
     vtx2rhs: &[f32],
-    vtx2lhs: &[f32],
-    lambda: f32,
-) -> f32
-where
-    IDX: PrimInt + AsPrimitive<usize> + AsPrimitive<f32>,
+    vtx2lhs: &mut [f32],
+) where
+    IDX: PrimInt + AsPrimitive<usize> + AsPrimitive<f32> + std::marker::Sync,
 {
-    let num_vtx = vtx2rhs.len() / 3;
-    let func_res = |i_vtx: usize| -> f32 {
-        let mut res: [f32; NDIM] = std::array::from_fn(|i| vtx2rhs[i_vtx * NDIM + i]);
+    let func_upd = |i_vtx: usize, lhs: &mut [f32]| {
+        let valence: f32 = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]).as_();
+        for i in 0..NDIM {
+            lhs[i] = valence * vtx2rhs[i_vtx * NDIM + i];
+        }
         for &j_vtx in &idx2vtx[vtx2idx[i_vtx].as_()..vtx2idx[i_vtx + 1].as_()] {
             let j_vtx: usize = j_vtx.as_();
             for i in 0..NDIM {
-                res[i] += lambda * vtx2lhs[j_vtx * NDIM + i];
+                lhs[i] -= vtx2rhs[j_vtx * NDIM + i];
             }
         }
-        let valence: f32 = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]).as_();
-        for i in 0..NDIM {
-            res[i] -= (1f32 + lambda * valence) * vtx2lhs[i_vtx * NDIM + i];
-        }
-        res.iter().map(|v| v * v).sum::<f32>()
     };
-    (0..num_vtx).map(func_res).sum()
+    use rayon::prelude::*;
+    vtx2lhs
+        .par_chunks_mut(NDIM)
+        .enumerate()
+        .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs));
 }
 
 #[test]
@@ -284,9 +283,20 @@ fn test_laplacian_smoothing() {
     };
     let lambda = 1f32;
     let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
-    let res0 = compute_residual_norm_of_laplacian_smoothing::<3, usize>(
-        &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
-    );
+    let res0: f32 = {
+        let mut vtx2tmp = vec![0f32; vtx2xyz.len()];
+        multiply_graph_laplacian::<3, usize>(&vtx2idx, &idx2vtx, &vtx2lhs, &mut vtx2tmp);
+        vtx2tmp
+            .iter()
+            .zip(&vtx2lhs)
+            .zip(&vtx2rhs)
+            .map(|((t, l), r)| {
+                let v = t * lambda + l - r;
+                v * v
+            })
+            .sum()
+    };
+    dbg!(res0);
     assert!(res0 > 1000.);
     {
         let mut vtx2lhs_tmp = vtx2lhs.clone();
@@ -300,9 +310,19 @@ fn test_laplacian_smoothing() {
             &mut vtx2lhs_tmp,
         );
     }
-    let res1 = compute_residual_norm_of_laplacian_smoothing::<3, usize>(
-        &vtx2idx, &idx2vtx, &vtx2rhs, &vtx2lhs, lambda,
-    );
+    let res1: f32 = {
+        let mut vtx2tmp = vec![0f32; vtx2xyz.len()];
+        multiply_graph_laplacian::<3, usize>(&vtx2idx, &idx2vtx, &vtx2lhs, &mut vtx2tmp);
+        vtx2tmp
+            .iter()
+            .zip(&vtx2lhs)
+            .zip(&vtx2rhs)
+            .map(|((t, l), r)| {
+                let v = t * lambda + l - r;
+                v * v
+            })
+            .sum()
+    };
+    dbg!(res1);
     assert!(res1 < 1.0e-9);
-    dbg!(res0, res1);
 }
