@@ -318,7 +318,7 @@ pub fn inside_square<Real>(
     if (pos[0] - pos_in[0]).abs() < rad && (pos[1] - pos_in[1]).abs() < rad {
         pos_near.push(ivtx); // update the nearest position
     }
-
+    #[allow(clippy::manual_is_multiple_of)]
     if branch.i_depth % 2 == 0 {
         // division in x direction
         inside_square(

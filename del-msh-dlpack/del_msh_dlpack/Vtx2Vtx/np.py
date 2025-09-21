@@ -30,7 +30,6 @@ def laplacian_smoothing(
     """
     assert len(vtx2idx.shape) == 1
     assert len(idx2vtx.shape) == 1
-
     assert vtx2lhs.shape == vtx2rhs.shape
     assert vtx2idx.dtype == np.uint32
     assert idx2vtx.dtype == np.uint32
@@ -57,7 +56,15 @@ def multiply_graph_laplacian(
     vtx2idx: np.ndarray,
     idx2vtx: np.ndarray,
     vtx2rhs: np.ndarray) -> np.ndarray:
+    assert len(vtx2idx.shape) == 1
+    vtx2idx.dtype == np.uint32
+    assert len(idx2vtx.shape) == 1
+    idx2vtx.dtype == np.uint32
+    assert len(vtx2rhs.shape) == 2
+    vtx2rhs.dtype == np.float32
+    #
     vtx2lhs = np.zeros_like(vtx2rhs)
+    #
     from .. import Vtx2Vtx
     Vtx2Vtx.multiply_graph_laplacian(
         vtx2idx.__dlpack__(),
