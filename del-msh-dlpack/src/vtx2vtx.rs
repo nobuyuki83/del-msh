@@ -1,5 +1,3 @@
-use crate::slice_shape_from_tensor;
-use del_msh_cpu::uniform_mesh::vtx2vtx;
 use del_msh_cpu::vtx2vtx;
 use pyo3::{pyfunction, types::PyModule, Bound, PyAny, PyResult, Python};
 
