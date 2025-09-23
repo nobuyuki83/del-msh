@@ -5,6 +5,7 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 use std::{mem, slice};
 
 mod edge2vtx;
+mod trimesh3;
 mod trimesh3_raycast;
 mod vtx2vtx;
 
@@ -13,6 +14,7 @@ mod vtx2vtx;
 fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // m.add_function(wrap_pyfunction!(solve, m)?)?;
     trimesh3_raycast::add_functions(_py, m)?;
+    trimesh3::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
     vtx2vtx::add_functions(_py, m)?;
     Ok(())

@@ -63,3 +63,4 @@ pub mod pix2tri;
 pub mod raycast_trimesh;
 pub mod render_meshtri2_vtxcolor;
 pub mod silhouette;
+pub mod trimesh3_to_tri2nrm;

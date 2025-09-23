@@ -2,23 +2,34 @@ import math
 import os.path
 
 import numpy
-from del_msh_numpy import TriMesh, BVH
-from del_msh_dlpack import Raycast
+import del_msh_numpy.TriMesh
+import del_msh_numpy.BVH
+import del_msh_dlpack.Raycast
+import del_msh_dlpack.TriMesh3.np
+
+def test_01():
+    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
+    tri2normal = del_msh_dlpack.TriMesh3.np.tri2normal(tri2vtx.astype(numpy.uint32), vtx2xyz)
+    tri2area = numpy.linalg.norm(tri2normal, axis=1)
+    area = tri2area.sum() * 0.5
+    area0 = 0.8 * 0.8 * 4.0 * numpy.pi
+    assert abs(area-area0)/area0  < 0.001
+
 
 def test_02():
     '''
     test raycast
     '''
-    tri2vtx, vtx2xyz = TriMesh.sphere(0.8, 64, 32)
-    bvhnodes = TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
+    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 64, 32)
+    bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
     assert bvhnodes.shape[1] == 3
-    bvhnode2aabb = BVH.aabb_uniform_mesh(tri2vtx, vtx2xyz, bvhnodes, aabbs=None, vtx2xyz1=None)
+    bvhnode2aabb = del_msh_numpy.BVH.aabb_uniform_mesh(tri2vtx, vtx2xyz, bvhnodes, aabbs=None, vtx2xyz1=None)
     assert bvhnode2aabb.shape[1] == 6
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
     #
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint64)
 
-    Raycast.pix2tri(
+    del_msh_dlpack.Raycast.pix2tri(
         pix2tri,
         tri2vtx,
         vtx2xyz,

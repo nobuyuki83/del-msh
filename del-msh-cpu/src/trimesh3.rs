@@ -128,22 +128,23 @@ where
 // above: to*** methods
 // -------------------------
 
-pub fn tri2normal<T, U>(tri2vtx: &[U], vtx2xyz: &[T]) -> Vec<T>
+pub fn tri2normal<T, INDEX>(tri2vtx: &[INDEX], vtx2xyz: &[T], tri2normal: &mut [T])
 where
     T: num_traits::Float,
-    U: AsPrimitive<usize>,
+    INDEX: AsPrimitive<usize>,
 {
-    let mut tri2normal = Vec::<T>::with_capacity(tri2vtx.len());
-    for node2vtx in tri2vtx.chunks(3) {
+    assert_eq!(tri2vtx.len(), tri2normal.len());
+    for (i_tri, node2vtx) in tri2vtx.chunks(3).enumerate() {
         let (i0, i1, i2) = (node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_());
         let n = del_geo_core::tri3::normal(
             arrayref::array_ref!(vtx2xyz, i0 * 3, 3),
             arrayref::array_ref!(vtx2xyz, i1 * 3, 3),
             arrayref::array_ref!(vtx2xyz, i2 * 3, 3),
         );
-        tri2normal.extend_from_slice(&n);
+        tri2normal[i_tri * 3] = n[0];
+        tri2normal[i_tri * 3 + 1] = n[1];
+        tri2normal[i_tri * 3 + 2] = n[2];
     }
-    tri2normal
 }
 
 pub fn tri2area(tri2vtx: &[usize], vtx2xyz: &[f32]) -> Vec<f32> {

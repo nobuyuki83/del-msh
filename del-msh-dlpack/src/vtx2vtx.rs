@@ -183,8 +183,8 @@ fn vtx2vtx_multiply_graph_laplacian(
 }
 
 #[pyfunction]
-fn vtx2vtx_from_uniform_mesh<'a>(
-    py: Python<'a>,
+fn vtx2vtx_from_uniform_mesh(
+    py: Python<'_>,
     elem2vtx: &Bound<'_, PyAny>,
     num_vtx: usize,
     is_self: bool,

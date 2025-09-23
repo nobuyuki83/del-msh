@@ -17,6 +17,7 @@ arrayref.workspace = true
 del-geo-core.workspace = true
 rayon.workspace = true
 candle-core.workspace = true
+num-traits.workspace = true
 
 # for develop
 # del-msh-cpu.workspace = true
