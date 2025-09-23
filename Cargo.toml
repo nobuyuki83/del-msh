@@ -39,7 +39,7 @@ del-msh-cudarc = {path="del-msh-cudarc"}
 del-msh-cuda-kernel = {path= "del-msh-cuda-kernel" }
 
 # for development
-del-geo-core = { path="../del-geo/del-geo-core"}
+# del-geo-core = { path="../del-geo/del-geo-core"}
 # del-gl-core = {path = "../del-gl/del-gl-core"} # this is defined here
 # del-gl-winit-glutin = {path = "../del-gl/del-gl-winit-glutin"}
 # candle-core = { git="https://github.com/huggingface/candle.git" }
@@ -49,7 +49,7 @@ del-geo-core = { path="../del-geo/del-geo-core"}
 # del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 candle-core = "=0.9.0"
 del-cudarc = "=0.1.2"
-# del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 # candle-core = { git="https://github.com/huggingface/candle.git" }
 del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
 
