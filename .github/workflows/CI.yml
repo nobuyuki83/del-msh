@@ -18,7 +18,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-        components: rustfmt
+        components: rustfmt, clippy
         override: true
 
     - name: Cargo commands
