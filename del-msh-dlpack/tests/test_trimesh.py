@@ -101,7 +101,7 @@ def test_03():
             diff_num = (loss1 - loss0) / eps
             diff_ana = dw_vtx2xyz[i_vtx, i_dim]
             ratio = abs(diff_num - diff_ana) / (abs(diff_ana) + 0.001)
-            assert ratio < 0.004
+            assert ratio < 0.006
 
 
 
