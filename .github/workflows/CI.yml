@@ -16,6 +16,10 @@ jobs:
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        components: rustfmt
+        override: true
 
     - name: Cargo commands
       run: |          
