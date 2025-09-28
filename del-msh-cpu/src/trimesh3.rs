@@ -1,5 +1,6 @@
 //! methods for 3D triangle mesh
 
+// use del_geo_core::vec3;
 use num_traits::AsPrimitive;
 
 pub fn vtx2normal<Real>(tri2vtx: &[usize], vtx2xyz: &[Real]) -> Vec<Real>
@@ -144,6 +145,36 @@ where
         tri2normal[i_tri * 3] = n[0];
         tri2normal[i_tri * 3 + 1] = n[1];
         tri2normal[i_tri * 3 + 2] = n[2];
+    }
+}
+
+pub fn bwd_tri2normal<INDEX>(
+    tri2vtx: &[INDEX],
+    vtx2xyz: &[f32],
+    dw_tri2nrm: &[f32],
+    dw_vtx2xyz: &mut [f32],
+) where
+    INDEX: num_traits::AsPrimitive<usize>,
+{
+    assert_eq!(vtx2xyz.len(), dw_vtx2xyz.len());
+    assert_eq!(tri2vtx.len(), dw_tri2nrm.len());
+    dw_vtx2xyz.fill(0.0);
+    for (i_tri, node2vtx) in tri2vtx.chunks(3).enumerate() {
+        let (i0, i1, i2) = (node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_());
+        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, i0);
+        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, i1);
+        let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, i2);
+        let dw = del_geo_core::tri3::dw_normal(p0, p1, p2);
+        let dw_nrm = crate::vtx2xyz::to_vec3(dw_tri2nrm, i_tri);
+        use del_geo_core::vec3;
+        let q0 = vec3::mult_mat3_col_major(dw_nrm, &dw[0]);
+        let q1 = vec3::mult_mat3_col_major(dw_nrm, &dw[1]);
+        let q2 = vec3::mult_mat3_col_major(dw_nrm, &dw[2]);
+        for i in 0..3 {
+            dw_vtx2xyz[i0 * 3 + i] += q0[i];
+            dw_vtx2xyz[i1 * 3 + i] += q1[i];
+            dw_vtx2xyz[i2 * 3 + i] += q2[i];
+        }
     }
 }
 

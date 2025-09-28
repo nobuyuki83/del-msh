@@ -38,7 +38,7 @@ def test_02():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.pt
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
-    print(vtx2xyz.shape)
+    # print(vtx2xyz.shape)
     tri2vtx = torch.from_numpy(tri2vtx)
     vtx2xyz = torch.from_numpy(vtx2xyz)
     vtx2vtxA = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.to(torch.uint64), vtx2xyz.shape[0], False)
@@ -54,7 +54,7 @@ def test_02():
     lambda0 = 1.0
     del_msh_dlpack.Vtx2Vtx.pt.laplacian_smoothing(
         *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, vtx2lhstmp)
-    print(vtx2rhs)
+    #print(vtx2rhs)
     #
     residual = numpy.linalg.norm(\
     vtx2lhs + lambda0 * del_msh_dlpack.Vtx2Vtx.np.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)\
@@ -74,5 +74,5 @@ def test_02():
         residual = numpy.linalg.norm(\
         vtx2lhs + lambda0 * del_msh_dlpack.Vtx2Vtx.np.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)\
          - vtx2rhs)
-        print(residual)
+        # print(residual)
         assert residual < 3.0e-5
