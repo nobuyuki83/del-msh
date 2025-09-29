@@ -1,6 +1,7 @@
 import numpy
 import torch
 #
+import del_msh_dlpack.Vtx2Vtx.np
 
 def test_01():
     '''

@@ -29,7 +29,7 @@ def laplacian_smoothing(
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
     """
-    is_cuda = vtx2idx.is_cuda
+    device = vtx2idx.device
     num_vtx = vtx2idx.shape[0] - 1
     if vtx2lhstmp is None:
         vtx2lhstmp = torch.zeros_like(vtx2lhs)
@@ -46,15 +46,15 @@ def laplacian_smoothing(
     assert vtx2lhs.dtype == vtx2rhs.dtype == torch.float32
     assert vtx2rhs.is_contiguous()
     assert num_iter >= 0
-    assert idx2vtx.is_cuda == is_cuda, "idx2vtx should be on the same device as vtx2idx"
-    assert vtx2rhs.is_cuda == is_cuda, "vtx2rhs should be on the same device as vtx2idx"
-    assert vtx2lhs.is_cuda == is_cuda, "vtx2lhs should be on the same device as vtx2lhs"
-    assert vtx2lhstmp.is_cuda == is_cuda, "the vtx2lhstmp should be on the same device as vtx2idx"
+    assert idx2vtx.device == device, "idx2vtx should be on the same device as vtx2idx"
+    assert vtx2rhs.device == device, "vtx2rhs should be on the same device as vtx2idx"
+    assert vtx2lhs.device == device, "vtx2lhs should be on the same device as vtx2lhs"
+    assert vtx2lhstmp.device == device, "the vtx2lhstmp should be on the same device as vtx2idx"
     #
     stream_ptr = 0
-    if is_cuda:
-        s = torch.cuda.current_stream()
-        stream_ptr = s.cuda_stream
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
     #
     from .. import Vtx2Vtx
     Vtx2Vtx.laplacian_smoothing(
@@ -73,11 +73,11 @@ def multiply_graph_laplacian(
     idx2vtx: torch.Tensor,
     vtx2rhs: torch.Tensor) -> torch.Tensor:
     assert len(vtx2idx.shape) == 1
-    vtx2idx.dtype == torch.uint32
+    assert vtx2idx.dtype == torch.uint32
     assert len(idx2vtx.shape) == 1
-    idx2vtx.dtype == torch.uint32
+    assert idx2vtx.dtype == torch.uint32
     assert len(vtx2rhs.shape) == 2
-    vtx2rhs.dtype == torch.float32
+    assert vtx2rhs.dtype == torch.float32
     #
     vtx2lhs = torch.zeros_like(vtx2rhs)
     #

@@ -122,14 +122,11 @@ fn vtx2vtx_laplacian_smoothing(
             unsafe {
                 let res_sync = del_cudarc_sys::cuStreamSynchronize(stream);
                 if res_sync != del_cudarc_sys::CUresult::CUDA_SUCCESS {
-                    // エラー名を引いてログに出すのも良い
                     return Err(pyo3::exceptions::PyRuntimeError::new_err(
                         "stream sync failed",
                     ));
                 }
-            }
-            unsafe {
-                del_cudarc_sys::cuStreamDestroy_v2(stream);
+                // del_cudarc_sys::cuStreamDestroy_v2(stream);
             }
         }
         _ => println!("Unknown device type {}", vtx2idx.ctx.device_type),

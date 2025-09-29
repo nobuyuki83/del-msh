@@ -13,7 +13,8 @@ def tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
     TriMesh3.tri2normal(
         tri2vtx.__dlpack__(),
         vtx2xyz.__dlpack__(),
-        tri2nrm.__dlpack__())
+        tri2nrm.__dlpack__()
+    )
     return tri2nrm
 
 def bwd_tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray, dw_tri2nrm: np.ndarray):

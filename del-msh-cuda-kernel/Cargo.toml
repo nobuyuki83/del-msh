@@ -12,10 +12,10 @@ license = "MIT"
 bindgen_cuda = "0.1.5"
 
 # for develop
-# del-geo-cpp-headers = {path="../../del-geo/del-geo-cpp-headers"}
+del-geo-cpp-headers = {path="../../del-geo/del-geo-cpp-headers"}
 
 # for push
-del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
+# del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
 
 # for deploy
 # del-geo-cpp-headers = "=0.1.33"
