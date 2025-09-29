@@ -24,7 +24,7 @@ fn vtx2vtx_laplacian_smoothing(
     vtx2rhs: &Bound<'_, PyAny>,
     num_iter: usize,
     vtx2lhstmp: &Bound<'_, PyAny>,
-    stream_ptr: u64,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;

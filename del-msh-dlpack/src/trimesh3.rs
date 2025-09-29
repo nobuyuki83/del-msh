@@ -15,7 +15,7 @@ pub fn trimesh3_tri2normal(
     tri2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
     tri2nrm: &Bound<'_, PyAny>,
-    stream_ptr: u64,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let tri2vtx = crate::get_managed_tensor_from_pyany(tri2vtx)?;
     let vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
@@ -97,7 +97,7 @@ pub fn trimesh3_bwd_tri2normal(
     vtx2xyz: &Bound<'_, PyAny>,
     dw_tri2nrm: &Bound<'_, PyAny>,
     dw_vtx2xyz: &Bound<'_, PyAny>,
-    stream_ptr: u64,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let tri2vtx = crate::get_managed_tensor_from_pyany(tri2vtx)?;
     let vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
