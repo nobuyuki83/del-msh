@@ -260,5 +260,5 @@ pub fn is_equal<T: ToDataTypeCode>(dt: &DataType) -> bool {
     if dt.lanes != 1 {
         return false;
     }
-    return true;
+    true
 }
