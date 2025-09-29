@@ -18,8 +18,8 @@ pub fn solve(
     let cfg = cudarc::driver::LaunchConfig::for_num_elems(num_vtx);
     let func = del_cudarc_safe::get_or_load_func(
         &stream.context(),
-        "laplacian_smoothing_jacobi",
-        del_msh_cuda_kernel::LAPLACIAN_SMOOTHING_JACOBI,
+        "laplacian_smoothing",
+        del_msh_cuda_kernel::VTX2VTX,
     )?;
     let mut builder = stream.launch_builder(&func);
     builder.arg(&num_vtx);
