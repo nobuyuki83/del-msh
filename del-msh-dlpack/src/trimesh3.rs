@@ -25,22 +25,20 @@ pub fn trimesh3_tri2normal(
     let vtx2xyz_sh = unsafe { from_raw_parts(vtx2xyz.shape, vtx2xyz.ndim as usize) };
     let tri2nrm_sh = unsafe { from_raw_parts(tri2nrm.shape, tri2nrm.ndim as usize) };
     let num_tri = tri2vtx_sh[0];
-    let _num_vtx = vtx2xyz_sh[0];
-    assert_eq!(tri2vtx_sh.len(), 2);
-    assert_eq!(vtx2xyz_sh.len(), 2);
-    assert_eq!(tri2nrm_sh.len(), 2);
-    assert_eq!(tri2vtx_sh[1], 3);
-    assert_eq!(vtx2xyz_sh[1], 3);
-    assert_eq!(tri2nrm_sh[1], 3);
-    assert_eq!(tri2vtx_sh, tri2nrm_sh);
+    let num_vtx = vtx2xyz_sh[0];
+    //
+    assert_eq!(tri2vtx.byte_offset, 0);
+    assert_eq!(vtx2xyz.byte_offset, 0);
+    assert_eq!(tri2nrm.byte_offset, 0);
+    assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
+    assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
+    assert_eq!(tri2nrm_sh, vec!(num_tri, 3));
     assert_eq!(vtx2xyz.ctx.device_type, device_type);
     assert_eq!(tri2nrm.ctx.device_type, device_type);
-    assert_eq!(tri2vtx.dtype.code, dlpack::data_type_codes::UINT);
-    assert_eq!(tri2vtx.dtype.bits, 32);
-    assert_eq!(vtx2xyz.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(tri2vtx.dtype.bits, 32);
-    assert_eq!(tri2nrm.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(tri2nrm.dtype.bits, 32);
+    assert!(crate::is_equal::<u32>(&tri2vtx.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2xyz.dtype));
+    assert!(crate::is_equal::<f32>(&tri2nrm.dtype));
+    //
     match device_type {
         dlpack::device_type_codes::CPU => {
             let (tri2vtx, tri2vtx_sh) =
@@ -64,9 +62,6 @@ pub fn trimesh3_tri2normal(
             }
             assert_eq!(std::mem::size_of::<usize>(), 8);
             let stream = stream_ptr as usize as *mut std::ffi::c_void as del_cudarc_sys::CUstream;
-            assert_eq!(tri2vtx.byte_offset, 0);
-            assert_eq!(vtx2xyz.byte_offset, 0);
-            assert_eq!(tri2nrm.byte_offset, 0);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_i32(num_tri as i32);
             builder.arg_data(&tri2vtx.data);
@@ -111,14 +106,14 @@ pub fn trimesh3_bwd_tri2normal(
     let num_tri = tri2vtx_sh[0];
     let num_vtx = vtx2xyz_sh[0];
     // shape check
-    assert_eq!(tri2vtx_sh.len(), 2);
-    assert_eq!(vtx2xyz_sh.len(), 2);
-    assert_eq!(dw_tri2nrm_sh.len(), 2);
-    assert_eq!(dw_vtx2xyz_sh.len(), 2);
-    assert_eq!(tri2vtx_sh[1], 3);
-    assert_eq!(vtx2xyz_sh[1], 3);
-    assert_eq!(dw_tri2nrm_sh[1], 3);
-    assert_eq!(dw_vtx2xyz_sh[1], 3);
+    assert_eq!(tri2vtx.byte_offset, 0);
+    assert_eq!(vtx2xyz.byte_offset, 0);
+    assert_eq!(dw_tri2nrm.byte_offset, 0);
+    assert_eq!(dw_vtx2xyz.byte_offset, 0);
+    assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
+    assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
+    assert_eq!(dw_tri2nrm_sh, vec!(num_tri, 3));
+    assert_eq!(dw_vtx2xyz_sh, vec!(num_vtx, 3));
     assert_eq!(tri2vtx_sh, dw_tri2nrm_sh);
     assert_eq!(vtx2xyz_sh, dw_vtx2xyz_sh);
     // device check
@@ -126,14 +121,10 @@ pub fn trimesh3_bwd_tri2normal(
     assert_eq!(dw_tri2nrm.ctx.device_type, device_type);
     assert_eq!(dw_vtx2xyz.ctx.device_type, device_type);
     // type check
-    assert_eq!(tri2vtx.dtype.code, dlpack::data_type_codes::UINT);
-    assert_eq!(tri2vtx.dtype.bits, 32);
-    assert_eq!(vtx2xyz.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(tri2vtx.dtype.bits, 32);
-    assert_eq!(dw_tri2nrm.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(dw_tri2nrm.dtype.bits, 32);
-    assert_eq!(dw_vtx2xyz.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(dw_vtx2xyz.dtype.bits, 32);
+    assert!(crate::is_equal::<u32>(&tri2vtx.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2xyz.dtype));
+    assert!(crate::is_equal::<f32>(&dw_tri2nrm.dtype));
+    assert!(crate::is_equal::<f32>(&dw_vtx2xyz.dtype));
     match device_type {
         dlpack::device_type_codes::CPU => {
             let (tri2vtx, tri2vtx_sh) =
@@ -160,10 +151,6 @@ pub fn trimesh3_bwd_tri2normal(
             }
             assert_eq!(std::mem::size_of::<usize>(), 8);
             let stream = stream_ptr as usize as *mut std::ffi::c_void as del_cudarc_sys::CUstream;
-            assert_eq!(tri2vtx.byte_offset, 0);
-            assert_eq!(vtx2xyz.byte_offset, 0);
-            assert_eq!(dw_tri2nrm.byte_offset, 0);
-            assert_eq!(dw_vtx2xyz.byte_offset, 0);
             unsafe {
                 let dptr: del_cudarc_sys::CUdeviceptr =
                     dw_vtx2xyz.data as del_cudarc_sys::CUdeviceptr;

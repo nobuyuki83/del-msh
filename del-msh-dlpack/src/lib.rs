@@ -1,4 +1,4 @@
-use dlpack::ManagedTensor;
+use dlpack::{DataType, ManagedTensor};
 use pyo3::prelude::{PyAnyMethods, PyCapsuleMethods};
 use pyo3::types::PyCapsule;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
@@ -167,7 +167,7 @@ unsafe extern "C" fn capsule_destructor(capsule: *mut pyo3::ffi::PyObject) {
     }
 }
 
-trait ToDataTypeCode {
+pub trait ToDataTypeCode {
     fn category() -> dlpack::DataTypeCode;
 }
 
@@ -248,4 +248,17 @@ where
         );
         pyo3::PyObject::from_owned_ptr(py, cap_ptr)
     }
+}
+
+pub fn is_equal<T: ToDataTypeCode>(dt: &DataType) -> bool {
+    if T::category() != dt.code {
+        return false;
+    }
+    if dt.bits != std::mem::size_of::<T>() as u8 * 8 {
+        return false;
+    }
+    if dt.lanes != 1 {
+        return false;
+    }
+    return true;
 }

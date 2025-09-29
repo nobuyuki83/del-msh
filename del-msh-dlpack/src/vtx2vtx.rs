@@ -36,23 +36,23 @@ fn vtx2vtx_laplacian_smoothing(
     let vtx2lhs_shape = unsafe { std::slice::from_raw_parts(vtx2lhs.shape, vtx2lhs.ndim as usize) };
     let num_vtx = vtx2idx_shape[0] - 1;
     let num_dim = vtx2lhs_shape[1];
-    assert_eq!(vtx2idx.dtype.code, dlpack::data_type_codes::UINT);
-    assert_eq!(vtx2idx.dtype.bits, 32, "index type must be u32");
-    assert_eq!(idx2vtx.dtype.code, dlpack::data_type_codes::UINT);
-    assert_eq!(idx2vtx.dtype.bits, 32, "index type must be u32");
-    assert_eq!(vtx2lhs.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(vtx2lhs.dtype.bits, 32);
-    assert_eq!(vtx2rhs.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(vtx2rhs.dtype.bits, 32);
-    assert_eq!(vtx2lhstmp.dtype.code, dlpack::data_type_codes::FLOAT);
-    assert_eq!(vtx2lhstmp.dtype.bits, 32);
+    assert_eq!(vtx2idx.byte_offset, 0);
+    assert_eq!(idx2vtx.byte_offset, 0);
+    assert_eq!(vtx2lhstmp.byte_offset, 0);
+    assert_eq!(vtx2lhs.byte_offset, 0);
+    assert_eq!(vtx2rhs.byte_offset, 0);
+    assert!(crate::is_equal::<u32>(&vtx2idx.dtype), "index must be u32");
+    assert!(crate::is_equal::<u32>(&idx2vtx.dtype), "index must be u32");
+    assert!(crate::is_equal::<f32>(&vtx2lhs.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2rhs.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2lhstmp.dtype));
     //
     let device_type = vtx2idx.ctx.device_type;
     assert_eq!(idx2vtx.ctx.device_type, device_type);
     assert_eq!(vtx2rhs.ctx.device_type, device_type);
     assert_eq!(vtx2lhs.ctx.device_type, device_type);
     assert_eq!(vtx2lhstmp.ctx.device_type, device_type);
-
+    //
     match device_type {
         dlpack::device_type_codes::CPU => {
             let (vtx2idx, vtx2idx_sh) =
@@ -86,11 +86,6 @@ fn vtx2vtx_laplacian_smoothing(
             }
             assert_eq!(std::mem::size_of::<usize>(), 8);
             let stream = stream_ptr as usize as *mut std::ffi::c_void as del_cudarc_sys::CUstream;
-            assert_eq!(vtx2idx.byte_offset, 0);
-            assert_eq!(idx2vtx.byte_offset, 0);
-            assert_eq!(vtx2lhstmp.byte_offset, 0);
-            assert_eq!(vtx2lhs.byte_offset, 0);
-            assert_eq!(vtx2rhs.byte_offset, 0);
             for _itr in 0..num_iter {
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
