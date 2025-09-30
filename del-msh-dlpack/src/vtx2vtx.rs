@@ -1,3 +1,5 @@
+use std::ptr::null_mut;
+use dlpack::Tensor;
 use pyo3::{pyfunction, types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -189,14 +191,17 @@ fn vtx2vtx_from_uniform_mesh(
     elem2vtx: &Bound<'_, PyAny>,
     num_vtx: usize,
     is_self: bool,
+    //#[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<(pyo3::PyObject, pyo3::PyObject)> {
     let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
     //
     let elem2vtx_sh = unsafe { std::slice::from_raw_parts(elem2vtx.shape, elem2vtx.ndim as usize) };
+    let num_elem = elem2vtx_sh[0] as usize;
+    let num_node = elem2vtx_sh[1] as usize;
     let device = elem2vtx.ctx.device_type;
     //
     assert_eq!(elem2vtx.byte_offset, 0);
-    assert_eq!(elem2vtx_sh.len(), 2);
+    assert_eq!(elem2vtx_sh, vec!(num_elem as i64, num_node as i64));
     assert!(crate::is_equal::<i32>(&elem2vtx.dtype));
     assert!(unsafe { crate::is_tensor_c_contiguous(elem2vtx) });
     //
@@ -212,7 +217,7 @@ fn vtx2vtx_from_uniform_mesh(
             let vtx2idx_cap = crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
             let idx2vtx_cap = crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
             Ok((vtx2idx_cap, idx2vtx_cap))
-        }
+        },
         _ => {
             todo!()
         }

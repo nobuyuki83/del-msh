@@ -23,4 +23,5 @@ del-msh-cuda-kernel = { path="../del-msh-cuda-kernel", optional = true }
 
 # for push
 del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
-#del-cudarc-kernel = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+del-cudarc-kernel = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+#del-cudarc-safe = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
