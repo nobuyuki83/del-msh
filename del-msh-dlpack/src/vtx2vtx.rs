@@ -217,5 +217,4 @@ fn vtx2vtx_from_uniform_mesh(
             todo!()
         }
     }
-    todo!();
 }
