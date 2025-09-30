@@ -25,8 +25,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     let _edge2tri = crate::get_managed_tensor_from_pyany(edge2tri)?;
     match tri2vtx.ctx.device_type {
         dlpack::device_type_codes::CPU => {
-            let (_tri2vtx, _tri2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<usize>(tri2vtx).unwrap() };
+            let _tri2vtx = unsafe { crate::slice_from_tensor::<usize>(tri2vtx).unwrap() };
             //del_msh_cpu::edge2vtx::contour_for_triangle_mesh(tri2vtx, vtx2xyz, transform_world2ndc, edge2vtx, edge2tri);
             Ok(())
         }

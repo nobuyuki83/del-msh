@@ -7,7 +7,7 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     device = tri2vtx.device
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == torch.uint32
+    assert tri2vtx.dtype == torch.int32
     assert tri2vtx.is_contiguous()
     assert tri2vtx.requires_grad == False
     #
@@ -40,7 +40,7 @@ def bwd_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: tor
     device = tri2vtx.device
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == torch.uint32
+    assert tri2vtx.dtype == torch.int32
     assert tri2vtx.is_contiguous()
     assert tri2vtx.requires_grad == False
     #

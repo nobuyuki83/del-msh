@@ -33,22 +33,22 @@ pub fn trimesh3_tri2normal(
     assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
     assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
     assert_eq!(tri2nrm_sh, vec!(num_tri, 3));
-    assert_eq!(vtx2xyz.ctx.device_type, device_type);
-    assert_eq!(tri2nrm.ctx.device_type, device_type);
-    assert!(crate::is_equal::<u32>(&tri2vtx.dtype));
+    assert!(crate::is_equal::<i32>(&tri2vtx.dtype));
     assert!(crate::is_equal::<f32>(&vtx2xyz.dtype));
     assert!(crate::is_equal::<f32>(&tri2nrm.dtype));
+    assert!(unsafe { crate::is_tensor_c_contiguous(tri2vtx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2xyz) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(tri2nrm) });
+    assert_eq!(vtx2xyz.ctx.device_type, device_type);
+    assert_eq!(tri2nrm.ctx.device_type, device_type);
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let (tri2vtx, tri2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(tri2vtx).unwrap() };
+            let tri2vtx = unsafe { crate::slice_from_tensor::<i32>(tri2vtx).unwrap() };
             assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
-            let (vtx2xyz, _vtx2xyz_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let (tri2nrm, _tri2nrm_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(tri2nrm).unwrap() };
-            del_msh_cpu::trimesh3::tri2normal::<f32, u32>(tri2vtx, vtx2xyz, tri2nrm);
+            let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
+            let tri2nrm = unsafe { crate::slice_from_tensor_mut::<f32>(tri2nrm).unwrap() };
+            del_msh_cpu::trimesh3::tri2normal::<f32, i32>(tri2vtx, vtx2xyz, tri2nrm);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -105,7 +105,7 @@ pub fn trimesh3_bwd_tri2normal(
     let dw_vtx2xyz_sh = unsafe { from_raw_parts(dw_vtx2xyz.shape, dw_vtx2xyz.ndim as usize) };
     let num_tri = tri2vtx_sh[0];
     let num_vtx = vtx2xyz_sh[0];
-    // shape check
+    //
     assert_eq!(tri2vtx.byte_offset, 0);
     assert_eq!(vtx2xyz.byte_offset, 0);
     assert_eq!(dw_tri2nrm.byte_offset, 0);
@@ -116,28 +116,27 @@ pub fn trimesh3_bwd_tri2normal(
     assert_eq!(dw_vtx2xyz_sh, vec!(num_vtx, 3));
     assert_eq!(tri2vtx_sh, dw_tri2nrm_sh);
     assert_eq!(vtx2xyz_sh, dw_vtx2xyz_sh);
-    // device check
-    assert_eq!(vtx2xyz.ctx.device_type, device_type);
-    assert_eq!(dw_tri2nrm.ctx.device_type, device_type);
-    assert_eq!(dw_vtx2xyz.ctx.device_type, device_type);
-    // type check
-    assert!(crate::is_equal::<u32>(&tri2vtx.dtype));
+    assert!(crate::is_equal::<i32>(&tri2vtx.dtype));
     assert!(crate::is_equal::<f32>(&vtx2xyz.dtype));
     assert!(crate::is_equal::<f32>(&dw_tri2nrm.dtype));
     assert!(crate::is_equal::<f32>(&dw_vtx2xyz.dtype));
+    assert!(unsafe { crate::is_tensor_c_contiguous(tri2vtx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2xyz) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(dw_tri2nrm) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(dw_vtx2xyz) });
+    assert_eq!(vtx2xyz.ctx.device_type, device_type);
+    assert_eq!(dw_tri2nrm.ctx.device_type, device_type);
+    assert_eq!(dw_vtx2xyz.ctx.device_type, device_type);
+    //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let (tri2vtx, tri2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(tri2vtx).unwrap() };
+            let tri2vtx = unsafe { crate::slice_from_tensor::<i32>(tri2vtx).unwrap() };
             assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
-            let (vtx2xyz, _vtx2xyz_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2xyz).unwrap() };
+            let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
             assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
-            let (dw_tri2nrm, _dw_tri2nrm_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(dw_tri2nrm).unwrap() };
-            let (dw_vtx2xyz, _dw_vtx2xyz_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(dw_vtx2xyz).unwrap() };
-            del_msh_cpu::trimesh3::bwd_tri2normal::<u32>(tri2vtx, vtx2xyz, dw_tri2nrm, dw_vtx2xyz);
+            let dw_tri2nrm = unsafe { crate::slice_from_tensor_mut::<f32>(dw_tri2nrm).unwrap() };
+            let dw_vtx2xyz = unsafe { crate::slice_from_tensor_mut::<f32>(dw_vtx2xyz).unwrap() };
+            del_msh_cpu::trimesh3::bwd_tri2normal::<i32>(tri2vtx, vtx2xyz, dw_tri2nrm, dw_vtx2xyz);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

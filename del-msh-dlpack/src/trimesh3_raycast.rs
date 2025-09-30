@@ -22,34 +22,46 @@ pub fn trimesh3_raycast_update_pix2tri(
     let bvhnodes = crate::get_managed_tensor_from_pyany(bvhnodes)?;
     let bvhnode2aabb = crate::get_managed_tensor_from_pyany(bvhnode2aabb)?;
     let transform_ndc2world = crate::get_managed_tensor_from_pyany(transform_ndc2world)?;
-    match pix2tri.ctx.device_type {
+    //
+    let device = pix2tri.ctx.device_type;
+    let pix2tri_sh = unsafe { std::slice::from_raw_parts(pix2tri.shape, pix2tri.ndim as usize) };
+    let tri2vtx_sh = unsafe { std::slice::from_raw_parts(tri2vtx.shape, tri2vtx.ndim as usize) };
+    let vtx2xyz_sh = unsafe { std::slice::from_raw_parts(vtx2xyz.shape, vtx2xyz.ndim as usize) };
+    let bvhnodes_sh = unsafe { std::slice::from_raw_parts(bvhnodes.shape, bvhnodes.ndim as usize) };
+    let bvhnode2aabb_sh =
+        unsafe { std::slice::from_raw_parts(bvhnode2aabb.shape, bvhnode2aabb.ndim as usize) };
+    let transform_ndc2world_sh = unsafe {
+        std::slice::from_raw_parts(transform_ndc2world.shape, transform_ndc2world.ndim as usize)
+    };
+    let num_vtx = vtx2xyz_sh[0];
+    let num_tri = tri2vtx_sh[0];
+    let num_bvhnode = bvhnodes_sh[0];
+    //
+    assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
+    assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
+    assert_eq!(num_tri * 2 - 1, num_bvhnode);
+    assert_eq!(bvhnodes_sh, vec![num_bvhnode, 3]);
+    assert_eq!(bvhnode2aabb_sh, vec![num_bvhnode, 6]);
+    assert_eq!(transform_ndc2world_sh, vec![16]);
+    assert!(crate::is_equal::<usize>(&pix2tri.dtype));
+    assert!(crate::is_equal::<usize>(&tri2vtx.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2xyz.dtype));
+    assert!(crate::is_equal::<usize>(&bvhnodes.dtype));
+    assert!(crate::is_equal::<f32>(&bvhnode2aabb.dtype));
+    assert!(crate::is_equal::<f32>(&transform_ndc2world.dtype));
+    assert_eq!(tri2vtx.ctx.device_type, device);
+    assert_eq!(vtx2xyz.ctx.device_type, device);
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2xyz) });
+    //
+    match device {
         dlpack::device_type_codes::CPU => {
-            assert_eq!(tri2vtx.ctx.device_type, dlpack::device_type_codes::CPU);
-            let (pix2tri, pix2tri_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<usize>(pix2tri).unwrap() };
-            assert_eq!(pix2tri_sh.len(), 2);
-            //
-            let (tri2vtx, tri2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<usize>(tri2vtx).unwrap() };
-            let num_tri = tri2vtx_sh[0];
-            assert!(matches!(tri2vtx_sh[..], [_, 3]));
-            //
-            let (vtx2xyz, vtx2xyz_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2xyz).unwrap() };
-            assert!(matches!(vtx2xyz_sh[..], [_, 3]));
-            //
-            let (bvhnodes, bvhnodes_sh) =
-                unsafe { crate::slice_shape_from_tensor::<usize>(bvhnodes).unwrap() };
-            assert_eq!(bvhnodes_sh, [num_tri * 2 - 1, 3]);
-            let num_bvhnode = bvhnodes_sh[0];
-            //
-            let (bvhnode2aabb, bvhnode2aabb_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(bvhnode2aabb).unwrap() };
-            assert_eq!(bvhnode2aabb_sh, [num_bvhnode, 6]);
-            //
-            let (transform_ndc2world, transform_ndc2world_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(transform_ndc2world).unwrap() };
-            assert_eq!(transform_ndc2world_sh, [16]);
+            let pix2tri = unsafe { crate::slice_from_tensor_mut::<usize>(pix2tri).unwrap() };
+            let tri2vtx = unsafe { crate::slice_from_tensor::<usize>(tri2vtx).unwrap() };
+            let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
+            let bvhnodes = unsafe { crate::slice_from_tensor::<usize>(bvhnodes).unwrap() };
+            let bvhnode2aabb = unsafe { crate::slice_from_tensor::<f32>(bvhnode2aabb).unwrap() };
+            let transform_ndc2world =
+                unsafe { crate::slice_from_tensor::<f32>(transform_ndc2world).unwrap() };
             let transform_ndc2world = arrayref::array_ref![transform_ndc2world, 0, 16];
             let img_shape = (pix2tri_sh[1] as usize, pix2tri_sh[0] as usize);
             del_msh_cpu::trimesh3_raycast::update_pix2tri(

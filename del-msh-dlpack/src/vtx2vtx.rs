@@ -36,18 +36,23 @@ fn vtx2vtx_laplacian_smoothing(
     let vtx2lhs_shape = unsafe { std::slice::from_raw_parts(vtx2lhs.shape, vtx2lhs.ndim as usize) };
     let num_vtx = vtx2idx_shape[0] - 1;
     let num_dim = vtx2lhs_shape[1];
+    let device_type = vtx2idx.ctx.device_type;
+    //
     assert_eq!(vtx2idx.byte_offset, 0);
     assert_eq!(idx2vtx.byte_offset, 0);
     assert_eq!(vtx2lhstmp.byte_offset, 0);
     assert_eq!(vtx2lhs.byte_offset, 0);
     assert_eq!(vtx2rhs.byte_offset, 0);
-    assert!(crate::is_equal::<u32>(&vtx2idx.dtype), "index must be u32");
-    assert!(crate::is_equal::<u32>(&idx2vtx.dtype), "index must be u32");
+    assert!(crate::is_equal::<i32>(&vtx2idx.dtype), "index must be i32");
+    assert!(crate::is_equal::<i32>(&idx2vtx.dtype), "index must be i32");
     assert!(crate::is_equal::<f32>(&vtx2lhs.dtype));
     assert!(crate::is_equal::<f32>(&vtx2rhs.dtype));
     assert!(crate::is_equal::<f32>(&vtx2lhstmp.dtype));
-    //
-    let device_type = vtx2idx.ctx.device_type;
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2idx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(idx2vtx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2rhs) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2lhs) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2lhstmp) });
     assert_eq!(idx2vtx.ctx.device_type, device_type);
     assert_eq!(vtx2rhs.ctx.device_type, device_type);
     assert_eq!(vtx2lhs.ctx.device_type, device_type);
@@ -55,21 +60,11 @@ fn vtx2vtx_laplacian_smoothing(
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let (vtx2idx, vtx2idx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
-            assert_eq!(vtx2idx_sh, vec!(num_vtx + 1));
-            let (idx2vtx, idx2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
-            assert_eq!(idx2vtx_sh.len(), 1);
-            let (vtx2rhs, vtx2rhs_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
-            assert_eq!(vtx2rhs_sh, vec!(num_vtx, num_dim));
-            let (vtx2lhs, vtx2lhs_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
-            assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
-            let (vtx2lhstmp, vtx2lhstmp_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
-            assert_eq!(vtx2lhstmp_sh, vec!(num_vtx, num_dim));
+            let vtx2idx = unsafe { crate::slice_from_tensor::<u32>(vtx2idx).unwrap() };
+            let idx2vtx = unsafe { crate::slice_from_tensor::<u32>(idx2vtx).unwrap() };
+            let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
+            let vtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
+            let vtx2lhstmp = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
             del_msh_cpu::vtx2vtx::laplacian_smoothing::<3, u32>(
                 vtx2idx, idx2vtx, lambda, vtx2lhs, vtx2rhs, num_iter, vtx2lhstmp,
             );
@@ -139,31 +134,45 @@ fn vtx2vtx_multiply_graph_laplacian(
     vtx2idx: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
     vtx2rhs: &Bound<'_, PyAny>,
-    vtx2lhs: &Bound<'_, PyAny>,
+    vtx2lhs: &Bound<'_, PyAny>, 
 ) -> PyResult<()> {
     let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
     let vtx2rhs = crate::get_managed_tensor_from_pyany(vtx2rhs)?;
     let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
+    //
     let vtx2idx_sh = unsafe { std::slice::from_raw_parts(vtx2idx.shape, vtx2idx.ndim as usize) };
+    let idx2vtx_sh = unsafe { std::slice::from_raw_parts(vtx2idx.shape, vtx2idx.ndim as usize) };
     let vtx2lhs_sh = unsafe { std::slice::from_raw_parts(vtx2lhs.shape, vtx2lhs.ndim as usize) };
+    let vtx2rhs_sh = unsafe { std::slice::from_raw_parts(vtx2rhs.shape, vtx2lhs.ndim as usize) };
     let num_vtx = vtx2idx_sh[0] - 1;
     let num_dim = vtx2lhs_sh[1];
+    //
+    assert_eq!(vtx2idx.byte_offset, 0);
+    assert_eq!(idx2vtx.byte_offset, 0);
+    assert_eq!(vtx2rhs.byte_offset, 0);
+    assert_eq!(vtx2lhs.byte_offset, 0);
+    assert_eq!(num_dim, 3);
+    assert_eq!(vtx2idx_sh.len(), 1);
+    assert_eq!(idx2vtx_sh.len(), 1);
+    assert_eq!(vtx2rhs_sh, vec!(num_vtx, 3));
+    assert_eq!(vtx2lhs_sh, vtx2rhs_sh);
+    assert!(crate::is_equal::<i32>(&vtx2idx.dtype));
+    assert!(crate::is_equal::<i32>(&idx2vtx.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2rhs.dtype));
+    assert!(crate::is_equal::<f32>(&vtx2lhs.dtype));
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2idx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(idx2vtx) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2rhs) });
+    assert!(unsafe { crate::is_tensor_c_contiguous(vtx2lhs) });
+    //
     match vtx2idx.ctx.device_type {
         dlpack::device_type_codes::CPU => {
-            let (vtx2idx, vtx2idx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(vtx2idx).unwrap() };
-            assert_eq!(vtx2idx_sh, vec!(num_vtx + 1));
-            let (idx2vtx, idx2vtx_sh) =
-                unsafe { crate::slice_shape_from_tensor::<u32>(idx2vtx).unwrap() };
-            assert_eq!(idx2vtx_sh.len(), 1);
-            let (vtx2rhs, vtx2rhs_sh) =
-                unsafe { crate::slice_shape_from_tensor::<f32>(vtx2rhs).unwrap() };
-            assert_eq!(vtx2rhs_sh, vec!(num_vtx, num_dim));
-            let (vtx2lhs, vtx2lhs_sh) =
-                unsafe { crate::slice_shape_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
-            assert_eq!(vtx2lhs_sh, vec!(num_vtx, num_dim));
-            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(
+            let vtx2idx = unsafe { crate::slice_from_tensor::<i32>(vtx2idx).unwrap() };
+            let idx2vtx = unsafe { crate::slice_from_tensor::<i32>(idx2vtx).unwrap() };
+            let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
+            let vtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
+            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, i32>(
                 vtx2idx, idx2vtx, vtx2rhs, vtx2lhs,
             );
             Ok(())
@@ -182,39 +191,27 @@ fn vtx2vtx_from_uniform_mesh(
     is_self: bool,
 ) -> PyResult<(pyo3::PyObject, pyo3::PyObject)> {
     let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
-    match elem2vtx.ctx.device_type {
+    //
+    let elem2vtx_sh = unsafe { std::slice::from_raw_parts(elem2vtx.shape, elem2vtx.ndim as usize) };
+    let device = elem2vtx.ctx.device_type;
+    //
+    assert_eq!(elem2vtx.byte_offset, 0);
+    assert_eq!(elem2vtx_sh.len(), 2);
+    assert!(crate::is_equal::<i32>(&elem2vtx.dtype));
+    assert!(unsafe { crate::is_tensor_c_contiguous(elem2vtx) });
+    //
+    match device {
         dlpack::device_type_codes::CPU => {
-            if elem2vtx.dtype.code == dlpack::data_type_codes::UINT && elem2vtx.dtype.bits == 64 {
-                let (elem2vtx, elem2vtx_sh) =
-                    unsafe { crate::slice_shape_from_tensor::<u64>(elem2vtx).unwrap() };
-                let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
-                    elem2vtx,
-                    elem2vtx_sh[1] as usize,
-                    num_vtx,
-                    is_self,
-                );
-                let vtx2idx_cap =
-                    crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
-                let idx2vtx_cap =
-                    crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
-                return Ok((vtx2idx_cap, idx2vtx_cap));
-            } else if elem2vtx.dtype.code == dlpack::data_type_codes::UINT
-                && elem2vtx.dtype.bits == 32
-            {
-                let (elem2vtx, elem2vtx_sh) =
-                    unsafe { crate::slice_shape_from_tensor::<u32>(elem2vtx).unwrap() };
-                let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
-                    elem2vtx,
-                    elem2vtx_sh[1] as usize,
-                    num_vtx,
-                    is_self,
-                );
-                let vtx2idx_cap =
-                    crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
-                let idx2vtx_cap =
-                    crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
-                return Ok((vtx2idx_cap, idx2vtx_cap));
-            }
+            let elem2vtx = unsafe { crate::slice_from_tensor::<i32>(elem2vtx).unwrap() };
+            let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
+                elem2vtx,
+                elem2vtx_sh[1] as usize,
+                num_vtx,
+                is_self,
+            );
+            let vtx2idx_cap = crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
+            let idx2vtx_cap = crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
+            return Ok((vtx2idx_cap, idx2vtx_cap));
         }
         _ => {
             todo!()

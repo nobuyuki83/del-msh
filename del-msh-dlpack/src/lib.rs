@@ -1,4 +1,4 @@
-use dlpack::{DataType, ManagedTensor};
+use dlpack::{DataType, ManagedTensor, Tensor};
 use pyo3::prelude::{PyAnyMethods, PyCapsuleMethods};
 use pyo3::types::PyCapsule;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
@@ -70,9 +70,18 @@ pub unsafe fn is_c_contiguous(shape: *const i64, strides: *const i64, ndim: i32)
 
 ///
 /// # Safety
-pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a [T], Vec<i64>)> {
+pub unsafe fn is_tensor_c_contiguous(t: &Tensor) -> bool {
+    is_c_contiguous(t.shape, t.strides, t.ndim)
+}
+
+///
+/// # Safety
+pub unsafe fn slice_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<&'a [T]> {
     assert_eq!(mem::size_of::<T>() * 8, t.dtype.bits as usize);
-    assert!(is_c_contiguous(t.shape, t.strides, t.ndim));
+    assert!(
+        is_c_contiguous(t.shape, t.strides, t.ndim),
+        "not contiguous"
+    );
     if t.shape.is_null() || t.ndim < 0 {
         return None;
     }
@@ -92,14 +101,12 @@ pub unsafe fn slice_shape_from_tensor<'a, T>(t: &dlpack::Tensor) -> Option<(&'a 
         );
         slice::from_raw_parts(t.data as *const T, len)
     };
-    Some((s, sh.to_vec()))
+    Some(s)
 }
 
 ///
 /// # Safety
-pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
-    t: &dlpack::Tensor,
-) -> Option<(&'a mut [T], Vec<i64>)> {
+pub unsafe fn slice_from_tensor_mut<'a, T>(t: &dlpack::Tensor) -> Option<&'a mut [T]> {
     assert!(is_c_contiguous(t.shape, t.strides, t.ndim));
     if t.shape.is_null() || t.ndim < 0 {
         return None;
@@ -120,7 +127,7 @@ pub unsafe fn slice_shape_from_tensor_mut<'a, T>(
         );
         slice::from_raw_parts_mut(t.data as *mut T, len)
     };
-    Some((s, sh.to_vec()))
+    Some(s)
 }
 
 /// Rust側の所有物をまとめておき、deleterで回収する用
@@ -174,6 +181,18 @@ pub trait ToDataTypeCode {
 impl ToDataTypeCode for u32 {
     fn category() -> dlpack::DataTypeCode {
         dlpack::data_type_codes::UINT
+    }
+}
+
+impl ToDataTypeCode for usize {
+    fn category() -> dlpack::DataTypeCode {
+        dlpack::data_type_codes::UINT
+    }
+}
+
+impl ToDataTypeCode for i32 {
+    fn category() -> dlpack::DataTypeCode {
+        dlpack::data_type_codes::INT
     }
 }
 

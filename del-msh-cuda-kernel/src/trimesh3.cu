@@ -10,7 +10,7 @@ extern "C" {
 __global__
 void tri2normal(
     const uint32_t num_tri,
-    const uint32_t *tri2vtx,
+    const int32_t *tri2vtx,
     const float *vtx2xyz,
     float *tri2nrm)
 {
@@ -30,7 +30,7 @@ void tri2normal(
 __global__
 void bwd_tri2normal(
     const uint32_t num_tri,
-    const uint32_t *tri2vtx,
+    const int32_t *tri2vtx,
     const float *vtx2xyz,
     const float *dw_tri2nrm,
     float *dw_vtx2xyz)
@@ -38,9 +38,9 @@ void bwd_tri2normal(
     int i_tri = blockDim.x * blockIdx.x + threadIdx.x;
     if (i_tri >= num_tri) { return; }
     //
-    const uint32_t i0_vtx = tri2vtx[i_tri*3+0];
-    const uint32_t i1_vtx = tri2vtx[i_tri*3+1];
-    const uint32_t i2_vtx = tri2vtx[i_tri*3+2];
+    const int32_t i0_vtx = tri2vtx[i_tri*3+0];
+    const int32_t i1_vtx = tri2vtx[i_tri*3+1];
+    const int32_t i2_vtx = tri2vtx[i_tri*3+2];
     const float* p0 = vtx2xyz + i0_vtx*3;
     const float* p1 = vtx2xyz + i1_vtx*3;
     const float* p2 = vtx2xyz + i2_vtx*3;

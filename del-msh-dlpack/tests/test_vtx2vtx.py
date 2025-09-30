@@ -10,13 +10,9 @@ def test_01():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.np
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
-    vtx2vtxA = del_msh_dlpack.Vtx2Vtx.np.from_uniform_mesh(tri2vtx.astype(numpy.uint64), vtx2xyz.shape[0], False)
-    assert vtx2vtxA[0].dtype == vtx2vtxA[1].dtype == numpy.uint64
-    vtx2vtxB = del_msh_dlpack.Vtx2Vtx.np.from_uniform_mesh(tri2vtx.astype(numpy.uint32), vtx2xyz.shape[0], False)
-    assert vtx2vtxB[0].dtype == vtx2vtxB[1].dtype == numpy.uint32
-    assert numpy.array_equal(vtx2vtxA[0], vtx2vtxB[0].astype(numpy.uint64) )
-    assert numpy.array_equal(vtx2vtxA[1], vtx2vtxB[1].astype(numpy.uint64) )
-    vtx2vtx = vtx2vtxB
+    tri2vtx = tri2vtx.astype(numpy.int32)
+    vtx2vtx = del_msh_dlpack.Vtx2Vtx.np.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
+    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == numpy.int32
     #
     vtx2rhs = numpy.random.rand(vtx2xyz.shape[0], 3).astype(numpy.float32)
     vtx2lhs = numpy.zeros_like(vtx2rhs)
@@ -39,14 +35,10 @@ def test_02():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.pt
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
-    # print(vtx2xyz.shape)
-    tri2vtx = torch.from_numpy(tri2vtx)
+    tri2vtx = torch.from_numpy(tri2vtx).to(torch.int32)
     vtx2xyz = torch.from_numpy(vtx2xyz)
-    vtx2vtxA = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.to(torch.uint64), vtx2xyz.shape[0], False)
-    assert vtx2vtxA[0].dtype == vtx2vtxA[1].dtype == torch.uint64
-    vtx2vtxB = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.to(torch.uint32), vtx2xyz.shape[0], False)
-    assert vtx2vtxB[0].dtype == vtx2vtxB[1].dtype == torch.uint32
-    vtx2vtx = vtx2vtxB
+    vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
+    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == torch.int32
     #
     vtx2rhs = torch.rand(size=(vtx2xyz.shape[0], 3)).to(torch.float32)
     vtx2lhs = torch.zeros_like(vtx2rhs)
@@ -58,7 +50,7 @@ def test_02():
     #print(vtx2rhs)
     #
     residual = numpy.linalg.norm(\
-    vtx2lhs + lambda0 * del_msh_dlpack.Vtx2Vtx.np.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)\
+    vtx2lhs + lambda0 * del_msh_dlpack.Vtx2Vtx.pt.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)\
      - vtx2rhs)
     assert residual < 3.0e-5
     #

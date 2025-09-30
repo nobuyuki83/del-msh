@@ -6,7 +6,7 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     """make vertex surrounding vertex data from uniform mesh
     """
     assert len(elem2vtx.shape) == 2
-    assert elem2vtx.dtype == torch.uint32 or elem2vtx.dtype == torch.uint64
+    assert elem2vtx.dtype == torch.int32
     from .. import Vtx2Vtx
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
         elem2vtx.__dlpack__(),
@@ -37,8 +37,8 @@ def laplacian_smoothing(
     assert len(vtx2idx.shape) == 1
     assert len(idx2vtx.shape) == 1
     assert vtx2lhs.shape == vtx2rhs.shape
-    assert vtx2idx.dtype == torch.uint32
-    assert idx2vtx.dtype == torch.uint32
+    assert vtx2idx.dtype == torch.int32
+    assert idx2vtx.dtype == torch.int32
     assert len(vtx2lhs.shape) == 2
     assert vtx2lhs.is_contiguous()
     assert vtx2lhs.shape[0] == num_vtx
@@ -73,9 +73,9 @@ def multiply_graph_laplacian(
     idx2vtx: torch.Tensor,
     vtx2rhs: torch.Tensor) -> torch.Tensor:
     assert len(vtx2idx.shape) == 1
-    assert vtx2idx.dtype == torch.uint32
+    assert vtx2idx.dtype == torch.int32
     assert len(idx2vtx.shape) == 1
-    assert idx2vtx.dtype == torch.uint32
+    assert idx2vtx.dtype == torch.int32
     assert len(vtx2rhs.shape) == 2
     assert vtx2rhs.dtype == torch.float32
     #
