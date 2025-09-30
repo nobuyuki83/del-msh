@@ -134,7 +134,7 @@ fn vtx2vtx_multiply_graph_laplacian(
     vtx2idx: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
     vtx2rhs: &Bound<'_, PyAny>,
-    vtx2lhs: &Bound<'_, PyAny>, 
+    vtx2lhs: &Bound<'_, PyAny>,
 ) -> PyResult<()> {
     let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
