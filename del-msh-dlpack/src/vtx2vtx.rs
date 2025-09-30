@@ -211,7 +211,7 @@ fn vtx2vtx_from_uniform_mesh(
             );
             let vtx2idx_cap = crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
             let idx2vtx_cap = crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
-            return Ok((vtx2idx_cap, idx2vtx_cap));
+            Ok((vtx2idx_cap, idx2vtx_cap))
         }
         _ => {
             todo!()
