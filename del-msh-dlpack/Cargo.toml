@@ -15,13 +15,15 @@ pyo3.workspace = true
 dlpack = "0.2.0"
 del-msh-cpu.workspace = true
 arrayref.workspace = true
-
-# for develop
-# del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
-# del-cudarc-kernel = { path = "../../del-cudarc/del-cudarc-kernel", optional = true}
 del-msh-cuda-kernel = { path="../del-msh-cuda-kernel", optional = true }
 
+# for develop
+del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
+# del-cudarc-kernel = { path = "../../del-cudarc/del-cudarc-kernel", optional = true}
+
 # for push
-del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+#del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 del-cudarc-kernel = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+
+# not usin
 #del-cudarc-safe = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}

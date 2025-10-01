@@ -76,11 +76,11 @@ fn vtx2vtx_laplacian_smoothing(
                 del_msh_cuda_kernel::VTX2VTX,
                 "laplacian_smoothing",
             );
-            unsafe {
-                del_cudarc_sys::cuInit(0);
-            }
-            assert_eq!(std::mem::size_of::<usize>(), 8);
-            let stream = stream_ptr as usize as *mut std::ffi::c_void as del_cudarc_sys::CUstream;
+            use del_cudarc_sys::cu;
+            use del_cudarc_sys::cuda_check;
+            cuda_check!(cu::cuInit(0));
+            assert_eq!(size_of::<usize>(), 8);
+            let stream = stream_ptr as usize as *mut std::ffi::c_void as cu::CUstream;
             for _itr in 0..num_iter {
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -91,9 +91,7 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&vtx2lhstmp.data);
                     builder.arg_data(&vtx2lhs.data);
                     builder.arg_data(&vtx2rhs.data);
-                    unsafe {
-                        builder.launch_kernel(function, num_vtx as u32);
-                    }
+                    builder.launch_kernel(function, num_vtx as u32);
                 }
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -104,19 +102,8 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&vtx2lhs.data);
                     builder.arg_data(&vtx2lhstmp.data);
                     builder.arg_data(&vtx2rhs.data);
-                    unsafe {
-                        builder.launch_kernel(function, num_vtx as u32);
-                    }
+                    builder.launch_kernel(function, num_vtx as u32);
                 }
-            }
-            unsafe {
-                let res_sync = del_cudarc_sys::cuStreamSynchronize(stream);
-                if res_sync != del_cudarc_sys::CUresult::CUDA_SUCCESS {
-                    return Err(pyo3::exceptions::PyRuntimeError::new_err(
-                        "stream sync failed",
-                    ));
-                }
-                // del_cudarc_sys::cuStreamDestroy_v2(stream);
             }
         }
         _ => println!("Unknown device type {}", vtx2idx.ctx.device_type),
