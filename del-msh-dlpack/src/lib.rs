@@ -281,6 +281,7 @@ where
 
 // -------------------------------
 
+#[allow(dead_code)]
 extern "C" fn dlpack_deleter_wo_free(mt: *mut dlpack::ManagedTensor) {
     unsafe {
         if mt.is_null() {
