@@ -16,6 +16,7 @@ void laplacian_smoothing(
 {
     int i_vtx = blockDim.x * blockIdx.x + threadIdx.x;
     if (i_vtx >= num_vtx) { return; }
+    //
     float rhs[3] = {
         vtx2trgs[i_vtx*3+0],
         vtx2trgs[i_vtx*3+1],

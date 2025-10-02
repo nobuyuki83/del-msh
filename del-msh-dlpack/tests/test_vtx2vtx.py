@@ -69,3 +69,28 @@ def test_02():
          - vtx2rhs)
         # print(residual)
         assert residual < 3.0e-5
+
+
+def test_03():
+    '''
+    test Vtx2Vtx for pytorch
+    '''
+    import del_msh_numpy.TriMesh
+    import del_msh_dlpack.Vtx2Vtx.pt
+    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 3, 3)
+    tri2vtx = torch.from_numpy(tri2vtx).to(torch.int32)
+    vtx2xyz = torch.from_numpy(vtx2xyz)
+    h_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
+    #print(h_vtx2vtx[0])
+    #print(h_vtx2vtx[1])
+    '''
+    if torch.cuda.is_available():
+        d_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.cuda(), vtx2xyz.shape[0], False)
+        print(d_vtx2vtx.cpu())
+    '''
+
+
+
+
+
+

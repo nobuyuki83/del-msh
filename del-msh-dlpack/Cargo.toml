@@ -18,7 +18,7 @@ arrayref.workspace = true
 del-msh-cuda-kernel = { path="../del-msh-cuda-kernel", optional = true }
 
 # for develop
-#del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
+# del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
 # del-cudarc-kernel = { path = "../../del-cudarc/del-cudarc-kernel", optional = true}
 
 # for push

@@ -5,13 +5,20 @@ from .. import _CapsuleAsDLPack
 def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     """make vertex surrounding vertex data from uniform mesh
     """
+    device = elem2vtx.device
     assert len(elem2vtx.shape) == 2
     assert elem2vtx.dtype == torch.int32
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
     from .. import Vtx2Vtx
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
         elem2vtx.__dlpack__(),
         num_vtx,
-        is_self
+        is_self,
+        stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx))
     idx2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_idx2vtx))
