@@ -1,6 +1,6 @@
 use numpy::PyUntypedArrayMethods;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
-use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, Bound, PyObject, PyResult, Python};
+use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, Bound, Py, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
@@ -26,10 +26,10 @@ pub fn load_wavefront_obj(
     Bound<PyArray1<usize>>,
     Bound<PyArray1<usize>>,
     Bound<PyArray1<usize>>,
-    PyObject,
+    Py<PyAny>,
     Bound<PyArray1<usize>>,
-    PyObject,
-    PyObject,
+    Py<PyAny>,
+    Py<PyAny>,
 ) {
     let mut obj = del_msh_cpu::io_obj::WavefrontObj::<usize, f32>::new();
     if let Err(str) = obj.load(&path_file) {

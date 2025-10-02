@@ -104,7 +104,7 @@ impl candle_core::InplaceOp3 for Pix2Tri {
             self.transform_ndc2world,
             f32
         );
-        del_msh_cudarc::pix2tri::fwd(
+        del_msh_cudarc_safe::pix2tri::fwd(
             &device_pix2tri.cuda_stream(),
             img_shape,
             pix2tri,

@@ -1,26 +1,22 @@
 [package]
-name = "del-msh-cudarc"
+name = "del-msh-cudarc-sys"
 description = "2D/3D Mesh processing using Cuda for scientific prototyping."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [features]
-cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-safe"]
+cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-sys"]
 
 [dependencies]
-arrayref.workspace = true
-del-geo-core.workspace = true
 
 # for develop
-# del-msh-cpu.workspace = true
 # del-msh-cuda-kernel = { workspace = true, optional = true }
-# del-cudarc = { path="../../del-cudarc", optional = true}
+# del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
 
 # for push
-del-msh-cpu.workspace = true
 del-msh-cuda-kernel = { workspace = true, optional = true }
-del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+del-cudarc-sys = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for deploy (internal crates must be specified locally)
 # del-msh-cpu = "=0.1.37"

@@ -100,7 +100,7 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
             u32
         );
         get_cuda_slice_device_from_storage_f32!(dldw_vtx2xyz, dev_dldw_vtx2xyz, dldw_vtx2xyz);
-        del_msh_cudarc::silhouette::backward_wrt_vtx2xyz(
+        del_msh_cudarc_safe::silhouette::backward_wrt_vtx2xyz(
             &dev_dldw_vtx2xyz.cuda_stream(),
             edge2vtx_contour,
             vtx2xyz,
@@ -205,13 +205,13 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
         );
         let vtx2xyz = vtx2xyz.as_cuda_slice()?;
         //let img = candle_core::cuda_backend::cua
-        let mut pix2occu = del_msh_cudarc::silhouette::compute_with_alias(
+        let mut pix2occu = del_msh_cudarc_safe::silhouette::compute_with_alias(
             &device.cuda_stream(),
             img_shape,
             pix2tri,
         )
         .w()?;
-        del_msh_cudarc::silhouette::remove_alias(
+        del_msh_cudarc_safe::silhouette::remove_alias(
             &device.cuda_stream(),
             edge2vtx_contour,
             img_shape,

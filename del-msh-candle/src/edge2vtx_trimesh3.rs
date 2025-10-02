@@ -90,7 +90,7 @@ impl CustomOp1 for Layer {
         );
         assert_eq!(l_transform_world2ndc.dims(), &[16]);
         let vtx2xyz = vtx2xyz.as_cuda_slice::<f32>()?;
-        let edge2vtx_contour = del_msh_cudarc::edge2vtx_contour::fwd(
+        let edge2vtx_contour = del_msh_cudarc_safe::edge2vtx_contour::fwd(
             &device.cuda_stream(),
             tri2vtx,
             vtx2xyz,

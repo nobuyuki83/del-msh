@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [features]
-cuda = ["candle-core/cuda", "del-msh-cudarc/cuda", "del-cudarc-safe"]
+cuda = ["candle-core/cuda", "del-msh-cudarc-safe/cuda", "del-cudarc-safe"]
 
 [dependencies]
 rand.workspace = true
@@ -22,17 +22,17 @@ num-traits.workspace = true
 # for develop
 # del-msh-cpu.workspace = true
 # del-msh-nalgebra.workspace = true
-# del-msh-cudarc = { workspace = true, optional = true }
+# del-msh-cudarc-safe = { workspace = true, optional = true }
 # del-cudarc = { path="../../del-cudarc", optional = true}
 
 # for push
 del-msh-cpu.workspace = true
-del-msh-cudarc = { workspace = true, optional = true }
+del-msh-cudarc-safe = { workspace = true, optional = true }
 del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for delpoy (internal crates must specify version explicitly)
 # del-msh-cpu = "0.1.37"
-# del-msh-cudarc = {  version="=0.1.39", optional = true }
+# del-msh-cudarc-safe = {  version="=0.1.39", optional = true }
 # del-msh-nalgebra = "0.1.39"
 # del-cudarc
 

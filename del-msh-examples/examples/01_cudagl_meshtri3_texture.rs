@@ -84,7 +84,7 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
             .alloc_zeros::<u32>(img_shape.1 * img_shape.0)
             .unwrap();
         let transform_ndc2world_dev = self.stream.memcpy_stod(&transform_ndc2world).unwrap();
-        del_msh_cudarc::pix2tri::fwd(
+        del_msh_cudarc_safe::pix2tri::fwd(
             &self.stream,
             img_shape,
             &mut pix2tri_dev,

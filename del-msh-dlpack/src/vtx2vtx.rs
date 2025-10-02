@@ -152,7 +152,7 @@ fn vtx2vtx_from_uniform_mesh(
     num_vtx: usize,
     is_self: bool,
     #[allow(unused_variables)] stream_ptr: u64,
-) -> PyResult<(pyo3::PyObject, pyo3::PyObject)> {
+) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
     let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
     //
     let num_elem = get_shape_tensor(elem2vtx, 0);
@@ -172,6 +172,9 @@ fn vtx2vtx_from_uniform_mesh(
             let vtx2idx_cap = crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
             let idx2vtx_cap = crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
             Ok((vtx2idx_cap, idx2vtx_cap))
+        }
+        dlpack::device_type_codes::GPU => {
+            todo!()
         }
         _ => {
             todo!()

@@ -59,7 +59,7 @@ impl candle_core::InplaceOp3 for Layer {
         get_cuda_slice_device_from_storage_f32!(elem2center, device_elem2center, elem2center);
         assert!(device_elem2vtx.same_device(device_vtx2pos));
         assert!(device_elem2vtx.same_device(device_elem2center));
-        del_msh_cudarc::elem2center::tri2cntr_from_trimesh3(
+        del_msh_cudarc_safe::elem2center::tri2cntr_from_trimesh3(
             &device_elem2vtx.cuda_stream(),
             elem2vtx,
             vtx2pos,

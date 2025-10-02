@@ -5,7 +5,7 @@
 extern "C" {
 
 __global__
-void vtx2valence(
+void vtx2nelem(
     const uint32_t num_elem,
     const int32_t *elem2vtx,
     const int32_t num_node,
@@ -21,7 +21,7 @@ void vtx2valence(
 }
 
 __global__
-void fill_idx2vtx(
+void fill_idx2elem(
     const uint32_t num_elem,
     const int32_t *elem2vtx,
     const int32_t num_node,

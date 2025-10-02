@@ -89,7 +89,7 @@ impl candle_core::InplaceOp3 for Layer {
             u32
         );
         assert_eq!(l_tri2vtx.dims(), &[num_tri, 3]);
-        del_msh_cudarc::bvhnode2aabb::from_trimesh3_with_bvhnodes(
+        del_msh_cudarc_safe::bvhnode2aabb::from_trimesh3_with_bvhnodes(
             &dev_bvhnode2aabb.cuda_stream(),
             tri2vtx,
             vtx2xyz,

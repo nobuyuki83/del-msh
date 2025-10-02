@@ -216,7 +216,7 @@ unsafe extern "C" fn capsule_destructor(capsule: *mut pyo3::ffi::PyObject) {
     }
 }
 
-fn make_capsule_from_vec<T>(py: Python, shape_vec: Vec<i64>, mut data: Vec<T>) -> pyo3::PyObject
+fn make_capsule_from_vec<T>(py: Python, shape_vec: Vec<i64>, mut data: Vec<T>) -> pyo3::Py<PyAny>
 where
     T: ToDataTypeCode,
 {
@@ -275,7 +275,7 @@ where
             name_ptr,
             Some(capsule_destructor),
         );
-        pyo3::PyObject::from_owned_ptr(py, cap_ptr)
+        pyo3::Py::<PyAny>::from_owned_ptr(py, cap_ptr)
     }
 }
 

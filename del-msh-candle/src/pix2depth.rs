@@ -137,7 +137,7 @@ impl candle_core::InplaceOp3 for BackwardPix2Depth {
         get_cuda_slice_device_from_storage_f32!(vtx2xyz, device_vtx2xyz, vtx2xyz);
         assert!(device_dw_vtx2xyz.same_device(device_tri2vtx));
         assert!(device_dw_vtx2xyz.same_device(device_vtx2xyz));
-        del_msh_cudarc::pix2depth::bwd_wrt_vtx2xyz(
+        del_msh_cudarc_safe::pix2depth::bwd_wrt_vtx2xyz(
             &device_dw_vtx2xyz.cuda_stream(),
             img_shape,
             &mut dw_vtx2xyz.slice_mut(..),
@@ -265,7 +265,7 @@ impl candle_core::CustomOp1 for Pix2Depth {
         );
         // let mut pix2depth = unsafe { device.alloc::<f32>(img_shape.0 * img_shape.1) }.w()?;
         let mut pix2depth = device.alloc_zeros::<f32>(img_shape.0 * img_shape.1)?;
-        del_msh_cudarc::pix2depth::fwd(
+        del_msh_cudarc_safe::pix2depth::fwd(
             &device.cuda_stream(),
             img_shape,
             &mut pix2depth,
