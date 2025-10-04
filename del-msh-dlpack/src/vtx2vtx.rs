@@ -189,7 +189,7 @@ fn vtx2vtx_from_uniform_mesh(
                 &elem2vtx,
                 num_elem as usize,
                 num_vtx,
-                is_self
+                is_self,
             );
             let vtx2idx_cap =
                 crate::make_capsule_from_cuvec(py, 0, vec![vtx2idx.n as i64], vtx2idx);
