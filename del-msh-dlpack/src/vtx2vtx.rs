@@ -37,8 +37,8 @@ fn vtx2vtx_laplacian_smoothing(
     let num_dim = get_shape_tensor(vtx2rhs, 1);
     let device_type = vtx2idx.ctx.device_type;
     //
-    check_1d_tensor::<i32>(vtx2idx, num_vtx + 1, device_type);
-    check_1d_tensor::<i32>(idx2vtx, -1, device_type);
+    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device_type);
+    check_1d_tensor::<u32>(idx2vtx, -1, device_type);
     check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_dim, device_type);
     check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_dim, device_type);
     check_2d_tensor::<f32>(vtx2lhstmp, num_vtx, num_dim, device_type);
@@ -123,18 +123,18 @@ fn vtx2vtx_multiply_graph_laplacian(
     let device = vtx2idx.ctx.device_type;
     //
     assert_eq!(num_dim, 3);
-    check_1d_tensor::<i32>(vtx2idx, num_vtx + 1, device);
-    check_1d_tensor::<i32>(idx2vtx, -1, device);
+    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device);
+    check_1d_tensor::<u32>(idx2vtx, -1, device);
     check_2d_tensor::<f32>(vtx2rhs, num_vtx, 3, device);
     check_2d_tensor::<f32>(vtx2lhs, num_vtx, 3, device);
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2idx = unsafe { crate::slice_from_tensor::<i32>(vtx2idx).unwrap() };
-            let idx2vtx = unsafe { crate::slice_from_tensor::<i32>(idx2vtx).unwrap() };
+            let vtx2idx = unsafe { crate::slice_from_tensor::<u32>(vtx2idx).unwrap() };
+            let idx2vtx = unsafe { crate::slice_from_tensor::<u32>(idx2vtx).unwrap() };
             let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
             let vtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
-            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, i32>(
+            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(
                 vtx2idx, idx2vtx, vtx2rhs, vtx2lhs,
             );
             Ok(())
@@ -158,11 +158,11 @@ fn vtx2vtx_from_uniform_mesh(
     let num_elem = get_shape_tensor(elem2vtx, 0);
     let num_node = get_shape_tensor(elem2vtx, 1);
     let device = elem2vtx.ctx.device_type;
-    check_2d_tensor::<i32>(elem2vtx, num_elem, num_node, device);
+    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device);
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let elem2vtx = unsafe { crate::slice_from_tensor::<i32>(elem2vtx).unwrap() };
+            let elem2vtx = unsafe { crate::slice_from_tensor::<u32>(elem2vtx).unwrap() };
             let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
                 elem2vtx,
                 num_node as usize,
@@ -173,8 +173,29 @@ fn vtx2vtx_from_uniform_mesh(
             let idx2vtx_cap = crate::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
             Ok((vtx2idx_cap, idx2vtx_cap))
         }
+        #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            todo!()
+            use del_cudarc_sys::{cu, cuda_check, CuVec};
+            cuda_check!(cu::cuInit(0));
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            use del_cudarc_sys::cu::CUdeviceptr;
+            let elem2vtx = CuVec::new(
+                elem2vtx.data as CUdeviceptr,
+                (num_elem * num_node) as usize,
+                false,
+            );
+            let (vtx2idx, idx2vtx) = del_msh_cudarc_sys::vtx2vtx::from_uniform_mesh(
+                stream,
+                &elem2vtx,
+                num_elem as usize,
+                num_vtx,
+                is_self
+            );
+            let vtx2idx_cap =
+                crate::make_capsule_from_cuvec(py, 0, vec![vtx2idx.n as i64], vtx2idx);
+            let idx2vtx_cap =
+                crate::make_capsule_from_cuvec(py, 0, vec![idx2vtx.n as i64], idx2vtx);
+            Ok((vtx2idx_cap, idx2vtx_cap))
         }
         _ => {
             todo!()

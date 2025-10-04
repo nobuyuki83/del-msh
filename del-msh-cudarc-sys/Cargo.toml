@@ -12,11 +12,11 @@ cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-sys"]
 
 # for develop
 # del-msh-cuda-kernel = { workspace = true, optional = true }
-# del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
+del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
 
 # for push
 del-msh-cuda-kernel = { workspace = true, optional = true }
-del-cudarc-sys = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+#del-cudarc-sys = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for deploy (internal crates must be specified locally)
 # del-msh-cpu = "=0.1.37"

@@ -24,16 +24,16 @@ pub fn trimesh3_tri2normal(
     let num_tri = get_shape_tensor(tri2vtx, 0);
     let num_vtx = get_shape_tensor(vtx2xyz, 0);
     //
-    check_2d_tensor::<i32>(tri2vtx, num_tri, 3, device_type);
+    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type);
     check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type);
     check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type);
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let tri2vtx = unsafe { crate::slice_from_tensor::<i32>(tri2vtx).unwrap() };
+            let tri2vtx = unsafe { crate::slice_from_tensor::<u32>(tri2vtx).unwrap() };
             let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
             let tri2nrm = unsafe { crate::slice_from_tensor_mut::<f32>(tri2nrm).unwrap() };
-            del_msh_cpu::trimesh3::tri2normal::<f32, i32>(tri2vtx, vtx2xyz, tri2nrm);
+            del_msh_cpu::trimesh3::tri2normal::<f32, u32>(tri2vtx, vtx2xyz, tri2nrm);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -82,18 +82,18 @@ pub fn trimesh3_bwd_tri2normal(
     let num_tri = get_shape_tensor(tri2vtx, 0);
     let num_vtx = get_shape_tensor(vtx2xyz, 0);
     //
-    check_2d_tensor::<i32>(tri2vtx, num_tri, 3, device_type);
+    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type);
     check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type);
     check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type);
     check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type);
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let tri2vtx = unsafe { crate::slice_from_tensor::<i32>(tri2vtx).unwrap() };
+            let tri2vtx = unsafe { crate::slice_from_tensor::<u32>(tri2vtx).unwrap() };
             let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
             let dw_tri2nrm = unsafe { crate::slice_from_tensor_mut::<f32>(dw_tri2nrm).unwrap() };
             let dw_vtx2xyz = unsafe { crate::slice_from_tensor_mut::<f32>(dw_vtx2xyz).unwrap() };
-            del_msh_cpu::trimesh3::bwd_tri2normal::<i32>(tri2vtx, vtx2xyz, dw_tri2nrm, dw_vtx2xyz);
+            del_msh_cpu::trimesh3::bwd_tri2normal::<u32>(tri2vtx, vtx2xyz, dw_tri2nrm, dw_vtx2xyz);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

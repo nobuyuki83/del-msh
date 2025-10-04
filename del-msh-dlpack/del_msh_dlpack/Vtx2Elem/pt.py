@@ -6,7 +6,7 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int):
     """
     device = elem2vtx.device
     assert len(elem2vtx.shape) == 2
-    assert elem2vtx.dtype == torch.int32
+    assert elem2vtx.dtype == torch.uint32
     #
     stream_ptr = 0
     if device.type == "cuda":

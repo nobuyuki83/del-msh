@@ -4,7 +4,7 @@ def tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
     num_tri = tri2vtx.shape[0]
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == np.int32
+    assert tri2vtx.dtype == np.uint32
     assert len(vtx2xyz.shape) == 2
     assert vtx2xyz.shape[1] == 3
     assert vtx2xyz.dtype == np.float32
@@ -22,7 +22,7 @@ def bwd_tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray, dw_tri2nrm: np.ndar
     num_vtx = vtx2xyz.shape[0]
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == np.int32
+    assert tri2vtx.dtype == np.uint32
     assert len(vtx2xyz.shape) == 2
     assert vtx2xyz.shape[1] == 3
     assert vtx2xyz.dtype == np.float32

@@ -19,11 +19,11 @@ fn vtx2elem_from_uniform_mesh(
     let num_elem = get_shape_tensor(elem2vtx, 0);
     let num_node = get_shape_tensor(elem2vtx, 1);
     let device = elem2vtx.ctx.device_type;
-    check_2d_tensor::<i32>(elem2vtx, num_elem, num_node, device);
+    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device);
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let elem2vtx = unsafe { crate::slice_from_tensor::<i32>(elem2vtx).unwrap() };
+            let elem2vtx = unsafe { crate::slice_from_tensor::<u32>(elem2vtx).unwrap() };
             let (vtx2idx, idx2elem) =
                 del_msh_cpu::vtx2elem::from_uniform_mesh(elem2vtx, num_node as usize, num_vtx);
             let vtx2idx_cap = crate::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);

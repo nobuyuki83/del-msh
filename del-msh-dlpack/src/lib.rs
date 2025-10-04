@@ -306,7 +306,7 @@ fn make_capsule_from_cuvec<T: ToDataTypeCode>(
     device_id: i32,
     shape: Vec<i64>,
     mut v: del_cudarc_sys::CuVec<T>,
-) -> pyo3::PyObject {
+) -> pyo3::Py<PyAny> {
     v.is_free_at_drop = false;
 
     // --- 必要ならここで「可視化」 ---
@@ -368,7 +368,7 @@ fn make_capsule_from_cuvec<T: ToDataTypeCode>(
             name_ptr,
             Some(capsule_destructor),
         );
-        pyo3::PyObject::from_owned_ptr(py, cap_ptr)
+        pyo3::Py::<PyAny>::from_owned_ptr(py, cap_ptr)
     }
 }
 

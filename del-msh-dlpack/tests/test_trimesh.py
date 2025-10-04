@@ -12,7 +12,7 @@ import del_msh_dlpack.TriMesh3.pt
 
 def test_01():
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
-    tri2vtx = tri2vtx.astype(numpy.int32)
+    tri2vtx = tri2vtx.astype(numpy.uint32)
     np_tri2normal = del_msh_dlpack.TriMesh3.np.tri2normal(tri2vtx, vtx2xyz)
     tri2area = numpy.linalg.norm(np_tri2normal, axis=1)
     area = tri2area.sum() * 0.5
@@ -96,7 +96,7 @@ def test_02():
 
 def test_03():
     tri2vtx, vtx2xyz0 = del_msh_numpy.TriMesh.sphere(0.8, 4, 4)
-    tri2vtx = tri2vtx.astype(numpy.int32)
+    tri2vtx = tri2vtx.astype(numpy.uint32)
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz0.shape[0]
     rng = numpy.random.default_rng(seed=42)
@@ -119,7 +119,7 @@ def test_03():
 
 def test_04():
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
-    tri2vtx, vtx2xyz = torch.from_numpy(tri2vtx).to(torch.int32), torch.from_numpy(vtx2xyz)
+    tri2vtx, vtx2xyz = torch.from_numpy(tri2vtx).to(torch.uint32), torch.from_numpy(vtx2xyz)
     dw_tri2nrm = torch.rand(size=tri2vtx.shape, dtype=torch.float32)
     dw_vtx2xyz0 = del_msh_dlpack.TriMesh3.pt.bwd_tri2normal(tri2vtx, vtx2xyz, dw_tri2nrm)
     #

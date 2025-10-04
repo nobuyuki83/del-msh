@@ -10,9 +10,9 @@ def test_01():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.np
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
-    tri2vtx = tri2vtx.astype(numpy.int32)
+    tri2vtx = tri2vtx.astype(numpy.uint32)
     vtx2vtx = del_msh_dlpack.Vtx2Vtx.np.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
-    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == numpy.int32
+    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == numpy.uint32
     #
     vtx2rhs = numpy.random.rand(vtx2xyz.shape[0], 3).astype(numpy.float32)
     vtx2lhs = numpy.zeros_like(vtx2rhs)
@@ -35,10 +35,10 @@ def test_02():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.pt
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
-    tri2vtx = torch.from_numpy(tri2vtx).to(torch.int32)
+    tri2vtx = torch.from_numpy(tri2vtx).to(torch.uint32)
     vtx2xyz = torch.from_numpy(vtx2xyz)
     vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
-    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == torch.int32
+    assert vtx2vtx[0].dtype == vtx2vtx[1].dtype == torch.uint32
     #
     vtx2rhs = torch.rand(size=(vtx2xyz.shape[0], 3)).to(torch.float32)
     vtx2lhs = torch.zeros_like(vtx2rhs)
@@ -78,19 +78,20 @@ def test_03():
     import del_msh_numpy.TriMesh
     import del_msh_dlpack.Vtx2Vtx.pt
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 3, 3)
-    tri2vtx = torch.from_numpy(tri2vtx).to(torch.int32)
+    tri2vtx = torch.from_numpy(tri2vtx).to(torch.uint32)
     vtx2xyz = torch.from_numpy(vtx2xyz)
+    #
     h_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
-    #print(h_vtx2vtx[0])
-    #print(h_vtx2vtx[1])
-    '''
     if torch.cuda.is_available():
         d_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.cuda(), vtx2xyz.shape[0], False)
-        print(d_vtx2vtx.cpu())
-    '''
-
-
-
+        assert torch.equal(h_vtx2vtx[0],  d_vtx2vtx[0].cpu())
+        assert torch.equal(h_vtx2vtx[1],  d_vtx2vtx[1].cpu())
+    #
+    h_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], True)
+    if torch.cuda.is_available():
+        d_vtx2vtx = del_msh_dlpack.Vtx2Vtx.pt.from_uniform_mesh(tri2vtx.cuda(), vtx2xyz.shape[0], True)
+        assert torch.equal(h_vtx2vtx[0],  d_vtx2vtx[0].cpu())
+        assert torch.equal(h_vtx2vtx[1],  d_vtx2vtx[1].cpu())
 
 
 

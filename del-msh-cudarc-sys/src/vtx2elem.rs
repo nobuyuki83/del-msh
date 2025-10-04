@@ -19,7 +19,7 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(vtx2valence.dptr);
         builder.launch_kernel(func, LaunchConfig::for_num_elems(num_elem as u32));
     }
-    let vtx2idx0 = del_cudarc_sys::cumsum::cumsum(&vtx2valence, stream);
+    let vtx2idx0 = del_cudarc_sys::cumsum::cumsum(stream, &vtx2valence);
     // dbg!(vtx2idx0.copy_to_host());
     let num_idx = vtx2idx0.last();
     let idx2elem: CuVec<u32> = CuVec::with_capacity(num_idx as usize);

@@ -5,7 +5,7 @@ def from_uniform_mesh(elem2vtx: np.ndarray, num_vtx: int, is_self: bool):
     """make vertex surrounding vertex data from uniform mesh
     """
     assert len(elem2vtx.shape) == 2
-    assert elem2vtx.dtype == np.int32
+    assert elem2vtx.dtype == np.uint32
     from .. import Vtx2Vtx
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
         elem2vtx.__dlpack__(),
@@ -36,8 +36,8 @@ def laplacian_smoothing(
     assert len(vtx2lhs.shape) == 2
     assert vtx2lhs.shape[0] == num_vtx
     assert vtx2lhs.shape == vtx2rhs.shape
-    assert vtx2idx.dtype == np.int32
-    assert idx2vtx.dtype == np.int32
+    assert vtx2idx.dtype == np.uint32
+    assert idx2vtx.dtype == np.uint32
     assert vtx2lhs.dtype == vtx2rhs.dtype == np.float32
     assert num_iter >= 0
     if vtx2lhstmp is None:
@@ -62,8 +62,8 @@ def multiply_graph_laplacian(
     assert len(idx2vtx.shape) == 1
     assert len(vtx2rhs.shape) == 2
     assert vtx2rhs.shape[0] == num_vtx
-    assert vtx2idx.dtype == np.int32
-    assert idx2vtx.dtype == np.int32
+    assert vtx2idx.dtype == np.uint32
+    assert idx2vtx.dtype == np.uint32
     assert vtx2rhs.dtype == np.float32
     #
     vtx2lhs = np.zeros_like(vtx2rhs)
