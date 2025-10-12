@@ -93,7 +93,7 @@ fn mortons_make_bvh(
             let bvhnodes = unsafe { crate::slice_from_tensor_mut::<u32>(bvhnodes) }.unwrap();
             del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2obj, idx2morton);
         }
-        #[cfg(feature = "cuda")]        
+        #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
@@ -114,15 +114,14 @@ fn mortons_make_bvh(
                 builder.arg_data(&vtx2co.data);
                 builder.arg_i32(num_dim as i32);
                 builder.arg_data(&transform_co2unit.data);
-                builder.arg_data(&vtx2morton.data);                
+                builder.arg_data(&vtx2morton.data);
                  */
-                builder.launch_kernel(
-                    func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(n as u32),
-                );
+                builder.launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(n as u32));
             }
-        },
-        _ => { todo!()}
+        }
+        _ => {
+            todo!()
+        }
     }
     Ok(())
 }
