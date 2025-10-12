@@ -2,9 +2,9 @@ import torch
 import os
 from .. import _CapsuleAsDLPack
 
+
 def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
-    """make vertex surrounding vertex data from uniform mesh
-    """
+    """make vertex surrounding vertex data from uniform mesh"""
     device = elem2vtx.device
     assert len(elem2vtx.shape) == 2
     assert elem2vtx.dtype == torch.uint32
@@ -14,15 +14,14 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
     from .. import Vtx2Vtx
+
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
-        elem2vtx.__dlpack__(),
-        num_vtx,
-        is_self,
-        stream_ptr
+        elem2vtx.__dlpack__(), num_vtx, is_self, stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx))
     idx2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_idx2vtx))
     return vtx2idx, idx2vtx
+
 
 def laplacian_smoothing(
     vtx2idx: torch.Tensor,
@@ -31,7 +30,8 @@ def laplacian_smoothing(
     vtx2lhs: torch.Tensor,
     vtx2rhs: torch.Tensor,
     num_iter: int,
-    vtx2lhstmp: torch.Tensor | None):
+    vtx2lhstmp: torch.Tensor | None,
+):
     """Solve the linear system from screened Poisson equation using Jacobi method:
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
@@ -56,7 +56,9 @@ def laplacian_smoothing(
     assert idx2vtx.device == device, "idx2vtx should be on the same device as vtx2idx"
     assert vtx2rhs.device == device, "vtx2rhs should be on the same device as vtx2idx"
     assert vtx2lhs.device == device, "vtx2lhs should be on the same device as vtx2lhs"
-    assert vtx2lhstmp.device == device, "the vtx2lhstmp should be on the same device as vtx2idx"
+    assert vtx2lhstmp.device == device, (
+        "the vtx2lhstmp should be on the same device as vtx2idx"
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -64,6 +66,7 @@ def laplacian_smoothing(
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
     #
     from .. import Vtx2Vtx
+
     Vtx2Vtx.laplacian_smoothing(
         vtx2idx.__dlpack__(stream=stream_ptr),
         idx2vtx.__dlpack__(stream=stream_ptr),
@@ -72,13 +75,13 @@ def laplacian_smoothing(
         vtx2rhs.__dlpack__(stream=stream_ptr),
         num_iter,
         vtx2lhstmp.__dlpack__(stream=stream_ptr),
-        stream_ptr)
+        stream_ptr,
+    )
 
 
 def multiply_graph_laplacian(
-    vtx2idx: torch.Tensor,
-    idx2vtx: torch.Tensor,
-    vtx2rhs: torch.Tensor) -> torch.Tensor:
+    vtx2idx: torch.Tensor, idx2vtx: torch.Tensor, vtx2rhs: torch.Tensor
+) -> torch.Tensor:
     assert len(vtx2idx.shape) == 1
     assert vtx2idx.dtype == torch.uint32
     assert len(idx2vtx.shape) == 1
@@ -89,9 +92,11 @@ def multiply_graph_laplacian(
     vtx2lhs = torch.zeros_like(vtx2rhs)
     #
     from .. import Vtx2Vtx
+
     Vtx2Vtx.multiply_graph_laplacian(
         vtx2idx.__dlpack__(),
         idx2vtx.__dlpack__(),
         vtx2rhs.__dlpack__(),
-        vtx2lhs.__dlpack__())
+        vtx2lhs.__dlpack__(),
+    )
     return vtx2lhs

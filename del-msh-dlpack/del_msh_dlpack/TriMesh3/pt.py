@@ -2,6 +2,7 @@ from typing import Any
 
 import torch
 
+
 def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
@@ -22,19 +23,23 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     if device.type == "cuda":
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
-        #print(device, stream_ptr)
+        # print(device, stream_ptr)
     #
-    tri2nrm = torch.empty(size=(num_tri,3), dtype=torch.float32, device=device)
+    tri2nrm = torch.empty(size=(num_tri, 3), dtype=torch.float32, device=device)
     from .. import TriMesh3
-    TriMesh3.tri2normal( 
+
+    TriMesh3.tri2normal(
         tri2vtx.__dlpack__(stream=stream_ptr),
         vtx2xyz.__dlpack__(stream=stream_ptr),
         tri2nrm.__dlpack__(stream=stream_ptr),
-        stream_ptr=stream_ptr
+        stream_ptr=stream_ptr,
     )
     return tri2nrm
 
-def bwd_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor):
+
+def bwd_tri2normal(
+    tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
+):
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     device = tri2vtx.device
@@ -62,15 +67,16 @@ def bwd_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: tor
     if device.type == "cuda":
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
-        #print(device, stream_ptr)
-    dw_vtx2xyz = torch.empty(size=(num_vtx,3), dtype=torch.float32, device=device)
+        # print(device, stream_ptr)
+    dw_vtx2xyz = torch.empty(size=(num_vtx, 3), dtype=torch.float32, device=device)
     from .. import TriMesh3
+
     TriMesh3.bwd_tri2normal(
         tri2vtx.__dlpack__(stream=stream_ptr),
         vtx2xyz.__dlpack__(stream=stream_ptr),
         dw_tri2nrm.__dlpack__(stream=stream_ptr),
         dw_vtx2xyz.__dlpack__(stream=stream_ptr),
-        stream_ptr = stream_ptr
+        stream_ptr=stream_ptr,
     )
     return dw_vtx2xyz
 
@@ -86,4 +92,3 @@ class Tri2Normal(torch.autograd.Function):
         tri2vtx, vtx2xyz = ctx.saved_tensors
         dw_vtx2xyz = bwd_tri2normal(tri2vtx.detach(), vtx2xyz.detach(), dw_tri2nrm)
         return None, dw_vtx2xyz
-

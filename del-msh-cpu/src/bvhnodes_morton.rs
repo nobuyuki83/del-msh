@@ -174,6 +174,48 @@ fn test_sorted_morten_code() {
 
 // ---------------
 
+pub fn vtx2morton(
+    num_dim: usize,
+    vtx2co: &[f32],
+    transform_co2uni: &[f32],
+    vtx2morton: &mut [u32],
+) {
+    assert_eq!((num_dim + 1) * (num_dim + 1), transform_co2uni.len());
+    match num_dim {
+        2 => {
+            let transform_co2uni = arrayref::array_ref![transform_co2uni, 0, 9];
+            vtx2co
+                .chunks(2)
+                .zip(vtx2morton.iter_mut())
+                .for_each(|(xyz, m)| {
+                    let xyz = del_geo_core::mat3_col_major::transform_homogeneous(
+                        transform_co2uni,
+                        &[xyz[0], xyz[1]],
+                    )
+                    .unwrap();
+                    *m = morton_code2(xyz[0], xyz[1])
+                });
+        }
+        3 => {
+            let transform_co2uni = arrayref::array_ref![transform_co2uni, 0, 16];
+            vtx2co
+                .chunks(3)
+                .zip(vtx2morton.iter_mut())
+                .for_each(|(xyz, m)| {
+                    let xyz = del_geo_core::mat4_col_major::transform_homogeneous(
+                        transform_co2uni,
+                        &[xyz[0], xyz[1], xyz[2]],
+                    )
+                    .unwrap();
+                    *m = morton_code3(xyz[0], xyz[1], xyz[2])
+                });
+        }
+        _ => {
+            panic!()
+        }
+    }
+}
+
 fn delta(idx0: usize, idx1: usize, idx2morton: &[u32]) -> i64 {
     (idx2morton[idx0] ^ idx2morton[idx1]).leading_zeros().into()
 }
@@ -400,9 +442,9 @@ fn test_2d() {
 }
 
 pub fn update_sorted_morton_code<Index>(
-    idx2tri: &mut [Index],
+    idx2vtx: &mut [Index],
     idx2morton: &mut [u32],
-    tri2morton: &mut [u32],
+    vtx2morton: &mut [u32],
     vtx2xyz: &[f32],
     num_dim: usize,
 ) where
@@ -414,14 +456,14 @@ pub fn update_sorted_morton_code<Index>(
             let aabb = crate::vtx2xy::aabb2(vtx2xyz);
             let transform_xy2uni =
                 del_geo_core::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
-            sorted_morten_code2(idx2tri, idx2morton, tri2morton, vtx2xyz, &transform_xy2uni);
+            sorted_morten_code2(idx2vtx, idx2morton, vtx2morton, vtx2xyz, &transform_xy2uni);
         }
         3 => {
             let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
             let transform_xy2uni =
                 del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(&aabb);
             // del_geo_core::mat4_col_major::from_aabb3_fit_into_unit(&aabb);
-            sorted_morten_code3(idx2tri, idx2morton, tri2morton, vtx2xyz, &transform_xy2uni);
+            sorted_morten_code3(idx2vtx, idx2morton, vtx2morton, vtx2xyz, &transform_xy2uni);
         }
         _ => {
             panic!();
@@ -456,19 +498,19 @@ where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_tri = vtx2xyz.len() / num_dim;
-    let mut idx2tri = vec![Index::one(); num_tri];
-    let mut idx2morton = vec![0u32; num_tri];
-    let mut tri2morton = vec![0u32; num_tri];
+    let num_vtx = vtx2xyz.len() / num_dim;
+    let mut idx2vtx = vec![Index::one(); num_vtx];
+    let mut idx2morton = vec![0u32; num_vtx];
+    let mut vtx2morton = vec![0u32; num_vtx];
     update_sorted_morton_code(
-        &mut idx2tri,
+        &mut idx2vtx,
         &mut idx2morton,
-        &mut tri2morton,
+        &mut vtx2morton,
         vtx2xyz,
         num_dim,
     );
-    let mut bvhnodes = vec![Index::zero(); (num_tri * 2 - 1) * 3];
-    update_bvhnodes(&mut bvhnodes, &idx2tri, &idx2morton);
+    let mut bvhnodes = vec![Index::zero(); (num_vtx * 2 - 1) * 3];
+    update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
     bvhnodes
 }
 

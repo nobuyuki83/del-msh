@@ -7,7 +7,7 @@ pub fn from_uniform_mesh(
     is_self: bool,
 ) -> (CuVec<u32>, CuVec<u32>) {
     let num_node = elem2vtx.n / num_elem;
-    assert_eq!(elem2vtx.n % num_vtx, 0);
+    assert_eq!(elem2vtx.n, num_elem * num_node);
     let (vtx2jdx, jdx2elem) =
         crate::vtx2elem::from_uniform_mesh(stream, elem2vtx, num_elem, num_vtx);
     let num_buff = if is_self {
