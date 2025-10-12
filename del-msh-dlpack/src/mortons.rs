@@ -93,9 +93,36 @@ fn mortons_make_bvh(
             let bvhnodes = unsafe { crate::slice_from_tensor_mut::<u32>(bvhnodes) }.unwrap();
             del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2obj, idx2morton);
         }
-        _ => {
-            todo!()
-        }
+        #[cfg(feature = "cuda")]        
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::cu;
+            use del_cudarc_sys::cuda_check;
+            cuda_check!(cu::cuInit(0));
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let (func, _mdl) = del_cudarc_sys::load_function_in_module(
+                del_msh_cuda_kernel::BVHNODES_MORTON,
+                "kernel_MortonCode_BVHTopology",
+            );
+            {
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_i32(n as i32);
+                builder.arg_dptr(bvhnodes.data as cu::CUdeviceptr);
+                builder.arg_dptr(idx2morton.data as cu::CUdeviceptr);
+                builder.arg_dptr(idx2obj.data as cu::CUdeviceptr);
+                /*
+                builder.arg_i32(num_vtx as i32);
+                builder.arg_data(&vtx2co.data);
+                builder.arg_i32(num_dim as i32);
+                builder.arg_data(&transform_co2unit.data);
+                builder.arg_data(&vtx2morton.data);                
+                 */
+                builder.launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(n as u32),
+                );
+            }
+        },
+        _ => { todo!()}
     }
     Ok(())
 }
