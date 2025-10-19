@@ -479,6 +479,7 @@ pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32]) -> Vec<u32> {
     bnode2onode
 }
 
+#[allow(clippy::type_complexity)]
 pub fn make_octree_from_binary_radix_tree<const NDIM: usize>(
     bnodes: &[u32],
     bnode2onode: &[u32],
@@ -545,9 +546,7 @@ pub fn make_octree_from_binary_radix_tree<const NDIM: usize>(
         if i < num_vtx - 1 {
             let i_bnode = i;
             if i_bnode == 0 {
-                for i_dim in 0..NDIM {
-                    onode2center[i_dim] = 0.5f32;
-                }
+                onode2center[0..NDIM].iter_mut().for_each(|v| *v = 0.5);
                 continue;
             }
             if bnode2onode[i_bnode - 1] == bnode2onode[i_bnode] {
