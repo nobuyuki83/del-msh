@@ -69,5 +69,6 @@ pub mod vtx2group;
 
 pub mod adaptive_distance_field3;
 pub mod grid2;
+pub mod mortons;
 pub mod silhouette;
 pub mod trimesh3_raycast;

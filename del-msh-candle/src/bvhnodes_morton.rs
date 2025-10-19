@@ -24,7 +24,7 @@ impl candle_core::InplaceOp2 for SortedMortonCode {
         assert_eq!(morton_data.len(), num_vtx * 3);
         let (idx2vtx, idx2morton) = morton_data.split_at_mut(num_vtx);
         let (idx2morton, vtx2morton) = idx2morton.split_at_mut(num_vtx);
-        del_msh_cpu::bvhnodes_morton::update_sorted_morton_code(
+        del_msh_cpu::mortons::update_sorted_morton_code(
             idx2vtx, idx2morton, vtx2morton, vtx2pos, num_dim,
         );
         Ok(())

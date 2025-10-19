@@ -54,7 +54,7 @@ fn build_bvh_topology_morton<'a>(
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
     if num_dim == 3 {
-        del_msh_cpu::bvhnodes_morton::sorted_morten_code3(
+        del_msh_cpu::mortons::sorted_morten_code3(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
@@ -62,7 +62,7 @@ fn build_bvh_topology_morton<'a>(
             &del_geo_core::mat4_col_major::from_identity(),
         );
     } else if num_dim == 2 {
-        del_msh_cpu::bvhnodes_morton::sorted_morten_code2(
+        del_msh_cpu::mortons::sorted_morten_code2(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
