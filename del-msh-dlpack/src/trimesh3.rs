@@ -106,24 +106,28 @@ pub fn trimesh3_bwd_tri2normal(
             use del_cudarc_sys::cuda_check;
             cuda_check!(cu::cuInit(0));
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            let dptr: cu::CUdeviceptr = dw_vtx2xyz.data as cu::CUdeviceptr;
-            cuda_check!(cu::cuMemsetD32Async(
-                dptr,
-                0,
-                (num_vtx * 3) as usize,
-                stream
-            ));
-            cuda_check!(cu::cuStreamSynchronize(stream));
-            let mut builder = del_cudarc_sys::Builder::new(stream);
-            builder.arg_i32(num_tri as i32);
-            builder.arg_data(&tri2vtx.data);
-            builder.arg_data(&vtx2xyz.data);
-            builder.arg_data(&dw_tri2nrm.data);
-            builder.arg_data(&dw_vtx2xyz.data);
-            builder.launch_kernel(
-                function,
-                del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
-            );
+            {
+                let dptr: cu::CUdeviceptr = dw_vtx2xyz.data as cu::CUdeviceptr;
+                cuda_check!(cu::cuMemsetD32Async(
+                    dptr,
+                    0,
+                    (num_vtx * 3) as usize,
+                    stream
+                ));
+                cuda_check!(cu::cuStreamSynchronize(stream));
+            }
+            {
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_i32(num_tri as i32);
+                builder.arg_data(&tri2vtx.data);
+                builder.arg_data(&vtx2xyz.data);
+                builder.arg_data(&dw_tri2nrm.data);
+                builder.arg_data(&dw_vtx2xyz.data);
+                builder.launch_kernel(
+                    function,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
+                );
+            }
         }
         _ => {
             todo!()

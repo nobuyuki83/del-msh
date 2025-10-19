@@ -3,7 +3,9 @@ use pyo3::prelude::{PyAnyMethods, PyCapsuleMethods};
 use pyo3::types::PyCapsule;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
+mod array1d;
 mod edge2vtx;
+mod mortons;
 mod trimesh3;
 mod trimesh3_raycast;
 mod vtx2elem;
@@ -18,6 +20,8 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     edge2vtx::add_functions(_py, m)?;
     vtx2vtx::add_functions(_py, m)?;
     vtx2elem::add_functions(_py, m)?;
+    mortons::add_functions(_py, m)?;
+    array1d::add_functions(_py, m)?;
     Ok(())
 }
 
@@ -413,7 +417,7 @@ pub fn check_1d_tensor<T: ToDataTypeCode>(
     if d0 != -1 {
         assert_eq!(shape[0], d0);
     }
-    assert!(is_equal::<T>(&t.dtype));
+    assert!(is_equal::<T>(&t.dtype), "the data type is different");
     assert!(unsafe { is_tensor_c_contiguous(t) });
     assert_eq!(t.ctx.device_type, device_type);
 }

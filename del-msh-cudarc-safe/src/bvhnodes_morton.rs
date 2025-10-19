@@ -14,9 +14,11 @@ pub fn vtx2morton(
         "vtx2morton",
         del_msh_cuda_kernel::BVHNODES_MORTON,
     )?;
+    let num_dim = 3;
     let mut builder = stream.launch_builder(&func);
     builder.arg(&num_vtx);
     builder.arg(vtx2xyz);
+    builder.arg(&num_dim);
     builder.arg(transform_xyz2uni);
     builder.arg(vtx2morton);
     unsafe { builder.launch(cfg) }?;

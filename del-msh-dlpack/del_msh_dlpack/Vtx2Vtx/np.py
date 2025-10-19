@@ -1,20 +1,20 @@
 import numpy as np
 from .. import _CapsuleAsDLPack
 
+
 def from_uniform_mesh(elem2vtx: np.ndarray, num_vtx: int, is_self: bool):
-    """make vertex surrounding vertex data from uniform mesh
-    """
+    """make vertex surrounding vertex data from uniform mesh"""
     assert len(elem2vtx.shape) == 2
     assert elem2vtx.dtype == np.uint32
     from .. import Vtx2Vtx
+
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
-        elem2vtx.__dlpack__(),
-        num_vtx,
-        is_self
+        elem2vtx.__dlpack__(), num_vtx, is_self
     )
     vtx2idx = np.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx)).copy()
     idx2vtx = np.from_dlpack(_CapsuleAsDLPack(cap_idx2vtx)).copy()
     return vtx2idx, idx2vtx
+
 
 def laplacian_smoothing(
     vtx2idx: np.ndarray,
@@ -23,7 +23,8 @@ def laplacian_smoothing(
     vtx2lhs: np.ndarray,
     vtx2rhs: np.ndarray,
     num_iter: int,
-    vtx2lhstmp: np.ndarray | None):
+    vtx2lhstmp: np.ndarray | None,
+):
     """Solve the linear system from screened Poisson equation using Jacobi method:
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
@@ -43,6 +44,7 @@ def laplacian_smoothing(
     if vtx2lhstmp is None:
         vtx2lhstmp = np.zeros_like(vtx2lhs)
     from .. import Vtx2Vtx
+
     Vtx2Vtx.laplacian_smoothing(
         vtx2idx.__dlpack__(),
         idx2vtx.__dlpack__(),
@@ -50,13 +52,13 @@ def laplacian_smoothing(
         vtx2lhs.__dlpack__(),
         vtx2rhs.__dlpack__(),
         num_iter,
-        vtx2lhstmp.__dlpack__())
+        vtx2lhstmp.__dlpack__(),
+    )
 
 
 def multiply_graph_laplacian(
-    vtx2idx: np.ndarray,
-    idx2vtx: np.ndarray,
-    vtx2rhs: np.ndarray) -> np.ndarray:
+    vtx2idx: np.ndarray, idx2vtx: np.ndarray, vtx2rhs: np.ndarray
+) -> np.ndarray:
     num_vtx = vtx2idx.shape[0] - 1
     assert len(vtx2idx.shape) == 1
     assert len(idx2vtx.shape) == 1
@@ -69,9 +71,11 @@ def multiply_graph_laplacian(
     vtx2lhs = np.zeros_like(vtx2rhs)
     #
     from .. import Vtx2Vtx
+
     Vtx2Vtx.multiply_graph_laplacian(
         vtx2idx.__dlpack__(),
         idx2vtx.__dlpack__(),
         vtx2rhs.__dlpack__(),
-        vtx2lhs.__dlpack__())
+        vtx2lhs.__dlpack__(),
+    )
     return vtx2lhs
