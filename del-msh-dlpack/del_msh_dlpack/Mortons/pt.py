@@ -1,5 +1,5 @@
 import torch
-
+from .. import util_torch
 
 def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor):
     num_vtx = vtx2co.shape[0]
@@ -22,9 +22,9 @@ def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor
     from .. import Mortons
 
     Mortons.vtx2morton_from_vtx2co(
-        vtx2co.__dlpack__(stream=stream_ptr),
-        transform_co2unit.__dlpack__(stream=stream_ptr),
-        vtx2morton.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(vtx2co),
+        util_torch.to_dlpack_safe(transform_co2unit),
+        util_torch.to_dlpack_safe(vtx2morton),
         stream_ptr,
     )
     return vtx2morton
@@ -48,8 +48,8 @@ def make_bvh(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
     from .. import Mortons
 
     Mortons.make_bvh(
-        idx2obj.__dlpack__(stream=stream_ptr),
-        idx2morton.__dlpack__(stream=stream_ptr),
-        bvhnodes.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(idx2obj),
+        util_torch.to_dlpack_safe(idx2morton),
+        util_torch.to_dlpack_safe(bvhnodes)
     )
     return bvhnodes

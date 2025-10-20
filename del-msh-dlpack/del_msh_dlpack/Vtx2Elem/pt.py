@@ -1,5 +1,6 @@
 import torch
 from .. import _CapsuleAsDLPack
+from .. import util_torch
 
 
 def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int):
@@ -15,7 +16,9 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int):
     from .. import Vtx2Elem
 
     cap_vtx2idx, cap_idx2elem = Vtx2Elem.from_uniform_mesh(
-        elem2vtx.__dlpack__(), num_vtx, stream_ptr
+        util_torch.to_dlpack_safe(elem2vtx),
+        num_vtx,
+        stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx)).clone()
     idx2elem = torch.from_dlpack(_CapsuleAsDLPack(cap_idx2elem)).clone()

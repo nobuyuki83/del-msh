@@ -12,3 +12,5 @@ class _CapsuleAsDLPack:
     def __dlpack_device__(self):
         # CPU: (kDLCPU=1, device_id=0)
         return (1, 0)
+
+

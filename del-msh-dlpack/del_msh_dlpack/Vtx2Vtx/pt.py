@@ -1,6 +1,7 @@
 import torch
 import os
 from .. import _CapsuleAsDLPack
+from .. import util_torch
 
 
 def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
@@ -16,7 +17,8 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     from .. import Vtx2Vtx
 
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
-        elem2vtx.__dlpack__(), num_vtx, is_self, stream_ptr
+        util_torch.to_dlpack_safe(elem2vtx),
+        num_vtx, is_self, stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx))
     idx2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_idx2vtx))
@@ -47,11 +49,9 @@ def laplacian_smoothing(
     assert vtx2idx.dtype == torch.uint32
     assert idx2vtx.dtype == torch.uint32
     assert len(vtx2lhs.shape) == 2
-    assert vtx2lhs.is_contiguous()
     assert vtx2lhs.shape[0] == num_vtx
     assert vtx2lhs.shape == vtx2rhs.shape
     assert vtx2lhs.dtype == vtx2rhs.dtype == torch.float32
-    assert vtx2rhs.is_contiguous()
     assert num_iter >= 0
     assert idx2vtx.device == device, "idx2vtx should be on the same device as vtx2idx"
     assert vtx2rhs.device == device, "vtx2rhs should be on the same device as vtx2idx"
@@ -68,13 +68,13 @@ def laplacian_smoothing(
     from .. import Vtx2Vtx
 
     Vtx2Vtx.laplacian_smoothing(
-        vtx2idx.__dlpack__(stream=stream_ptr),
-        idx2vtx.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(vtx2idx),
+        util_torch.to_dlpack_safe(idx2vtx),
         lambda0,
-        vtx2lhs.__dlpack__(stream=stream_ptr),
-        vtx2rhs.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(vtx2lhs),
+        util_torch.to_dlpack_safe(vtx2rhs),
         num_iter,
-        vtx2lhstmp.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(vtx2lhstmp),
         stream_ptr,
     )
 

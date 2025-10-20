@@ -1,7 +1,7 @@
 from typing import Any
 
 import torch
-
+from .. import util_torch
 
 def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_tri = tri2vtx.shape[0]
@@ -9,15 +9,11 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
     assert tri2vtx.dtype == torch.uint32
-    assert tri2vtx.is_contiguous()
-    assert tri2vtx.requires_grad == False
     #
     assert len(vtx2xyz.shape) == 2
     assert vtx2xyz.shape[1] == 3
     assert vtx2xyz.dtype == torch.float32
-    assert vtx2xyz.is_contiguous()
     assert vtx2xyz.device == device, "vtx2xyz should be on the same device as tri2vtx"
-    assert vtx2xyz.requires_grad == False
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -29,9 +25,9 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     from .. import TriMesh3
 
     TriMesh3.tri2normal(
-        tri2vtx.__dlpack__(stream=stream_ptr),
-        vtx2xyz.__dlpack__(stream=stream_ptr),
-        tri2nrm.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(tri2vtx),
+        util_torch.to_dlpack_safe(vtx2xyz),
+        util_torch.to_dlpack_safe(tri2nrm),
         stream_ptr=stream_ptr,
     )
     return tri2nrm
@@ -46,22 +42,16 @@ def bwd_tri2normal(
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3
     assert tri2vtx.dtype == torch.uint32
-    assert tri2vtx.is_contiguous()
-    assert tri2vtx.requires_grad == False
     #
     assert len(vtx2xyz.shape) == 2
     assert vtx2xyz.shape[1] == 3
     assert vtx2xyz.dtype == torch.float32
     assert vtx2xyz.device == device
-    assert vtx2xyz.is_contiguous()
-    assert vtx2xyz.requires_grad == False
     #
     assert len(dw_tri2nrm.shape) == 2
     assert dw_tri2nrm.shape[1] == 3
     assert dw_tri2nrm.dtype == torch.float32
     assert dw_tri2nrm.device == device
-    assert dw_tri2nrm.is_contiguous()
-    assert dw_tri2nrm.requires_grad == False
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -72,10 +62,10 @@ def bwd_tri2normal(
     from .. import TriMesh3
 
     TriMesh3.bwd_tri2normal(
-        tri2vtx.__dlpack__(stream=stream_ptr),
-        vtx2xyz.__dlpack__(stream=stream_ptr),
-        dw_tri2nrm.__dlpack__(stream=stream_ptr),
-        dw_vtx2xyz.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(tri2vtx),
+        util_torch.to_dlpack_safe(vtx2xyz),
+        util_torch.to_dlpack_safe(dw_tri2nrm),
+        util_torch.to_dlpack_safe(dw_vtx2xyz),
         stream_ptr=stream_ptr,
     )
     return dw_vtx2xyz
