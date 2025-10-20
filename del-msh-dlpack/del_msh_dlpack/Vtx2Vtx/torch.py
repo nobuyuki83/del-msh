@@ -16,7 +16,7 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     from .. import Vtx2Vtx
 
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
-        util_torch.to_dlpack_safe(elem2vtx),
+        util_torch.to_dlpack_safe(elem2vtx, stream_ptr),
         num_vtx, is_self, stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx))
@@ -67,13 +67,13 @@ def laplacian_smoothing(
     from .. import Vtx2Vtx
 
     Vtx2Vtx.laplacian_smoothing(
-        util_torch.to_dlpack_safe(vtx2idx),
-        util_torch.to_dlpack_safe(idx2vtx),
+        util_torch.to_dlpack_safe(vtx2idx, stream_ptr),
+        util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
         lambda0,
-        util_torch.to_dlpack_safe(vtx2lhs),
-        util_torch.to_dlpack_safe(vtx2rhs),
+        util_torch.to_dlpack_safe(vtx2lhs, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
         num_iter,
-        util_torch.to_dlpack_safe(vtx2lhstmp),
+        util_torch.to_dlpack_safe(vtx2lhstmp, stream_ptr),
         stream_ptr,
     )
 

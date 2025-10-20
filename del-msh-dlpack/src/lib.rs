@@ -6,6 +6,7 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 mod array1d;
 mod edge2vtx;
 mod mortons;
+mod quad_oct_tree;
 mod trimesh3;
 mod trimesh3_raycast;
 mod vtx2elem;
@@ -22,6 +23,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     vtx2elem::add_functions(_py, m)?;
     mortons::add_functions(_py, m)?;
     array1d::add_functions(_py, m)?;
+    quad_oct_tree::add_functions(_py, m)?;
     Ok(())
 }
 

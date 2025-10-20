@@ -7,43 +7,43 @@ import torch
 import del_msh_numpy.TriMesh
 import del_msh_numpy.BVH
 import del_msh_dlpack.Raycast
-import del_msh_dlpack.TriMesh3.np
-import del_msh_dlpack.TriMesh3.pt
+import del_msh_dlpack.TriMesh3.numpy
+import del_msh_dlpack.TriMesh3.torch
 
 
 def test_01():
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
     tri2vtx = tri2vtx.astype(numpy.uint32)
-    np_tri2normal = del_msh_dlpack.TriMesh3.np.tri2normal(tri2vtx, vtx2xyz)
+    np_tri2normal = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz)
     tri2area = numpy.linalg.norm(np_tri2normal, axis=1)
     area = tri2area.sum() * 0.5
     area0 = 0.8 * 0.8 * 4.0 * numpy.pi
     assert abs(area - area0) / area0 < 0.001
     rng = numpy.random.default_rng(seed=42)
     np_dw_tri2nrm = rng.random(tri2vtx.shape).astype(numpy.float32)
-    np_dw_vtx2xyz = del_msh_dlpack.TriMesh3.np.bwd_tri2normal(
+    np_dw_vtx2xyz = del_msh_dlpack.TriMesh3.numpy.bwd_tri2normal(
         tri2vtx, vtx2xyz, np_dw_tri2nrm
     )
     #
     tri2vtx = torch.from_numpy(tri2vtx)
     vtx2xyz = torch.from_numpy(vtx2xyz)
-    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.pt.tri2normal(tri2vtx, vtx2xyz)
+    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.torch.tri2normal(tri2vtx, vtx2xyz)
     ptcpu_area = ptcpu_tri2normal.norm(dim=1).sum() * 0.5
     assert abs(area - ptcpu_area.item()) < 1.0e-20
-    ptcpu_dw_vtx2xyz = del_msh_dlpack.TriMesh3.pt.bwd_tri2normal(
+    ptcpu_dw_vtx2xyz = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
         tri2vtx, vtx2xyz, torch.from_numpy(np_dw_tri2nrm)
     )
     assert numpy.linalg.norm(np_dw_vtx2xyz - ptcpu_dw_vtx2xyz.numpy()) < 1.0e-20
     if torch.cuda.is_available():
         print('test "tri2nrm" and "dw_tri2nrm" on gpu')
-        ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.pt.tri2normal(
+        ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.torch.tri2normal(
             tri2vtx.cuda(), vtx2xyz.cuda()
         )
         # print(ptcuda_tri2normal)
         n0 = torch.norm(ptcpu_tri2normal - ptcuda_tri2nrm.cpu())
         n1 = torch.norm(ptcuda_tri2nrm)
         assert n0 / n1 < 1.0e-7, n0 / n1
-        ptcuda_dw_vtx2xyz = del_msh_dlpack.TriMesh3.pt.bwd_tri2normal(
+        ptcuda_dw_vtx2xyz = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
             tri2vtx.cuda(), vtx2xyz.cuda(), torch.from_numpy(np_dw_tri2nrm).cuda()
         )
         n0 = torch.norm(ptcuda_dw_vtx2xyz.cpu() - ptcpu_dw_vtx2xyz)
@@ -109,9 +109,9 @@ def test_03():
     num_vtx = vtx2xyz0.shape[0]
     rng = numpy.random.default_rng(seed=42)
     dw_tri2nrm = rng.random((num_tri, 3)).astype(numpy.float32)
-    tri2nrm0 = del_msh_dlpack.TriMesh3.np.tri2normal(tri2vtx, vtx2xyz0)
+    tri2nrm0 = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz0)
     loss0 = numpy.tensordot(dw_tri2nrm, tri2nrm0)
-    dw_vtx2xyz = del_msh_dlpack.TriMesh3.np.bwd_tri2normal(
+    dw_vtx2xyz = del_msh_dlpack.TriMesh3.numpy.bwd_tri2normal(
         tri2vtx, vtx2xyz0, dw_tri2nrm
     )
     eps = 1.0e-3
@@ -119,7 +119,7 @@ def test_03():
         for i_dim in range(0, 3):
             vtx2xyz1 = vtx2xyz0.copy()
             vtx2xyz1[i_vtx, i_dim] += eps
-            tri2nrm1 = del_msh_dlpack.TriMesh3.np.tri2normal(tri2vtx, vtx2xyz1)
+            tri2nrm1 = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz1)
             loss1 = numpy.tensordot(dw_tri2nrm, tri2nrm1)
             diff_num = (loss1 - loss0) / eps
             diff_ana = dw_vtx2xyz[i_vtx, i_dim]
@@ -134,14 +134,14 @@ def test_04():
         torch.from_numpy(vtx2xyz),
     )
     dw_tri2nrm = torch.rand(size=tri2vtx.shape, dtype=torch.float32)
-    dw_vtx2xyz0 = del_msh_dlpack.TriMesh3.pt.bwd_tri2normal(
+    dw_vtx2xyz0 = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
         tri2vtx, vtx2xyz, dw_tri2nrm
     )
     #
     vtx2xyz = torch.nn.Parameter(vtx2xyz)
     optimizer = torch.optim.Adam([vtx2xyz], lr=0.001)
     optimizer.zero_grad()
-    tri2nrm = del_msh_dlpack.TriMesh3.pt.Tri2Normal.apply(tri2vtx, vtx2xyz)
+    tri2nrm = del_msh_dlpack.TriMesh3.torch.Tri2Normal.apply(tri2vtx, vtx2xyz)
     loss0 = torch.tensordot(tri2nrm, dw_tri2nrm)
     loss0.backward()
     print(loss0)
@@ -155,7 +155,7 @@ def test_04():
         vtx2xyz = torch.nn.Parameter(vtx2xyz)
         optimizer = torch.optim.Adam([vtx2xyz], lr=0.001)
         optimizer.zero_grad()
-        tri2nrm = del_msh_dlpack.TriMesh3.pt.Tri2Normal.apply(tri2vtx.cuda(), vtx2xyz)
+        tri2nrm = del_msh_dlpack.TriMesh3.torch.Tri2Normal.apply(tri2vtx.cuda(), vtx2xyz)
         loss1 = torch.tensordot(tri2nrm, dw_tri2nrm)
         loss1.backward()
         dw_vtx2xyz2 = vtx2xyz.grad

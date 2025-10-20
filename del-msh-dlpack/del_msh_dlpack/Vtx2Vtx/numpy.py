@@ -1,8 +1,9 @@
 import numpy as np
+import numpy.typing as npt
 from .. import _CapsuleAsDLPack
 
 
-def from_uniform_mesh(elem2vtx: np.ndarray, num_vtx: int, is_self: bool):
+def from_uniform_mesh(elem2vtx: npt.NDArray, num_vtx: int, is_self: bool):
     """make vertex surrounding vertex data from uniform mesh"""
     assert len(elem2vtx.shape) == 2
     assert elem2vtx.dtype == np.uint32
@@ -17,13 +18,13 @@ def from_uniform_mesh(elem2vtx: np.ndarray, num_vtx: int, is_self: bool):
 
 
 def laplacian_smoothing(
-    vtx2idx: np.ndarray,
-    idx2vtx: np.ndarray,
+    vtx2idx: npt.NDArray,
+    idx2vtx: npt.NDArray,
     lambda0: float,
-    vtx2lhs: np.ndarray,
-    vtx2rhs: np.ndarray,
+    vtx2lhs: npt.NDArray,
+    vtx2rhs: npt.NDArray,
     num_iter: int,
-    vtx2lhstmp: np.ndarray | None,
+    vtx2lhstmp: npt.NDArray | None,
 ):
     """Solve the linear system from screened Poisson equation using Jacobi method:
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
@@ -57,7 +58,9 @@ def laplacian_smoothing(
 
 
 def multiply_graph_laplacian(
-    vtx2idx: np.ndarray, idx2vtx: np.ndarray, vtx2rhs: np.ndarray
+    vtx2idx: npt.NDArray,
+    idx2vtx: npt.NDArray,
+    vtx2rhs: npt.NDArray
 ) -> np.ndarray:
     num_vtx = vtx2idx.shape[0] - 1
     assert len(vtx2idx.shape) == 1

@@ -24,9 +24,9 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     from .. import TriMesh3
 
     TriMesh3.tri2normal(
-        util_torch.to_dlpack_safe(tri2vtx),
-        util_torch.to_dlpack_safe(vtx2xyz),
-        util_torch.to_dlpack_safe(tri2nrm),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(tri2nrm, stream_ptr),
         stream_ptr=stream_ptr,
     )
     return tri2nrm
@@ -35,7 +35,7 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
 def bwd_tri2normal(
     tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
 ):
-    num_tri = tri2vtx.shape[0]
+    # num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     device = tri2vtx.device
     assert len(tri2vtx.shape) == 2
@@ -61,10 +61,10 @@ def bwd_tri2normal(
     from .. import TriMesh3
 
     TriMesh3.bwd_tri2normal(
-        util_torch.to_dlpack_safe(tri2vtx),
-        util_torch.to_dlpack_safe(vtx2xyz),
-        util_torch.to_dlpack_safe(dw_tri2nrm),
-        util_torch.to_dlpack_safe(dw_vtx2xyz),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(dw_tri2nrm, stream_ptr),
+        util_torch.to_dlpack_safe(dw_vtx2xyz, stream_ptr),
         stream_ptr=stream_ptr,
     )
     return dw_vtx2xyz

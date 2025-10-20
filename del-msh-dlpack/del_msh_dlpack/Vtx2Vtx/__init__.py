@@ -1,6 +1,3 @@
-import numpy
-
-
 def laplacian_smoothing(
     vtx2idx,
     idx2vtx,

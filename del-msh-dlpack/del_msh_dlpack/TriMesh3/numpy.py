@@ -19,7 +19,7 @@ def tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
 
 
 def bwd_tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray, dw_tri2nrm: np.ndarray):
-    num_tri = tri2vtx.shape[0]
+    # num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     assert len(tri2vtx.shape) == 2
     assert tri2vtx.shape[1] == 3

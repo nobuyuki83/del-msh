@@ -33,7 +33,7 @@ fn mortons_vtx2morton_from_vtx2co(
             let transform_co2unit =
                 unsafe { crate::slice_from_tensor::<f32>(transform_co2unit) }.unwrap();
             let vtx2morton = unsafe { crate::slice_from_tensor_mut::<u32>(vtx2morton) }.unwrap();
-            del_msh_cpu::bvhnodes_morton::vtx2morton(
+            del_msh_cpu::mortons::vtx2morton_from_vtx2co(
                 num_dim as usize,
                 vtx2co,
                 transform_co2unit,
@@ -48,7 +48,7 @@ fn mortons_vtx2morton_from_vtx2co(
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             {
                 let (func, _mdl) = del_cudarc_sys::load_function_in_module(
-                    del_msh_cuda_kernel::BVHNODES_MORTON,
+                    del_msh_cuda_kernel::MORTONS,
                     "vtx2morton",
                 );
                 let mut builder = del_cudarc_sys::Builder::new(stream);
