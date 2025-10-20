@@ -376,7 +376,7 @@ def ccd_intersection_time(
         aabbs: typing.Optional[numpy.typing.NDArray] = None,
         roots: typing.Optional[typing.List[int]] = None):
     from .del_msh_numpy import ccd_intersection_time
-    if not bvhnodes is None:
+    if bvhnodes is not None:
         assert bvhnodes.shape[0] == aabbs.shape[0]
         assert vtx2xyz0.shape == vtx2xyz1.shape
         assert bvhnodes.shape[0] == vtx2xyz0.shape[0] * 2 - 1 + edge2vtx.shape[0] * 2 - 1 + tri2vtx.shape[0] * 2 - 1

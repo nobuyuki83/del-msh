@@ -1,5 +1,4 @@
 import numpy
-from del_msh_numpy import TriMesh
 
 
 def test_01():

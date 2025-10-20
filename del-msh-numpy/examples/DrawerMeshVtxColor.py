@@ -3,7 +3,6 @@ OpenGL drawer of uniform simplex mesh (triangles and line segments) with vertex 
 """
 
 from pyrr import Matrix44
-import numpy
 import moderngl
 
 class Drawer:

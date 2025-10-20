@@ -1,5 +1,4 @@
 import numpy as np
-import bpy
 
 from del_msh_numpy import TriMesh, AlembicExporter
 
