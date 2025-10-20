@@ -10,7 +10,6 @@ def test_01():
     test Vtx2Vtx for numpy
     """
     import del_msh_numpy.TriMesh
-    import del_msh_dlpack.Vtx2Vtx.np
 
     tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.torus(1.0, 0.3, 64, 32)
     tri2vtx = tri2vtx.astype(numpy.uint32)

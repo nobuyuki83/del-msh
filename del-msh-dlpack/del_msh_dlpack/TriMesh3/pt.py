@@ -1,4 +1,3 @@
-from typing import Any
 
 import torch
 from .. import util_torch

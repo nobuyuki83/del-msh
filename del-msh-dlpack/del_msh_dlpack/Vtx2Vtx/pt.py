@@ -1,5 +1,4 @@
 import torch
-import os
 from .. import _CapsuleAsDLPack
 from .. import util_torch
 

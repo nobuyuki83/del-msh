@@ -1,4 +1,3 @@
-import numpy
 
 
 def pix2tri(pix2tri, tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world):

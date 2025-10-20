@@ -1,5 +1,3 @@
-import math
-import os.path
 
 #
 import numpy
