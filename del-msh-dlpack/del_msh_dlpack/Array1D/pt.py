@@ -1,5 +1,5 @@
 import torch
-
+from .. import util_torch
 
 def permute(old2val: torch.Tensor, new2old: torch.Tensor):
     n = old2val.shape[0]
@@ -19,9 +19,9 @@ def permute(old2val: torch.Tensor, new2old: torch.Tensor):
     from .. import Array1D
 
     Array1D.permute(
-        old2val.__dlpack__(stream=stream_ptr),
-        new2old.__dlpack__(stream=stream_ptr),
-        new2val.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(old2val),
+        util_torch.to_dlpack_safe(new2old),
+        util_torch.to_dlpack_safe(new2val),
         stream_ptr,
     )
     return new2val
@@ -40,8 +40,8 @@ def argsort(idx2val: torch.Tensor):
     from .. import Array1D
 
     Array1D.argsort(
-        jdx2val.__dlpack__(stream=stream_ptr),
-        jdx2idx.__dlpack__(stream=stream_ptr),
+        util_torch.to_dlpack_safe(jdx2val),
+        util_torch.to_dlpack_safe(jdx2idx),
         stream_ptr,
     )
     return jdx2idx, jdx2val
