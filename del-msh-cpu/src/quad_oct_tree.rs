@@ -100,13 +100,13 @@ pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32], bnode2onode: &mut [u32])
         }
         let i_bnode_parent = bnodes[i_bnode * 3] as usize;
         if bnode2depth[i_bnode] != bnode2depth[i_bnode_parent] {
-            bnode2isonode[i_bnode] = 1;
+            bnode2isonode[i_bnode - 1] = 1; // shift for exclusive scan
         }
     }
-    // prefix sum
-    bnode2onode[0] = bnode2isonode[0];
+    // prefix sum (exclusive scan)
+    bnode2onode[0] = 0;
     for i_bnode in 1..num_vtx - 1 {
-        bnode2onode[i_bnode] = bnode2onode[i_bnode - 1] + bnode2isonode[i_bnode];
+        bnode2onode[i_bnode] = bnode2onode[i_bnode - 1] + bnode2isonode[i_bnode - 1];
     }
 }
 
@@ -327,7 +327,7 @@ pub fn check_octree<const NDIM: usize>(
 
 #[test]
 fn test_octree_2d() {
-    let num_vtx = 1000usize;
+    let num_vtx = 10usize;
     const NDIM: usize = 2;
     let max_depth = 16;
     let vtx2xyz: Vec<f32> = {

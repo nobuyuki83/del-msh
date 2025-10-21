@@ -34,7 +34,8 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(jdx2buff.dptr);
         builder.launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32));
     }
-    let vtx2idx = del_cudarc_sys::cumsum::cumsum(stream, &vtx2nvtx);
+    let vtx2idx = CuVec::<u32>::with_capacity(vtx2nvtx.n);
+    del_cudarc_sys::cumsum::exclusive_scan(stream, &vtx2nvtx, &vtx2idx);
     let num_idx = vtx2idx.last();
     let idx2vtx: CuVec<u32> = CuVec::with_capacity(num_idx as usize);
     {

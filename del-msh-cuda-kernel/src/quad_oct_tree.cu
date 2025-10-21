@@ -45,4 +45,25 @@ void binary_radix_tree_and_depth(
     bnode2depth[i_bnode] = (delta_split - offset) / num_dim;
 }
 
+
+__global__
+void bnode2isonode(
+    uint32_t num_bnode,
+    const uint32_t* bnodes,
+    const uint32_t* bnode2depth,
+    uint32_t* bnode2isonode)
+{
+    const unsigned int i_bnode = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i_bnode >= num_bnode ) return;
+    //
+    if( i_bnode == 0 ){
+        return;
+    }
+    const uint32_t i_bnode_parent = bnodes[i_bnode * 3];
+    if( bnode2depth[i_bnode] != bnode2depth[i_bnode_parent] ){
+        bnode2isonode[i_bnode-1] = 1; // shift for exclusive scan
+    }
+}
+
+
 }
