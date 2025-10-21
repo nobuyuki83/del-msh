@@ -37,8 +37,8 @@ void kernel_MortonCode_BVHTopology(
   const unsigned int ini = idx;
   const unsigned int nni = nMC-1;
   // -------------------------------
-  const int2 range = device_MortonCode_DeterminRange(dSortedMC,nMC,ini);
-  const int isplit = device_MortonCode_FindSplit(dSortedMC,range.x,range.y);
+  const int2 range = mortons::device_MortonCode_DeterminRange(dSortedMC,nMC,ini);
+  const int isplit = mortons::device_MortonCode_FindSplit(dSortedMC,range.x,range.y);
   // printf("%d --> %d %d  %d\n",ini, range.x, range.y, isplit);
   // -------------------------------
   if( range.x == isplit ){

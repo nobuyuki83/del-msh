@@ -89,9 +89,10 @@ pub fn bnode2depth(
 }
  */
 
-pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32]) -> Vec<u32> {
+pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32], bnode2onode: &mut [u32]) {
     let num_vtx = bnodes.len() / 3 + 1;
     assert_eq!(bnodes.len(), (num_vtx - 1) * 3);
+    assert_eq!(bnode2onode.len(), num_vtx - 1);
     let mut bnode2isonode = vec![0; num_vtx - 1];
     for i_bnode in 0..num_vtx - 1 {
         if i_bnode == 0 {
@@ -102,14 +103,11 @@ pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32]) -> Vec<u32> {
             bnode2isonode[i_bnode] = 1;
         }
     }
-    // dbg!(&bnode2isonode);
-    let mut bnode2onode = vec![0u32; num_vtx - 1];
     // prefix sum
     bnode2onode[0] = bnode2isonode[0];
     for i_bnode in 1..num_vtx - 1 {
         bnode2onode[i_bnode] = bnode2onode[i_bnode - 1] + bnode2isonode[i_bnode];
     }
-    bnode2onode
 }
 
 #[allow(clippy::type_complexity)]
@@ -348,19 +346,14 @@ fn test_octree_2d() {
         &vtx2xyz,
         &del_geo_core::mat3_col_major::from_identity(),
     );
-    for idx in 0..num_vtx - 1 {
-        let jdx = idx + 1;
-        assert!(idx2morton[idx] <= idx2morton[jdx]);
-    }
     crate::mortons::check_morton_code_range_split(&idx2morton);
     // bvh creation
     let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
     let mut bnode2depth = vec![0u32; num_vtx - 1];
     binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
     crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
-    // dbg!(&bnode2depth);
-    let bnode2onode = bnode2onode(&bnodes, &bnode2depth);
-    // dbg!(&bnode2onode);
+    let mut bnode2onode = vec![0u32; num_vtx - 1];
+    crate::quad_oct_tree::bnode2onode(&bnodes, &bnode2depth, &mut bnode2onode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
     println!("num octree node branch:{}", num_onode);
     let (onodes, onode2depth, onode2center, idx2onode, idx2center) =
@@ -406,17 +399,14 @@ fn test_octree_3d() {
         &vtx2xyz,
         &del_geo_core::mat4_col_major::from_identity(),
     );
-    for idx in 0..num_vtx - 1 {
-        let jdx = idx + 1;
-        assert!(idx2morton[idx] <= idx2morton[jdx]);
-    }
     crate::mortons::check_morton_code_range_split(&idx2morton);
     // bvh creation
     let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
     let mut bnode2depth = vec![0u32; num_vtx - 1];
     binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
     crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
-    let bnode2onode = bnode2onode(&bnodes, &bnode2depth);
+    let mut bnode2onode = vec![0u32; num_vtx - 1];
+    crate::quad_oct_tree::bnode2onode(&bnodes, &bnode2depth, &mut bnode2onode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
     println!("num octree node branch:{}", num_onode);
     let (onodes, onode2depth, onode2center, idx2onode, idx2center) =

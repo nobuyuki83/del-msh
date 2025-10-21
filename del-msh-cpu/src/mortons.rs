@@ -327,7 +327,12 @@ pub fn split_of_binary_radix_tree_node(
 /// panic if there is a bug in the sorted morton codes
 #[allow(dead_code)]
 pub fn check_morton_code_range_split(idx2morton: &[u32]) {
+    let num_vtx = idx2morton.len();
     assert!(!idx2morton.is_empty());
+    for idx in 0..num_vtx - 1 {
+        let jdx = idx + 1;
+        assert!(idx2morton[idx] <= idx2morton[jdx]);
+    }
     for ini in 0..idx2morton.len() - 1 {
         let range = range_of_binary_radix_tree_node(idx2morton, ini);
         let isplit = split_of_binary_radix_tree_node(idx2morton, range.0, range.1);
