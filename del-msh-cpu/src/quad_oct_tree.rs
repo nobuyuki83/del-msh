@@ -51,9 +51,7 @@ pub fn binary_radix_tree_and_depth<Index>(
 // max_depth: 10 for 3D, 16 for 2D
 fn morton2center(morton: u32, num_dim: usize, depth: usize, max_depth: usize, center: &mut [f32]) {
     let mut key = morton >> ((max_depth - depth) * num_dim);
-    for i_dim in 0..num_dim {
-        center[i_dim] = 0.5;
-    }
+    center.iter_mut().take(num_dim).for_each(|v| *v = 0.5);
     for _i_depth in 0..depth {
         for i_dim in 0..num_dim {
             let j = num_dim - i_dim - 1;
@@ -102,6 +100,7 @@ pub fn bnode2onode_and_idx2bnode(
 }
 
 #[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 pub fn make_tree_from_binary_radix_tree(
     bnodes: &[u32],
     bnode2onode: &[u32],

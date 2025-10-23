@@ -58,9 +58,9 @@ def make_tree_from_binary_radix_tree(
     #
     onodes = torch.empty((num_onode, nlink), device=device, dtype=torch.uint32)
     onode2depth = torch.empty((num_onode, ), device=device, dtype=torch.uint32)
-    onode2center = torch.empty((num_onode, 3), device=device, dtype=torch.float32)
+    onode2center = torch.empty((num_onode, num_dim), device=device, dtype=torch.float32)
     idx2onode = torch.empty((num_idx, ), device=device, dtype=torch.uint32)
-    idx2center= torch.empty((num_idx, 3), device=device, dtype=torch.float32)
+    idx2center= torch.empty((num_idx, num_dim), device=device, dtype=torch.float32)
     #
     onode2depth.fill_(0)
     onodes.fill_(2**32 - 1) # the maximum of uint32

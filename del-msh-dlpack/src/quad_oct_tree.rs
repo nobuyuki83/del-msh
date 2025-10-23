@@ -117,6 +117,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
 }
 
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     _py: Python<'_>,
     bnodes: &Bound<'_, PyAny>,
@@ -158,9 +159,9 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     assert_eq!(num_link as usize, 1 + 2i32.pow(num_dim as u32) as usize);
     crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device);
     crate::check_1d_tensor::<u32>(onode2depth, num_onode, device);
-    crate::check_2d_tensor::<f32>(onode2center, num_onode, 3, device);
+    crate::check_2d_tensor::<f32>(onode2center, num_onode, num_dim as i64, device);
     crate::check_1d_tensor::<u32>(idx2onode, num_idx, device);
-    crate::check_2d_tensor::<f32>(idx2center, num_idx, 3, device);
+    crate::check_2d_tensor::<f32>(idx2center, num_idx, num_dim as i64, device);
     //
     match device {
         dlpack::device_type_codes::CPU => {
