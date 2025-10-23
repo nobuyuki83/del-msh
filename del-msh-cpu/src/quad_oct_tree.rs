@@ -277,7 +277,7 @@ pub fn check_octree<const NDIM: usize>(
                 onodes[i_onode * nlink]
             } else {
                 let idx = i_onode - num_onode;
-                idx2onode[idx] as u32
+                idx2onode[idx]
             };
             if i_onode_parent == u32::MAX {
                 continue;
