@@ -12,13 +12,39 @@ def test_01():
     )
     (idx2vtx, idx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
     #
-    (bnodes, bnode2depth, bnode2onode) = del_msh_dlpack.QuadOctTree.torch.bnodes_and_bnode2depth_and_bnode2onode(idx2morton, 3)
+    (bnodes, bnode2depth, bnode2onode) \
+     = del_msh_dlpack.QuadOctTree.torch.bnodes_and_bnode2depth_and_bnode2onode(
+      idx2morton, 3)
     num_onode = bnode2onode[-1].item() + 1
     print(num_onode)
+    (onodes, onode2depth, onode2center, idx2onode, idx2center) \
+      = del_msh_dlpack.QuadOctTree.torch.make_tree_from_binary_radix_tree(
+       bnodes,
+       bnode2onode,
+       bnode2depth,
+       idx2morton,
+       3)
+    print(onodes)
     #
     if torch.cuda.is_available():
-        (d_bnodes, d_bnode2depth, d_bnode2onode) = del_msh_dlpack.QuadOctTree.torch.bnodes_and_bnode2depth_and_bnode2onode(idx2morton.cuda(),3,10)
+        d_idx2morton = idx2morton.cuda()
+        (d_bnodes, d_bnode2depth, d_bnode2onode) \
+          = del_msh_dlpack.QuadOctTree.torch.bnodes_and_bnode2depth_and_bnode2onode(
+          idx2morton.cuda(),3,10)
         assert torch.equal(bnodes, d_bnodes.cpu())
         assert torch.equal(bnode2depth, d_bnode2depth.cpu())
         assert torch.equal(bnode2onode, d_bnode2onode.cpu())
+        (d_onodes, d_onode2depth, d_onode2center, d_idx2onode, d_idx2center) \
+          = del_msh_dlpack.QuadOctTree.torch.make_tree_from_binary_radix_tree(
+          d_bnodes,
+          d_bnode2onode,
+          d_bnode2depth,
+          d_idx2morton,
+          3)
+        print(d_onodes)
+
+
+
+
+
 

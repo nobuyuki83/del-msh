@@ -49,52 +49,43 @@ pub fn binary_radix_tree_and_depth<Index>(
 }
 
 // max_depth: 10 for 3D, 16 for 2D
-fn morton2center<const NDIM: usize>(morton: u32, depth: usize, max_depth: usize) -> [f32; NDIM] {
-    let mut key = morton >> ((max_depth - depth) * NDIM);
-    let mut center = [0.5f32; NDIM];
+fn morton2center(morton: u32, num_dim: usize, depth: usize, max_depth: usize, center: &mut [f32]) {
+    let mut key = morton >> ((max_depth - depth) * num_dim);
+    for i_dim in 0..num_dim {
+        center[i_dim] = 0.5;
+    }
     for _i_depth in 0..depth {
-        for i_dim in 0..NDIM {
-            let j = NDIM - i_dim - 1;
+        for i_dim in 0..num_dim {
+            let j = num_dim - i_dim - 1;
             center[j] += (key & 1) as f32;
             center[j] *= 0.5f32;
             key >>= 1;
         }
     }
-    center
 }
 
-/*
-pub fn bnode2depth(
+pub fn bnode2onode_and_idx2bnode(
     bnodes: &[u32],
-    idx2morton: &[u32],
-    num_dim: usize,
-    max_depth: usize,
-) -> Vec<u32> {
-    let num_idx = idx2morton.len();
-    assert_eq!(bnodes.len(), (num_idx - 1) * 3);
-    let mut bnode2depth = vec![0u32; num_idx - 1];
-    for i_branch in 0..num_idx - 1 {
-        let i_left = bnodes[i_branch * 3 + 1];
-        let i_split = if i_left >= num_idx as u32 - 1 {
-            i_left as usize - (num_idx - 1)
-        } else {
-            i_left as usize
-        };
-        let delta_split = (idx2morton[i_split] ^ idx2morton[i_split + 1]).leading_zeros();
-        // 3D: morton code use 3x10 bits. 32 - 3x10 = 2. Leading two bits are always zero.
-        let offset = u32::BITS as usize - num_dim * max_depth;
-        bnode2depth[i_branch] = (delta_split - offset as u32) / num_dim as u32;
-    }
-    bnode2depth
-}
- */
-
-pub fn bnode2onode(bnodes: &[u32], bnode2depth: &[u32], bnode2onode: &mut [u32]) {
-    let num_vtx = bnodes.len() / 3 + 1;
-    assert_eq!(bnodes.len(), (num_vtx - 1) * 3);
+    bnode2depth: &[u32],
+    bnode2onode: &mut [u32],
+    idx2bnode: &mut [u32],
+) {
+    let num_bnode = bnodes.len() / 3;
+    let num_vtx = num_bnode + 1;
+    assert_eq!(bnodes.len(), num_bnode * 3);
     assert_eq!(bnode2onode.len(), num_vtx - 1);
-    let mut bnode2isonode = vec![0; num_vtx - 1];
-    for i_bnode in 0..num_vtx - 1 {
+    let mut bnode2isonode = vec![0; num_bnode];
+    for i_bnode in 0..num_bnode {
+        {
+            if bnodes[i_bnode * 3 + 1] as usize >= num_vtx - 1 {
+                let idx = bnodes[i_bnode * 3 + 1] as usize - (num_vtx - 1);
+                idx2bnode[idx] = i_bnode as u32;
+            }
+            if bnodes[i_bnode * 3 + 2] as usize >= num_vtx - 1 {
+                let idx = bnodes[i_bnode * 3 + 2] as usize - (num_vtx - 1);
+                idx2bnode[idx] = i_bnode as u32;
+            }
+        }
         if i_bnode == 0 {
             continue;
         }
@@ -115,46 +106,38 @@ pub fn make_tree_from_binary_radix_tree<const NDIM: usize>(
     bnodes: &[u32],
     bnode2onode: &[u32],
     bnode2depth: &[u32],
+    idx2bnode: &[u32],
     idx2morton: &[u32],
     num_onode: usize,
     max_depth: usize,
-) -> (Vec<u32>, Vec<usize>, Vec<f32>, Vec<usize>, Vec<f32>) {
+    onodes: &mut [u32],
+    onode2depth: &mut [u32],
+    onode2center: &mut [f32],
+    idx2onode: &mut [u32],
+    idx2center: &mut [f32],
+) {
     let num_child = 1 << NDIM; // 8 for 3D
     let nlink = (num_child + 1) as usize; // 9 for 3D, 5 for 2D
     let num_vtx = bnodes.len() / 3 + 1;
+    assert_eq!(idx2bnode.len(), num_vtx);
     assert_eq!(idx2morton.len(), num_vtx);
-    let idx2bnode = {
-        let mut idx2bnode = vec![0; num_vtx];
-        for i_bnode in 0..num_vtx - 1 {
-            if bnodes[i_bnode * 3 + 1] as usize >= num_vtx - 1 {
-                let idx = bnodes[i_bnode * 3 + 1] as usize - (num_vtx - 1);
-                idx2bnode[idx] = i_bnode;
-            }
-            if bnodes[i_bnode * 3 + 2] as usize >= num_vtx - 1 {
-                let idx = bnodes[i_bnode * 3 + 2] as usize - (num_vtx - 1);
-                idx2bnode[idx] = i_bnode;
-            }
-        }
-        idx2bnode
-    };
-    // dbg!(&idx2bnode);
-    let mut onodes = vec![u32::MAX; num_onode * nlink];
-    let mut idx2onode = vec![0usize; num_vtx];
-    let mut onode2depth = vec![0usize; num_onode];
-    let mut onode2center = vec![0f32; num_onode * NDIM];
-    let mut idx2center = vec![0f32; num_vtx * NDIM];
+    assert_eq!(onodes.len(), num_onode * nlink);
+    assert_eq!(onode2depth.len(), num_onode);
+    assert_eq!(onode2center.len(), num_onode * NDIM);
+    assert_eq!(idx2onode.len(), num_vtx);
+    assert_eq!(idx2center.len(), num_vtx * NDIM);
     for i in 0..num_vtx {
         {
             // set leaf
             let idx = i;
             let (i_onode_parent, depth_parent) = {
-                let mut i_bnode_cur = idx2bnode[idx];
+                let mut i_bnode_cur = idx2bnode[idx] as usize;
                 loop {
                     if i_bnode_cur == 0 || bnode2onode[i_bnode_cur] != bnode2onode[i_bnode_cur - 1]
                     {
                         break (bnode2onode[i_bnode_cur] as usize, bnode2depth[i_bnode_cur]);
                     }
-                    i_bnode_cur = bnodes[i_bnode_cur * 3] as usize
+                    i_bnode_cur = bnodes[i_bnode_cur * 3] as usize;
                 }
             };
             assert!(depth_parent < max_depth as u32);
@@ -164,12 +147,15 @@ pub fn make_tree_from_binary_radix_tree<const NDIM: usize>(
             // println!("leaf: {} {} {}", i_onode_parent, i_child, depth_parent);
             assert_eq!(
                 onodes[i_onode_parent * nlink + 1 + i_child as usize],
-                u32::MAX
+                u32::MAX,
+                "duplicated child -- idx {}",
+                idx
             );
             //
             onodes[i_onode_parent * nlink + 1 + i_child as usize] = (idx + num_onode) as u32;
-            idx2onode[idx] = i_onode_parent;
-            let center = morton2center::<NDIM>(idx2morton[idx], max_depth, max_depth);
+            idx2onode[idx] = i_onode_parent as u32;
+            let mut center = [0f32; 3];
+            morton2center(idx2morton[idx], NDIM, max_depth, max_depth, &mut center);
             for i_dim in 0..NDIM {
                 idx2center[idx * NDIM + i_dim] = center[i_dim];
             }
@@ -203,7 +189,9 @@ pub fn make_tree_from_binary_radix_tree<const NDIM: usize>(
             // println!("branch: {} {} {}", i_onode_parent, i_child, depth_parent);
             assert_eq!(
                 onodes[i_onode_parent * nlink + 1 + i_child as usize],
-                u32::MAX
+                u32::MAX,
+                "duplicated child -- branch {}",
+                i_bnode
             );
             //
             let i_onode = bnode2onode[i_bnode] as usize;
@@ -211,21 +199,21 @@ pub fn make_tree_from_binary_radix_tree<const NDIM: usize>(
             onodes[i_onode * nlink] = i_onode_parent as u32;
             //
             let depth = bnode2depth[i_bnode] as usize;
-            let center = morton2center::<NDIM>(morton, depth, max_depth);
+            let mut center = [0f32; 3];
+            morton2center(morton, NDIM, depth, max_depth, &mut center);
             for i_dim in 0..NDIM {
                 onode2center[i_onode * NDIM + i_dim] = center[i_dim];
             }
-            onode2depth[i_onode] = depth;
+            onode2depth[i_onode] = depth as u32;
         }
     }
-    (onodes, onode2depth, onode2center, idx2onode, idx2center)
 }
 
 pub fn check_octree<const NDIM: usize>(
-    idx2onode: &[usize],
+    idx2onode: &[u32],
     idx2center: &[f32],
     onodes: &[u32],
-    onode2depth: &[usize],
+    onode2depth: &[u32],
     onode2center: &[f32],
     max_depth: usize,
 ) {
@@ -274,7 +262,7 @@ pub fn check_octree<const NDIM: usize>(
             let depth = if i_onode < num_onode {
                 onode2depth[i_onode]
             } else {
-                max_depth
+                max_depth as u32
             };
             let h = 0.5 / (1 << depth) as f32;
             let center: [f32; NDIM] = if i_onode < num_onode {
@@ -353,18 +341,29 @@ fn test_octree_2d() {
     binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
     crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
     let mut bnode2onode = vec![0u32; num_vtx - 1];
-    crate::quad_oct_tree::bnode2onode(&bnodes, &bnode2depth, &mut bnode2onode);
+    let mut idx2bnode = vec![u32::MAX; num_vtx];
+    bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
     println!("num octree node branch:{}", num_onode);
-    let (onodes, onode2depth, onode2center, idx2onode, idx2center) =
-        make_tree_from_binary_radix_tree::<NDIM>(
-            &bnodes,
-            &bnode2onode,
-            &bnode2depth,
-            &idx2morton,
-            num_onode,
-            max_depth,
-        );
+    let mut onodes = vec![u32::MAX; num_onode * 5];
+    let mut idx2onode = vec![0u32; num_vtx];
+    let mut onode2depth = vec![0u32; num_onode];
+    let mut onode2center = vec![0f32; num_onode * NDIM];
+    let mut idx2center = vec![0f32; num_vtx * NDIM];
+    make_tree_from_binary_radix_tree::<NDIM>(
+        &bnodes,
+        &bnode2onode,
+        &bnode2depth,
+        &idx2bnode,
+        &idx2morton,
+        num_onode,
+        max_depth,
+        &mut onodes,
+        &mut onode2depth,
+        &mut onode2center,
+        &mut idx2onode,
+        &mut idx2center,
+    );
     check_octree::<NDIM>(
         &idx2onode,
         &idx2center,
@@ -406,18 +405,29 @@ fn test_octree_3d() {
     binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
     crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
     let mut bnode2onode = vec![0u32; num_vtx - 1];
-    crate::quad_oct_tree::bnode2onode(&bnodes, &bnode2depth, &mut bnode2onode);
+    let mut idx2bnode = vec![u32::MAX; num_vtx];
+    bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
     println!("num octree node branch:{}", num_onode);
-    let (onodes, onode2depth, onode2center, idx2onode, idx2center) =
-        make_tree_from_binary_radix_tree::<NDIM>(
-            &bnodes,
-            &bnode2onode,
-            &bnode2depth,
-            &idx2morton,
-            num_onode,
-            max_depth,
-        );
+    let mut onodes = vec![u32::MAX; num_onode * 9];
+    let mut idx2onode = vec![0u32; num_vtx];
+    let mut onode2depth = vec![0u32; num_onode];
+    let mut onode2center = vec![0f32; num_onode * NDIM];
+    let mut idx2center = vec![0f32; num_vtx * NDIM];
+    make_tree_from_binary_radix_tree::<NDIM>(
+        &bnodes,
+        &bnode2onode,
+        &bnode2depth,
+        &idx2bnode,
+        &idx2morton,
+        num_onode,
+        max_depth,
+        &mut onodes,
+        &mut onode2depth,
+        &mut onode2center,
+        &mut idx2onode,
+        &mut idx2center,
+    );
     check_octree::<NDIM>(
         &idx2onode,
         &idx2center,

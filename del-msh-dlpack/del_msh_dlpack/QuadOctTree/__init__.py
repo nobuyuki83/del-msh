@@ -15,5 +15,22 @@ def bnodes_and_bnode2depth_and_bnode2onode(
 
 
 
+def make_tree_from_binary_radix_tree(
+    bnodes,
+    bnode2onode,
+    bnode2depth,
+    idx2morton,
+    num_dim: int,
+    max_depth: int,
+    onodes,
+    onode2depth,
+    onode2center,
+    idx2onode,
+    idx2center):
+    from ..del_msh_dlpack import quad_oct_tree_make_tree_from_binary_radix_tree
 
+    quad_oct_tree_make_tree_from_binary_radix_tree(
+        bnodes, bnode2onode, bnode2depth, idx2morton,
+        num_dim, max_depth,
+        onodes, onode2depth, onode2center, idx2onode, idx2center)
 
