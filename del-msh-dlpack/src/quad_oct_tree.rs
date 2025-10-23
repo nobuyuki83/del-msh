@@ -3,7 +3,7 @@ use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(
-        quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode,
+        quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode,
         m
     )?)?;
     m.add_function(pyo3::wrap_pyfunction!(
@@ -16,7 +16,7 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
 // binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
-fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode(
+fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
     _py: Python<'_>,
     idx2morton: &Bound<'_, PyAny>,
     num_dim: usize,
@@ -131,6 +131,7 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     onode2center: &Bound<'_, PyAny>,
     idx2onode: &Bound<'_, PyAny>,
     idx2center: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let bnodes = crate::get_managed_tensor_from_pyany(bnodes)?;
     let bnode2onode = crate::get_managed_tensor_from_pyany(bnode2onode)?;
@@ -173,43 +174,51 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
             let onode2center = unsafe { crate::slice_from_tensor_mut(onode2center) }.unwrap();
             let idx2onode = unsafe { crate::slice_from_tensor_mut(idx2onode) }.unwrap();
             let idx2center = unsafe { crate::slice_from_tensor_mut(idx2center) }.unwrap();
-            if num_dim == 2 {
-                del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree::<2>(
-                    bnodes,
-                    bnode2onode,
-                    bnode2depth,
-                    idx2bnode,
-                    idx2morton,
-                    num_onode as usize,
-                    max_depth,
-                    onodes,
-                    onode2depth,
-                    onode2center,
-                    idx2onode,
-                    idx2center,
-                );
-            } else if num_dim == 3 {
-                del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree::<3>(
-                    bnodes,
-                    bnode2onode,
-                    bnode2depth,
-                    idx2bnode,
-                    idx2morton,
-                    num_onode as usize,
-                    max_depth,
-                    onodes,
-                    onode2depth,
-                    onode2center,
-                    idx2onode,
-                    idx2center,
-                );
-            } else {
-                unreachable!();
-            }
+            del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree(
+                bnodes,
+                bnode2onode,
+                bnode2depth,
+                idx2bnode,
+                idx2morton,
+                num_onode as usize,
+                max_depth,
+                num_dim,
+                onodes,
+                onode2depth,
+                onode2center,
+                idx2onode,
+                idx2center,
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            todo!()
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0));
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            //
+            {
+                let (function, _module) = del_cudarc_sys::load_function_in_module(
+                    del_msh_cuda_kernel::QUAD_OCT_TREE,
+                    "make_tree_from_binary_radix_tree",
+                );
+                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_i32(num_idx as i32);
+                builder.arg_data(&bnodes.data);
+                builder.arg_data(&bnode2onode.data);
+                builder.arg_data(&bnode2depth.data);
+                builder.arg_data(&idx2bnode.data);
+                builder.arg_data(&idx2morton.data);
+                builder.arg_i32(num_onode as i32);
+                builder.arg_i32(max_depth as i32);
+                builder.arg_i32(num_dim as i32);
+                builder.arg_data(&onodes.data);
+                builder.arg_data(&onode2depth.data);
+                builder.arg_data(&onode2center.data);
+                builder.arg_data(&idx2onode.data);
+                builder.arg_data(&idx2center.data);
+                builder.launch_kernel(function, cfg);
+            }
         }
         _ => {}
     }
