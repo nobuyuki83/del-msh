@@ -24,9 +24,9 @@ pub fn trimesh3_tri2normal(
     let num_tri = get_shape_tensor(tri2vtx, 0);
     let num_vtx = get_shape_tensor(vtx2xyz, 0);
     //
-    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type);
-    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type);
-    check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type);
+    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
@@ -82,10 +82,10 @@ pub fn trimesh3_bwd_tri2normal(
     let num_tri = get_shape_tensor(tri2vtx, 0);
     let num_vtx = get_shape_tensor(vtx2xyz, 0);
     //
-    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type);
-    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type);
-    check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type);
-    check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type);
+    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type).unwrap();
+    check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {

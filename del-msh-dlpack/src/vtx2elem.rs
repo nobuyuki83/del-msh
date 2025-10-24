@@ -19,7 +19,7 @@ fn vtx2elem_from_uniform_mesh(
     let num_elem = get_shape_tensor(elem2vtx, 0);
     let num_node = get_shape_tensor(elem2vtx, 1);
     let device = elem2vtx.ctx.device_type;
-    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device);
+    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

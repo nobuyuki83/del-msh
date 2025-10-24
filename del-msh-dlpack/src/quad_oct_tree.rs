@@ -37,11 +37,11 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
     let num_bnode = num_idx - 1;
     let device = idx2morton.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2morton, num_idx, device);
-    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device);
-    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device);
-    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device);
-    crate::check_1d_tensor::<u32>(idx2bnode, num_idx, device);
+    crate::check_1d_tensor::<u32>(idx2morton, num_idx, device).unwrap();
+    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
+    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
+    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
+    crate::check_1d_tensor::<u32>(idx2bnode, num_idx, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -150,18 +150,18 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     let num_idx = num_bnode + 1;
     let device = bnodes.ctx.device_type;
     //
-    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device);
-    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device);
-    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device);
+    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
+    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
+    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
     let num_onode = crate::get_shape_tensor(onodes, 0);
     let num_link = crate::get_shape_tensor(onodes, 1);
     assert!(num_dim == 2 || num_dim == 3);
     assert_eq!(num_link as usize, 1 + 2i32.pow(num_dim as u32) as usize);
-    crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device);
-    crate::check_1d_tensor::<u32>(onode2depth, num_onode, device);
-    crate::check_2d_tensor::<f32>(onode2center, num_onode, num_dim as i64, device);
-    crate::check_1d_tensor::<u32>(idx2onode, num_idx, device);
-    crate::check_2d_tensor::<f32>(idx2center, num_idx, num_dim as i64, device);
+    crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
+    crate::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
+    crate::check_2d_tensor::<f32>(onode2center, num_onode, num_dim as i64, device).unwrap();
+    crate::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
+    crate::check_2d_tensor::<f32>(idx2center, num_idx, num_dim as i64, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

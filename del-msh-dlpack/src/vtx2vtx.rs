@@ -37,11 +37,11 @@ fn vtx2vtx_laplacian_smoothing(
     let num_dim = get_shape_tensor(vtx2rhs, 1);
     let device_type = vtx2idx.ctx.device_type;
     //
-    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device_type);
-    check_1d_tensor::<u32>(idx2vtx, -1, device_type);
-    check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_dim, device_type);
-    check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_dim, device_type);
-    check_2d_tensor::<f32>(vtx2lhstmp, num_vtx, num_dim, device_type);
+    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device_type).unwrap();
+    check_1d_tensor::<u32>(idx2vtx, -1, device_type).unwrap();
+    check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_dim, device_type).unwrap();
+    check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_dim, device_type).unwrap();
+    check_2d_tensor::<f32>(vtx2lhstmp, num_vtx, num_dim, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
@@ -123,10 +123,10 @@ fn vtx2vtx_multiply_graph_laplacian(
     let device = vtx2idx.ctx.device_type;
     //
     assert_eq!(num_dim, 3);
-    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device);
-    check_1d_tensor::<u32>(idx2vtx, -1, device);
-    check_2d_tensor::<f32>(vtx2rhs, num_vtx, 3, device);
-    check_2d_tensor::<f32>(vtx2lhs, num_vtx, 3, device);
+    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device).unwrap();
+    check_1d_tensor::<u32>(idx2vtx, -1, device).unwrap();
+    check_2d_tensor::<f32>(vtx2rhs, num_vtx, 3, device).unwrap();
+    check_2d_tensor::<f32>(vtx2lhs, num_vtx, 3, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -158,7 +158,7 @@ fn vtx2vtx_from_uniform_mesh(
     let num_elem = get_shape_tensor(elem2vtx, 0);
     let num_node = get_shape_tensor(elem2vtx, 1);
     let device = elem2vtx.ctx.device_type;
-    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device);
+    check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

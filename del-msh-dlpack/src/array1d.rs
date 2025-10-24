@@ -21,9 +21,9 @@ pub fn array1d_permute(
     let n = crate::get_shape_tensor(old2val, 0);
     let device = old2val.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(old2val, n, device);
-    crate::check_1d_tensor::<u32>(new2old, n, device);
-    crate::check_1d_tensor::<u32>(new2val, n, device);
+    crate::check_1d_tensor::<u32>(old2val, n, device).unwrap();
+    crate::check_1d_tensor::<u32>(new2old, n, device).unwrap();
+    crate::check_1d_tensor::<u32>(new2val, n, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -100,8 +100,8 @@ pub fn array1d_argsort(
     let n = crate::get_shape_tensor(jdx2idx, 0);
     let device = jdx2idx.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(jdx2idx, n, device);
-    crate::check_1d_tensor::<u32>(idx2val, n, device);
+    crate::check_1d_tensor::<u32>(jdx2idx, n, device).unwrap();
+    crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

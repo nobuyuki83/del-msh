@@ -391,37 +391,77 @@ pub fn is_equal<T: ToDataTypeCode>(dt: &DataType) -> bool {
     true
 }
 
+#[macro_export]
+macro_rules! ensure {
+    ($cond:expr, $msg:expr) => {
+        if !$cond {
+            return Err($msg.to_string());
+        }
+    };
+    ($cond:expr $(,)?) => {
+        if !$cond {
+            return Err(format!("ensure! failed: {}", stringify!($cond)));
+        }
+    };
+    ($cond:expr, $($arg:tt)*) => {
+        if !$cond {
+            return Err(format!($($arg)*));
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! ensure_eq {
+    ($left:expr, $right:expr $(,)?) => {
+        if $left != $right {
+            return Err(format!(
+                "assertion failed: left = `{:?}`, right = `{:?}`",
+                $left, $right
+            ));
+        }
+    };
+    ($left:expr, $right:expr, $($arg:tt)*) => {
+        if $left != $right {
+            return Err(format!(
+                "assertion failed: left = `{:?}`, right = `{:?}`: {}",
+                $left, $right, format!($($arg)*)
+            ));
+        }
+    };
+}
+
 pub fn check_2d_tensor<T: ToDataTypeCode>(
     t: &Tensor,
     d0: i64,
     d1: i64,
     device_type: dlpack::DeviceTypeCode,
-) {
-    assert_eq!(t.byte_offset, 0);
+) -> Result<(), String> {
+    ensure_eq!(t.byte_offset, 0, "{}", t.byte_offset);
     let shape = unsafe { std::slice::from_raw_parts(t.shape, t.ndim as usize) };
-    assert_eq!(shape.len(), 2);
-
-    assert_eq!(shape[0], d0);
-    assert_eq!(shape[1], d1);
-    assert!(is_equal::<T>(&t.dtype));
-    assert!(unsafe { is_tensor_c_contiguous(t) });
-    assert_eq!(t.ctx.device_type, device_type);
+    ensure_eq!(shape.len(), 2, "{}", shape.len());
+    ensure_eq!(shape[0], d0);
+    ensure_eq!(shape[1], d1);
+    ensure!(is_equal::<T>(&t.dtype));
+    ensure!(unsafe { is_tensor_c_contiguous(t) });
+    ensure_eq!(t.ctx.device_type, device_type);
+    Ok(())
 }
 
 pub fn check_1d_tensor<T: ToDataTypeCode>(
     t: &Tensor,
     d0: i64,
     device_type: dlpack::DeviceTypeCode,
-) {
-    assert_eq!(t.byte_offset, 0);
+) -> Result<(), String> {
+    ensure_eq!(t.byte_offset, 0);
     let shape = unsafe { std::slice::from_raw_parts(t.shape, t.ndim as usize) };
-    assert_eq!(shape.len(), 1);
+    ensure_eq!(shape.len(), 1);
     if d0 != -1 {
-        assert_eq!(shape[0], d0);
+        ensure_eq!(shape[0], d0);
     }
-    assert!(is_equal::<T>(&t.dtype), "the data type is different");
-    assert!(unsafe { is_tensor_c_contiguous(t) });
-    assert_eq!(t.ctx.device_type, device_type);
+    ensure!(is_equal::<T>(&t.dtype), "the data type is different");
+    ensure!(unsafe { is_tensor_c_contiguous(t) });
+    ensure_eq!(t.ctx.device_type, device_type);
+    Ok(())
 }
 
 pub fn get_shape_tensor(t: &Tensor, i_dim: usize) -> i64 {

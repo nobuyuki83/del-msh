@@ -23,9 +23,9 @@ fn mortons_vtx2morton_from_vtx2co(
     let num_dim = get_shape_tensor(vtx2co, 1);
     assert!(num_dim == 2 || num_dim == 3);
     let device = vtx2co.ctx.device_type;
-    crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device);
-    crate::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device);
-    crate::check_1d_tensor::<u32>(vtx2morton, num_vtx, device);
+    crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    crate::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device).unwrap();
+    crate::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -83,9 +83,9 @@ fn mortons_make_bvh(
     let bvhnodes = crate::get_managed_tensor_from_pyany(bhvnodes)?;
     let n = crate::get_shape_tensor(idx2obj, 0);
     let device = idx2obj.ctx.device_type;
-    crate::check_1d_tensor::<u32>(idx2obj, n, device);
-    crate::check_1d_tensor::<u32>(idx2morton, n, device);
-    crate::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device);
+    crate::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
+    crate::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();
+    crate::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
     match device {
         dlpack::device_type_codes::CPU => {
             let idx2obj = unsafe { crate::slice_from_tensor::<u32>(idx2obj) }.unwrap();
