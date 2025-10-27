@@ -60,10 +60,11 @@ fn vtx2vtx_laplacian_smoothing(
             let (function, _module) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::VTX2VTX,
                 "laplacian_smoothing",
-            );
+            )
+            .unwrap();
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             for _itr in 0..num_iter {
                 {
@@ -75,10 +76,12 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&vtx2lhstmp.data);
                     builder.arg_data(&vtx2lhs.data);
                     builder.arg_data(&vtx2rhs.data);
-                    builder.launch_kernel(
-                        function,
-                        del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
-                    );
+                    builder
+                        .launch_kernel(
+                            function,
+                            del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
+                        )
+                        .unwrap();
                 }
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -89,10 +92,12 @@ fn vtx2vtx_laplacian_smoothing(
                     builder.arg_data(&vtx2lhs.data);
                     builder.arg_data(&vtx2lhstmp.data);
                     builder.arg_data(&vtx2rhs.data);
-                    builder.launch_kernel(
-                        function,
-                        del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
-                    );
+                    builder
+                        .launch_kernel(
+                            function,
+                            del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
+                        )
+                        .unwrap();
                 }
             }
         }
@@ -176,7 +181,7 @@ fn vtx2vtx_from_uniform_mesh(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check, CuVec};
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             use del_cudarc_sys::cu::CUdeviceptr;
             let elem2vtx = CuVec::new(

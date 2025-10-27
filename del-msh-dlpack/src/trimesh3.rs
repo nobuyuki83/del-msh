@@ -41,20 +41,23 @@ pub fn trimesh3_tri2normal(
             let (function, _module) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::TRIMESH3,
                 "tri2normal",
-            );
+            )
+            .unwrap();
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_i32(num_tri as i32);
             builder.arg_data(&tri2vtx.data);
             builder.arg_data(&vtx2xyz.data);
             builder.arg_data(&tri2nrm.data);
-            builder.launch_kernel(
-                function,
-                del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
-            );
+            builder
+                .launch_kernel(
+                    function,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
+                )
+                .unwrap();
         }
         _ => {
             println!("Unknown device type {}", device_type);
@@ -99,7 +102,7 @@ pub fn trimesh3_bwd_tri2normal(
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             {
                 let dptr: cu::CUdeviceptr = dw_vtx2xyz.data as cu::CUdeviceptr;
@@ -108,25 +111,29 @@ pub fn trimesh3_bwd_tri2normal(
                     0,
                     (num_vtx * 3) as usize,
                     stream
-                ));
-                cuda_check!(cu::cuStreamSynchronize(stream));
+                ))
+                .unwrap();
+                cuda_check!(cu::cuStreamSynchronize(stream)).unwrap();
             }
             {
                 // println!("GPU_{}", tri2vtx.ctx.device_id);
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::TRIMESH3,
                     "bwd_tri2normal",
-                );
+                )
+                .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_i32(num_tri as i32);
                 builder.arg_data(&tri2vtx.data);
                 builder.arg_data(&vtx2xyz.data);
                 builder.arg_data(&dw_tri2nrm.data);
                 builder.arg_data(&dw_vtx2xyz.data);
-                builder.launch_kernel(
-                    function,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
-                );
+                builder
+                    .launch_kernel(
+                        function,
+                        del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
+                    )
+                    .unwrap();
             }
         }
         _ => {

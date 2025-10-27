@@ -34,10 +34,10 @@ fn vtx2elem_from_uniform_mesh(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check, CuVec};
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             use del_cudarc_sys::cu::CUdeviceptr;
-            let elem2vtx = CuVec::new(
+            let elem2vtx = CuVec::<u32>::new(
                 elem2vtx.data as CUdeviceptr,
                 (num_elem * num_node) as usize,
                 false,

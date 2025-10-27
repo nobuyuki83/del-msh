@@ -77,3 +77,29 @@ pub fn map_elem_index(elem2vtxa: &[usize], vtxa2vtxb: &[usize]) -> Vec<usize> {
     }
     elem2vtxb
 }
+
+/// "old2new" should be sorted
+/// this function use bisection algorithm to find array of offset
+pub fn inverse(old2new: &[u32], new2old_offset: &mut [u32]) {
+    let num_new = new2old_offset.len() - 1;
+    let num_old = old2new.len();
+    for i_new in 0..num_new + 1 {
+        let mut i0_old = 0;
+        let mut i2_old = num_old;
+        new2old_offset[i_new] = loop {
+            if i2_old - i0_old == 1 {
+                if old2new[i0_old] as usize >= i_new {
+                    break i0_old as u32;
+                } else {
+                    break i2_old as u32;
+                }
+            }
+            let i1_old = (i2_old + i0_old) / 2;
+            if (old2new[i1_old] as usize) < i_new {
+                i0_old = i1_old;
+            } else {
+                i2_old = i1_old;
+            }
+        };
+    }
+}

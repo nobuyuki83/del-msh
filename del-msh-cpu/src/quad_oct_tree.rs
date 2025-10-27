@@ -75,12 +75,12 @@ pub fn bnode2onode_and_idx2bnode(
     let mut bnode2isonode = vec![0; num_bnode];
     for i_bnode in 0..num_bnode {
         {
-            if bnodes[i_bnode * 3 + 1] as usize >= num_vtx - 1 {
-                let idx = bnodes[i_bnode * 3 + 1] as usize - (num_vtx - 1);
+            if bnodes[i_bnode * 3 + 1] as usize >= num_bnode {
+                let idx = bnodes[i_bnode * 3 + 1] as usize - num_bnode;
                 idx2bnode[idx] = i_bnode as u32;
             }
-            if bnodes[i_bnode * 3 + 2] as usize >= num_vtx - 1 {
-                let idx = bnodes[i_bnode * 3 + 2] as usize - (num_vtx - 1);
+            if bnodes[i_bnode * 3 + 2] as usize >= num_bnode {
+                let idx = bnodes[i_bnode * 3 + 2] as usize - num_bnode;
                 idx2bnode[idx] = i_bnode as u32;
             }
         }
@@ -344,7 +344,7 @@ fn test_octree_2d() {
     let mut idx2bnode = vec![u32::MAX; num_vtx];
     bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
-    println!("num octree node branch:{}", num_onode);
+    // println!("num octree node branch:{}", num_onode);
     let mut onodes = vec![u32::MAX; num_onode * 5];
     let mut idx2onode = vec![0u32; num_vtx];
     let mut onode2depth = vec![0u32; num_onode];
@@ -409,7 +409,7 @@ fn test_octree_3d() {
     let mut idx2bnode = vec![u32::MAX; num_vtx];
     bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
     let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
-    println!("num octree node branch:{}", num_onode);
+    // println!("num octree node branch:{}", num_onode);
     let mut onodes = vec![u32::MAX; num_onode * 9];
     let mut idx2onode = vec![0u32; num_vtx];
     let mut onode2depth = vec![0u32; num_onode];

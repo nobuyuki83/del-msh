@@ -452,15 +452,29 @@ pub fn check_1d_tensor<T: ToDataTypeCode>(
     d0: i64,
     device_type: dlpack::DeviceTypeCode,
 ) -> Result<(), String> {
-    ensure_eq!(t.byte_offset, 0);
+    ensure_eq!(
+        t.byte_offset,
+        0,
+        "byte_offset should be zero: {}",
+        t.byte_offset
+    );
     let shape = unsafe { std::slice::from_raw_parts(t.shape, t.ndim as usize) };
-    ensure_eq!(shape.len(), 1);
+    ensure_eq!(shape.len(), 1, "dimension should be one {}", shape.len());
     if d0 != -1 {
         ensure_eq!(shape[0], d0);
     }
     ensure!(is_equal::<T>(&t.dtype), "the data type is different");
-    ensure!(unsafe { is_tensor_c_contiguous(t) });
-    ensure_eq!(t.ctx.device_type, device_type);
+    ensure!(
+        unsafe { is_tensor_c_contiguous(t) },
+        "the array need to be contiguous"
+    );
+    ensure_eq!(
+        t.ctx.device_type,
+        device_type,
+        "device_type is different {} {}",
+        t.ctx.device_type,
+        device_type
+    );
     Ok(())
 }
 

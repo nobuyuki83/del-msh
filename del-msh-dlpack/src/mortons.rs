@@ -44,23 +44,26 @@ fn mortons_vtx2morton_from_vtx2co(
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             {
                 let (func, _mdl) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::MORTONS,
                     "vtx2morton",
-                );
+                )
+                .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_i32(num_vtx as i32);
                 builder.arg_data(&vtx2co.data);
                 builder.arg_i32(num_dim as i32);
                 builder.arg_data(&transform_co2unit.data);
                 builder.arg_data(&vtx2morton.data);
-                builder.launch_kernel(
-                    func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
-                );
+                builder
+                    .launch_kernel(
+                        func,
+                        del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
+                    )
+                    .unwrap();
             }
         }
         _ => {
@@ -97,12 +100,13 @@ fn mortons_make_bvh(
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let (func, _mdl) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::BVHNODES_MORTON,
                 "kernel_MortonCode_BVHTopology",
-            );
+            )
+            .unwrap();
             {
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_i32(n as i32);
@@ -116,7 +120,9 @@ fn mortons_make_bvh(
                 builder.arg_data(&transform_co2unit.data);
                 builder.arg_data(&vtx2morton.data);
                  */
-                builder.launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(n as u32));
+                builder
+                    .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(n as u32))
+                    .unwrap();
             }
         }
         _ => {

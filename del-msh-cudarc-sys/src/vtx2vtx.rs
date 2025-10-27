@@ -15,14 +15,15 @@ pub fn from_uniform_mesh(
     } else {
         jdx2elem.n * (num_node - 1)
     };
-    let jdx2buff = CuVec::<u32>::with_capacity(num_buff);
-    let vtx2nvtx = CuVec::<u32>::with_capacity(num_vtx + 1);
-    vtx2nvtx.set_zeros(stream);
+    let jdx2buff = CuVec::<u32>::with_capacity(num_buff).unwrap();
+    let vtx2nvtx = CuVec::<u32>::with_capacity(num_vtx + 1).unwrap();
+    vtx2nvtx.set_zeros(stream).unwrap();
     {
         let (func, _mdl) = del_cudarc_sys::load_function_in_module(
             del_msh_cuda_kernel::VTX2VTX,
             "vtx2nvtx_from_uniform_mesh",
-        );
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_i32(num_vtx as i32);
         builder.arg_dptr(elem2vtx.dptr);
@@ -32,17 +33,20 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(jdx2elem.dptr);
         builder.arg_dptr(vtx2nvtx.dptr);
         builder.arg_dptr(jdx2buff.dptr);
-        builder.launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32));
+        builder
+            .launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32))
+            .unwrap();
     }
-    let vtx2idx = CuVec::<u32>::with_capacity(vtx2nvtx.n);
+    let vtx2idx = CuVec::<u32>::with_capacity(vtx2nvtx.n).unwrap();
     del_cudarc_sys::cumsum::exclusive_scan(stream, &vtx2nvtx, &vtx2idx);
-    let num_idx = vtx2idx.last();
-    let idx2vtx: CuVec<u32> = CuVec::with_capacity(num_idx as usize);
+    let num_idx = vtx2idx.last().unwrap();
+    let idx2vtx: CuVec<u32> = CuVec::with_capacity(num_idx as usize).unwrap();
     {
         let (func, _mdl) = del_cudarc_sys::load_function_in_module(
             del_msh_cuda_kernel::VTX2VTX,
             "idx2vtx_from_vtx2buff_for_uniform_mesh",
-        );
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_i32(num_vtx as i32);
         builder.arg_dptr(vtx2jdx.dptr);
@@ -51,7 +55,9 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(vtx2idx.dptr);
         builder.arg_dptr(jdx2buff.dptr);
         builder.arg_dptr(idx2vtx.dptr);
-        builder.launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32));
+        builder
+            .launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32))
+            .unwrap();
     }
     (vtx2idx, idx2vtx)
 }

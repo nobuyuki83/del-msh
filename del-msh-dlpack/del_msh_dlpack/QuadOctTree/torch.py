@@ -19,6 +19,8 @@ def bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
     bnode2onode = torch.empty((num_bnode,), device=device, dtype=torch.uint32)
     idx2bnode = torch.empty((num_idx,), device=device, dtype=torch.uint32)
     #
+    idx2bnode.fill_(2**32 - 1) # the maximum of uint32
+    #
     stream_ptr = 0
     if device.type == "cuda":
         torch.cuda.set_device(device)
@@ -88,3 +90,31 @@ def make_tree_from_binary_radix_tree(
     )
 
     return onodes, onode2depth, onode2center, idx2onode, idx2center
+
+
+class QuadOctTree:
+    def __init__(self):
+        pass
+
+    def construct_from_idx2morton(self, idx2morton: torch.Tensor, num_dim: int, is_save_intermediate = False):
+        self.num_dim = num_dim
+        (bnodes, bnode2depth, bnode2onode, idx2bnode) \
+            = bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
+            idx2morton, num_dim)
+        (self.onodes, self.onode2depth, self.onode2center, self.idx2onode, self.idx2center) \
+            = make_tree_from_binary_radix_tree(
+            bnodes, bnode2onode, bnode2depth,
+            idx2bnode, idx2morton, num_dim)
+        if is_save_intermediate:
+            self.bnodes = bnodes
+            self.bnode2depth = bnode2depth
+            self.bnode2onode = bnode2onode
+            self.idx2bnode = idx2bnode
+
+
+
+
+
+
+
+

@@ -78,6 +78,17 @@ void bnode2isonode_and_idx2bnode(
 {
     const unsigned int i_bnode = blockDim.x * blockIdx.x + threadIdx.x;
     if (i_bnode >= num_bnode ) return;
+    // make idx2bnode
+    if( bnodes[i_bnode * 3 + 1] >= num_bnode ){
+        uint32_t idx = bnodes[i_bnode * 3 + 1] - num_bnode;
+        assert(idx<num_bnode+1);
+        idx2bnode[idx] = i_bnode;
+    }
+    if( bnodes[i_bnode * 3 + 2] >= num_bnode ){
+        uint32_t idx = bnodes[i_bnode * 3 + 2] - num_bnode;
+        assert(idx<num_bnode+1);
+        idx2bnode[idx] = i_bnode;
+    }
     //
     if( i_bnode == 0 ){
         return;
@@ -86,14 +97,8 @@ void bnode2isonode_and_idx2bnode(
     if( bnode2depth[i_bnode] != bnode2depth[i_bnode_parent] ){
         bnode2isonode[i_bnode-1] = 1; // shift for exclusive scan
     }
-    //
-    if( bnodes[i_bnode * 3 + 1] >= num_bnode ){
-        unsigned int idx = bnodes[i_bnode * 3 + 1] - num_bnode;
-        idx2bnode[idx] = i_bnode;
-    }
-    if( bnodes[i_bnode * 3 + 2] >= num_bnode ){
-        unsigned int idx = bnodes[i_bnode * 3 + 2] - num_bnode;
-        idx2bnode[idx] = i_bnode;
+    else {
+        bnode2isonode[i_bnode-1] = 0;
     }
 }
 
@@ -139,14 +144,16 @@ void make_tree_from_binary_radix_tree(
                 i_bnode_cur = bnodes[i_bnode_cur * 3];
             }
         };
+        assert(i_onode_parent < num_onode );
         assert(depth_parent < max_depth);
         const uint32_t key = idx2morton[idx];
         const int i_child =
              (key >> ((max_depth - 1 - depth_parent) * num_dim)) & (num_child - 1);
         // println!("leaf: {} {} {}", i_onode_parent, i_child, depth_parent);
-        assert(onodes[i_onode_parent * nlink + 1 + i_child] == UINT32_MAX);
+        const uint32_t idx_onodes = i_onode_parent * nlink + 1 + i_child;
+        // assert(onodes[idx_onodes] == UINT32_MAX);
         //
-        onodes[i_onode_parent * nlink + 1 + i_child] = idx + num_onode;
+        onodes[idx_onodes] = idx + num_onode;
         idx2onode[idx] = i_onode_parent;
         float center[3];
         morton2center(idx2morton[idx], num_dim, max_depth, max_depth, center);
@@ -182,12 +189,14 @@ void make_tree_from_binary_radix_tree(
             }
         };
         assert(depth_parent < max_depth);
+        assert(i_onode_parent < num_onode );
         const uint32_t morton = idx2morton[i_bnode];
         const int i_child = (morton >> ((max_depth - 1 - depth_parent) * num_dim)) & (num_child - 1);
-        assert(onodes[i_onode_parent * nlink + 1 + i_child] == UINT32_MAX );
+        const uint32_t idx_onodes = i_onode_parent * nlink + 1 + i_child;
+        // assert( onodes[idx_onodes] == UINT32_MAX );
         //
         int i_onode = bnode2onode[i_bnode];
-        onodes[i_onode_parent * nlink + 1 + i_child] = i_onode;
+        onodes[idx_onodes] = i_onode;
         onodes[i_onode * nlink] = i_onode_parent;
         //
         uint32_t depth = bnode2depth[i_bnode];

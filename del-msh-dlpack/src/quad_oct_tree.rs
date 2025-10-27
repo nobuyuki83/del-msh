@@ -67,14 +67,15 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
             {
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::QUAD_OCT_TREE,
                     "binary_radix_tree_and_depth",
-                );
+                )
+                .unwrap();
                 let num_bnode = num_idx as u32 - 1;
                 let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -84,14 +85,25 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 builder.arg_i32(max_depth as i32);
                 builder.arg_data(&bnodes.data);
                 builder.arg_data(&bnode2depth.data);
-                builder.launch_kernel(function, cfg);
+                builder.launch_kernel(function, cfg).unwrap();
             }
-            let bnode2isonode = del_cudarc_sys::CuVec::<u32>::with_capacity(num_bnode as usize);
+            /*
+            {
+                let bnodes = del_cudarc_sys::CuVec::<u32>::from_dptr(bnodes.data as cu::CUdeviceptr, num_bnode as usize * 3 );
+                let bnodes = bnodes.copy_to_host().unwrap();
+                dbg!(&bnodes[0..9]);
+                dbg!(&bnodes[57480 * 3 ..57480 * 3+9]);
+            }
+             */
+            let bnode2isonode =
+                del_cudarc_sys::CuVec::<u32>::with_capacity(num_bnode as usize).unwrap();
+            bnode2isonode.set_zeros(stream).unwrap();
             {
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::QUAD_OCT_TREE,
                     "bnode2isonode_and_idx2bnode",
-                );
+                )
+                .unwrap();
                 let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode as u32);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_i32(num_bnode as i32);
@@ -99,14 +111,12 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 builder.arg_data(&bnode2depth.data);
                 builder.arg_dptr(bnode2isonode.dptr);
                 builder.arg_data(&idx2bnode.data);
-                builder.launch_kernel(function, cfg);
+                builder.launch_kernel(function, cfg).unwrap();
             }
-            let bnode2onode = del_cudarc_sys::CuVec::<u32> {
-                n: num_bnode as usize,
-                dptr: bnode2onode.data as cu::CUdeviceptr,
-                is_free_at_drop: false,
-                phantom: std::marker::PhantomData,
-            };
+            let bnode2onode = del_cudarc_sys::CuVec::<u32>::from_dptr(
+                bnode2onode.data as cu::CUdeviceptr,
+                num_bnode as usize,
+            );
             del_cudarc_sys::cumsum::exclusive_scan(stream, &bnode2isonode, &bnode2onode);
         }
         _ => {
@@ -194,14 +204,15 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
-            cuda_check!(cu::cuInit(0));
+            cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
             {
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::QUAD_OCT_TREE,
                     "make_tree_from_binary_radix_tree",
-                );
+                )
+                .unwrap();
                 let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_i32(num_idx as i32);
@@ -218,7 +229,7 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
                 builder.arg_data(&onode2center.data);
                 builder.arg_data(&idx2onode.data);
                 builder.arg_data(&idx2center.data);
-                builder.launch_kernel(function, cfg);
+                builder.launch_kernel(function, cfg).unwrap();
             }
         }
         _ => {}
