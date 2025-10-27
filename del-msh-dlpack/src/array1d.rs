@@ -161,9 +161,7 @@ pub fn array1d_has_duplicate_sorted_array(
     let res = match device {
         dlpack::device_type_codes::CPU => {
             let idx2val = unsafe { crate::slice_from_tensor::<u32>(idx2val) }.unwrap();
-            (0..idx2val.len() - 1)
-                .find(|&idx| idx2val[idx] == idx2val[idx + 1])
-                .is_some()
+            (0..idx2val.len() - 1).any(|idx| idx2val[idx] == idx2val[idx + 1])
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
