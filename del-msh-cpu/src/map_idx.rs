@@ -81,12 +81,11 @@ pub fn map_elem_index(elem2vtxa: &[usize], vtxa2vtxb: &[usize]) -> Vec<usize> {
 /// "old2new" should be sorted
 /// this function use bisection algorithm to find array of offset
 pub fn inverse(old2new: &[u32], new2old_offset: &mut [u32]) {
-    let num_new = new2old_offset.len() - 1;
     let num_old = old2new.len();
-    for i_new in 0..num_new + 1 {
+    let bisection = |i_new: usize| -> u32 {
         let mut i0_old = 0;
         let mut i2_old = num_old;
-        new2old_offset[i_new] = loop {
+        loop {
             if i2_old - i0_old == 1 {
                 if old2new[i0_old] as usize >= i_new {
                     break i0_old as u32;
@@ -100,6 +99,13 @@ pub fn inverse(old2new: &[u32], new2old_offset: &mut [u32]) {
             } else {
                 i2_old = i1_old;
             }
-        };
-    }
+        }
+    };
+    use rayon::prelude::*;
+    new2old_offset
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(i_new, i_old)| {
+            *i_old = bisection(i_new);
+        })
 }

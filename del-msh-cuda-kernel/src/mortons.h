@@ -22,7 +22,7 @@ uint32_t device_expand_bits3(uint32_t v)
 }
 
 __device__
-unsigned int device_morton_code2(float x, float y)
+uint32_t device_morton_code2(float x, float y)
 {
   auto ix = (uint32_t)fmin(fmax(x * 1024.0f, 0.0f), 1023.0f);
   auto iy = (uint32_t)fmin(fmax(y * 1024.0f, 0.0f), 1023.0f);
@@ -34,7 +34,7 @@ unsigned int device_morton_code2(float x, float y)
 }
 
 __device__
-unsigned int device_morton_code3(float x, float y, float z)
+uint32_t device_morton_code3(float x, float y, float z)
 {
   auto ix = (uint32_t)fmin(fmax(x * 1024.0f, 0.0f), 1023.0f);
   auto iy = (uint32_t)fmin(fmax(y * 1024.0f, 0.0f), 1023.0f);

@@ -161,9 +161,7 @@ pub fn array1d_has_duplicate_sorted_array(
     let res = match device {
         dlpack::device_type_codes::CPU => {
             let idx2val = unsafe { crate::slice_from_tensor::<u32>(idx2val) }.unwrap();
-            (0..idx2val.len() - 1)
-                .find(|&idx| idx2val[idx] == idx2val[idx + 1])
-                .is_some()
+            (0..idx2val.len() - 1).any(|idx| idx2val[idx] == idx2val[idx + 1])
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -287,7 +285,7 @@ pub fn array1d_unique_jdx2val_jdx2idx(
             );
             let jdx2idx_offset = del_cudarc_sys::CuVec::<u32>::from_dptr(
                 jdx2idx_offset.data as cu::CUdeviceptr,
-                num_idx as usize,
+                num_jdx as usize + 1,
             );
             del_cudarc_sys::offset_array::inverse_map(stream, &idx2jdx, &jdx2idx_offset);
             let idx2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
@@ -296,7 +294,7 @@ pub fn array1d_unique_jdx2val_jdx2idx(
             );
             let jdx2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
                 jdx2val.data as cu::CUdeviceptr,
-                num_idx as usize,
+                num_jdx as usize,
             );
             del_cudarc_sys::array1d::permute(stream, &jdx2val, &jdx2idx_offset, &idx2val);
         }

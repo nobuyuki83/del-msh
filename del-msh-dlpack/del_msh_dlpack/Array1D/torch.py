@@ -33,6 +33,7 @@ def argsort(idx2val: torch.Tensor):
     device = idx2val.device
     #
     assert idx2val.shape == (n,)
+    assert idx2val.dtype == torch.uint32
     #
     jdx2idx = torch.empty(size=(n,), device=device, dtype=torch.uint32)
     jdx2val = idx2val.clone()
@@ -75,20 +76,21 @@ def has_duplicate_in_sorted_array(idx2val: torch.Tensor):
 
 
 def unique_for_sorted_array(idx2val: torch.Tensor):
-    n = idx2val.shape[0]
+    from .. import Array1D
+    #
+    num_idx = idx2val.shape[0]
     device = idx2val.device
     #
-    assert idx2val.shape == (n,)
+    assert idx2val.shape == (num_idx,)
     assert idx2val.dtype == torch.uint32
     #
-    idx2jdx = torch.empty((n,), dtype=torch.uint32, device=device)
+    idx2jdx = torch.empty((num_idx,), dtype=torch.uint32, device=device)
     #
     stream_ptr = 0
     if device.type == "cuda":
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
-    from .. import Array1D
-
+    #
     Array1D.unique_for_sorted_array(
         util_torch.to_dlpack_safe(idx2val, stream_ptr),
         util_torch.to_dlpack_safe(idx2jdx, stream_ptr),
