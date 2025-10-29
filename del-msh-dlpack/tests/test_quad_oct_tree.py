@@ -46,6 +46,8 @@ def test_01():
 
 
 def test_02():
+    if not torch.cuda.is_available():
+        return
     '''
     TODO: this test fails when num_vtx > 17_000_000
     :return:
