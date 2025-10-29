@@ -8,7 +8,7 @@ name = "del_msh_dlpack"
 crate-type = ["cdylib"]
 
 [features]
-cuda = ["dep:del-cudarc-sys", "dep:del-msh-cuda-kernel", "dep:del-msh-cudarc-sys"]
+cuda = ["dep:del-cudarc-sys", "dep:del-msh-cuda-kernel", "dep:del-msh-cudarc-sys", "dep:del-cudarc-kernel"]
 
 [dependencies]
 pyo3.workspace = true

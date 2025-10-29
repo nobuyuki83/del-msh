@@ -21,8 +21,8 @@ pub fn trimesh3_tri2normal(
     let vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
     let tri2nrm = crate::get_managed_tensor_from_pyany(tri2nrm)?;
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = get_shape_tensor(tri2vtx, 0);
-    let num_vtx = get_shape_tensor(vtx2xyz, 0);
+    let num_tri = get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = get_shape_tensor(vtx2xyz, 0).unwrap();
     //
     check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
     check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
@@ -82,8 +82,8 @@ pub fn trimesh3_bwd_tri2normal(
     let dw_vtx2xyz = crate::get_managed_tensor_from_pyany(dw_vtx2xyz)?;
     //
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = get_shape_tensor(tri2vtx, 0);
-    let num_vtx = get_shape_tensor(vtx2xyz, 0);
+    let num_tri = get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = get_shape_tensor(vtx2xyz, 0).unwrap();
     //
     check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
     check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();

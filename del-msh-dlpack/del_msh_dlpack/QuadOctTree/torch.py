@@ -111,6 +111,31 @@ class QuadOctTree:
             self.bnode2onode = bnode2onode
             self.idx2bnode = idx2bnode
 
+    def aggregate(self, idx2val) -> torch.Tensor:
+        num_vdim = idx2val.shape[1]
+        num_idx = self.idx2onode.shape[0]
+        num_onode = self.onodes.shape[0]
+        device = self.onodes.device
+        #
+        assert idx2val.shape == (num_idx, num_vdim) and idx2val.device == device and idx2val.dtype == torch.float32
+        #
+        onode2aggval = torch.zeros(size=(num_onode, num_vdim), dtype=torch.float32, device=device)
+        #
+        stream_ptr = 0
+        if device.type == "cuda":
+            torch.cuda.set_device(device)
+            stream_ptr = torch.cuda.current_stream(device).cuda_stream
+        #
+        from .. import QuadOctTree
+        QuadOctTree.aggregate(
+            util_torch.to_dlpack_safe(idx2val,stream_ptr),
+            util_torch.to_dlpack_safe(self.idx2onode, stream_ptr),
+            util_torch.to_dlpack_safe(self.onodes, stream_ptr),
+            util_torch.to_dlpack_safe(onode2aggval, stream_ptr),
+            stream_ptr
+        )
+        return onode2aggval
+
 
 
 

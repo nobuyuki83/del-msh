@@ -16,8 +16,8 @@ fn vtx2elem_from_uniform_mesh(
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
     let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
     //
-    let num_elem = get_shape_tensor(elem2vtx, 0);
-    let num_node = get_shape_tensor(elem2vtx, 1);
+    let num_elem = get_shape_tensor(elem2vtx, 0).unwrap();
+    let num_node = get_shape_tensor(elem2vtx, 1).unwrap();
     let device = elem2vtx.ctx.device_type;
     check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //

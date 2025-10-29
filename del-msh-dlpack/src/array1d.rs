@@ -24,7 +24,7 @@ pub fn array1d_permute(
     let old2val = crate::get_managed_tensor_from_pyany(old2val)?;
     let new2old = crate::get_managed_tensor_from_pyany(new2old)?;
     let new2val = crate::get_managed_tensor_from_pyany(new2val)?;
-    let n = crate::get_shape_tensor(old2val, 0);
+    let n = crate::get_shape_tensor(old2val, 0).unwrap();
     let device = old2val.ctx.device_type;
     //
     crate::check_1d_tensor::<u32>(old2val, n, device).unwrap();
@@ -103,7 +103,7 @@ pub fn array1d_argsort(
     let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
     let jdx2idx = crate::get_managed_tensor_from_pyany(jdx2idx)?;
     //
-    let n = crate::get_shape_tensor(jdx2idx, 0);
+    let n = crate::get_shape_tensor(jdx2idx, 0).unwrap();
     let device = jdx2idx.ctx.device_type;
     //
     crate::check_1d_tensor::<u32>(jdx2idx, n, device).unwrap();
@@ -153,7 +153,7 @@ pub fn array1d_has_duplicate_sorted_array(
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<bool> {
     let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
-    let n = crate::get_shape_tensor(idx2val, 0);
+    let n = crate::get_shape_tensor(idx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
     crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
@@ -193,7 +193,7 @@ pub fn array1d_unique_for_sorted_array(
 ) {
     let idx2val = crate::get_managed_tensor_from_pyany(idx2val).unwrap();
     let idx2jdx = crate::get_managed_tensor_from_pyany(idx2jdx).unwrap();
-    let n = crate::get_shape_tensor(idx2val, 0);
+    let n = crate::get_shape_tensor(idx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
     crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
@@ -250,8 +250,8 @@ pub fn array1d_unique_jdx2val_jdx2idx(
     let idx2jdx = crate::get_managed_tensor_from_pyany(idx2jdx).unwrap();
     let jdx2val = crate::get_managed_tensor_from_pyany(jdx2val).unwrap();
     let jdx2idx_offset = crate::get_managed_tensor_from_pyany(jdx2idx_offset).unwrap();
-    let num_idx = crate::get_shape_tensor(idx2val, 0);
-    let num_jdx = crate::get_shape_tensor(jdx2val, 0);
+    let num_idx = crate::get_shape_tensor(idx2val, 0).unwrap();
+    let num_jdx = crate::get_shape_tensor(jdx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
     crate::check_1d_tensor::<u32>(idx2val, num_idx, device).unwrap();

@@ -19,8 +19,8 @@ fn mortons_vtx2morton_from_vtx2co(
     let vtx2co = crate::get_managed_tensor_from_pyany(vtx2co)?;
     let transform_co2unit = crate::get_managed_tensor_from_pyany(transform_co2unit)?;
     let vtx2morton = crate::get_managed_tensor_from_pyany(vtx2morton)?;
-    let num_vtx = get_shape_tensor(vtx2co, 0);
-    let num_dim = get_shape_tensor(vtx2co, 1);
+    let num_vtx = get_shape_tensor(vtx2co, 0).unwrap();
+    let num_dim = get_shape_tensor(vtx2co, 1).unwrap();
     assert!(num_dim == 2 || num_dim == 3);
     let device = vtx2co.ctx.device_type;
     crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
@@ -84,7 +84,7 @@ fn mortons_make_bvh(
     let idx2obj = crate::get_managed_tensor_from_pyany(idx2obj)?;
     let idx2morton = crate::get_managed_tensor_from_pyany(idx2morton)?;
     let bvhnodes = crate::get_managed_tensor_from_pyany(bhvnodes)?;
-    let n = crate::get_shape_tensor(idx2obj, 0);
+    let n = crate::get_shape_tensor(idx2obj, 0).unwrap();
     let device = idx2obj.ctx.device_type;
     crate::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
     crate::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();

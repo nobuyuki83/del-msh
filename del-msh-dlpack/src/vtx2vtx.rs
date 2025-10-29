@@ -33,8 +33,8 @@ fn vtx2vtx_laplacian_smoothing(
     let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
     let vtx2lhstmp = crate::get_managed_tensor_from_pyany(vtx2lhstmp)?;
     //
-    let num_vtx = get_shape_tensor(vtx2idx, 0) - 1;
-    let num_dim = get_shape_tensor(vtx2rhs, 1);
+    let num_vtx = get_shape_tensor(vtx2idx, 0).unwrap() - 1;
+    let num_dim = get_shape_tensor(vtx2rhs, 1).unwrap();
     let device_type = vtx2idx.ctx.device_type;
     //
     check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device_type).unwrap();
@@ -123,8 +123,8 @@ fn vtx2vtx_multiply_graph_laplacian(
     let vtx2rhs = crate::get_managed_tensor_from_pyany(vtx2rhs)?;
     let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
     //
-    let num_vtx = get_shape_tensor(vtx2idx, 0) - 1;
-    let num_dim = get_shape_tensor(vtx2lhs, 1);
+    let num_vtx = get_shape_tensor(vtx2idx, 0).unwrap() - 1;
+    let num_dim = get_shape_tensor(vtx2lhs, 1).unwrap();
     let device = vtx2idx.ctx.device_type;
     //
     assert_eq!(num_dim, 3);
@@ -160,8 +160,8 @@ fn vtx2vtx_from_uniform_mesh(
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
     let elem2vtx = crate::get_managed_tensor_from_pyany(elem2vtx)?;
     //
-    let num_elem = get_shape_tensor(elem2vtx, 0);
-    let num_node = get_shape_tensor(elem2vtx, 1);
+    let num_elem = get_shape_tensor(elem2vtx, 0).unwrap();
+    let num_node = get_shape_tensor(elem2vtx, 1).unwrap();
     let device = elem2vtx.ctx.device_type;
     check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //

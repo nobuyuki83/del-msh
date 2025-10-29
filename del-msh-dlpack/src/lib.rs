@@ -6,6 +6,7 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 mod array1d;
 mod edge2vtx;
 mod mortons;
+mod offset_array;
 mod quad_oct_tree;
 mod trimesh3;
 mod trimesh3_raycast;
@@ -24,6 +25,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     mortons::add_functions(_py, m)?;
     array1d::add_functions(_py, m)?;
     quad_oct_tree::add_functions(_py, m)?;
+    offset_array::add_functions(_py, m)?;
     Ok(())
 }
 
@@ -478,8 +480,10 @@ pub fn check_1d_tensor<T: ToDataTypeCode>(
     Ok(())
 }
 
-pub fn get_shape_tensor(t: &Tensor, i_dim: usize) -> i64 {
-    assert!(i_dim < t.ndim as usize);
+pub fn get_shape_tensor(t: &Tensor, i_dim: usize) -> Result<i64, String> {
+    if i_dim >= t.ndim as usize {
+        return Err(format!("Shape index out of bounds {} {}", i_dim, t.ndim).to_string());
+    }
     let shape = unsafe { std::slice::from_raw_parts(t.shape, t.ndim as usize) };
-    shape[i_dim]
+    Ok(shape[i_dim])
 }

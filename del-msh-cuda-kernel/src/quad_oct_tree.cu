@@ -103,8 +103,6 @@ void bnode2isonode_and_idx2bnode(
 }
 
 
-
-
 __global__
 void make_tree_from_binary_radix_tree(
     const uint32_t num_vtx,
@@ -206,6 +204,29 @@ void make_tree_from_binary_radix_tree(
             onode2center[i_onode * num_dim + i_dim] = center[i_dim];
         }
         onode2depth[i_onode] = depth;
+    }
+}
+
+__global__
+void aggregate(
+    uint32_t num_idx,
+    uint32_t num_dim,
+    const float* idx2val,
+    const uint32_t* idx2onode,
+    uint32_t num_link,
+    const uint32_t* onodes,
+    float* onode2aggval)
+{
+    const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (idx >= num_idx ) return;
+    // ---------------
+    const float* val = idx2val + idx * num_dim;
+    int i_onode = idx2onode[idx];
+    while(i_onode != UINT32_MAX){
+        for(int i_dim=0; i_dim<num_dim; ++i_dim ){
+           atomicAdd(onode2aggval + i_onode*num_dim + i_dim, val[i_dim]);
+        }
+        i_onode = onodes[i_onode*num_link];
     }
 }
 

@@ -10,6 +10,7 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
         quad_oct_tree_make_tree_from_binary_radix_tree,
         m
     )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(quad_oct_tree_aggregate, m)?)?;
     Ok(())
 }
 
@@ -33,7 +34,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
     let bnode2onode = crate::get_managed_tensor_from_pyany(bnode2onode)?;
     let idx2bnode = crate::get_managed_tensor_from_pyany(idx2bnode)?;
     //
-    let num_idx = crate::get_shape_tensor(idx2morton, 0);
+    let num_idx = crate::get_shape_tensor(idx2morton, 0).unwrap();
     let num_bnode = num_idx - 1;
     let device = idx2morton.ctx.device_type;
     //
@@ -87,14 +88,6 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 builder.arg_data(&bnode2depth.data);
                 builder.launch_kernel(function, cfg).unwrap();
             }
-            /*
-            {
-                let bnodes = del_cudarc_sys::CuVec::<u32>::from_dptr(bnodes.data as cu::CUdeviceptr, num_bnode as usize * 3 );
-                let bnodes = bnodes.copy_to_host().unwrap();
-                dbg!(&bnodes[0..9]);
-                dbg!(&bnodes[57480 * 3 ..57480 * 3+9]);
-            }
-             */
             let bnode2isonode =
                 del_cudarc_sys::CuVec::<u32>::with_capacity(num_bnode as usize).unwrap();
             bnode2isonode.set_zeros(stream).unwrap();
@@ -156,15 +149,15 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     let idx2onode = crate::get_managed_tensor_from_pyany(idx2onode)?;
     let idx2center = crate::get_managed_tensor_from_pyany(idx2center)?;
     //
-    let num_bnode = crate::get_shape_tensor(bnodes, 0);
+    let num_bnode = crate::get_shape_tensor(bnodes, 0).unwrap();
     let num_idx = num_bnode + 1;
     let device = bnodes.ctx.device_type;
     //
     crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
     crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
     crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
-    let num_onode = crate::get_shape_tensor(onodes, 0);
-    let num_link = crate::get_shape_tensor(onodes, 1);
+    let num_onode = crate::get_shape_tensor(onodes, 0).unwrap();
+    let num_link = crate::get_shape_tensor(onodes, 1).unwrap();
     assert!(num_dim == 2 || num_dim == 3);
     assert_eq!(num_link as usize, 1 + 2i32.pow(num_dim as u32) as usize);
     crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
@@ -207,33 +200,87 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
-            {
-                let (function, _module) = del_cudarc_sys::load_function_in_module(
-                    del_msh_cuda_kernel::QUAD_OCT_TREE,
-                    "make_tree_from_binary_radix_tree",
-                )
-                .unwrap();
-                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
-                let mut builder = del_cudarc_sys::Builder::new(stream);
-                builder.arg_i32(num_idx as i32);
-                builder.arg_data(&bnodes.data);
-                builder.arg_data(&bnode2onode.data);
-                builder.arg_data(&bnode2depth.data);
-                builder.arg_data(&idx2bnode.data);
-                builder.arg_data(&idx2morton.data);
-                builder.arg_i32(num_onode as i32);
-                builder.arg_i32(max_depth as i32);
-                builder.arg_i32(num_dim as i32);
-                builder.arg_data(&onodes.data);
-                builder.arg_data(&onode2depth.data);
-                builder.arg_data(&onode2center.data);
-                builder.arg_data(&idx2onode.data);
-                builder.arg_data(&idx2center.data);
-                builder.launch_kernel(function, cfg).unwrap();
-            }
+            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
+                del_msh_cuda_kernel::QUAD_OCT_TREE,
+                "make_tree_from_binary_radix_tree",
+            )
+            .unwrap();
+            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_i32(num_idx as i32);
+            builder.arg_data(&bnodes.data);
+            builder.arg_data(&bnode2onode.data);
+            builder.arg_data(&bnode2depth.data);
+            builder.arg_data(&idx2bnode.data);
+            builder.arg_data(&idx2morton.data);
+            builder.arg_i32(num_onode as i32);
+            builder.arg_i32(max_depth as i32);
+            builder.arg_i32(num_dim as i32);
+            builder.arg_data(&onodes.data);
+            builder.arg_data(&onode2depth.data);
+            builder.arg_data(&onode2center.data);
+            builder.arg_data(&idx2onode.data);
+            builder.arg_data(&idx2center.data);
+            builder.launch_kernel(fnc, cfg).unwrap();
         }
-        _ => {}
+        _ => {
+            todo!()
+        }
     }
+    Ok(())
+}
 
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+pub fn quad_oct_tree_aggregate(
+    _py: Python<'_>,
+    idx2val: &Bound<'_, PyAny>,
+    idx2onode: &Bound<'_, PyAny>,
+    onodes: &Bound<'_, PyAny>,
+    onode2aggval: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
+) -> PyResult<()> {
+    let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
+    let idx2onode = crate::get_managed_tensor_from_pyany(idx2onode)?;
+    let onodes = crate::get_managed_tensor_from_pyany(onodes)?;
+    let onode2aggval = crate::get_managed_tensor_from_pyany(onode2aggval)?;
+    let num_idx = crate::get_shape_tensor(idx2val, 0).unwrap();
+    let num_vdim = crate::get_shape_tensor(idx2val, 1).unwrap();
+    let num_onode = crate::get_shape_tensor(onodes, 0).unwrap();
+    let num_link = crate::get_shape_tensor(onodes, 1).unwrap();
+    let device = idx2val.ctx.device_type;
+    //
+    crate::check_2d_tensor::<f32>(idx2val, num_idx, num_vdim, device).unwrap();
+    crate::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
+    crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
+    crate::check_2d_tensor::<f32>(onode2aggval, num_onode, num_vdim, device).unwrap();
+    //
+    match device {
+        dlpack::device_type_codes::CPU => {}
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
+                del_msh_cuda_kernel::QUAD_OCT_TREE,
+                "aggregate",
+            )
+            .unwrap();
+            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_i32(num_idx as i32);
+            builder.arg_i32(num_vdim as i32);
+            builder.arg_data(&idx2val.data);
+            builder.arg_data(&idx2onode.data);
+            builder.arg_i32(num_link as i32);
+            builder.arg_data(&onodes.data);
+            builder.arg_data(&onode2aggval.data);
+            builder.launch_kernel(fnc, cfg).unwrap();
+        }
+        _ => {
+            todo!()
+        }
+    }
     Ok(())
 }

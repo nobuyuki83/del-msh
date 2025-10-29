@@ -39,3 +39,16 @@ def make_tree_from_binary_radix_tree(
         onodes, onode2depth, onode2center, idx2onode, idx2center,
         stream_ptr)
 
+
+def aggregate(
+            idx2val,
+            idx2onode,
+            onodes,
+            onode2aggval,
+            stream_ptr = 0):
+    from ..del_msh_dlpack import quad_oct_tree_aggregate
+
+    quad_oct_tree_aggregate(
+        idx2val, idx2onode,
+        onodes, onode2aggval,
+        stream_ptr)
