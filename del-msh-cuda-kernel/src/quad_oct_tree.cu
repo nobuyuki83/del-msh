@@ -221,7 +221,7 @@ void aggregate(
     if (idx >= num_idx ) return;
     // ---------------
     const float* val = idx2val + idx * num_dim;
-    int i_onode = idx2onode[idx];
+    uint32_t i_onode = idx2onode[idx];
     while(i_onode != UINT32_MAX){
         for(int i_dim=0; i_dim<num_dim; ++i_dim ){
            atomicAdd(onode2aggval + i_onode*num_dim + i_dim, val[i_dim]);

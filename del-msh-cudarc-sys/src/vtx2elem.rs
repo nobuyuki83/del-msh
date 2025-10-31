@@ -14,9 +14,9 @@ pub fn from_uniform_mesh(
             del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::UNIFORM_MESH, "vtx2nelem")
                 .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
-        builder.arg_i32(num_elem as i32);
+        builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);
-        builder.arg_i32(num_node as i32);
+        builder.arg_u32(num_node as u32);
         builder.arg_dptr(vtx2valence.dptr);
         builder
             .launch_kernel(func, LaunchConfig::for_num_elems(num_elem as u32))
@@ -34,9 +34,9 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
-        builder.arg_i32(num_elem as i32);
+        builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);
-        builder.arg_i32(num_node as i32);
+        builder.arg_u32(num_node as u32);
         builder.arg_dptr(vtx2idx0.dptr);
         builder.arg_dptr(idx2elem.dptr);
         builder

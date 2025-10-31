@@ -44,10 +44,10 @@ fn offset_array_aggregate(
             .unwrap();
             let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
-            builder.arg_i32(num_idx as i32);
+            builder.arg_u32(num_idx as u32);
             builder.arg_data(&idx2jdx_offset.data);
             builder.arg_data(&jdx2kdx.data);
-            builder.arg_i32(num_dim as i32);
+            builder.arg_u32(num_dim as u32);
             builder.arg_data(&kdx2val.data);
             builder.arg_data(&idx2aggval.data);
             builder.launch_kernel(fnc, cfg).unwrap();

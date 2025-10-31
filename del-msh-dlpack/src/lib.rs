@@ -12,6 +12,7 @@ mod trimesh3;
 mod trimesh3_raycast;
 mod vtx2elem;
 mod vtx2vtx;
+mod nbody;
 
 #[pyo3::pymodule]
 #[pyo3(name = "del_msh_dlpack")]
@@ -26,6 +27,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     array1d::add_functions(_py, m)?;
     quad_oct_tree::add_functions(_py, m)?;
     offset_array::add_functions(_py, m)?;
+    nbody::add_functions(_py, m)?;
     Ok(())
 }
 

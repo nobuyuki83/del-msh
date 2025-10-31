@@ -48,7 +48,7 @@ pub fn trimesh3_tri2normal(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let mut builder = del_cudarc_sys::Builder::new(stream);
-            builder.arg_i32(num_tri as i32);
+            builder.arg_u32(num_tri as u32);
             builder.arg_data(&tri2vtx.data);
             builder.arg_data(&vtx2xyz.data);
             builder.arg_data(&tri2nrm.data);
@@ -123,7 +123,7 @@ pub fn trimesh3_bwd_tri2normal(
                 )
                 .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
-                builder.arg_i32(num_tri as i32);
+                builder.arg_u32(num_tri as u32);
                 builder.arg_data(&tri2vtx.data);
                 builder.arg_data(&vtx2xyz.data);
                 builder.arg_data(&dw_tri2nrm.data);

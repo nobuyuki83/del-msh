@@ -69,7 +69,7 @@ fn vtx2vtx_laplacian_smoothing(
             for _itr in 0..num_iter {
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
-                    builder.arg_i32(num_vtx as i32);
+                    builder.arg_u32(num_vtx as u32);
                     builder.arg_data(&vtx2idx.data);
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);
@@ -85,7 +85,7 @@ fn vtx2vtx_laplacian_smoothing(
                 }
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
-                    builder.arg_i32(num_vtx as i32);
+                    builder.arg_u32(num_vtx as u32);
                     builder.arg_data(&vtx2idx.data);
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);

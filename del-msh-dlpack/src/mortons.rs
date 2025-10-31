@@ -26,7 +26,7 @@ fn mortons_vtx2morton_from_vtx2co(
     crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
     crate::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device).unwrap();
     crate::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
-    //
+    // 
     match device {
         dlpack::device_type_codes::CPU => {
             let vtx2co = unsafe { crate::slice_from_tensor::<f32>(vtx2co) }.unwrap();
@@ -53,9 +53,9 @@ fn mortons_vtx2morton_from_vtx2co(
                 )
                 .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
-                builder.arg_i32(num_vtx as i32);
+                builder.arg_u32(num_vtx as u32);
                 builder.arg_data(&vtx2co.data);
-                builder.arg_i32(num_dim as i32);
+                builder.arg_u32(num_dim as u32);
                 builder.arg_data(&transform_co2unit.data);
                 builder.arg_data(&vtx2morton.data);
                 builder
@@ -109,7 +109,7 @@ fn mortons_make_bvh(
             .unwrap();
             {
                 let mut builder = del_cudarc_sys::Builder::new(stream);
-                builder.arg_i32(n as i32);
+                builder.arg_u32(n as u32);
                 builder.arg_dptr(bvhnodes.data as cu::CUdeviceptr);
                 builder.arg_dptr(idx2morton.data as cu::CUdeviceptr);
                 builder.arg_dptr(idx2obj.data as cu::CUdeviceptr);

@@ -25,9 +25,9 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
-        builder.arg_i32(num_vtx as i32);
+        builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(elem2vtx.dptr);
-        builder.arg_i32(num_node as i32);
+        builder.arg_u32(num_node as u32);
         builder.arg_bool(is_self);
         builder.arg_dptr(vtx2jdx.dptr);
         builder.arg_dptr(jdx2elem.dptr);
@@ -48,9 +48,9 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
-        builder.arg_i32(num_vtx as i32);
+        builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(vtx2jdx.dptr);
-        builder.arg_i32(num_node as i32);
+        builder.arg_u32(num_node as u32);
         builder.arg_bool(is_self);
         builder.arg_dptr(vtx2idx.dptr);
         builder.arg_dptr(jdx2buff.dptr);
