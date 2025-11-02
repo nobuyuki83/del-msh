@@ -1,4 +1,4 @@
-name: build-wheels-windows
+name: dlpack-wheels-win
 
 on:
   workflow_dispatch:

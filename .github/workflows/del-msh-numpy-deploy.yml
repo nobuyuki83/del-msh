@@ -1,4 +1,4 @@
-name: PyO3_Deploy
+name: del-msh-numpy-deploy
 
 on:
   push:

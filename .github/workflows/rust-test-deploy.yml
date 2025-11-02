@@ -1,4 +1,4 @@
-name: CI
+name: rust-test-deploy
 
 on:
   push:
