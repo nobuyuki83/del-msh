@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Use preinstalled Python (no registry)
-        shell: pwsh
+        shell: powershell
         run: |
           $py = "${{ matrix.python_spec.py_root }}"
           # PATH 先頭に Python と Scripts を追加（後続ステップへ永続）
