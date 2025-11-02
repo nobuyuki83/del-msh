@@ -1,12 +1,12 @@
 name: rust-test-deploy
 
-on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  pull_request:
+#on:
+#  push:
+#    branches:
+#      - main
+#    tags:
+#      - 'v*'
+#  pull_request:
 
 jobs:
   linux:
