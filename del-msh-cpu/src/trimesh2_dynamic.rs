@@ -414,7 +414,7 @@ pub fn enforce_edge<T>(
             );
             if ratio < T::epsilon() {
                 panic!();
-            } else if ratio > T::one() - T::epsilon() {
+            } else if ratio > (T::one() - T::epsilon()) {
                 panic!();
             } else {
                 let ied0 = 3 - i0_node - i1_node;

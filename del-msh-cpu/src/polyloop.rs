@@ -264,6 +264,7 @@ pub fn resample_multiple_loops_remain_original_vtxs<T>(
             let ip_loop = idx2vtx_in[iip_loop];
             idx2vtx_inout[i_vtx0] = ip_loop;
             i_vtx0 += 1;
+            #[allow(clippy::needless_range_loop)]
             for iadd in 0..edge2point[ip_loop].len() {
                 idx2vtx_inout[i_vtx0] = edge2point[iip_loop][iadd];
                 i_vtx0 += 1;
