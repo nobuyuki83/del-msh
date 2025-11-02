@@ -1,10 +1,8 @@
 name: dlpack-wheels-win
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main, master ]
-  pull_request:
+    branches: [ main ]
 
 jobs:
   win-wheels:
