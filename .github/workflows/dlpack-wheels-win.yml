@@ -2,13 +2,13 @@ name: dlpack-wheels-win
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   win-wheels:
     runs-on: self-hosted
-    # ラベルで runner を絞る
-    labels: [ windows, windows-gpu ]
+
     strategy:
       fail-fast: false
       matrix:
