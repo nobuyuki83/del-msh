@@ -37,7 +37,7 @@ jobs:
           python -m pip --version
 
       - name: Build wheel (isolate CUDA and PATH)
-        shell: pwsh
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           $cuda  = "${{ matrix.cuda_spec.cuda_path }}"
