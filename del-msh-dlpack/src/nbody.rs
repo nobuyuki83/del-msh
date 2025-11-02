@@ -36,14 +36,17 @@ fn nbody_screened_poisson(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let _a = lambda;
-            let _b = epsilon;
-            todo!()
+            let vtx2co = unsafe { crate::slice_from_tensor::<f32>(vtx2co) }.unwrap();
+            let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
+            let wtx2co = unsafe { crate::slice_from_tensor::<f32>(wtx2co) }.unwrap();
+            let wtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
+            del_msh_cpu::nbody::screened_poisson3(
+                wtx2co, wtx2lhs, lambda, epsilon, vtx2co, vtx2rhs,
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
@@ -103,12 +106,15 @@ fn nbody_elastic(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            todo!();
+            let vtx2co = unsafe { crate::slice_from_tensor::<f32>(vtx2co) }.unwrap();
+            let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
+            let wtx2co = unsafe { crate::slice_from_tensor::<f32>(wtx2co) }.unwrap();
+            let wtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
+            del_msh_cpu::nbody::elastic3(wtx2co, wtx2lhs, nu, epsilon, vtx2co, vtx2rhs);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let (fnc, _mdl) =

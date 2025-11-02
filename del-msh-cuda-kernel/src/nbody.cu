@@ -70,14 +70,14 @@ void elastic(
         float r_eps_inv = 1.f / r_eps;
         float r_eps3_inv = 1.f / (r_eps * r_eps * r_eps);
 
-        float coeff_I = norm * ((a - b) * r_eps_inv + 0.5f * a * eps * eps * r_eps3_inv);
-        float coeff_rrT = norm * b * r_eps3_inv;
+        float coeff_i = norm * ((a - b) * r_eps_inv + 0.5f * a * eps * eps * r_eps3_inv);
+        float coeff_rr_t = norm * b * r_eps3_inv;
 
         float dot_rg = r[0]*gj[0] + r[1]*gj[1] + r[2]*gj[2];
 
-        accum[0] += coeff_I * gj[0] + coeff_rrT * dot_rg * r[0];
-        accum[1] += coeff_I * gj[1] + coeff_rrT * dot_rg * r[1];
-        accum[2] += coeff_I * gj[2] + coeff_rrT * dot_rg * r[2];
+        accum[0] += coeff_i * gj[0] + coeff_rr_t * dot_rg * r[0];
+        accum[1] += coeff_i * gj[1] + coeff_rr_t * dot_rg * r[1];
+        accum[2] += coeff_i * gj[2] + coeff_rr_t * dot_rg * r[2];
     }
 
     wtx2lhs[i_wtx * 3 + 0] = accum[0];
