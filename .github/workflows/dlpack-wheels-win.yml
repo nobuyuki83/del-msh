@@ -6,65 +6,74 @@ on:
     branches: [ main, master ]
 
 jobs:
-  win-wheels:
+  build:
     runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.11", "3.12", "3.13"]
-        include:
-          - cuda: "12.1"
-            cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.1"
-            cutag: "cu121"
-          - cuda: "12.6"
-            cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.6"
-            cutag: "cu126"
-          - cuda: "12.9"
-            cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.9"
-            cutag: "cu129"
+        python_spec:
+          - { py: "3.11", py_root: "C:\\Users\\Nobuyuki Umetani\\AppData\\Local\\Programs\\Python\\Python311" }
+          - { py: "3.13", py_root: "C:\\Users\\Nobuyuki Umetani\\AppData\\Local\\Programs\\Python\\Python313" }
+        cuda_spec:
+          - { cuda: "12.1", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.1", cutag: "cu121" }
+          - { cuda: "12.6", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.6", cutag: "cu126" }
+          - { cuda: "12.9", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.9", cutag: "cu129" }
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-          architecture: x64
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Use preinstalled Python (no registry)
+        shell: pwsh
+        run: |
+          $py = "${{ matrix.python_spec.py_root }}"
+          # PATH 先頭に Python と Scripts を追加（後続ステップへ永続）
+          Add-Content -Path $env:GITHUB_PATH -Value "$py"
+          Add-Content -Path $env:GITHUB_PATH -Value "$py\Scripts"
+          "PYTHONUTF8=1"                    | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "PIP_DISABLE_PIP_VERSION_CHECK=1" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "PIP_NO_INPUT=1"                  | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          python --version
+          where.exe python
+          python -m pip --version
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable-x86_64-pc-windows-msvc
 
-      - name: Build wheel (isolate CUDA version)
+      - name: Build wheel (isolate CUDA and PATH)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $cuda  = "${{ matrix.cuda_path }}"
-          $cutag = "${{ matrix.cutag }}"
-          $py    = "${{ matrix.python }}"
+          $cuda  = "${{ matrix.cuda_spec.cuda_path }}"
+          $cutag = "${{ matrix.cuda_spec.cutag }}"
+          $py    = "${{ matrix.python_spec.py }}"
 
-          Write-Host "=== Using CUDA $cutag ==="
-          # --- 他 CUDA bin を除去して対象のみ前置き ---
+          # --- 他の CUDA bin を PATH から除去し、対象のみ前置き ---
           $parts = $env:PATH -split ';' | ? { $_ -notmatch 'NVIDIA GPU Computing Toolkit\\CUDA\\v\d+\.\d+\\bin' }
           $env:PATH = @("$cuda\bin", "$cuda\extras\CUPTI\lib64") + $parts -join ';'
-          # --- 併用環境変数固定 ---
+
+          # --- 併用される環境変数も固定 ---
           $env:CUDA_PATH = $cuda
           $env:CUDA_HOME = $cuda
           $env:CUDAToolkit_ROOT = $cuda
           $env:INCLUDE = "$cuda\include;$env:INCLUDE"
           $env:LIB     = "$cuda\lib\x64;$env:LIB"
-          # --- ターゲットディレクトリ分離 ---
-          $env:CARGO_TARGET_DIR = "target\cu$cutag\py$py"
 
-          # --- 確認 ---
+          # --- ビルドキャッシュ取り違え防止（Python×CUDA で分離） ---
+          $env:CARGO_TARGET_DIR = "target\${cutag}\py${py}"
+
+          # --- 可視化・確認 ---
           & "$cuda\bin\nvcc.exe" --version
           where.exe nvrtc64_*.dll
+          python --version
 
-          # --- ビルド ---
+          # --- 依存導入 & ビルド ---
           python -m pip install -U pip maturin
+          # 必要に応じて features を付与: 例) --features cuda-nvrtc
           maturin build --release -i python -m pyproject.toml
 
-          # --- CUDA タグ付きファイル名にリネーム ---
+          # --- wheel に CUDA タグを付与して dist/ に配置 ---
           $whl = Get-ChildItem target\wheels\*.whl | Select-Object -First 1
           if (-not $whl) { throw "wheel not found" }
           New-Item -ItemType Directory -Path dist -Force | Out-Null
@@ -72,7 +81,8 @@ jobs:
           Copy-Item $whl.FullName -Destination ("dist\" + $new)
           Write-Host "Created dist\$new"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
-          name: "win-py${{ matrix.python }}-${{ matrix.cutag }}"
+          name: "win-py${{ matrix.python_spec.py }}-${{ matrix.cuda_spec.cutag }}"
           path: dist\*.whl
