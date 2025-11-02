@@ -412,9 +412,7 @@ pub fn enforce_edge<T>(
                     &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]
                 ) > T::epsilon()
             );
-            if ratio < T::epsilon() {
-                panic!();
-            } else if ratio > (T::one() - T::epsilon()) {
+            if ratio < T::epsilon() || ratio > T::one() - T::epsilon() {
                 panic!();
             } else {
                 let ied0 = 3 - i0_node - i1_node;
