@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.9", "3.10", "3.11", "3.12"]
+        python: ["3.10", "3.11", "3.12", "3.13"]
         include:
           - cuda: "12.1"
             cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.1"
@@ -25,8 +25,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
           architecture: x64
