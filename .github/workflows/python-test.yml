@@ -55,9 +55,9 @@ jobs:
           echo "VIRTUAL ENV:" $VIRTUAL_ENV
           echo "install maturin"
           pip3 install maturin
-          maturin build --release
+          maturin build --release --verbose
           echo "install library using maturin"
-          maturin develop --release
+          maturin develop --release --verbose
           pip3 list
           echo "test library using pytest"
           pip3 install pytest
