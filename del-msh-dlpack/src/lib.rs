@@ -6,13 +6,13 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 mod array1d;
 mod edge2vtx;
 mod mortons;
+mod nbody;
 mod offset_array;
 mod quad_oct_tree;
 mod trimesh3;
 mod trimesh3_raycast;
 mod vtx2elem;
 mod vtx2vtx;
-mod nbody;
 
 #[pyo3::pymodule]
 #[pyo3(name = "del_msh_dlpack")]

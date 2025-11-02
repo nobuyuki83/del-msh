@@ -19,14 +19,14 @@ def laplacian_smoothing(
     )
 
 
-def multiply_graph_laplacian(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs):
+def multiply_graph_laplacian(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs, stream_ptr=0):
     """Multiply graph laplacian matrix to vector
     {vtx2lhs} = L * {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
     """
     from ..del_msh_dlpack import vtx2vtx_multiply_graph_laplacian
 
-    vtx2vtx_multiply_graph_laplacian(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs)
+    vtx2vtx_multiply_graph_laplacian(vtx2idx, idx2vtx, vtx2rhs, vtx2lhs, stream_ptr)
 
 
 def from_uniform_mesh(elem2vtx, num_vtx: int, is_self, stream_ptr=0):

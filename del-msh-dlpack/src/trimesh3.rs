@@ -1,11 +1,12 @@
-use crate::{check_2d_tensor, get_shape_tensor};
 use pyo3::prelude::PyModule;
-use pyo3::{Bound, PyAny, PyResult, Python};
+use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(trimesh3_tri2normal, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(trimesh3_bwd_tri2normal, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(trimesh3_load_nastran, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(trimesh3_save_wavefront_obj, m)?)?;
     Ok(())
 }
 
@@ -21,12 +22,12 @@ pub fn trimesh3_tri2normal(
     let vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
     let tri2nrm = crate::get_managed_tensor_from_pyany(tri2nrm)?;
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = get_shape_tensor(tri2vtx, 0).unwrap();
-    let num_vtx = get_shape_tensor(vtx2xyz, 0).unwrap();
+    let num_tri = crate::get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = crate::get_shape_tensor(vtx2xyz, 0).unwrap();
     //
-    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
-    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
-    check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type).unwrap();
+    crate::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    crate::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    crate::check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
@@ -82,13 +83,13 @@ pub fn trimesh3_bwd_tri2normal(
     let dw_vtx2xyz = crate::get_managed_tensor_from_pyany(dw_vtx2xyz)?;
     //
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = get_shape_tensor(tri2vtx, 0).unwrap();
-    let num_vtx = get_shape_tensor(vtx2xyz, 0).unwrap();
+    let num_tri = crate::get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = crate::get_shape_tensor(vtx2xyz, 0).unwrap();
     //
-    check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
-    check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
-    check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type).unwrap();
-    check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type).unwrap();
+    crate::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    crate::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    crate::check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type).unwrap();
+    crate::check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
@@ -140,5 +141,39 @@ pub fn trimesh3_bwd_tri2normal(
             todo!()
         }
     }
+    Ok(())
+}
+
+#[pyfunction]
+fn trimesh3_load_nastran(
+    py: Python<'_>,
+    path: String,
+) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
+    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_nas::load_tri_mesh::<_, u32>(path);
+    let tri2vtx_cap =
+        crate::make_capsule_from_vec(py, vec![(tri2vtx.len() as i64) / 3, 3], tri2vtx);
+    let vtx2xyz_cap =
+        crate::make_capsule_from_vec(py, vec![(vtx2xyz.len() as i64) / 3, 3], vtx2xyz);
+    Ok((tri2vtx_cap, vtx2xyz_cap))
+}
+
+#[pyo3::pyfunction]
+pub fn trimesh3_save_wavefront_obj(
+    _py: Python<'_>,
+    tri2vtx: &Bound<'_, PyAny>,
+    vtx2xyz: &Bound<'_, PyAny>,
+    path: String,
+) -> PyResult<()> {
+    let tri2vtx = crate::get_managed_tensor_from_pyany(tri2vtx)?;
+    let vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
+    let num_tri = crate::get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = crate::get_shape_tensor(vtx2xyz, 0).unwrap();
+    //
+    crate::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, dlpack::device_type_codes::CPU).unwrap();
+    crate::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, dlpack::device_type_codes::CPU).unwrap();
+    //
+    let tri2vtx = unsafe { crate::slice_from_tensor::<u32>(tri2vtx) }.unwrap();
+    let vtx2xyz = unsafe { crate::slice_from_tensor::<f32>(vtx2xyz) }.unwrap();
+    del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(path, tri2vtx, vtx2xyz, 3).unwrap();
     Ok(())
 }

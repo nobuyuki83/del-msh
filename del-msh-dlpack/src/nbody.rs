@@ -1,14 +1,11 @@
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
-
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(nbody_screened_poisson, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(nbody_elastic, m)?)?;
     Ok(())
 }
-
-
 
 #[pyfunction]
 fn nbody_screened_poisson(
@@ -39,7 +36,7 @@ fn nbody_screened_poisson(
     match device {
         dlpack::device_type_codes::CPU => {
             todo!()
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
@@ -50,7 +47,7 @@ fn nbody_screened_poisson(
                 del_msh_cuda_kernel::NBODY,
                 "screened_poisson3",
             )
-                .unwrap();
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_wtx as u32);
             builder.arg_data(&wtx2co.data);
@@ -60,13 +57,19 @@ fn nbody_screened_poisson(
             builder.arg_data(&vtx2rhs.data);
             builder.arg_f32(lambda);
             builder.arg_f32(epsilon);
-            builder.launch_kernel(fnc, del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32)).unwrap();
-        },
-        _ => { todo!() }
+            builder
+                .launch_kernel(
+                    fnc,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                )
+                .unwrap();
+        }
+        _ => {
+            todo!()
+        }
     }
     Ok(())
 }
-
 
 #[pyfunction]
 fn nbody_elastic(
@@ -97,18 +100,16 @@ fn nbody_elastic(
     match device {
         dlpack::device_type_codes::CPU => {
             todo!()
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
-                del_msh_cuda_kernel::NBODY,
-                "elastic",
-            )
-                .unwrap();
+            let (fnc, _mdl) =
+                del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::NBODY, "elastic")
+                    .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_wtx as u32);
             builder.arg_data(&wtx2co.data);
@@ -118,11 +119,16 @@ fn nbody_elastic(
             builder.arg_data(&vtx2rhs.data);
             builder.arg_f32(nu);
             builder.arg_f32(epsilon);
-            builder.launch_kernel(fnc, del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32)).unwrap();
-        },
-        _ => { todo!() }
+            builder
+                .launch_kernel(
+                    fnc,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                )
+                .unwrap();
+        }
+        _ => {
+            todo!()
+        }
     }
     Ok(())
 }
-
-

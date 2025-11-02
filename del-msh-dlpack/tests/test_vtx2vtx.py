@@ -56,38 +56,28 @@ def test_02():
     vtx2lhstmp = vtx2lhs.clone()
     #
     lambda0 = 1.0
+    # [I + lambda * L] {vtx2lhs} = {vtx2rhs}
+    # where L = [ .., -1, .., valence, ..,-1, .. ]
     del_msh_dlpack.Vtx2Vtx.torch.laplacian_smoothing(
         *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, vtx2lhstmp
     )
-    # print(vtx2rhs)
-    #
-    residual = numpy.linalg.norm(
-        vtx2lhs
-        + lambda0
-        * del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
-        - vtx2rhs
-    )
-    assert residual < 3.0e-5
+    l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
+    res = vtx2lhs + lambda0 * l_vtx2lhs - vtx2rhs
+    assert torch.norm(res) < 3.0e-5
     #
     if torch.cuda.is_available():
         print("test laplacian smoothing on gpu")
         vtx2vtx = (vtx2vtx[0].cuda(), vtx2vtx[1].cuda())
         vtx2rhs = vtx2rhs.cuda()
         vtx2lhs = torch.zeros_like(vtx2rhs).cuda()
+        # [I + lambda * L] {vtx2lhs} = {vtx2rhs}
+        # where L = [ .., -1, .., valence, ..,-1, .. ]
         del_msh_dlpack.Vtx2Vtx.torch.laplacian_smoothing(
             *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, None
         )
-        vtx2lhs = vtx2lhs.cpu().numpy()
-        vtx2vtx = (vtx2vtx[0].cpu().numpy(), vtx2vtx[1].cpu().numpy())
-        vtx2rhs = vtx2rhs.cpu().numpy()
-        residual = numpy.linalg.norm(
-            vtx2lhs
-            + lambda0
-            * del_msh_dlpack.Vtx2Vtx.numpy.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
-            - vtx2rhs
-        )
-        # print(residual)
-        assert residual < 3.0e-5
+        l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
+        res = vtx2lhs + lambda0 * l_vtx2lhs - vtx2rhs
+        assert torch.norm(res) < 3.0e-5
 
 
 def test_03():

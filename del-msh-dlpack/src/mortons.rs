@@ -26,7 +26,7 @@ fn mortons_vtx2morton_from_vtx2co(
     crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
     crate::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device).unwrap();
     crate::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
-    // 
+    //
     match device {
         dlpack::device_type_codes::CPU => {
             let vtx2co = unsafe { crate::slice_from_tensor::<f32>(vtx2co) }.unwrap();

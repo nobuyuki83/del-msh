@@ -27,17 +27,17 @@ fn vtx2vtx_laplacian_smoothing(
     vtx2lhstmp: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
+    let vtx2idx_offset = crate::get_managed_tensor_from_pyany(vtx2idx)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
     let vtx2rhs = crate::get_managed_tensor_from_pyany(vtx2rhs)?;
     let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
     let vtx2lhstmp = crate::get_managed_tensor_from_pyany(vtx2lhstmp)?;
     //
-    let num_vtx = get_shape_tensor(vtx2idx, 0).unwrap() - 1;
+    let num_vtx = get_shape_tensor(vtx2idx_offset, 0).unwrap() - 1;
     let num_dim = get_shape_tensor(vtx2rhs, 1).unwrap();
-    let device_type = vtx2idx.ctx.device_type;
+    let device_type = vtx2idx_offset.ctx.device_type;
     //
-    check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device_type).unwrap();
+    check_1d_tensor::<u32>(vtx2idx_offset, num_vtx + 1, device_type).unwrap();
     check_1d_tensor::<u32>(idx2vtx, -1, device_type).unwrap();
     check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_dim, device_type).unwrap();
     check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_dim, device_type).unwrap();
@@ -45,13 +45,21 @@ fn vtx2vtx_laplacian_smoothing(
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let vtx2idx = unsafe { crate::slice_from_tensor::<u32>(vtx2idx).unwrap() };
+            let vtx2idx_offset =
+                unsafe { crate::slice_from_tensor::<u32>(vtx2idx_offset).unwrap() };
             let idx2vtx = unsafe { crate::slice_from_tensor::<u32>(idx2vtx).unwrap() };
             let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
             let vtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
             let vtx2lhstmp = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
-            del_msh_cpu::vtx2vtx::laplacian_smoothing::<3, u32>(
-                vtx2idx, idx2vtx, lambda, vtx2lhs, vtx2rhs, num_iter, vtx2lhstmp,
+            del_msh_cpu::vtx2vtx::laplacian_smoothing::<u32>(
+                vtx2idx_offset,
+                idx2vtx,
+                lambda,
+                3,
+                vtx2lhs,
+                vtx2rhs,
+                num_iter,
+                vtx2lhstmp,
             );
         }
         #[cfg(feature = "cuda")]
@@ -70,7 +78,7 @@ fn vtx2vtx_laplacian_smoothing(
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
                     builder.arg_u32(num_vtx as u32);
-                    builder.arg_data(&vtx2idx.data);
+                    builder.arg_data(&vtx2idx_offset.data);
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);
                     builder.arg_data(&vtx2lhstmp.data);
@@ -86,7 +94,7 @@ fn vtx2vtx_laplacian_smoothing(
                 {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
                     builder.arg_u32(num_vtx as u32);
-                    builder.arg_data(&vtx2idx.data);
+                    builder.arg_data(&vtx2idx_offset.data);
                     builder.arg_data(&idx2vtx.data);
                     builder.arg_f32(lambda);
                     builder.arg_data(&vtx2lhs.data);
@@ -101,7 +109,7 @@ fn vtx2vtx_laplacian_smoothing(
                 }
             }
         }
-        _ => println!("Unknown device type {}", vtx2idx.ctx.device_type),
+        _ => println!("Unknown device type {}", vtx2idx_offset.ctx.device_type),
     }
     Ok(())
 }
@@ -113,25 +121,26 @@ fn vtx2vtx_laplacian_smoothing(
 #[pyo3::pyfunction]
 fn vtx2vtx_multiply_graph_laplacian(
     _py: Python,
-    vtx2idx: &Bound<'_, PyAny>,
+    vtx2idx_offset: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
     vtx2rhs: &Bound<'_, PyAny>,
     vtx2lhs: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx)?;
+    let vtx2idx = crate::get_managed_tensor_from_pyany(vtx2idx_offset)?;
     let idx2vtx = crate::get_managed_tensor_from_pyany(idx2vtx)?;
     let vtx2rhs = crate::get_managed_tensor_from_pyany(vtx2rhs)?;
     let vtx2lhs = crate::get_managed_tensor_from_pyany(vtx2lhs)?;
     //
     let num_vtx = get_shape_tensor(vtx2idx, 0).unwrap() - 1;
-    let num_dim = get_shape_tensor(vtx2lhs, 1).unwrap();
+    let num_vdim = get_shape_tensor(vtx2lhs, 1).unwrap();
+    let num_idx = get_shape_tensor(idx2vtx, 0).unwrap();
     let device = vtx2idx.ctx.device_type;
     //
-    assert_eq!(num_dim, 3);
     check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device).unwrap();
     check_1d_tensor::<u32>(idx2vtx, -1, device).unwrap();
-    check_2d_tensor::<f32>(vtx2rhs, num_vtx, 3, device).unwrap();
-    check_2d_tensor::<f32>(vtx2lhs, num_vtx, 3, device).unwrap();
+    check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
+    check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_vdim, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -139,15 +148,41 @@ fn vtx2vtx_multiply_graph_laplacian(
             let idx2vtx = unsafe { crate::slice_from_tensor::<u32>(idx2vtx).unwrap() };
             let vtx2rhs = unsafe { crate::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
             let vtx2lhs = unsafe { crate::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
-            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<3, u32>(
-                vtx2idx, idx2vtx, vtx2rhs, vtx2lhs,
+            del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<u32>(
+                vtx2idx,
+                idx2vtx,
+                num_vdim as usize,
+                vtx2rhs,
+                vtx2lhs,
             );
-            Ok(())
+        }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cu::CUdeviceptr, cuda_check, CuVec};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let vtx2idx =
+                CuVec::<u32>::from_dptr(vtx2idx.data as CUdeviceptr, num_vtx as usize + 1);
+            let idx2vtx =
+                CuVec::<u32>::from_dptr(idx2vtx.data as CUdeviceptr, num_idx as usize + 1);
+            let vtx2rhs =
+                CuVec::<f32>::from_dptr(vtx2rhs.data as CUdeviceptr, (num_vtx * num_vdim) as usize);
+            let vtx2lhs =
+                CuVec::<f32>::from_dptr(vtx2lhs.data as CUdeviceptr, (num_vtx * num_vdim) as usize);
+            del_msh_cudarc_sys::vtx2vtx::multiply_graph_laplacian(
+                stream,
+                &vtx2idx,
+                &idx2vtx,
+                num_vdim as usize,
+                &vtx2rhs,
+                &vtx2lhs,
+            );
         }
         _ => {
             todo!()
         }
     }
+    Ok(())
 }
 
 #[pyfunction]

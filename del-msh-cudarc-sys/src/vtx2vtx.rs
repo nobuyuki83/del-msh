@@ -61,3 +61,29 @@ pub fn from_uniform_mesh(
     }
     (vtx2idx, idx2vtx)
 }
+
+
+pub fn multiply_graph_laplacian(
+    stream: cu::CUstream,
+    vtx2idx_offset: &CuVec<u32>,
+    idx2vtx: &CuVec<u32>,
+    num_vdim: usize,
+    vtx2rhs: &CuVec<f32>,
+    vtx2lhs: &CuVec<f32>)
+{
+    let num_vtx = vtx2idx_offset.n - 1;
+    assert_eq!(vtx2rhs.n, num_vtx * num_vdim);
+    assert_eq!(vtx2lhs.n, num_vtx * num_vdim);
+    let (func, _mdl) = del_cudarc_sys::load_function_in_module(
+        del_msh_cuda_kernel::VTX2VTX,
+        "multiply_graph_laplacian",
+    ).unwrap();
+    let mut builder = del_cudarc_sys::Builder::new(stream);
+    builder.arg_u32(num_vtx as u32);
+    builder.arg_dptr(vtx2idx_offset.dptr);
+    builder.arg_dptr(idx2vtx.dptr);
+    builder.arg_u32(num_vdim as u32);
+    builder.arg_dptr(vtx2rhs.dptr);
+    builder.arg_dptr(vtx2lhs.dptr);
+    builder.launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32)).unwrap();
+}

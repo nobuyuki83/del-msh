@@ -81,21 +81,42 @@ def laplacian_smoothing(
 def multiply_graph_laplacian(
     vtx2idx: torch.Tensor, idx2vtx: torch.Tensor, vtx2rhs: torch.Tensor
 ) -> torch.Tensor:
-    assert len(vtx2idx.shape) == 1
-    assert vtx2idx.dtype == torch.uint32
-    assert len(idx2vtx.shape) == 1
-    assert idx2vtx.dtype == torch.uint32
-    assert len(vtx2rhs.shape) == 2
-    assert vtx2rhs.dtype == torch.float32
+    num_vtx = vtx2idx.shape[0] - 1
+    num_idx = idx2vtx.shape[0]
+    device = vtx2idx.device
+    num_vdim = vtx2rhs.shape[1]
+    #
+    assert vtx2idx.shape == (num_vtx+1,) and vtx2idx.dtype == torch.uint32
+    assert idx2vtx.shape == (num_idx,) and idx2vtx.dtype == torch.uint32 and idx2vtx.device == device
+    assert vtx2rhs.shape == (num_vtx, num_vdim) and vtx2rhs.dtype == torch.float32 and vtx2rhs.device == device
     #
     vtx2lhs = torch.zeros_like(vtx2rhs)
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
     #
     from .. import Vtx2Vtx
 
     Vtx2Vtx.multiply_graph_laplacian(
-        vtx2idx.__dlpack__(),
-        idx2vtx.__dlpack__(),
-        vtx2rhs.__dlpack__(),
-        vtx2lhs.__dlpack__(),
+        util_torch.to_dlpack_safe(vtx2idx, stream_ptr),
+        util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2lhs, stream_ptr),
+        stream_ptr
     )
     return vtx2lhs
+
+
+class GraphLaplacian(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, vtx2idx, idx2vtx, x):
+        ctx.save_for_backward(vtx2idx, idx2vtx)
+        return multiply_graph_laplacian(vtx2idx.detach(), idx2vtx.detach(), x.detach())
+
+    @staticmethod
+    def backward(ctx, dw_lx):
+        vtx2idx, idx2vtx = ctx.saved_tensors
+        dw_vtx2xyz = multiply_graph_laplacian(vtx2idx.detach(), idx2vtx.detach(), dw_lx.detach())
+        return None, None, dw_vtx2xyz

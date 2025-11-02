@@ -94,5 +94,30 @@ void idx2vtx_from_vtx2buff_for_uniform_mesh(
     }
 }
 
+__global__
+void multiply_graph_laplacian(
+    uint32_t num_vtx,
+    const uint32_t* vtx2idx,
+    const uint32_t* idx2vtx,
+    uint32_t num_dim,
+    const float* vtx2rhs,
+    float* vtx2lhs)
+{
+    const int i_vtx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i_vtx >= num_vtx) { return; }
+    // ---------
+    const float valence = static_cast<float>(vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]);
+    float* lhs = vtx2lhs + i_vtx * num_dim;
+    for(int i_dim=0;i_dim<num_dim;++i_dim) {
+        lhs[i_dim] = valence * vtx2rhs[i_vtx * num_dim + i_dim];
+    }
+    for(int idx=vtx2idx[i_vtx];idx<vtx2idx[i_vtx + 1];++idx) {
+        int j_vtx = idx2vtx[idx];
+        for(int i_dim=0;i_dim<num_dim;++i_dim) {
+            lhs[i_dim] -= vtx2rhs[j_vtx * num_dim + i_dim];
+        }
+    }
+}
+
 }
 

@@ -1,6 +1,7 @@
-
 import torch
 from .. import util_torch
+from .. import _CapsuleAsDLPack
+
 
 def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_tri = tri2vtx.shape[0]
@@ -35,28 +36,18 @@ def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
 def bwd_tri2normal(
     tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
 ):
-    # num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
+    num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
-    assert len(tri2vtx.shape) == 2
-    assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == torch.uint32
     #
-    assert len(vtx2xyz.shape) == 2
-    assert vtx2xyz.shape[1] == 3
-    assert vtx2xyz.dtype == torch.float32
-    assert vtx2xyz.device == device
-    #
-    assert len(dw_tri2nrm.shape) == 2
-    assert dw_tri2nrm.shape[1] == 3
-    assert dw_tri2nrm.dtype == torch.float32
-    assert dw_tri2nrm.device == device
+    assert tri2vtx.shape == (num_tri,3) and tri2vtx.dtype == torch.uint32
+    assert vtx2xyz.shape == (num_vtx,3) and vtx2xyz.dtype == torch.float32 and vtx2xyz.device == device
+    assert dw_tri2nrm.shape == (num_tri,3) and dw_tri2nrm.dtype == torch.float32 and dw_tri2nrm.device == device
     #
     stream_ptr = 0
     if device.type == "cuda":
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
-        # print(device, stream_ptr)
     dw_vtx2xyz = torch.empty(size=(num_vtx, 3), dtype=torch.float32, device=device)
     from .. import TriMesh3
 
@@ -81,3 +72,26 @@ class Tri2Normal(torch.autograd.Function):
         tri2vtx, vtx2xyz = ctx.saved_tensors
         dw_vtx2xyz = bwd_tri2normal(tri2vtx.detach(), vtx2xyz.detach(), dw_tri2nrm)
         return None, dw_vtx2xyz
+
+
+def load_nastran(
+        path_file: str):
+    from .. import TriMesh3
+
+    cap_tri2vtx, cap_vtx2xyz = TriMesh3.load_nastran(path_file)
+    tri2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_tri2vtx))
+    vtx2xyz = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2xyz))
+    return tri2vtx, vtx2xyz
+
+
+def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: str):
+    assert tri2vtx.device.type == "cpu"
+    assert vtx2xyz.device.type == "cpu"
+
+    from .. import TriMesh3
+
+    TriMesh3.save_wavefront_obj(
+        tri2vtx.__dlpack__(),
+        vtx2xyz.__dlpack__(),
+        path_file
+    )
