@@ -104,7 +104,7 @@ fn nbody_elastic(
     match device {
         dlpack::device_type_codes::CPU => {
             todo!();
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
@@ -129,7 +129,7 @@ fn nbody_elastic(
                     del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
                 )
                 .unwrap();
-        },
+        }
         _ => {
             let _a = nu;
             let _b = epsilon;
