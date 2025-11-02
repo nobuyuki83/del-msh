@@ -36,11 +36,6 @@ jobs:
           where.exe python
           python -m pip --version
 
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable-x86_64-pc-windows-msvc
-
       - name: Build wheel (isolate CUDA and PATH)
         shell: pwsh
         run: |
