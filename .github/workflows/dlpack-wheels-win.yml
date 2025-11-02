@@ -1,19 +1,18 @@
 name: dlpack-wheels-win
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main, master ]
 
 jobs:
   win-wheels:
     runs-on: self-hosted
-
+    labels: [windows, windows-gpu]
     strategy:
       fail-fast: false
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12"]
-        cuda:   ["12.1", "12.6", "12.9"]
         include:
           - cuda: "12.1"
             cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.1"
@@ -25,60 +24,56 @@ jobs:
             cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.9"
             cutag: "cu129"
 
-    env:
-      # 各ジョブで CUDA を切替
-      CUDA_PATH: ${{ matrix.cuda_path }}
-      # cudarc/cudarc-sys が見る PATH（nvrtc/cuda.dll を先頭優先）
-      PATH: "${{ matrix.cuda_path }}\\bin;${{ matrix.cuda_path }}\\extras\\CUPTI\\lib64;${{ env.PATH }}"
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show GPU & CUDA selection
-        shell: pwsh
-        run: |
-          nvidia-smi
-          "$env:CUDA_PATH"
-          & "$env:CUDA_PATH\bin\nvcc.exe" --version
-
-      - name: Setup Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          architecture: "x64"
+          architecture: x64
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable-x86_64-pc-windows-msvc
-          components: clippy
 
-      - name: Install maturin
-        run: |
-          python -m pip install -U pip maturin
-
-      # もし PyTorch の ABI に依存しない構成なら、ビルド時に特別な include/lib は不要。
-      # NVRTC を使わず静的/動的リンクを明示する場合は下で環境変数/feature を付ける。
-      - name: Build wheel (release)
+      - name: Build wheel (isolate CUDA version)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          # 例: cudarc の feature 切替があるなら --features を指定
-          # maturin build --release -i python --features "cuda-nvrtc" -m pyproject.toml
+          $cuda  = "${{ matrix.cuda_path }}"
+          $cutag = "${{ matrix.cutag }}"
+          $py    = "${{ matrix.python }}"
+
+          Write-Host "=== Using CUDA $cutag ==="
+          # --- 他 CUDA bin を除去して対象のみ前置き ---
+          $parts = $env:PATH -split ';' | ? { $_ -notmatch 'NVIDIA GPU Computing Toolkit\\CUDA\\v\d+\.\d+\\bin' }
+          $env:PATH = @("$cuda\bin", "$cuda\extras\CUPTI\lib64") + $parts -join ';'
+          # --- 併用環境変数固定 ---
+          $env:CUDA_PATH = $cuda
+          $env:CUDA_HOME = $cuda
+          $env:CUDAToolkit_ROOT = $cuda
+          $env:INCLUDE = "$cuda\include;$env:INCLUDE"
+          $env:LIB     = "$cuda\lib\x64;$env:LIB"
+          # --- ターゲットディレクトリ分離 ---
+          $env:CARGO_TARGET_DIR = "target\cu$cutag\py$py"
+
+          # --- 確認 ---
+          & "$cuda\bin\nvcc.exe" --version
+          where.exe nvrtc64_*.dll
+
+          # --- ビルド ---
+          python -m pip install -U pip maturin
           maturin build --release -i python -m pyproject.toml
 
-      # （任意）Wheel ファイル名に CUDA タグを付け替える
-      - name: Retag wheel with CUDA suffix
-        shell: pwsh
-        run: |
+          # --- CUDA タグ付きファイル名にリネーム ---
           $whl = Get-ChildItem target\wheels\*.whl | Select-Object -First 1
           if (-not $whl) { throw "wheel not found" }
-          $new = $whl.Name -replace '\.whl$', ".${{ matrix.cutag }}.whl"
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          $new = $whl.Name -replace '\.whl$', ".${cutag}.whl"
           Copy-Item $whl.FullName -Destination ("dist\" + $new)
-          Write-Host "Renamed to dist\$new"
+          Write-Host "Created dist\$new"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: "win-${{ matrix.python }}-${{ matrix.cutag }}"
+          name: "win-py${{ matrix.python }}-${{ matrix.cutag }}"
           path: dist\*.whl
