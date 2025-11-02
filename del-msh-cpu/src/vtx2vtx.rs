@@ -199,6 +199,7 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
 
 /// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
 /// L = \[..-1,..,valence, ..,-1 \]
+#[allow(clippy::too_many_arguments)]
 pub fn laplacian_smoothing<IDX>(
     vtx2idx_offset: &[IDX],
     idx2vtx: &[IDX],
@@ -216,8 +217,8 @@ pub fn laplacian_smoothing<IDX>(
     assert_eq!(vtx2rhs.len(), num_vtx * num_dim);
     assert_eq!(vtx2lhstmp.len(), num_vtx * num_dim);
     let func_upd = |i_vtx: usize, lhs_next: &mut [f32], vtx2lhs_prev: &[f32]| {
-        let mut buff = vec!(0f32; num_dim);
-        buff.copy_from_slice(&vtx2rhs[i_vtx*num_dim..(i_vtx+1)*num_dim] );
+        let mut buff = vec![0f32; num_dim];
+        buff.copy_from_slice(&vtx2rhs[i_vtx * num_dim..(i_vtx + 1) * num_dim]);
         for &j_vtx in &idx2vtx[vtx2idx_offset[i_vtx].as_()..vtx2idx_offset[i_vtx + 1].as_()] {
             let j_vtx: usize = j_vtx.as_();
             for i in 0..num_dim {
@@ -281,7 +282,7 @@ fn test_laplacian_smoothing() {
         use rand::Rng;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
-        (0..vtx2xyz.len()/3*num_vdim)
+        (0..vtx2xyz.len() / 3 * num_vdim)
             .map(|_| rng.random())
             .collect::<Vec<f32>>()
     };

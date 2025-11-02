@@ -8,6 +8,7 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
 }
 
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn nbody_screened_poisson(
     _py: Python<'_>,
     vtx2co: &Bound<'_, PyAny>,
@@ -35,6 +36,8 @@ fn nbody_screened_poisson(
     //
     match device {
         dlpack::device_type_codes::CPU => {
+            let _a = lambda;
+            let _b = epsilon;
             todo!()
         }
         #[cfg(feature = "cuda")]
@@ -72,6 +75,7 @@ fn nbody_screened_poisson(
 }
 
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn nbody_elastic(
     _py: Python<'_>,
     vtx2co: &Bound<'_, PyAny>,
@@ -99,8 +103,8 @@ fn nbody_elastic(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            todo!()
-        }
+            todo!();
+        },
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::cu;
@@ -125,9 +129,11 @@ fn nbody_elastic(
                     del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
                 )
                 .unwrap();
-        }
+        },
         _ => {
-            todo!()
+            let _a = nu;
+            let _b = epsilon;
+            todo!();
         }
     }
     Ok(())

@@ -138,7 +138,7 @@ fn vtx2vtx_multiply_graph_laplacian(
     let device = vtx2idx.ctx.device_type;
     //
     check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device).unwrap();
-    check_1d_tensor::<u32>(idx2vtx, -1, device).unwrap();
+    check_1d_tensor::<u32>(idx2vtx, num_idx, device).unwrap();
     check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
     check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_vdim, device).unwrap();
     //
