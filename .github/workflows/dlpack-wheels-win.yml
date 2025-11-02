@@ -8,7 +8,7 @@ on:
 jobs:
   win-wheels:
     runs-on: self-hosted
-    labels: [windows, windows-gpu]
+    labels: [windows, self-hosted, x64]
     strategy:
       fail-fast: false
       matrix:
