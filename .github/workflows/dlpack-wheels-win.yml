@@ -85,15 +85,13 @@ jobs:
           
           $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64"
           $vsdev = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat"
-          
-          $cmd = @"
-          "$vsdev" -arch=x64 -host_arch=x64 && ^
-          where cl && cl /Bv && ^
-          nvcc --version && ^
-          maturin build --release --features cuda && ^
-          echo hoge
-          "@
+          $cmd = ('"{0}" -arch=x64 -host_arch=x64 && where cl && cl /Bv && nvcc --version && maturin build --release --features cuda && echo hoge') -f $vsdev
           cmd /c $cmd
+          
+          #nvcc --version
+          #maturin build --release --features cuda
+          
+          echo hoge
           
           #cmd /c `"$vsdev`" -arch=x64 -host_arch=x64 && where cl && cl /Bv && nvcc --version && ^
           #cl.exe /Bv && ^
