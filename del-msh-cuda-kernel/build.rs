@@ -27,6 +27,6 @@ fn main() {
     //
     // let builder = bindgen_cuda::Builder::default().include_paths_glob("../cpp_header/*");
     println!("cargo:info={builder:?}");
-    let bindings = builder.build_ptx().unwrap();
+    let bindings = builder.arg("-allow-unsupported-compiler").build_ptx().unwrap();
     bindings.write("src/lib.rs").unwrap();
 }

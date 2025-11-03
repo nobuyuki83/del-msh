@@ -17,7 +17,6 @@ jobs:
         cuda_spec:
           - { cuda: "12.1", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.1", cutag: "cu121" }
           - { cuda: "12.6", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.6", cutag: "cu126" }
-          - { cuda: "12.9", cuda_path: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.9", cutag: "cu129" }
 
     steps:
       - uses: actions/checkout@v4
