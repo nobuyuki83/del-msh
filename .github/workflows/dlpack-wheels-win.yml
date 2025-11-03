@@ -73,11 +73,12 @@ jobs:
           
           pwd
           cd del-msh-dlpack
+          pwd
           
           echo "huga"
           
           # 必要に応じて features を付与: 例) --features cuda-nvrtc
-          maturin build --release -i python -m pyproject.toml
+          maturin build --release --features cuda
           
           echo "hoge"
 
