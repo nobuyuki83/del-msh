@@ -36,6 +36,11 @@ jobs:
           where.exe python
           python -m pip --version
 
+      - name: Check Rust toolchain
+        run: |
+          rustc -V
+          cargo -V          
+
       - name: Build wheel (isolate CUDA and PATH)
         shell: powershell
         run: |
@@ -65,6 +70,9 @@ jobs:
 
           # --- 依存導入 & ビルド ---
           python -m pip install -U pip maturin
+          
+          cd del-msh-dlpack
+          
           # 必要に応じて features を付与: 例) --features cuda-nvrtc
           maturin build --release -i python -m pyproject.toml
 
