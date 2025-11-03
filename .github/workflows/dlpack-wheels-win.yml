@@ -84,8 +84,10 @@ jobs:
           echo "huga"
           
           # 必要に応じて features を付与: 例) --features cuda-nvrtc
-          maturin build --release --features cuda
-          
+          $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64"
+          cl.exe /Bv
+          nvcc --version
+          maturin build --release --features cuda          
           echo "hoge"
 
           # --- wheel に CUDA タグを付与して dist/ に配置 ---
@@ -95,6 +97,7 @@ jobs:
           #$new = $whl.Name -replace '\.whl$', ".${cutag}.whl"
           #Copy-Item $whl.FullName -Destination ("dist\" + $new)
           #Write-Host "Created dist\$new"
+          
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
