@@ -71,6 +71,7 @@ jobs:
           # --- 依存導入 & ビルド ---
           python -m pip install -U pip maturin
           
+          pwd
           cd del-msh-dlpack
           
           # 必要に応じて features を付与: 例) --features cuda-nvrtc
