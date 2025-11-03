@@ -34,7 +34,10 @@ jobs:
 
       - name: Check Python
         shell: powershell
-        run: |
+        run: |  
+          $py = "${{ matrix.python_spec.py_root }}"
+          # ここが肝：このステップの PATH 先頭に“前置”する
+          $env:Path = "$py;$py\Scripts;$env:Path"
           python --version
           where.exe python
           python -m pip --version
