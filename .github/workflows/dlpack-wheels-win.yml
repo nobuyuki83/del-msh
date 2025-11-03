@@ -82,12 +82,12 @@ jobs:
           echo "hoge"
 
           # --- wheel に CUDA タグを付与して dist/ に配置 ---
-          $whl = Get-ChildItem ..\target\wheels\*.whl | Select-Object -First 1
-          if (-not $whl) { throw "wheel not found" }
-          New-Item -ItemType Directory -Path dist -Force | Out-Null
-          $new = $whl.Name -replace '\.whl$', ".${cutag}.whl"
-          Copy-Item $whl.FullName -Destination ("dist\" + $new)
-          Write-Host "Created dist\$new"
+          #$whl = Get-ChildItem ..\target\wheels\*.whl | Select-Object -First 1
+          #if (-not $whl) { throw "wheel not found" }
+          #New-Item -ItemType Directory -Path dist -Force | Out-Null
+          #$new = $whl.Name -replace '\.whl$', ".${cutag}.whl"
+          #Copy-Item $whl.FullName -Destination ("dist\" + $new)
+          #Write-Host "Created dist\$new"
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
