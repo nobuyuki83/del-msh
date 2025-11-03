@@ -74,8 +74,12 @@ jobs:
           pwd
           cd del-msh-dlpack
           
+          echo "huga"
+          
           # 必要に応じて features を付与: 例) --features cuda-nvrtc
           maturin build --release -i python -m pyproject.toml
+          
+          echo "hoge"
 
           # --- wheel に CUDA タグを付与して dist/ に配置 ---
           $whl = Get-ChildItem ..\target\wheels\*.whl | Select-Object -First 1
