@@ -31,6 +31,10 @@ jobs:
           "PYTHONUTF8=1"                    | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           "PIP_DISABLE_PIP_VERSION_CHECK=1" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
           "PIP_NO_INPUT=1"                  | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Check Python
+        shell: powershell
+        run: |
           python --version
           where.exe python
           python -m pip --version
