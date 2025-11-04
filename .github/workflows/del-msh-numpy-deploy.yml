@@ -2,9 +2,9 @@ name: del-msh-numpy-deploy
 
 on:
   pull_request:
-#  push:
-#    tags:
-#      - 'v*'
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   linux:

@@ -2,10 +2,10 @@ name: python-test
 
 on:
   pull_request:
-#  push:
-#    branches:
-#      - main
-#      - master
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
   linux:
