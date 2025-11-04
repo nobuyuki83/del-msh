@@ -42,8 +42,7 @@ fn mortons_vtx2morton_from_vtx2co(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             {

@@ -11,8 +11,8 @@ cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-sys"]
 [dependencies]
 
 # for develop
-#del-msh-cuda-kernel = { workspace = true, optional = true }
-#del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
+# del-msh-cuda-kernel = { workspace = true, optional = true }
+# del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
 
 # for push
 del-msh-cuda-kernel = { workspace = true, optional = true }

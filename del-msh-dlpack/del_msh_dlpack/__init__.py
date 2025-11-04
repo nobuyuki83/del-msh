@@ -14,3 +14,12 @@ class _CapsuleAsDLPack:
         return (1, 0)
 
 
+def get_cuda_driver_version():
+    from .del_msh_dlpack import get_cuda_driver_version
+
+    return get_cuda_driver_version()
+
+
+
+
+

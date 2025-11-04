@@ -1,5 +1,5 @@
 use dlpack::{DataType, ManagedTensor, Tensor};
-use pyo3::prelude::{PyAnyMethods, PyCapsuleMethods};
+use pyo3::prelude::{PyAnyMethods, PyCapsuleMethods, PyModuleMethods};
 use pyo3::types::PyCapsule;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
@@ -17,7 +17,7 @@ mod vtx2vtx;
 #[pyo3::pymodule]
 #[pyo3(name = "del_msh_dlpack")]
 fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    // m.add_function(wrap_pyfunction!(solve, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(get_cuda_driver_version, m)?)?;
     trimesh3_raycast::add_functions(_py, m)?;
     trimesh3::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
@@ -488,4 +488,20 @@ pub fn get_shape_tensor(t: &Tensor, i_dim: usize) -> Result<i64, String> {
     }
     let shape = unsafe { std::slice::from_raw_parts(t.shape, t.ndim as usize) };
     Ok(shape[i_dim])
+}
+
+#[pyo3::pyfunction]
+pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
+    #[cfg(feature = "cuda")]
+    {
+        use del_cudarc_sys::{cu, cuda_check};
+        cuda_check!(cu::cuInit(0)).unwrap();
+        let mut version: i32 = 0;
+        cuda_check!(cu::cuDriverGetVersion(&mut version)).unwrap();
+        let major = (version / 1000) as u32;
+        let minor = ((version % 1000) / 10) as u32;
+        return Ok((major, minor));
+    }
+    #[allow(unreachable_code)]
+    Ok((u32::MAX, u32::MAX))
 }
