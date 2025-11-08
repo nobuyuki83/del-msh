@@ -65,13 +65,15 @@ fn vtx2vtx_laplacian_smoothing(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             // println!("GPU_{}", vtx2idx.ctx.device_id);
+            /*
             let (function, _module) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::VTX2VTX,
                 "laplacian_smoothing",
             )
             .unwrap();
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+             */
+            let function = crate::load_get_function("vtx2vtx", "laplacian_smoothing").unwrap();
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             for _itr in 0..num_iter {

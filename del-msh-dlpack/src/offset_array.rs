@@ -37,11 +37,14 @@ fn offset_array_aggregate(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
+            /*
             let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
                 del_cudarc_kernel::OFFSET_ARRAY,
                 "aggregate",
             )
             .unwrap();
+             */
+            let fnc = del_cudarc_sys::load_get_function("offset_array", "aggregate").unwrap();
             let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);

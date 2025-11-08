@@ -19,11 +19,14 @@ pub fn from_uniform_mesh(
     let vtx2nvtx = CuVec::<u32>::with_capacity(num_vtx + 1).unwrap();
     vtx2nvtx.set_zeros(stream).unwrap();
     {
+        /*
         let (func, _mdl) = del_cudarc_sys::load_function_in_module(
             del_msh_cuda_kernel::VTX2VTX,
             "vtx2nvtx_from_uniform_mesh",
         )
         .unwrap();
+         */
+        let func = crate::load_get_function("vtx2vtx", "vtx2nvtx_from_uniform_mesh").unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(elem2vtx.dptr);
@@ -42,11 +45,15 @@ pub fn from_uniform_mesh(
     let num_idx = vtx2idx.last().unwrap();
     let idx2vtx: CuVec<u32> = CuVec::with_capacity(num_idx as usize).unwrap();
     {
+        /*
         let (func, _mdl) = del_cudarc_sys::load_function_in_module(
             del_msh_cuda_kernel::VTX2VTX,
             "idx2vtx_from_vtx2buff_for_uniform_mesh",
         )
         .unwrap();
+         */
+        let func =
+            crate::load_get_function("vtx2vtx", "idx2vtx_from_vtx2buff_for_uniform_mesh").unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(vtx2jdx.dptr);
@@ -73,11 +80,14 @@ pub fn multiply_graph_laplacian(
     let num_vtx = vtx2idx_offset.n - 1;
     assert_eq!(vtx2rhs.n, num_vtx * num_vdim);
     assert_eq!(vtx2lhs.n, num_vtx * num_vdim);
+    /*
     let (func, _mdl) = del_cudarc_sys::load_function_in_module(
         del_msh_cuda_kernel::VTX2VTX,
         "multiply_graph_laplacian",
     )
     .unwrap();
+     */
+    let func = crate::load_get_function("vtx2vtx", "multiply_graph_laplacian").unwrap();
     let mut builder = del_cudarc_sys::Builder::new(stream);
     builder.arg_u32(num_vtx as u32);
     builder.arg_dptr(vtx2idx_offset.dptr);

@@ -6,17 +6,18 @@ edition.workspace = true
 license.workspace = true
 
 [features]
-cuda = ["dep:del-msh-cuda-kernel", "dep:del-cudarc-sys"]
+cuda = ["dep:del-msh-cuda-kernels", "dep:del-cudarc-sys"]
 
 [dependencies]
 
 # for develop
-# del-msh-cuda-kernel = { workspace = true, optional = true }
-# del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
+#del-msh-cuda-kernel = { workspace = true, optional = true }
+del-msh-cuda-kernels = { workspace = true, optional = true }
+del-cudarc-sys = { path="../../del-cudarc/del-cudarc-sys", optional = true}
 
 # for push
-del-msh-cuda-kernel = { workspace = true, optional = true }
-del-cudarc-sys = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+# del-msh-cuda-kernel = { workspace = true, optional = true }
+# del-cudarc-sys = { git="https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 
 # for deploy (internal crates must be specified locally)
 # del-msh-cpu = "=0.1.37"

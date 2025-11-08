@@ -18,6 +18,7 @@ mod vtx2vtx;
 #[pyo3(name = "del_msh_dlpack")]
 fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(pyo3::wrap_pyfunction!(get_cuda_driver_version, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(get_ptx_compiler_version, m)?)?;
     trimesh3_raycast::add_functions(_py, m)?;
     trimesh3::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
@@ -490,6 +491,28 @@ pub fn get_shape_tensor(t: &Tensor, i_dim: usize) -> Result<i64, String> {
     Ok(shape[i_dim])
 }
 
+#[cfg(feature = "cuda")]
+pub fn load_get_function(
+    file_name: &str,
+    function_name: &str,
+) -> Result<del_cudarc_sys::cu::CUfunction, String> {
+    use del_cudarc_sys::cu;
+    let fatbin = del_msh_cuda_kernels::get(file_name).ok_or("missing add.fatbin in kernels")?;
+    let mut module: cu::CUmodule = std::ptr::null_mut();
+    let res = unsafe { cu::cuModuleLoadData(&mut module as *mut _, fatbin.as_ptr() as *const _) };
+    if res != cu::CUresult::CUDA_SUCCESS {
+        return Err(format!("cuModuleLoadData failed: {:?}", res));
+    }
+    //
+    let cname = std::ffi::CString::new(function_name).unwrap();
+    let mut f: cu::CUfunction = std::ptr::null_mut();
+    let res = unsafe { cu::cuModuleGetFunction(&mut f, module, cname.as_ptr()) };
+    if res != cu::CUresult::CUDA_SUCCESS {
+        return Err(format!("program not found: {}", "get_version"));
+    }
+    Ok(f)
+}
+
 #[pyo3::pyfunction]
 pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
     #[cfg(feature = "cuda")]
@@ -504,4 +527,15 @@ pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
     }
     #[allow(unreachable_code)]
     Ok((u32::MAX, u32::MAX))
+}
+
+#[pyo3::pyfunction]
+pub fn get_ptx_compiler_version() -> PyResult<(i32, i32, i32)> {
+    #[cfg(feature = "cuda")]
+    {
+        let a = del_cudarc_sys::get_ptx_compiler_version();
+        return Ok(a);
+    }
+    #[allow(unreachable_code)]
+    Ok((-1, -1, -1))
 }

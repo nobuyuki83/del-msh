@@ -10,9 +10,12 @@ pub fn from_uniform_mesh(
     let vtx2valence: CuVec<u32> = CuVec::with_capacity(num_vtx + 1).unwrap();
     vtx2valence.set_zeros(stream).unwrap();
     {
+        /*
         let (func, _mdl) =
             del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::UNIFORM_MESH, "vtx2nelem")
                 .unwrap();
+         */
+        let func = crate::load_get_function("uniform_mesh", "vtx2nelem").unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);
@@ -28,11 +31,14 @@ pub fn from_uniform_mesh(
     let num_idx = vtx2idx0.last().unwrap();
     let idx2elem: CuVec<u32> = CuVec::with_capacity(num_idx as usize).unwrap();
     {
+        /*
         let (func, _mdl) = del_cudarc_sys::load_function_in_module(
             del_msh_cuda_kernel::UNIFORM_MESH,
             "fill_idx2elem",
         )
         .unwrap();
+         */
+        let func = crate::load_get_function("uniform_mesh", "fill_idx2elem").unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);

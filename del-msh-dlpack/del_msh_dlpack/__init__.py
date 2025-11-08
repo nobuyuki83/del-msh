@@ -20,6 +20,10 @@ def get_cuda_driver_version():
     return get_cuda_driver_version()
 
 
+def get_ptx_compiler_version():
+    from .del_msh_dlpack import get_ptx_compiler_version
+
+    return get_ptx_compiler_version()
 
 
 

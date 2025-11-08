@@ -46,11 +46,21 @@ fn mortons_vtx2morton_from_vtx2co(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             {
-                let (func, _mdl) = del_cudarc_sys::load_function_in_module(
+                /*
+                let res = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::MORTONS,
                     "vtx2morton",
-                )
-                .unwrap();
+                );
+                let (func, _mdl) = match res {
+                    Ok((func, mdl)) => (func, mdl),
+                    Err(s) => {
+                        dbg!(s);
+                        dbg!(del_msh_cuda_kernel::MORTONS);
+                        panic!()
+                    }
+                };
+                 */
+                let func = crate::load_get_function("mortons", "vtx2morton").unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_vtx as u32);
                 builder.arg_data(&vtx2co.data);
@@ -101,8 +111,15 @@ fn mortons_make_bvh(
             use del_cudarc_sys::cuda_check;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            /*
             let (func, _mdl) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::BVHNODES_MORTON,
+                "kernel_MortonCode_BVHTopology",
+            )
+            .unwrap();
+             */
+            let func = del_cudarc_sys::load_get_function(
+                "bvhnodes_morton",
                 "kernel_MortonCode_BVHTopology",
             )
             .unwrap();

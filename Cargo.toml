@@ -9,7 +9,8 @@ members = [
     "del-msh-examples"
 ]
 exclude = [
-    "del-msh-cuda-kernel"
+    "del-msh-cuda-kernel",
+    "del-msh-cuda-kernels"
 ]
 resolver = "2"
 
@@ -38,6 +39,7 @@ rayon = "1.11.0"
 del-msh-cpu = {path= "del-msh-cpu" }
 del-msh-cudarc-safe = {path= "del-msh-cudarc-safe" }
 del-msh-cuda-kernel = {path= "del-msh-cuda-kernel" }
+del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for development
 #del-geo-core = { path="../del-geo/del-geo-core"}

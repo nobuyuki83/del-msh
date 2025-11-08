@@ -1,15 +1,18 @@
 [package]
-name = "del-msh-cuda-kernel"
+name = "del-msh-cuda-kernels"
 description = "hogehoge"
-publish = true
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+build = "build.rs"
+
+include = ["src/**", "cuda/**", "build.rs"]
 
 [dependencies]
 
+
 [build-dependencies]
-bindgen_cuda = "0.1.5"
+walkdir = "2.5.0"
 
 # for develop
 del-geo-cpp-headers = {path="../../del-geo/del-geo-cpp-headers"}

@@ -39,11 +39,14 @@ pub fn trimesh3_tri2normal(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             //println!("GPU_{}", tri2vtx.ctx.device_id);
+            /*
             let (function, _module) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::TRIMESH3,
                 "tri2normal",
             )
             .unwrap();
+             */
+            let function = crate::load_get_function("trimesh3", "tri2normal").unwrap();
             use del_cudarc_sys::cu;
             use del_cudarc_sys::cuda_check;
             cuda_check!(cu::cuInit(0)).unwrap();
@@ -118,11 +121,14 @@ pub fn trimesh3_bwd_tri2normal(
             }
             {
                 // println!("GPU_{}", tri2vtx.ctx.device_id);
+                /*
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::TRIMESH3,
                     "bwd_tri2normal",
                 )
                 .unwrap();
+                 */
+                let function = crate::load_get_function("trimesh3", "bwd_tri2normal").unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_tri as u32);
                 builder.arg_data(&tri2vtx.data);

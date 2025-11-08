@@ -72,11 +72,16 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
             {
+                /*
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::QUAD_OCT_TREE,
                     "binary_radix_tree_and_depth",
                 )
                 .unwrap();
+                 */
+                let function =
+                    crate::load_get_function("quad_oct_tree", "binary_radix_tree_and_depth")
+                        .unwrap();
                 let num_bnode = num_idx as u32 - 1;
                 let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -92,11 +97,16 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 del_cudarc_sys::CuVec::<u32>::with_capacity(num_bnode as usize).unwrap();
             bnode2isonode.set_zeros(stream).unwrap();
             {
+                /*
                 let (function, _module) = del_cudarc_sys::load_function_in_module(
                     del_msh_cuda_kernel::QUAD_OCT_TREE,
                     "bnode2isonode_and_idx2bnode",
                 )
                 .unwrap();
+                 */
+                let function =
+                    crate::load_get_function("quad_oct_tree", "bnode2isonode_and_idx2bnode")
+                        .unwrap();
                 let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode as u32);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_bnode as u32);
@@ -200,11 +210,15 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
+            /*
             let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::QUAD_OCT_TREE,
                 "make_tree_from_binary_radix_tree",
             )
             .unwrap();
+             */
+            let fnc = crate::load_get_function("quad_oct_tree", "make_tree_from_binary_radix_tree")
+                .unwrap();
             let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);
@@ -262,11 +276,14 @@ pub fn quad_oct_tree_aggregate(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            /*
             let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
                 del_msh_cuda_kernel::QUAD_OCT_TREE,
                 "aggregate",
             )
             .unwrap();
+             */
+            let fnc = crate::load_get_function("quad_oct_tree", "aggregate").unwrap();
             let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);
