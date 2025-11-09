@@ -19,7 +19,6 @@ jobs:
       with:
         toolchain: stable
         components: rustfmt, clippy
-        override: true
 
     - name: Cargo commands
       run: |          

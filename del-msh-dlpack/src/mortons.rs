@@ -60,7 +60,13 @@ fn mortons_vtx2morton_from_vtx2co(
                     }
                 };
                  */
-                let func = crate::load_get_function("mortons", "vtx2morton").unwrap();
+                //let func = crate::load_get_function("mortons", "vtx2morton").unwrap();
+                let func = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::mortons",
+                    del_msh_cuda_kernels::get("mortons").unwrap(),
+                    "vtx2morton",
+                )
+                .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_vtx as u32);
                 builder.arg_data(&vtx2co.data);
@@ -107,8 +113,7 @@ fn mortons_make_bvh(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             /*
@@ -139,6 +144,7 @@ fn mortons_make_bvh(
                 builder
                     .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(n as u32))
                     .unwrap();
+                todo!()
             }
         }
         _ => {

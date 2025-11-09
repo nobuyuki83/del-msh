@@ -72,7 +72,13 @@ fn vtx2vtx_laplacian_smoothing(
             )
             .unwrap();
              */
-            let function = crate::load_get_function("vtx2vtx", "laplacian_smoothing").unwrap();
+            //let function = crate::load_get_function("vtx2vtx", "laplacian_smoothing").unwrap();
+            let function = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh__vtx2vtx",
+                del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
+                "laplacian_smoothing",
+            )
+            .unwrap();
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);

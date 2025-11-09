@@ -44,7 +44,13 @@ fn offset_array_aggregate(
             )
             .unwrap();
              */
-            let fnc = del_cudarc_sys::load_get_function("offset_array", "aggregate").unwrap();
+            // let fnc = del_cudarc_sys::load_get_function("offset_array", "aggregate").unwrap();
+            let fnc = del_cudarc_sys::cache_func::get_function_cached(
+                "del_cudarc::offset_array",
+                del_cudarc_kernels::get("offset_array").unwrap(),
+                "aggregate",
+            )
+            .unwrap();
             let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);

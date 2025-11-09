@@ -25,7 +25,7 @@ del-msh-cudarc-sys = { path="../del-msh-cudarc-sys", optional = true, features =
 
 # for develop
 # del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
-# del-cudarc-kernel = { path = "../../del-cudarc/del-cudarc-kernel", optional = true}
+# del-cudarc-kernels = { path = "../../del-cudarc/del-cudarc-kernels", optional = true}
 
 # for push
 del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}

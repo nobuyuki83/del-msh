@@ -56,7 +56,13 @@ fn nbody_screened_poisson(
             )
             .unwrap();
              */
-            let fnc = crate::load_get_function("nbody", "screened_poisson3").unwrap();
+            //let fnc = crate::load_get_function("nbody", "screened_poisson3").unwrap();
+            let fnc = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::nbody",
+                del_msh_cuda_kernels::get("nbody").unwrap(),
+                "screened_poisson3",
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_wtx as u32);
             builder.arg_data(&wtx2co.data);
@@ -125,7 +131,13 @@ fn nbody_elastic(
                 del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::NBODY, "elastic")
                     .unwrap();
              */
-            let fnc = crate::load_get_function("nbody", "elastic").unwrap();
+            //let fnc = crate::load_get_function("nbody", "elastic").unwrap();
+            let fnc = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::nbody",
+                del_msh_cuda_kernels::get("nbody").unwrap(),
+                "elastic",
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_wtx as u32);
             builder.arg_data(&wtx2co.data);

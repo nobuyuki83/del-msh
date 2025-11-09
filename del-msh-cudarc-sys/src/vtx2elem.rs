@@ -15,7 +15,13 @@ pub fn from_uniform_mesh(
             del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::UNIFORM_MESH, "vtx2nelem")
                 .unwrap();
          */
-        let func = crate::load_get_function("uniform_mesh", "vtx2nelem").unwrap();
+        // let func = crate::load_get_function("uniform_mesh", "vtx2nelem").unwrap();
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::uniform_mesh",
+            del_msh_cuda_kernels::get("uniform_mesh").unwrap(),
+            "vtx2nelem",
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);
@@ -38,7 +44,13 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
          */
-        let func = crate::load_get_function("uniform_mesh", "fill_idx2elem").unwrap();
+        // let func = crate::load_get_function("uniform_mesh", "fill_idx2elem").unwrap();
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::uniform_mesh",
+            del_msh_cuda_kernels::get("uniform_mesh").unwrap(),
+            "fill_idx2elem",
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_elem as u32);
         builder.arg_dptr(elem2vtx.dptr);

@@ -1,7 +1,6 @@
-use cudarc::driver::DeviceSlice;
 use cudarc::driver::{CudaSlice, CudaViewMut};
 use del_cudarc_safe::cudarc;
-use del_cudarc_safe::cudarc::driver::{CudaStream, PushKernelArg};
+use del_cudarc_safe::cudarc::driver::CudaStream;
 
 pub fn compute_with_alias(
     stream: &std::sync::Arc<CudaStream>,

@@ -1,4 +1,4 @@
-use cudarc::driver::{CudaSlice, DeviceSlice};
+use cudarc::driver::CudaSlice;
 use del_cudarc_safe::cudarc;
 use del_cudarc_safe::cudarc::driver::CudaStream;
 

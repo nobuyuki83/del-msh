@@ -26,7 +26,13 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
          */
-        let func = crate::load_get_function("vtx2vtx", "vtx2nvtx_from_uniform_mesh").unwrap();
+        // let func = crate::load_get_function("vtx2vtx", "vtx2nvtx_from_uniform_mesh").unwrap();
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::vtx2vtx",
+            del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
+            "vtx2nvtx_from_uniform_mesh",
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(elem2vtx.dptr);
@@ -52,8 +58,16 @@ pub fn from_uniform_mesh(
         )
         .unwrap();
          */
+        /*
         let func =
             crate::load_get_function("vtx2vtx", "idx2vtx_from_vtx2buff_for_uniform_mesh").unwrap();
+         */
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::vtx2vtx",
+            del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
+            "idx2vtx_from_vtx2buff_for_uniform_mesh",
+        )
+        .unwrap();
         let mut builder = del_cudarc_sys::Builder::new(stream);
         builder.arg_u32(num_vtx as u32);
         builder.arg_dptr(vtx2jdx.dptr);
@@ -87,7 +101,13 @@ pub fn multiply_graph_laplacian(
     )
     .unwrap();
      */
-    let func = crate::load_get_function("vtx2vtx", "multiply_graph_laplacian").unwrap();
+    // let func = crate::load_get_function("vtx2vtx", "multiply_graph_laplacian").unwrap();
+    let func = del_cudarc_sys::cache_func::get_function_cached(
+        "del_msh::vtx2vtx",
+        del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
+        "multiply_graph_laplacian",
+    )
+    .unwrap();
     let mut builder = del_cudarc_sys::Builder::new(stream);
     builder.arg_u32(num_vtx as u32);
     builder.arg_dptr(vtx2idx_offset.dptr);

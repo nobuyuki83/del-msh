@@ -46,9 +46,14 @@ pub fn trimesh3_tri2normal(
             )
             .unwrap();
              */
-            let function = crate::load_get_function("trimesh3", "tri2normal").unwrap();
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            // let function = crate::load_get_function("trimesh3", "tri2normal").unwrap();
+            let function = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::trimesh3",
+                del_msh_cuda_kernels::get("trimesh3").unwrap(),
+                "tri2normal",
+            )
+            .unwrap();
+            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -128,7 +133,13 @@ pub fn trimesh3_bwd_tri2normal(
                 )
                 .unwrap();
                  */
-                let function = crate::load_get_function("trimesh3", "bwd_tri2normal").unwrap();
+                //let function = crate::load_get_function("trimesh3", "bwd_tri2normal").unwrap();
+                let function = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::trimesh3",
+                    del_msh_cuda_kernels::get("trimesh3").unwrap(),
+                    "bwd_tri2normal",
+                )
+                .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_tri as u32);
                 builder.arg_data(&tri2vtx.data);
