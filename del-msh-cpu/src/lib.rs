@@ -67,6 +67,7 @@ pub mod voronoi2;
 pub mod vtx2group;
 
 pub mod adaptive_distance_field3;
+pub mod alias_table;
 pub mod grid2;
 pub mod mortons;
 pub mod nbody;
