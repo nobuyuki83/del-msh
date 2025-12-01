@@ -1,3 +1,4 @@
+use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -28,27 +29,28 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
     idx2bnode: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2morton = crate::get_managed_tensor_from_pyany(idx2morton)?;
-    let bnodes = crate::get_managed_tensor_from_pyany(bnodes)?;
-    let bnode2depth = crate::get_managed_tensor_from_pyany(bnode2depth)?;
-    let bnode2onode = crate::get_managed_tensor_from_pyany(bnode2onode)?;
-    let idx2bnode = crate::get_managed_tensor_from_pyany(idx2bnode)?;
+    let idx2morton = del_dlpack::get_managed_tensor_from_pyany(idx2morton)?;
+    let bnodes = del_dlpack::get_managed_tensor_from_pyany(bnodes)?;
+    let bnode2depth = del_dlpack::get_managed_tensor_from_pyany(bnode2depth)?;
+    let bnode2onode = del_dlpack::get_managed_tensor_from_pyany(bnode2onode)?;
+    let idx2bnode = del_dlpack::get_managed_tensor_from_pyany(idx2bnode)?;
     //
-    let num_idx = crate::get_shape_tensor(idx2morton, 0).unwrap();
+    let num_idx = del_dlpack::get_shape_tensor(idx2morton, 0).unwrap();
     let num_bnode = num_idx - 1;
     let device = idx2morton.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2morton, num_idx, device).unwrap();
-    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
-    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
-    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2bnode, num_idx, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2morton, num_idx, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2bnode, num_idx, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2morton = unsafe { crate::slice_from_tensor::<u32>(idx2morton) }.unwrap();
-            let bnodes = unsafe { crate::slice_from_tensor_mut::<u32>(bnodes) }.unwrap();
-            let bnode2depth = unsafe { crate::slice_from_tensor_mut::<u32>(bnode2depth) }.unwrap();
+            let idx2morton = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2morton) }.unwrap();
+            let bnodes = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(bnodes) }.unwrap();
+            let bnode2depth =
+                unsafe { del_dlpack::slice_from_tensor_mut::<u32>(bnode2depth) }.unwrap();
             del_msh_cpu::quad_oct_tree::binary_radix_tree_and_depth(
                 idx2morton,
                 num_dim,
@@ -56,8 +58,9 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 bnodes,
                 bnode2depth,
             );
-            let bnode2onode = unsafe { crate::slice_from_tensor_mut::<u32>(bnode2onode) }.unwrap();
-            let idx2bnode = unsafe { crate::slice_from_tensor_mut::<u32>(idx2bnode) }.unwrap();
+            let bnode2onode =
+                unsafe { del_dlpack::slice_from_tensor_mut::<u32>(bnode2onode) }.unwrap();
+            let idx2bnode = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(idx2bnode) }.unwrap();
             del_msh_cpu::quad_oct_tree::bnode2onode_and_idx2bnode(
                 bnodes,
                 bnode2depth,
@@ -163,47 +166,47 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     idx2center: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let bnodes = crate::get_managed_tensor_from_pyany(bnodes)?;
-    let bnode2onode = crate::get_managed_tensor_from_pyany(bnode2onode)?;
-    let bnode2depth = crate::get_managed_tensor_from_pyany(bnode2depth)?;
-    let idx2bnode = crate::get_managed_tensor_from_pyany(idx2bnode)?;
-    let idx2morton = crate::get_managed_tensor_from_pyany(idx2morton)?;
+    let bnodes = del_dlpack::get_managed_tensor_from_pyany(bnodes)?;
+    let bnode2onode = del_dlpack::get_managed_tensor_from_pyany(bnode2onode)?;
+    let bnode2depth = del_dlpack::get_managed_tensor_from_pyany(bnode2depth)?;
+    let idx2bnode = del_dlpack::get_managed_tensor_from_pyany(idx2bnode)?;
+    let idx2morton = del_dlpack::get_managed_tensor_from_pyany(idx2morton)?;
     //
-    let onodes = crate::get_managed_tensor_from_pyany(onodes)?;
-    let onode2depth = crate::get_managed_tensor_from_pyany(onode2depth)?;
-    let onode2center = crate::get_managed_tensor_from_pyany(onode2center)?;
-    let idx2onode = crate::get_managed_tensor_from_pyany(idx2onode)?;
-    let idx2center = crate::get_managed_tensor_from_pyany(idx2center)?;
+    let onodes = del_dlpack::get_managed_tensor_from_pyany(onodes)?;
+    let onode2depth = del_dlpack::get_managed_tensor_from_pyany(onode2depth)?;
+    let onode2center = del_dlpack::get_managed_tensor_from_pyany(onode2center)?;
+    let idx2onode = del_dlpack::get_managed_tensor_from_pyany(idx2onode)?;
+    let idx2center = del_dlpack::get_managed_tensor_from_pyany(idx2center)?;
     //
-    let num_bnode = crate::get_shape_tensor(bnodes, 0).unwrap();
+    let num_bnode = del_dlpack::get_shape_tensor(bnodes, 0).unwrap();
     let num_idx = num_bnode + 1;
     let device = bnodes.ctx.device_type;
     //
-    crate::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
-    crate::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
-    crate::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
-    let num_onode = crate::get_shape_tensor(onodes, 0).unwrap();
-    let num_link = crate::get_shape_tensor(onodes, 1).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(bnodes, num_bnode, 3, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(bnode2onode, num_bnode, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(bnode2depth, num_bnode, device).unwrap();
+    let num_onode = del_dlpack::get_shape_tensor(onodes, 0).unwrap();
+    let num_link = del_dlpack::get_shape_tensor(onodes, 1).unwrap();
     assert!(num_dim == 2 || num_dim == 3);
     assert_eq!(num_link as usize, 1 + 2i32.pow(num_dim as u32) as usize);
-    crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
-    crate::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
-    crate::check_2d_tensor::<f32>(onode2center, num_onode, num_dim as i64, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
-    crate::check_2d_tensor::<f32>(idx2center, num_idx, num_dim as i64, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(onode2center, num_onode, num_dim as i64, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(idx2center, num_idx, num_dim as i64, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let bnodes = unsafe { crate::slice_from_tensor(bnodes) }.unwrap();
-            let bnode2onode = unsafe { crate::slice_from_tensor(bnode2onode) }.unwrap();
-            let bnode2depth = unsafe { crate::slice_from_tensor(bnode2depth) }.unwrap();
-            let idx2bnode = unsafe { crate::slice_from_tensor(idx2bnode) }.unwrap();
-            let idx2morton = unsafe { crate::slice_from_tensor(idx2morton) }.unwrap();
-            let onodes = unsafe { crate::slice_from_tensor_mut(onodes) }.unwrap();
-            let onode2depth = unsafe { crate::slice_from_tensor_mut(onode2depth) }.unwrap();
-            let onode2center = unsafe { crate::slice_from_tensor_mut(onode2center) }.unwrap();
-            let idx2onode = unsafe { crate::slice_from_tensor_mut(idx2onode) }.unwrap();
-            let idx2center = unsafe { crate::slice_from_tensor_mut(idx2center) }.unwrap();
+            let bnodes = unsafe { del_dlpack::slice_from_tensor(bnodes) }.unwrap();
+            let bnode2onode = unsafe { del_dlpack::slice_from_tensor(bnode2onode) }.unwrap();
+            let bnode2depth = unsafe { del_dlpack::slice_from_tensor(bnode2depth) }.unwrap();
+            let idx2bnode = unsafe { del_dlpack::slice_from_tensor(idx2bnode) }.unwrap();
+            let idx2morton = unsafe { del_dlpack::slice_from_tensor(idx2morton) }.unwrap();
+            let onodes = unsafe { del_dlpack::slice_from_tensor_mut(onodes) }.unwrap();
+            let onode2depth = unsafe { del_dlpack::slice_from_tensor_mut(onode2depth) }.unwrap();
+            let onode2center = unsafe { del_dlpack::slice_from_tensor_mut(onode2center) }.unwrap();
+            let idx2onode = unsafe { del_dlpack::slice_from_tensor_mut(idx2onode) }.unwrap();
+            let idx2center = unsafe { del_dlpack::slice_from_tensor_mut(idx2center) }.unwrap();
             del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree(
                 bnodes,
                 bnode2onode,
@@ -278,20 +281,20 @@ pub fn quad_oct_tree_aggregate(
     onode2aggval: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
-    let idx2onode = crate::get_managed_tensor_from_pyany(idx2onode)?;
-    let onodes = crate::get_managed_tensor_from_pyany(onodes)?;
-    let onode2aggval = crate::get_managed_tensor_from_pyany(onode2aggval)?;
-    let num_idx = crate::get_shape_tensor(idx2val, 0).unwrap();
-    let num_vdim = crate::get_shape_tensor(idx2val, 1).unwrap();
-    let num_onode = crate::get_shape_tensor(onodes, 0).unwrap();
-    let num_link = crate::get_shape_tensor(onodes, 1).unwrap();
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val)?;
+    let idx2onode = del_dlpack::get_managed_tensor_from_pyany(idx2onode)?;
+    let onodes = del_dlpack::get_managed_tensor_from_pyany(onodes)?;
+    let onode2aggval = del_dlpack::get_managed_tensor_from_pyany(onode2aggval)?;
+    let num_idx = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
+    let num_vdim = del_dlpack::get_shape_tensor(idx2val, 1).unwrap();
+    let num_onode = del_dlpack::get_shape_tensor(onodes, 0).unwrap();
+    let num_link = del_dlpack::get_shape_tensor(onodes, 1).unwrap();
     let device = idx2val.ctx.device_type;
     //
-    crate::check_2d_tensor::<f32>(idx2val, num_idx, num_vdim, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
-    crate::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
-    crate::check_2d_tensor::<f32>(onode2aggval, num_onode, num_vdim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(idx2val, num_idx, num_vdim, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2onode, num_idx, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(onodes, num_onode, num_link, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(onode2aggval, num_onode, num_vdim, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {}

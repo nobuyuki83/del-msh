@@ -1,3 +1,4 @@
+use del_dlpack::dlpack;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -18,14 +19,14 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     edge2vtx: &Bound<'_, PyAny>,
     edge2tri: &Bound<'_, PyAny>,
 ) -> PyResult<()> {
-    let tri2vtx = crate::get_managed_tensor_from_pyany(tri2vtx)?;
-    let _vtx2xyz = crate::get_managed_tensor_from_pyany(vtx2xyz)?;
-    let _transform_world2ndc = crate::get_managed_tensor_from_pyany(transform_world2ndc)?;
-    let _edge2vtx = crate::get_managed_tensor_from_pyany(edge2vtx)?;
-    let _edge2tri = crate::get_managed_tensor_from_pyany(edge2tri)?;
+    let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
+    let _vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
+    let _transform_world2ndc = del_dlpack::get_managed_tensor_from_pyany(transform_world2ndc)?;
+    let _edge2vtx = del_dlpack::get_managed_tensor_from_pyany(edge2vtx)?;
+    let _edge2tri = del_dlpack::get_managed_tensor_from_pyany(edge2tri)?;
     match tri2vtx.ctx.device_type {
         dlpack::device_type_codes::CPU => {
-            let _tri2vtx = unsafe { crate::slice_from_tensor::<usize>(tri2vtx).unwrap() };
+            let _tri2vtx = unsafe { del_dlpack::slice_from_tensor::<usize>(tri2vtx).unwrap() };
             //del_msh_cpu::edge2vtx::contour_for_triangle_mesh(tri2vtx, vtx2xyz, transform_world2ndc, edge2vtx, edge2tri);
             Ok(())
         }

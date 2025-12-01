@@ -31,6 +31,7 @@ if (-not (Test-Path $dir)) {
 # ###############
 
 $cuvers = @(
+    @("cu128", "v12.8"),
     @("cu126", "v12.6"),
     @("cu123", "v12.3"),
     @("cu121", "v12.1")
@@ -42,10 +43,16 @@ $path_org = $env:PATH
 foreach ($cu in $cuvers) {
 
     $cutag = $($cu[0])
+
+    # environment to compile CUDA into FATBIN
     $env:CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+    $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64"
+    echo $env:NVCC_CCBIN
+
+    # environment to build library
     $env:CUDA_HOME = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\$($cu[1])"
     $env:PATH = "$env:CUDA_HOME\bin;$env:CUDA_HOME\libnvvp;" + $path_org
-    $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64"
+    nvcc --version
 
     #if(($cutag -eq "cu121") -or ($cutag -eq "cu123")){
     #   $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\bin\Hostx64\x64"
@@ -53,9 +60,6 @@ foreach ($cu in $cuvers) {
     #else {
     #   $env:NVCC_CCBIN = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64"
     #}
-
-    nvcc --version
-    echo $env:NVCC_CCBIN
 
     foreach ($venv in $venvs) {
         echo "---------------------------------------"
@@ -66,6 +70,7 @@ foreach ($cu in $cuvers) {
         python --version
         python -m pip install -U pip maturin
         # compile
+        cargo clean
         & ..\..\$venv\Scripts\maturin.exe build --release --features cuda
         # rename
         $whl = Get-ChildItem $path_target\wheels\*.whl | Select-Object -First 1

@@ -1,3 +1,4 @@
+use del_dlpack::dlpack;
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -21,21 +22,21 @@ pub fn array1d_permute(
     new2val: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let old2val = crate::get_managed_tensor_from_pyany(old2val)?;
-    let new2old = crate::get_managed_tensor_from_pyany(new2old)?;
-    let new2val = crate::get_managed_tensor_from_pyany(new2val)?;
-    let n = crate::get_shape_tensor(old2val, 0).unwrap();
+    let old2val = del_dlpack::get_managed_tensor_from_pyany(old2val)?;
+    let new2old = del_dlpack::get_managed_tensor_from_pyany(new2old)?;
+    let new2val = del_dlpack::get_managed_tensor_from_pyany(new2val)?;
+    let n = del_dlpack::get_shape_tensor(old2val, 0).unwrap();
     let device = old2val.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(old2val, n, device).unwrap();
-    crate::check_1d_tensor::<u32>(new2old, n, device).unwrap();
-    crate::check_1d_tensor::<u32>(new2val, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(old2val, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(new2old, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(new2val, n, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let old2val = unsafe { crate::slice_from_tensor::<u32>(old2val) }.unwrap();
-            let new2old = unsafe { crate::slice_from_tensor::<u32>(new2old) }.unwrap();
-            let new2val = unsafe { crate::slice_from_tensor_mut::<u32>(new2val) }.unwrap();
+            let old2val = unsafe { del_dlpack::slice_from_tensor::<u32>(old2val) }.unwrap();
+            let new2old = unsafe { del_dlpack::slice_from_tensor::<u32>(new2old) }.unwrap();
+            let new2val = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(new2val) }.unwrap();
             for i_new in 0..n as usize {
                 new2val[i_new] = old2val[new2old[i_new] as usize];
             }
@@ -100,19 +101,19 @@ pub fn array1d_argsort(
     jdx2idx: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
-    let jdx2idx = crate::get_managed_tensor_from_pyany(jdx2idx)?;
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val)?;
+    let jdx2idx = del_dlpack::get_managed_tensor_from_pyany(jdx2idx)?;
     //
-    let n = crate::get_shape_tensor(jdx2idx, 0).unwrap();
+    let n = del_dlpack::get_shape_tensor(jdx2idx, 0).unwrap();
     let device = jdx2idx.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(jdx2idx, n, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(jdx2idx, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2val = unsafe { crate::slice_from_tensor_mut::<u32>(idx2val) }.unwrap();
-            let jdx2idx = unsafe { crate::slice_from_tensor_mut::<u32>(jdx2idx) }.unwrap();
+            let idx2val = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(idx2val) }.unwrap();
+            let jdx2idx = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(jdx2idx) }.unwrap();
             jdx2idx
                 .iter_mut()
                 .enumerate()
@@ -152,15 +153,15 @@ pub fn array1d_has_duplicate_sorted_array(
     idx2val: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<bool> {
-    let idx2val = crate::get_managed_tensor_from_pyany(idx2val)?;
-    let n = crate::get_shape_tensor(idx2val, 0).unwrap();
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val)?;
+    let n = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
     //
     let res = match device {
         dlpack::device_type_codes::CPU => {
-            let idx2val = unsafe { crate::slice_from_tensor::<u32>(idx2val) }.unwrap();
+            let idx2val = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2val) }.unwrap();
             (0..idx2val.len() - 1).any(|idx| idx2val[idx] == idx2val[idx + 1])
         }
         #[cfg(feature = "cuda")]
@@ -169,7 +170,6 @@ pub fn array1d_has_duplicate_sorted_array(
             use del_cudarc_sys::cuda_check;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            //
             let idx2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
                 idx2val.data as cu::CUdeviceptr,
                 n as usize,
@@ -191,18 +191,18 @@ pub fn array1d_unique_for_sorted_array(
     idx2jdx: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) {
-    let idx2val = crate::get_managed_tensor_from_pyany(idx2val).unwrap();
-    let idx2jdx = crate::get_managed_tensor_from_pyany(idx2jdx).unwrap();
-    let n = crate::get_shape_tensor(idx2val, 0).unwrap();
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val).unwrap();
+    let idx2jdx = del_dlpack::get_managed_tensor_from_pyany(idx2jdx).unwrap();
+    let n = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2jdx, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2val, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2jdx, n, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2val = unsafe { crate::slice_from_tensor::<u32>(idx2val) }.unwrap();
-            let jdx2idx = unsafe { crate::slice_from_tensor_mut::<u32>(idx2jdx) }.unwrap();
+            let idx2val = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2val) }.unwrap();
+            let jdx2idx = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(idx2jdx) }.unwrap();
             jdx2idx[0] = 0;
             for idx in 0..n as usize - 1 {
                 jdx2idx[idx + 1] = if idx2val[idx] == idx2val[idx + 1] {
@@ -246,27 +246,27 @@ pub fn array1d_unique_jdx2val_jdx2idx(
     jdx2idx_offset: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) {
-    let idx2val = crate::get_managed_tensor_from_pyany(idx2val).unwrap();
-    let idx2jdx = crate::get_managed_tensor_from_pyany(idx2jdx).unwrap();
-    let jdx2val = crate::get_managed_tensor_from_pyany(jdx2val).unwrap();
-    let jdx2idx_offset = crate::get_managed_tensor_from_pyany(jdx2idx_offset).unwrap();
-    let num_idx = crate::get_shape_tensor(idx2val, 0).unwrap();
-    let num_jdx = crate::get_shape_tensor(jdx2val, 0).unwrap();
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val).unwrap();
+    let idx2jdx = del_dlpack::get_managed_tensor_from_pyany(idx2jdx).unwrap();
+    let jdx2val = del_dlpack::get_managed_tensor_from_pyany(jdx2val).unwrap();
+    let jdx2idx_offset = del_dlpack::get_managed_tensor_from_pyany(jdx2idx_offset).unwrap();
+    let num_idx = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
+    let num_jdx = del_dlpack::get_shape_tensor(jdx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2val, num_idx, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2jdx, num_idx, device).unwrap();
-    crate::check_1d_tensor::<u32>(jdx2val, num_jdx, device).unwrap();
-    crate::check_1d_tensor::<u32>(jdx2idx_offset, num_jdx + 1, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2val, num_idx, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2jdx, num_idx, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(jdx2val, num_jdx, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(jdx2idx_offset, num_jdx + 1, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
             let jdx2idx_offset =
-                unsafe { crate::slice_from_tensor_mut::<u32>(jdx2idx_offset) }.unwrap();
-            let idx2jdx = unsafe { crate::slice_from_tensor::<u32>(idx2jdx) }.unwrap();
+                unsafe { del_dlpack::slice_from_tensor_mut::<u32>(jdx2idx_offset) }.unwrap();
+            let idx2jdx = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2jdx) }.unwrap();
             del_msh_cpu::map_idx::inverse(idx2jdx, jdx2idx_offset);
-            let idx2val = unsafe { crate::slice_from_tensor::<u32>(idx2val) }.unwrap();
-            let jdx2val = unsafe { crate::slice_from_tensor_mut::<u32>(jdx2val) }.unwrap();
+            let idx2val = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2val) }.unwrap();
+            let jdx2val = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(jdx2val) }.unwrap();
             for jdx in 0..num_jdx as usize {
                 let idx = jdx2idx_offset[jdx] as usize;
                 assert!(idx < num_idx as usize);

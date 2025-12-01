@@ -9,11 +9,11 @@ name = "del_msh_numpy"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3.workspace= true
 numpy.workspace = true
 num-traits.workspace = true
 del-geo-core.workspace = true
 arrayref.workspace = true
+pyo3 = { version = "0.26.0", features = ["extension-module"] }
 
 # for develop/push
 del-msh-cpu.workspace = true

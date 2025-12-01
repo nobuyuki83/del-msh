@@ -1,4 +1,4 @@
-use crate::get_shape_tensor;
+use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -16,23 +16,25 @@ fn mortons_vtx2morton_from_vtx2co(
     vtx2morton: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2co = crate::get_managed_tensor_from_pyany(vtx2co)?;
-    let transform_co2unit = crate::get_managed_tensor_from_pyany(transform_co2unit)?;
-    let vtx2morton = crate::get_managed_tensor_from_pyany(vtx2morton)?;
-    let num_vtx = get_shape_tensor(vtx2co, 0).unwrap();
-    let num_dim = get_shape_tensor(vtx2co, 1).unwrap();
+    let vtx2co = del_dlpack::get_managed_tensor_from_pyany(vtx2co)?;
+    let transform_co2unit = del_dlpack::get_managed_tensor_from_pyany(transform_co2unit)?;
+    let vtx2morton = del_dlpack::get_managed_tensor_from_pyany(vtx2morton)?;
+    let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
+    let num_dim = del_dlpack::get_shape_tensor(vtx2co, 1).unwrap();
     assert!(num_dim == 2 || num_dim == 3);
     let device = vtx2co.ctx.device_type;
-    crate::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
-    crate::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device).unwrap();
-    crate::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device)
+        .unwrap();
+    del_dlpack::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2co = unsafe { crate::slice_from_tensor::<f32>(vtx2co) }.unwrap();
+            let vtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2co) }.unwrap();
             let transform_co2unit =
-                unsafe { crate::slice_from_tensor::<f32>(transform_co2unit) }.unwrap();
-            let vtx2morton = unsafe { crate::slice_from_tensor_mut::<u32>(vtx2morton) }.unwrap();
+                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_co2unit) }.unwrap();
+            let vtx2morton =
+                unsafe { del_dlpack::slice_from_tensor_mut::<u32>(vtx2morton) }.unwrap();
             del_msh_cpu::mortons::vtx2morton_from_vtx2co(
                 num_dim as usize,
                 vtx2co,
@@ -96,19 +98,19 @@ fn mortons_make_bvh(
     bhvnodes: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2obj = crate::get_managed_tensor_from_pyany(idx2obj)?;
-    let idx2morton = crate::get_managed_tensor_from_pyany(idx2morton)?;
-    let bvhnodes = crate::get_managed_tensor_from_pyany(bhvnodes)?;
-    let n = crate::get_shape_tensor(idx2obj, 0).unwrap();
+    let idx2obj = del_dlpack::get_managed_tensor_from_pyany(idx2obj)?;
+    let idx2morton = del_dlpack::get_managed_tensor_from_pyany(idx2morton)?;
+    let bvhnodes = del_dlpack::get_managed_tensor_from_pyany(bhvnodes)?;
+    let n = del_dlpack::get_shape_tensor(idx2obj, 0).unwrap();
     let device = idx2obj.ctx.device_type;
-    crate::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
-    crate::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();
-    crate::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2obj = unsafe { crate::slice_from_tensor::<u32>(idx2obj) }.unwrap();
-            let idx2morton = unsafe { crate::slice_from_tensor::<u32>(idx2morton) }.unwrap();
-            let bvhnodes = unsafe { crate::slice_from_tensor_mut::<u32>(bvhnodes) }.unwrap();
+            let idx2obj = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2obj) }.unwrap();
+            let idx2morton = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2morton) }.unwrap();
+            let bvhnodes = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(bvhnodes) }.unwrap();
             del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2obj, idx2morton);
         }
         #[cfg(feature = "cuda")]

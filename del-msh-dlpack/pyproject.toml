@@ -12,9 +12,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
-dependencies = [
-    "numpy",
-]
+dependencies = []
 
 [tool.maturin]
 sdist-include = ["README.md"]

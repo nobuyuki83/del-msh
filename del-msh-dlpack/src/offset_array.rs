@@ -1,3 +1,4 @@
+use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -15,19 +16,19 @@ fn offset_array_aggregate(
     idx2aggval: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2jdx_offset = crate::get_managed_tensor_from_pyany(idx2jdx_offset)?;
-    let jdx2kdx = crate::get_managed_tensor_from_pyany(jdx2kdx)?;
-    let kdx2val = crate::get_managed_tensor_from_pyany(kdx2val)?;
-    let idx2aggval = crate::get_managed_tensor_from_pyany(idx2aggval)?;
-    let num_idx = crate::get_shape_tensor(idx2jdx_offset, 0).unwrap() - 1;
-    let num_jdx = crate::get_shape_tensor(jdx2kdx, 0).unwrap();
-    let num_dim = crate::get_shape_tensor(idx2aggval, 1).unwrap();
+    let idx2jdx_offset = del_dlpack::get_managed_tensor_from_pyany(idx2jdx_offset)?;
+    let jdx2kdx = del_dlpack::get_managed_tensor_from_pyany(jdx2kdx)?;
+    let kdx2val = del_dlpack::get_managed_tensor_from_pyany(kdx2val)?;
+    let idx2aggval = del_dlpack::get_managed_tensor_from_pyany(idx2aggval)?;
+    let num_idx = del_dlpack::get_shape_tensor(idx2jdx_offset, 0).unwrap() - 1;
+    let num_jdx = del_dlpack::get_shape_tensor(jdx2kdx, 0).unwrap();
+    let num_dim = del_dlpack::get_shape_tensor(idx2aggval, 1).unwrap();
     let device = idx2jdx_offset.ctx.device_type;
     //
-    crate::check_1d_tensor::<u32>(idx2jdx_offset, num_idx + 1, device).unwrap();
-    crate::check_1d_tensor::<u32>(jdx2kdx, num_jdx, device).unwrap();
-    crate::check_2d_tensor::<f32>(kdx2val, num_jdx, num_dim, device).unwrap();
-    crate::check_2d_tensor::<f32>(idx2aggval, num_idx, num_dim, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(idx2jdx_offset, num_idx + 1, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(jdx2kdx, num_jdx, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(kdx2val, num_jdx, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(idx2aggval, num_idx, num_dim, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {}
