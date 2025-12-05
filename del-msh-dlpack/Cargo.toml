@@ -20,7 +20,6 @@ cuda = [
 pyo3 = { version = "0.26.0", features = ["extension-module"] }
 del-msh-cpu.workspace = true
 arrayref.workspace = true
-del-dlpack.workspace = true
 
 # local crates
 del-msh-cuda-kernels = { path="../del-msh-cuda-kernels", optional = true }
@@ -29,10 +28,12 @@ del-msh-cudarc-sys = { path="../del-msh-cudarc-sys", optional = true, features =
 # for develop (optional)
 # del-cudarc-sys = {path = "../../del-cudarc/del-cudarc-sys", optional = true}
 # del-cudarc-kernels = { path = "../../del-cudarc/del-cudarc-kernels", optional = true}
+del-dlpack = {path ="../../del-dlpack" } # this should not be written in the "del-msh/Cargo.toml" as there is controled by the features
 
 # for push (optional)
 del-cudarc-sys = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
 del-cudarc-kernels = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}
+#del-dlpack = {git="https://github.com/nobuyuki83/del-dlpack"}
 
 # not using
 #del-cudarc-safe = {git = "https://github.com/nobuyuki83/del-cudarc.git", optional = true}

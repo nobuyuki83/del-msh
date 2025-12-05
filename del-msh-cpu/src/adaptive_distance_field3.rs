@@ -249,6 +249,6 @@ fn hoge() {
     }
     {
         use slice_of_array::SliceFlatExt;
-        crate::io_obj::save_tri2xyz("../target/sdf.obj", tri2xyz.flat()).unwrap();
+        crate::io_wavefront_obj::save_tri2xyz("../target/sdf.obj", tri2xyz.flat()).unwrap();
     }
 }

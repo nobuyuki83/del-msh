@@ -456,7 +456,7 @@ fn test_poisson_disk_sampling() {
         // write boundary and
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(vtx2xy);
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/poisson_disk.obj",
             &[0, 1, 1, 2, 2, 3, 3, 0],
             &vtxl2xy,

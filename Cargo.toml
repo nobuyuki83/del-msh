@@ -44,13 +44,11 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 # candle-core = { git="https://github.com/huggingface/candle.git" }
 #del-geo-core = { path="../del-geo/del-geo-core"}
 # del-canvas = {path="../del-canvas"} # for color map
-# del-dlpack = {path ="../../del-dlpack", features = ["cuda"]}
 
 # for GitHub push
 candle-core = "=0.9.0"
 del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
 del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
-del-dlpack = {git="https://github.com/nobuyuki83/del-dlpack", features = ["cuda"]}
 
 
 # for deploy

@@ -32,11 +32,11 @@ pub mod extract;
 pub mod unindex;
 
 // io
-pub mod io_nas;
-pub mod io_obj;
+pub mod io_nastran;
 pub mod io_off;
 pub mod io_svg;
 pub mod io_vtk;
+pub mod io_wavefront_obj;
 
 // search
 pub mod bvhnode2aabb2;
@@ -69,6 +69,7 @@ pub mod vtx2group;
 pub mod adaptive_distance_field3;
 pub mod alias_table;
 pub mod grid2;
+pub mod io_cfd_mesh_txt;
 pub mod mortons;
 pub mod nbody;
 pub mod quad_oct_tree;

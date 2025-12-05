@@ -104,7 +104,7 @@ fn edge_length_constraint() -> anyhow::Result<()> {
         let _ = vtx2xy.set(&vtx2xy.as_tensor().sub(&(dw_vtx2xyz * 0.1)?)?);
         if iter % 10 == 0 {
             let vtx2xy: Vec<_> = vtx2xy.flatten_all()?.to_vec1::<f32>()?;
-            del_msh_cpu::io_obj::save_vtx2xyz_as_polyloop(
+            del_msh_cpu::io_wavefront_obj::save_vtx2xyz_as_polyloop(
                 format!("../target/polyloop_{iter}.obj"),
                 &vtx2xy,
                 2,

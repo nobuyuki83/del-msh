@@ -211,7 +211,7 @@ pub fn sym_detector(
 fn main() -> anyhow::Result<()> {
     use del_geo_core::vec3::Vec3;
     use rand::Rng;
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_obj::load_tri_mesh::<_, usize, f32>(
+    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_wavefront_obj::load_tri_mesh::<_, usize, f32>(
         "asset/spot/spot_triangulated.obj",
         None,
     )
@@ -250,7 +250,7 @@ fn main() -> anyhow::Result<()> {
         let mut vtxo2xyz = vec![];
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &tris2vtx, &vtx2xyz, 3);
-        del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("target/sym_{i_sym}.obj"),
             &trio2vtxo,
             &vtxo2xyz,

@@ -326,7 +326,7 @@ fn test_voronoi_concave() {
         let num_vtxl = vtxl2xy.len() / 2;
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(site2xy.clone());
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_input.obj",
             &crate::edge2vtx::from_polyloop(num_vtxl),
             &vtxl2xy,
@@ -343,7 +343,7 @@ fn test_voronoi_concave() {
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy, 2);
         }
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_cells.obj",
             &edge2vtxo,
             &vtxo2xy,
@@ -363,7 +363,7 @@ fn test_voronoi_convex() {
     {
         let mut vtxl2xy = vtxl2xy.clone();
         vtxl2xy.extend(site2xy.clone());
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_input.obj",
             &[0, 1, 1, 2, 2, 3, 3, 0],
             &vtxl2xy,
@@ -382,7 +382,7 @@ fn test_voronoi_convex() {
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy, 2);
         }
-        let _ = crate::io_obj::save_edge2vtx_vtx2xyz(
+        let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_cells.obj",
             &edge2vtxo,
             &vtxo2xy,
@@ -414,7 +414,7 @@ fn test_voronoi_convex() {
         );
         use slice_of_array::SliceFlatExt;
         let vtxc2xy = voronoi_mesh.vtxv2xy.flat();
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_indexed.obj",
             &edge2vtxc,
             vtxc2xy,
@@ -478,7 +478,7 @@ fn test_voronoi_sites_on_edge() {
         }
         vedge2pnt
     };
-    crate::io_obj::save_edge2vtx_vtx2xyz(
+    crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
         "../target/voronoi_sites_on_edge.obj",
         &vedge2pnt,
         &pnt2xy,

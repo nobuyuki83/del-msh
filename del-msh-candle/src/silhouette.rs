@@ -348,7 +348,7 @@ fn test_cpu() -> anyhow::Result<()> {
             {
                 let vtx2xyz = vtx2xyz.flatten_all()?.to_vec1::<f32>()?;
                 let tri2vtx = tri2vtx.flatten_all()?.to_vec1::<u32>()?;
-                del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz(
+                del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                     format!("../target/del-raycast-candle__silhouette_{iter}.obj"),
                     &tri2vtx,
                     &vtx2xyz,

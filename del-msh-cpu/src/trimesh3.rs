@@ -95,7 +95,7 @@ fn test_vtx2curvature_gaussian() {
         .iter()
         .flat_map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
         .collect::<Vec<f32>>();
-    crate::io_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/curvature.obj",
         &tri2vtx,
         &vtx2xyz,

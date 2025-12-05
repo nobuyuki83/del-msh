@@ -806,7 +806,7 @@ fn test_square() {
         let vtx2xy: Vec<f32> = vtx2xy.iter().flat_map(|v| [v[0], v[1]]).collect();
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, -1., -1.);
-            let res = crate::io_obj::save_tri2vtx_vtx2xyz(
+            let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                 format!("../target/a{i_loop}.obj"),
                 &tri2vtx,
                 &vtx2xy,
@@ -816,7 +816,7 @@ fn test_square() {
         }
         {
             let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
-            let res = crate::io_obj::save_tri2vtx_vtx2xyz(
+            let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                 format!("../target/b{i_loop}.obj"),
                 &tri2vtx,
                 &vtx2xy,
@@ -844,6 +844,7 @@ fn test_shape_with_hole() {
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        crate::io_obj::save_tri2vtx_vtx2vecn("../target/d.obj", &tri2vtx, &vtx2xy0).unwrap();
+        crate::io_wavefront_obj::save_tri2vtx_vtx2vecn("../target/d.obj", &tri2vtx, &vtx2xy0)
+            .unwrap();
     }
 }

@@ -23,7 +23,7 @@ struct Content {
 impl Content {
     fn new() -> Self {
         let (tri2vtx, vtx2xyz, vtx2uv) = {
-            let mut obj = del_msh_cpu::io_obj::WavefrontObj::<usize, f32>::new();
+            let mut obj = del_msh_cpu::io_wavefront_obj::WavefrontObj::<usize, f32>::new();
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             obj.unified_xyz_uv_as_trimesh()
         };

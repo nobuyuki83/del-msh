@@ -152,7 +152,7 @@ fn test_backward() -> anyhow::Result<()> {
             &voronoi_info0.idx2vtxv,
             vtx2xy.len() / 2,
         );
-        del_msh_cpu::io_obj::save_edge2vtx_vtx2xyz(
+        del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi0.obj",
             &edge2vtxv,
             &vtx2xy,

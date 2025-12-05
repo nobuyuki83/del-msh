@@ -12,12 +12,12 @@ def bwd_tri2normal(tri2vtx, vtx2xyz, dw_tri2normal, dw_vtx2xyz, stream_ptr=0):
 
 def load_nastran(
         path_file: str):
-    from ..del_msh_dlpack import trimesh3_load_nastran
+    from ..del_msh_dlpack import io_nastran_load_tri_mesh
 
-    return trimesh3_load_nastran(path_file)
+    return io_nastran_load_tri_mesh(path_file)
 
 
 def save_wavefront_obj(tri2vtx, vtx2xyz, path_file):
-    from ..del_msh_dlpack import trimesh3_save_wavefront_obj
+    from ..del_msh_dlpack import io_wavefront_obj_save_tri_mesh
 
-    trimesh3_save_wavefront_obj(tri2vtx, vtx2xyz, path_file)
+    io_wavefront_obj_save_tri_mesh(tri2vtx, vtx2xyz, path_file)

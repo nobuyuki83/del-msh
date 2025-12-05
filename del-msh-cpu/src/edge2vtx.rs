@@ -307,7 +307,7 @@ pub fn test_contour() {
             &bvhnodes,
             &bvhnode2aabb,
         );
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_countour.obj",
             &edge2vtx_contour,
             &vtx2xyz,
@@ -325,7 +325,7 @@ pub fn test_contour() {
             &bvhnodes,
             &bvhnode2aabb,
         );
-        crate::io_obj::save_edge2vtx_vtx2xyz(
+        crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_silhouette.obj",
             &edge2vtx_contour,
             &vtx2xyz,
@@ -333,6 +333,11 @@ pub fn test_contour() {
         )
         .unwrap();
     }
-    crate::io_obj::save_tri2vtx_vtx2xyz("../target/edge2vtx_trimsh.obj", &tri2vtx, &vtx2xyz, 3)
-        .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        "../target/edge2vtx_trimsh.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        3,
+    )
+    .unwrap();
 }

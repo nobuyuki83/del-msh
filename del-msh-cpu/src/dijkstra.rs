@@ -143,7 +143,7 @@ fn test_vtx2dist_for_vtx2vtx() {
             [r, g, 1.0 - g]
         })
         .collect();
-    crate::io_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/test_vtx2dist_for_vtx2vtx.obj",
         &tri2vtx,
         &vtx2xyz,

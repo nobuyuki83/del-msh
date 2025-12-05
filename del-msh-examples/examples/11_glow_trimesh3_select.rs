@@ -45,7 +45,7 @@ struct MyApp {
 impl MyApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let (tri2vtx, vtx2xyz) = {
-            let mut obj = del_msh_cpu::io_obj::WavefrontObj::<u32, f32>::new();
+            let mut obj = del_msh_cpu::io_wavefront_obj::WavefrontObj::<u32, f32>::new();
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };

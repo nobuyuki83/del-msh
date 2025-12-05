@@ -12,7 +12,7 @@ impl del_gl_winit_glutin::viewer3d_for_gl_renderer::GlRenderer for MyViewTrg {
     fn initialize(&mut self, gl: &gl::Gl) {
         self.drawer.compile_shader(gl);
         let (tri2vtx, vtx2xyz) = {
-            let mut obj = del_msh_cpu::io_obj::WavefrontObj::<usize, f32>::new();
+            let mut obj = del_msh_cpu::io_wavefront_obj::WavefrontObj::<usize, f32>::new();
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };

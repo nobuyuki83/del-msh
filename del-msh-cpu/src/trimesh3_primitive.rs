@@ -421,7 +421,13 @@ where
 #[test]
 fn test_sphere_yup() {
     let (tri2vtx, vtx2xyz) = sphere_yup::<usize, f64>(1.0, 16, 8);
-    crate::io_obj::save_tri2vtx_vtx2xyz("../target/sphere_yup.obj", &tri2vtx, &vtx2xyz, 3).unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        "../target/sphere_yup.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        3,
+    )
+    .unwrap();
 }
 
 // ----------------------------------------
@@ -524,8 +530,13 @@ where
 #[test]
 fn test_biypyramid_zup() {
     let (tri2vtx, vtx2xyz) = bypyramid_zup::<f64>(2.0, 0.2, 0.3);
-    crate::io_obj::save_tri2vtx_vtx2xyz("../target/bipyramid_zup.obj", &tri2vtx, &vtx2xyz, 3)
-        .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        "../target/bipyramid_zup.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        3,
+    )
+    .unwrap();
 }
 
 // ------------------
@@ -580,7 +591,7 @@ where
 #[test]
 fn test_arrow_zup() {
     let (tri2vtx, vtx2xyz) = arrow_yup::<f64>(16);
-    crate::io_obj::save_tri2vtx_vtx2xyz(
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/arrow_zup.obj",
         tri2vtx.as_slice(),
         vtx2xyz.as_slice(),
@@ -620,7 +631,7 @@ where
 fn test_arrow_connecting_two_points() {
     let (tri2vtx, vtx2xyz) =
         arrow_connecting_two_points::<f64>(&[1.0, 1.0, 1.0], &[1.0, 1.0, 2.0], 16);
-    crate::io_obj::save_tri2vtx_vtx2xyz(
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/arrow_connecting_two_points.obj",
         tri2vtx.as_slice(),
         vtx2xyz.as_slice(),
@@ -707,7 +718,7 @@ where
 #[test]
 fn test_annulus_yup() {
     let (tri2vtx, vtx2xyz) = annulus_yup(0.3, 0.8, 32, 64);
-    crate::io_obj::save_tri2vtx_vtx2xyz(
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/annulus.obj",
         tri2vtx.as_slice(),
         vtx2xyz.as_slice(),

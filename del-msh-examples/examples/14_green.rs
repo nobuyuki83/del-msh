@@ -1,5 +1,5 @@
 fn main() {
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_obj::load_tri_mesh::<_, u32, f32>(
+    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_wavefront_obj::load_tri_mesh::<_, u32, f32>(
         "asset/spot/spot_triangulated.obj",
         Some(1.0),
     )
@@ -46,9 +46,15 @@ fn main() {
             vtxe2xyz[i_vtx * 6 + 4] = vtx2xyz[i_vtx * 3 + 1] + grad1[i_vtx * 3 + 1];
             vtxe2xyz[i_vtx * 6 + 5] = vtx2xyz[i_vtx * 3 + 2] + grad1[i_vtx * 3 + 2];
         }
-        del_msh_cpu::io_obj::save_edge2vtx_vtx2xyz("target/green1.obj", &edge2vtxe, &vtxe2xyz, 3)
-            .unwrap();
+        del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(
+            "target/green1.obj",
+            &edge2vtxe,
+            &vtxe2xyz,
+            3,
+        )
+        .unwrap();
     }
-    del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz("target/green0.obj", &tri2vtx, &vtx2xyz, 3).unwrap();
+    del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz("target/green0.obj", &tri2vtx, &vtx2xyz, 3)
+        .unwrap();
     //dbg!(tri2vtx);
 }

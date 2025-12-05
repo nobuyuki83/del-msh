@@ -6,7 +6,7 @@ fn main() -> anyhow::Result<()> {
     let ctx = cudarc::driver::CudaContext::new(0)?;
     let stream = ctx.default_stream();
     let (tri2vtx, vtx2xyz, _vtx2uv) = {
-        let mut obj = del_msh_cpu::io_obj::WavefrontObj::<u32, f32>::new();
+        let mut obj = del_msh_cpu::io_wavefront_obj::WavefrontObj::<u32, f32>::new();
         obj.load("asset/spot/spot_triangulated.obj")?;
         obj.unified_xyz_uv_as_trimesh()
     };

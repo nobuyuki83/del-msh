@@ -1,10 +1,13 @@
 use del_dlpack::pyo3;
 //
-use pyo3::prelude::{PyModuleMethods};
+use pyo3::prelude::PyModuleMethods;
 use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 mod array1d;
 mod edge2vtx;
+mod io_cfd_mesh_txt;
+mod io_nastran;
+mod io_wavefront_obj;
 mod mortons;
 mod nbody;
 mod offset_array;
@@ -29,12 +32,15 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     quad_oct_tree::add_functions(_py, m)?;
     offset_array::add_functions(_py, m)?;
     nbody::add_functions(_py, m)?;
+    io_nastran::add_functions(_py, m)?;
+    io_wavefront_obj::add_functions(_py, m)?;
+    io_cfd_mesh_txt::add_functions(_py, m)?;
     Ok(())
 }
 
 // --------------------------------
 
-#[pyo3::pyfunction] 
+#[pyo3::pyfunction]
 pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
     #[cfg(feature = "cuda")]
     {
