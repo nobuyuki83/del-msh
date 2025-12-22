@@ -11,7 +11,7 @@ def test_tree_construction():
     for num_dim in range(2,4):
         print(num_dim)
         torch.manual_seed(0)
-        vtx2co = torch.rand((1_000_000, num_dim))
+        vtx2co = torch.rand((1000_000, num_dim))
         transform_co2unit = torch.eye(num_dim+1)
         vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
             vtx2co, transform_co2unit
@@ -19,7 +19,7 @@ def test_tree_construction():
         (idx2vtx, idx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
         idx2jdx, jdx2morton, jdx2idx_offdset = del_msh_dlpack.Array1D.torch.unique_for_sorted_array(idx2morton)
         assert not del_msh_dlpack.Array1D.torch.has_duplicate_in_sorted_array(jdx2morton)
-        assert torch.equal(jdx2morton, torch.unique(idx2morton.to(torch.int32)).to(torch.uint32))
+        assert torch.equal(jdx2morton, torch.unique(idx2morton.to(torch.int64)).to(torch.uint32))
         #
         tree = del_msh_dlpack.QuadOctTree.torch.QuadOctTree()
         tree.construct_from_idx2morton(jdx2morton, num_dim, True)
