@@ -76,12 +76,14 @@ pub fn write_vtk_cells(
     Ok(())
 }
 
-pub fn write_vtk_cells_mix(
+pub fn write_vtk_cells_mix<IDX>(
     file: &mut std::fs::File,
-    tet2vtx: &[usize],
-    pyramid2vtx: &[usize],
-    prism2vtx: &[usize],
-) -> std::io::Result<()> {
+    tet2vtx: &[IDX],
+    pyramid2vtx: &[IDX],
+    prism2vtx: &[IDX],
+) -> std::io::Result<()>
+where IDX: num_traits::PrimInt + std::fmt::Display
+{
     let num_tet = tet2vtx.len() / 4;
     let num_pyramid = pyramid2vtx.len() / 5;
     let num_prism = prism2vtx.len() / 6;
