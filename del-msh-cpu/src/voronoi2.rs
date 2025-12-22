@@ -28,7 +28,7 @@ impl Cell {
 
     fn new_empty() -> Self {
         let vtx2xy: Vec<f32> = vec![];
-        let vtx2info = vec![[usize::MAX; 4]; 0];
+        let vtx2info: Vec<[usize; 4]> = vec![];
         Cell { vtx2xy, vtx2info }
     }
 }
