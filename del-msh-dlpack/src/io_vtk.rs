@@ -43,6 +43,7 @@ fn io_vtk_write_mix_mesh(
     //
     let mut file = std::fs::File::create(path).expect("file not found.");
     del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz, 3).unwrap();
-    del_msh_cpu::io_vtk::write_vtk_cells_mix(&mut file, tet2vtx, pyrmd2vtx, prism2vtx).unwrap();
+    del_msh_cpu::io_vtk::write_vtk_cells_mix::<u32>(&mut file, tet2vtx, pyrmd2vtx, prism2vtx)
+        .unwrap();
     Ok(())
 }
