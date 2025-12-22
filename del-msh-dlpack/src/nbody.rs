@@ -41,8 +41,9 @@ fn nbody_screened_poisson(
             let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
             let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
             let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
+            let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(lambda, epsilon);
             del_msh_cpu::nbody::screened_poisson3(
-                wtx2co, wtx2lhs, lambda, epsilon, vtx2co, vtx2rhs,
+                &spoisson, wtx2co, wtx2lhs, vtx2co, vtx2rhs,
             );
         }
         #[cfg(feature = "cuda")]

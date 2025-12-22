@@ -1,5 +1,7 @@
 //! methods related to 3D polyline
 
+use num_traits::{AsPrimitive, FloatConst};
+
 /// the center of gravity
 pub fn cog<T>(vtx2xyz: &[T]) -> [T; 3]
 where
@@ -512,12 +514,32 @@ fn test_reduce() -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn helix_from_delta_angle<T>(num_points: usize, dangle: T, rad0: T, pitch: T) -> Vec<T>
+where
+    T: num_traits::Float + FloatConst + 'static,
+    usize: AsPrimitive<T>,
+{
+    let two = T::one() + T::one();
+    let mut vtx2xyz = Vec::with_capacity(num_points * 3);
+    for ip in 0..num_points {
+        let angle = ip.as_() * dangle;
+        let pos = [
+            pitch * angle / (two * T::PI()),
+            rad0 * angle.cos(),
+            rad0 * angle.sin(),
+        ];
+        vtx2xyz.push(pos[0]);
+        vtx2xyz.push(pos[1]);
+        vtx2xyz.push(pos[2]);
+    }
+    vtx2xyz
+}
+
 pub fn helix<T>(num_points: usize, elen: T, rad0: T, pitch: T) -> Vec<T>
 where
     T: num_traits::Float + num_traits::FloatConst + 'static,
     usize: num_traits::AsPrimitive<T>,
 {
-    use num_traits::AsPrimitive;
     let one = T::one();
     let two = one + one;
     let dangle = {
@@ -532,17 +554,37 @@ where
         }
         dangle
     };
-    let mut vtx2xyz = Vec::with_capacity(num_points * 3);
-    for ip in 0..num_points {
-        let angle = ip.as_() * dangle;
-        let pos = [
-            pitch * angle / (two * T::PI()),
-            rad0 * angle.cos(),
-            rad0 * angle.sin(),
-        ];
-        vtx2xyz.push(pos[0]);
-        vtx2xyz.push(pos[1]);
-        vtx2xyz.push(pos[2]);
-    }
-    vtx2xyz
+    helix_from_delta_angle(num_points, dangle, rad0, pitch)
+}
+
+#[test]
+fn test_generate_trimesh() {
+    let vtx2xyz_polyline = helix(100, 0.05, 0.7, 0.4);
+    let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        "../target/polyline3_helix.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        3,
+    )
+    .unwrap();
+    //
+    let vtx2xyz_polyline = del_geo_core::bezier_cubic::sample_uniform_param(
+        100,
+        &[0.9, 0.0, -0.1],
+        &[-3.0, 0.9, -0.1],
+        &[0.9, -3.0, 0.1],
+        &[0.0, 0.9, 0.1],
+        true,
+        true,
+    );
+    use slice_of_array::SliceFlatExt;
+    let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline.flat(), 32, 32, 0.05);
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        "../target/polyline3_bezier.obj",
+        &tri2vtx,
+        &vtx2xyz,
+        3,
+    )
+    .unwrap();
 }

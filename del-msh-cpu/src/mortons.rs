@@ -14,12 +14,13 @@ fn test_expand_bits2() {
 }
 
 /// compute morton code for 2D point
-/// 10-bits for each coordinate
+/// 16-bits for each coordinate
 /// * `x` - float number between 0 and 1
 /// * `y` - float number between 0 and 1
-fn morton_code2(x: f32, y: f32) -> u32 {
-    let ix = (x * 1024_f32).clamp(0_f32, 1023_f32) as u32;
-    let iy = (y * 1024_f32).clamp(0_f32, 1023_f32) as u32;
+pub fn morton_code2(x: f32, y: f32) -> u32 {
+    // 2^16 = 65536
+    let ix = (x * 65536_f32).clamp(0_f32, 65535_f32) as u32;
+    let iy = (y * 65536_f32).clamp(0_f32, 65535_f32) as u32;
     let ix = expand_bits2(ix);
     let iy = expand_bits2(iy);
     ix * 2 + iy
@@ -28,7 +29,7 @@ fn morton_code2(x: f32, y: f32) -> u32 {
 #[test]
 fn test_morton_code2() {
     assert_eq!(morton_code2(0., 0.), 0u32); // all zero
-    assert_eq!(morton_code2(0., 1.), 0b01010101010101010101);
+    assert_eq!(morton_code2(0., 1.), 0b01010101010101010101010101010101);
 }
 
 pub fn sorted_morten_code2<Index>(
@@ -90,7 +91,7 @@ fn test_expand_bits3() {
 /// * `x` - float number between 0 and 1
 /// * `y` - float number between 0 and 1
 /// * `z` - float number between 0 and 1
-fn morton_code3(x: f32, y: f32, z: f32) -> u32 {
+pub fn morton_code3(x: f32, y: f32, z: f32) -> u32 {
     let ix = (x * 1024_f32).clamp(0_f32, 1023_f32) as u32;
     let iy = (y * 1024_f32).clamp(0_f32, 1023_f32) as u32;
     let iz = (z * 1024_f32).clamp(0_f32, 1023_f32) as u32;

@@ -54,11 +54,37 @@ pub fn nearest_integer_center<const NDIM: usize>(
     let i_tex = (iy0 as usize) * tex_shape.0 + (ix0 as usize);
     // assert!(i_tex >=0 && i_tex < tex_shape.1);
     std::array::from_fn(|i_dim| tex_data[i_tex * NDIM + i_dim])
-    /*
-    let mut res = [0f32; NDIM];
-    for i_dim in 0..NDIM {
-        res[i_dim] =
+}
+
+// left up corner is the origin
+pub fn to_quadmesh3_hightmap(
+    grid_shape: (usize, usize),
+    height: &[f32],
+    elen: f32,
+) -> (Vec<usize>, Vec<f32>) {
+    let nw = grid_shape.0;
+    let nh = grid_shape.1;
+    let _num_vtx = nw * nh;
+    let mw = nw - 1; // quads in width
+    let mh = nh - 1; // quads in height
+    let mut quad2vtx = Vec::<usize>::with_capacity(mw * mh * 4);
+    for ih in 0..mh {
+        for iw in 0..mw {
+            let i01_vtx = ih * nw + iw;
+            let i11_vtx = ih * nw + iw + 1;
+            let i00_vtx = (ih + 1) * nw + iw;
+            let i10_vtx = (ih + 1) * nw + iw + 1;
+            quad2vtx.extend_from_slice(&[i00_vtx, i10_vtx, i11_vtx, i01_vtx]);
+        }
     }
-    res
-     */
+    let mut vtx2xyz = Vec::<f32>::with_capacity(nw * nh * 3);
+    for ih in 0..nh {
+        for iw in 0..nw {
+            let x = iw as f32 * elen;
+            let y = ih as f32 * -elen;
+            let z = height[ih * nw + iw];
+            vtx2xyz.extend_from_slice(&[x, y, z]);
+        }
+    }
+    (quad2vtx, vtx2xyz)
 }

@@ -1,5 +1,4 @@
-use std::convert::TryInto;
-
+// max_depth is typically 32 / ndim
 pub fn binary_radix_tree_and_depth<Index>(
     idx2morton: &[u32],
     num_dim: usize,
@@ -14,6 +13,7 @@ pub fn binary_radix_tree_and_depth<Index>(
     use num_traits::AsPrimitive;
     let num_idx = idx2morton.len();
     assert!(!idx2morton.is_empty());
+    assert!(u32::BITS >= (num_dim * max_depth) as u32);
     assert_eq!(bnodes.len(), (num_idx - 1) * 3);
     bnodes[0] = Index::max_value();
 
@@ -59,6 +59,29 @@ fn morton2center(morton: u32, num_dim: usize, depth: usize, max_depth: usize, ce
             center[j] *= 0.5f32;
             key >>= 1;
         }
+    }
+}
+
+#[test]
+fn test_morton2center() {
+    {
+        let p = [0.321, 0.123];
+        let mc = crate::mortons::morton_code2(p[0], p[1]);
+        let mut center = [0f32; 3];
+        morton2center(mc, 2, 16, 16, &mut center);
+        let h = 1. / (1 << 16) as f32;
+        assert!((center[0] - p[0]).abs() < h);
+        assert!((center[1] - p[1]).abs() < h);
+    }
+    {
+        let p = [0.321, 0.123, 0.87321];
+        let mc = crate::mortons::morton_code3(p[0], p[1], p[2]);
+        let mut center = [0f32; 3];
+        morton2center(mc, 3, 10, 10, &mut center);
+        let h = 1. / (1 << 10) as f32;
+        assert!((center[0] - p[0]).abs() < h);
+        assert!((center[1] - p[1]).abs() < h);
+        assert!((center[2] - p[2]).abs() < h);
     }
 }
 
@@ -313,6 +336,83 @@ pub fn check_octree<const NDIM: usize>(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
+    vtx2xyz: &[f32],
+    transform_world2unit: &[f32; NAFFINE],
+    idx2vtx: &[u32],
+    idx2onode: &[u32],
+    idx2center: &[f32],
+    max_depth: usize,
+    onode2center: &[f32],
+    onode2depth: &[u32],
+) {
+    assert_eq!(NAFFINE, (NDIM + 1) * (NDIM + 1));
+    let num_vtx = vtx2xyz.len() / NDIM;
+    assert_eq!(vtx2xyz.len(), num_vtx * NDIM);
+    assert_eq!(idx2vtx.len(), num_vtx);
+    assert_eq!(idx2onode.len(), num_vtx);
+    assert_eq!(idx2center.len(), num_vtx * NDIM);
+    let num_onode = onode2center.len() / NDIM;
+    assert_eq!(onode2center.len(), num_onode * NDIM);
+    assert_eq!(onode2depth.len(), num_onode);
+    for idx in 0..num_vtx {
+        let i_vtx = idx2vtx[idx] as usize;
+        let i_onode = idx2onode[idx] as usize;
+        assert!(i_onode < num_onode);
+        let center_cell_unit = &idx2center[idx * NDIM..(idx + 1) * NDIM];
+        let h_cell_vtx = 0.5 / (1 << max_depth) as f32;
+        let pos_vtx_unit = match NDIM {
+            2 => {
+                let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * NDIM, 2];
+                let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 9];
+                del_geo_core::mat3_col_major::transform_homogeneous(
+                    transform_world2unit,
+                    pos_vtx_world,
+                )
+                .unwrap()
+                .to_vec()
+            }
+            3 => {
+                let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * NDIM, 3];
+                let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 16];
+                del_geo_core::mat4_col_major::transform_homogeneous(
+                    transform_world2unit,
+                    pos_vtx_world,
+                )
+                .unwrap()
+                .to_vec()
+            }
+            _ => {
+                panic!()
+            }
+        };
+        for i_dim in 0..NDIM {
+            // check the vtx position in unit coordinate is inside the cell
+            let d = (pos_vtx_unit[i_dim] - center_cell_unit[i_dim]).abs();
+            assert!(d <= h_cell_vtx, "{} {}", d, h_cell_vtx);
+        }
+        let center_cell_parent = &onode2center[i_onode * NDIM..(i_onode + 1) * NDIM];
+        let h_cell_parent = 0.5 / (1 << onode2depth[i_onode]) as f32;
+        /*
+        println!(
+            "{:?}, {:?}, {:?}",
+            center_cell_unit, pos_vtx_unit, center_cell_parent
+        );
+         */
+        for i_dim in 0..NDIM {
+            // check the vtx position in unit coordinate is inside the cell
+            let d = (center_cell_parent[i_dim] - center_cell_unit[i_dim]).abs();
+            assert!(
+                d + h_cell_vtx <= h_cell_parent,
+                "{} {}",
+                d + h_cell_vtx,
+                h_cell_parent
+            );
+        }
+    }
+}
+
 #[test]
 fn test_octree_2d() {
     let num_vtx = 10usize;
@@ -322,9 +422,16 @@ fn test_octree_2d() {
         use rand::Rng;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(3);
-        (0..num_vtx * NDIM).map(|_| rng.random::<f32>()).collect()
+        (0..num_vtx * NDIM)
+            .map(|_| rng.random::<f32>() * 3. - 1.)
+            .collect()
     };
-    let mut idx2vtx = vec![0usize; num_vtx];
+    let transform_world2unit = {
+        let m1 = del_geo_core::mat3_col_major::from_translate(&[1., 1.]);
+        let m2 = del_geo_core::mat3_col_major::from_diagonal(&[1. / 3., 1. / 3., 1.]);
+        del_geo_core::mat3_col_major::mult_mat_col_major(&m2, &m1)
+    };
+    let mut idx2vtx = vec![0u32; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
     crate::mortons::sorted_morten_code2(
@@ -332,7 +439,7 @@ fn test_octree_2d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat3_col_major::from_identity(),
+        &transform_world2unit,
     );
     crate::mortons::check_morton_code_range_split(&idx2morton);
     // bvh creation
@@ -373,7 +480,16 @@ fn test_octree_2d() {
         &onode2center,
         max_depth,
     );
-    // check
+    check_octree_vtx2xyz::<NDIM, { (NDIM + 1) * (NDIM + 1) }>(
+        &vtx2xyz,
+        &transform_world2unit,
+        &idx2vtx,
+        &idx2onode,
+        &idx2center,
+        max_depth,
+        &onode2center,
+        &onode2depth,
+    );
 }
 
 #[test]
@@ -385,11 +501,16 @@ fn test_octree_3d() {
         use rand::Rng;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
-        (0..num_vtx * NDIM as usize)
-            .map(|_| rng.random::<f32>())
+        (0..num_vtx * NDIM)
+            .map(|_| rng.random::<f32>() * 3. - 1.)
             .collect()
     };
-    let mut idx2vtx = vec![0usize; num_vtx];
+    let transform_world2unit = {
+        let m1 = del_geo_core::mat4_col_major::from_translate(&[1., 1., 1.]);
+        let m2 = del_geo_core::mat4_col_major::from_scale_uniform(1. / 3.);
+        del_geo_core::mat4_col_major::mult_mat_col_major(&m2, &m1)
+    };
+    let mut idx2vtx = vec![0u32; num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
     crate::mortons::sorted_morten_code3(
@@ -397,7 +518,7 @@ fn test_octree_3d() {
         &mut idx2morton,
         &mut vtx2morton,
         &vtx2xyz,
-        &del_geo_core::mat4_col_major::from_identity(),
+        &transform_world2unit,
     );
     crate::mortons::check_morton_code_range_split(&idx2morton);
     // bvh creation
@@ -438,5 +559,14 @@ fn test_octree_3d() {
         &onode2center,
         max_depth,
     );
-    // check
+    check_octree_vtx2xyz::<3, 16>(
+        &vtx2xyz,
+        &transform_world2unit,
+        &idx2vtx,
+        &idx2onode,
+        &idx2center,
+        max_depth,
+        &onode2center,
+        &onode2depth,
+    );
 }

@@ -186,3 +186,89 @@ where
     }
     img
 }
+
+#[test]
+fn test_depthmap() {
+    for i_case in 0..3 {
+        let (tri2vtx, vtx2xyz) = match i_case {
+            0 => {
+                let vtx2xyz_polyline = crate::polyline3::helix(100, 0.05, 0.7, 0.4);
+                use std::f32::consts::PI;
+                let rot_y = del_geo_core::mat4_col_major::from_rot_y(PI * 0.51);
+                let rot_x = del_geo_core::mat4_col_major::from_rot_x(-PI * 0.25);
+                let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x, &rot_y);
+                let vtx2xyz_polyline =
+                    crate::vtx2xyz::transform_homogeneous(&vtx2xyz_polyline, &transform);
+                crate::polyline3::to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05)
+            }
+            1 => {
+                let vtx2xyz_polyline = del_geo_core::bezier_cubic::sample_uniform_param(
+                    100,
+                    &[0.9, 0.0, -0.2],
+                    &[-3.0, 0.9, -0.2],
+                    &[0.9, -3.0, 0.2],
+                    &[0.0, 0.9, 0.2],
+                    true,
+                    true,
+                );
+                use slice_of_array::SliceFlatExt;
+                let vtx2xyz_polyline = vtx2xyz_polyline.flat().to_owned();
+                crate::polyline3::to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05)
+            }
+            2 => {
+                let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(0.8, 0.05, 32, 32);
+                let transform =
+                    del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI / 12.0);
+                let vtx2xyz = crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform);
+                (tri2vtx, vtx2xyz)
+            }
+            _ => unreachable!(),
+        };
+        crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+            format!("../target/trimesh3_raycast_mesh{i_case}.obj"),
+            &tri2vtx,
+            &vtx2xyz,
+            3,
+        )
+        .unwrap();
+        let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
+        dbg!(aabb3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+        let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+            0,
+            &bvhnodes,
+            Some((&tri2vtx, 3)),
+            &vtx2xyz,
+            None,
+        );
+        let img_shape = (300, 300);
+        let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];
+        let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
+        dbg!(&transform_ndc2world);
+        render_depth_bvh(
+            img_shape,
+            &mut pix2depth,
+            &transform_ndc2world,
+            &tri2vtx,
+            &vtx2xyz,
+            &bvhnodes,
+            &bvhnode2aabb,
+        );
+        pix2depth.iter_mut().for_each(|v| *v = (*v) + 0.0);
+        del_canvas::write_png_from_float_image_grayscale(
+            format!("../target/trimesh3_raycast_depth_{i_case}.png"),
+            img_shape,
+            &pix2depth,
+        )
+        .unwrap();
+        let (quad2vtx, vtx2xyz) =
+            crate::grid2::to_quadmesh3_hightmap(img_shape, &pix2depth, 1.0 / img_shape.0 as f32);
+        crate::io_wavefront_obj::save_quad2vtx_vtx2xyz(
+            format!("../target/trimesh3_raycast_hightmap_{i_case}.obj"),
+            &quad2vtx,
+            &vtx2xyz,
+            3,
+        )
+        .unwrap();
+    }
+}

@@ -591,6 +591,30 @@ where
     Ok(())
 }
 
+pub fn save_quad2vtx_vtx2xyz<Path, Real>(
+    filepath: Path,
+    quad2vtx: &[usize],
+    vtx2xyz: &[Real],
+    num_dim: usize,
+) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file  not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    // let num_vtx = vtx2xyz.len() / num_dim;
+    for node2vtx in quad2vtx.chunks(4) {
+        let i0 = node2vtx[0];
+        let i1 = node2vtx[1];
+        let i2 = node2vtx[2];
+        let i3 = node2vtx[3];
+        writeln!(file, "f {} {} {} {}", i0 + 1, i1 + 1, i2 + 1, i3 + 1)?;
+    }
+    Ok(())
+}
+
 // ------------------------/
 
 pub fn save_tri2xyz<Path, Real>(filepath: Path, tri2xyz: &[Real]) -> anyhow::Result<()>
