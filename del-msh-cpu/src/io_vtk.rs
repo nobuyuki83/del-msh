@@ -82,7 +82,8 @@ pub fn write_vtk_cells_mix<IDX>(
     pyramid2vtx: &[IDX],
     prism2vtx: &[IDX],
 ) -> std::io::Result<()>
-where IDX: num_traits::PrimInt + std::fmt::Display
+where
+    IDX: num_traits::PrimInt + std::fmt::Display,
 {
     let num_tet = tet2vtx.len() / 4;
     let num_pyramid = pyramid2vtx.len() / 5;
