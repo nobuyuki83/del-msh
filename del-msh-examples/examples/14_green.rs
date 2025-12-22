@@ -1,9 +1,6 @@
-
-
-
 fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
     let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vt2lhs0.len(), num_vtx*3);
+    assert_eq!(vt2lhs0.len(), num_vtx * 3);
     // draw edges
     let edge2vtxe = (0..num_vtx)
         .flat_map(|i| [i * 2, i * 2 + 1])
@@ -17,13 +14,7 @@ fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
         vtxe2xyz[i_vtx * 6 + 4] = vtx2xyz[i_vtx * 3 + 1] + vt2lhs0[i_vtx * 3 + 1];
         vtxe2xyz[i_vtx * 6 + 5] = vtx2xyz[i_vtx * 3 + 2] + vt2lhs0[i_vtx * 3 + 2];
     }
-    del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-        path,
-        &edge2vtxe,
-        &vtxe2xyz,
-        3,
-    )
-        .unwrap();
+    del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(path, &edge2vtxe, &vtxe2xyz, 3).unwrap();
 }
 
 fn main() {
@@ -40,9 +31,11 @@ fn main() {
         grad0[1] = 0.0;
         grad0[2] = 0.0;
          */
-        use rand::{SeedableRng, Rng};
+        use rand::{Rng, SeedableRng};
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
-        grad0.iter_mut().for_each(|v| *v = rng.random::<f32>() * 2.0 - 1.0 );
+        grad0
+            .iter_mut()
+            .for_each(|v| *v = rng.random::<f32>() * 2.0 - 1.0);
         grad0
     };
     let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(10.0, 1.0e-3);
@@ -59,7 +52,7 @@ fn main() {
     };
     let vtx2lhs1 = {
         let max_depth = 10;
-        let transform_world2unit= {
+        let transform_world2unit = {
             let aabb3 = del_msh_cpu::vtx2xyz::aabb3(&vtx2xyz, 0.);
             let scale_unit2world = del_geo_core::aabb3::max_edge_size(&aabb3);
             let scale_world2unit = 1.0 / scale_unit2world;
@@ -154,9 +147,9 @@ fn main() {
                 onode2gcunit[i_onode][1] += pos_vtx_unit[1];
                 onode2gcunit[i_onode][2] += pos_vtx_unit[2];
                 onode2nvtx[i_onode] += 1;
-                onode2rhs[i_onode][0] += vtx2rhs[i_vtx*3+0];
-                onode2rhs[i_onode][1] += vtx2rhs[i_vtx*3+1];
-                onode2rhs[i_onode][2] += vtx2rhs[i_vtx*3+2];
+                onode2rhs[i_onode][0] += vtx2rhs[i_vtx * 3 + 0];
+                onode2rhs[i_onode][1] += vtx2rhs[i_vtx * 3 + 1];
+                onode2rhs[i_onode][2] += vtx2rhs[i_vtx * 3 + 2];
                 if onodes[i_onode * 9] == u32::MAX {
                     break;
                 }
@@ -203,7 +196,8 @@ fn main() {
             },
             &idx2vtx,
             &onode2gcunit,
-            &onode2rhs);
+            &onode2rhs,
+        );
         vtx2lhs
     };
     hoge("target/green1b.obj".to_string(), &vtx2xyz, &vtx2lhs0);

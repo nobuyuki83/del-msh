@@ -42,9 +42,7 @@ fn nbody_screened_poisson(
             let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
             let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
             let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(lambda, epsilon);
-            del_msh_cpu::nbody::screened_poisson3(
-                &spoisson, wtx2co, wtx2lhs, vtx2co, vtx2rhs,
-            );
+            del_msh_cpu::nbody::screened_poisson3(&spoisson, wtx2co, wtx2lhs, vtx2co, vtx2rhs);
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
