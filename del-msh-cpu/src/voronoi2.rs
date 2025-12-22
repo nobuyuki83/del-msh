@@ -42,7 +42,7 @@ fn hoge(
 ) -> Option<Cell> {
     let num_vtx = vtx2xy.len() / 2;
     let mut vtx2xy_new: Vec<f32> = vec![];
-    let mut vtx2info_new = vec![[usize::MAX; 4]; 0];
+    let mut vtx2info_new: Vec<[usize; 4]> = vec![];
     let (i_vtx0, is_new0) = {
         let i_vtxnew_start = vtxnew2isvisisted
             .iter()
