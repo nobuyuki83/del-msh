@@ -7,6 +7,7 @@ mod array1d;
 mod edge2vtx;
 mod io_cfd_mesh_txt;
 mod io_nastran;
+mod io_vtk;
 mod io_wavefront_obj;
 mod mortons;
 mod nbody;
@@ -35,6 +36,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     io_nastran::add_functions(_py, m)?;
     io_wavefront_obj::add_functions(_py, m)?;
     io_cfd_mesh_txt::add_functions(_py, m)?;
+    io_vtk::add_functions(_py, m)?;
     Ok(())
 }
 
