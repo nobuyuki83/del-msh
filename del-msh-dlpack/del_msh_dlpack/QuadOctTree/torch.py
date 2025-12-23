@@ -88,7 +88,6 @@ def make_tree_from_binary_radix_tree(
         util_torch.to_dlpack_safe(idx2center, stream_ptr),
         stream_ptr
     )
-
     return onodes, onode2depth, onode2center, idx2onode, idx2center
 
 

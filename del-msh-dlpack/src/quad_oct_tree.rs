@@ -228,18 +228,6 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            //
-            /*
-            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
-                del_msh_cuda_kernel::QUAD_OCT_TREE,
-                "make_tree_from_binary_radix_tree",
-            )
-            .unwrap();
-             */
-            /*
-            let fnc = crate::load_get_function("quad_oct_tree", "make_tree_from_binary_radix_tree")
-                .unwrap();
-             */
             let fnc = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh::quad_oct_tree",
                 del_msh_cuda_kernels::get("quad_oct_tree").unwrap(),
@@ -285,6 +273,7 @@ pub fn quad_oct_tree_aggregate(
     let idx2onode = del_dlpack::get_managed_tensor_from_pyany(idx2onode)?;
     let onodes = del_dlpack::get_managed_tensor_from_pyany(onodes)?;
     let onode2aggval = del_dlpack::get_managed_tensor_from_pyany(onode2aggval)?;
+    //
     let num_idx = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
     let num_vdim = del_dlpack::get_shape_tensor(idx2val, 1).unwrap();
     let num_onode = del_dlpack::get_shape_tensor(onodes, 0).unwrap();
@@ -297,7 +286,21 @@ pub fn quad_oct_tree_aggregate(
     del_dlpack::check_2d_tensor::<f32>(onode2aggval, num_onode, num_vdim, device).unwrap();
     //
     match device {
-        dlpack::device_type_codes::CPU => {}
+        dlpack::device_type_codes::CPU => {
+            let idx2val = unsafe { del_dlpack::slice_from_tensor::<f32>(idx2val).unwrap() };
+            let idx2onode = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2onode).unwrap() };
+            let onodes = unsafe { del_dlpack::slice_from_tensor::<u32>(onodes).unwrap() };
+            let onode2aggval =
+                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(onode2aggval).unwrap() };
+            del_msh_cpu::quad_oct_tree::aggregate(
+                num_vdim as usize,
+                idx2val,
+                idx2onode,
+                num_link as usize,
+                onodes,
+                onode2aggval,
+            );
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};

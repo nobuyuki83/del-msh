@@ -20,6 +20,7 @@ fn offset_array_aggregate(
     let jdx2kdx = del_dlpack::get_managed_tensor_from_pyany(jdx2kdx)?;
     let kdx2val = del_dlpack::get_managed_tensor_from_pyany(kdx2val)?;
     let idx2aggval = del_dlpack::get_managed_tensor_from_pyany(idx2aggval)?;
+    //
     let num_idx = del_dlpack::get_shape_tensor(idx2jdx_offset, 0).unwrap() - 1;
     let num_jdx = del_dlpack::get_shape_tensor(jdx2kdx, 0).unwrap();
     let num_dim = del_dlpack::get_shape_tensor(idx2aggval, 1).unwrap();
@@ -31,21 +32,28 @@ fn offset_array_aggregate(
     del_dlpack::check_2d_tensor::<f32>(idx2aggval, num_idx, num_dim, device).unwrap();
     //
     match device {
-        dlpack::device_type_codes::CPU => {}
+        dlpack::device_type_codes::CPU => {
+            let idx2jdx_offset =
+                unsafe { del_dlpack::slice_from_tensor::<u32>(idx2jdx_offset) }.unwrap();
+            let jdx2kdx = unsafe { del_dlpack::slice_from_tensor::<u32>(jdx2kdx) }.unwrap();
+            let kdx2val = unsafe { del_dlpack::slice_from_tensor::<f32>(kdx2val) }.unwrap();
+            let idx2aggval =
+                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(idx2aggval) }.unwrap();
+            let num_dim = num_dim as usize;
+            for idx in 0..num_idx as usize {
+                for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx + 1] {
+                    let kdx = jdx2kdx[jdx as usize] as usize;
+                    for i_dim in 0..num_dim {
+                        idx2aggval[idx * num_dim + i_dim] += kdx2val[kdx * num_dim + i_dim];
+                    }
+                }
+            }
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            //
-            /*
-            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
-                del_cudarc_kernel::OFFSET_ARRAY,
-                "aggregate",
-            )
-            .unwrap();
-             */
-            // let fnc = del_cudarc_sys::load_get_function("offset_array", "aggregate").unwrap();
             let fnc = del_cudarc_sys::cache_func::get_function_cached(
                 "del_cudarc::offset_array",
                 del_cudarc_kernels::get("offset_array").unwrap(),
