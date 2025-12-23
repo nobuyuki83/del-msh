@@ -413,6 +413,37 @@ pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
     }
 }
 
+pub fn aggregate(
+    num_vdim: usize,
+    idx2val: &[f32],
+    idx2onode: &[u32],
+    num_link: usize,
+    onodes: &[u32],
+    onode2aggval: &mut [f32],
+) {
+    let num_onode = onodes.len() / num_link;
+    let num_idx = idx2val.len() / num_vdim;
+    //
+    assert_eq!(onodes.len(), num_onode * num_link);
+    assert_eq!(idx2val.len(), num_idx * num_vdim);
+    assert_eq!(onode2aggval.len(), num_onode * num_vdim);
+    //
+    for idx in 0..num_idx {
+        let mut i_onode = idx2onode[idx] as usize;
+        assert!(i_onode < num_onode);
+        loop {
+            for i_vdim in 0..num_vdim {
+                onode2aggval[i_onode * num_vdim + i_vdim] += idx2val[idx * num_vdim + i_vdim];
+            }
+            if onodes[i_onode * 9] == u32::MAX {
+                break;
+            }
+            i_onode = onodes[i_onode * 9] as usize;
+            assert!(i_onode < num_onode);
+        }
+    }
+}
+
 #[test]
 fn test_octree_2d() {
     let num_vtx = 10usize;

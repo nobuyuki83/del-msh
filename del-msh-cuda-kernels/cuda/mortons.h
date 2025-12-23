@@ -24,8 +24,8 @@ uint32_t device_expand_bits3(uint32_t v)
 __device__
 uint32_t device_morton_code2(float x, float y)
 {
-  auto ix = (uint32_t)fmin(fmax(x * 1024.0f, 0.0f), 1023.0f);
-  auto iy = (uint32_t)fmin(fmax(y * 1024.0f, 0.0f), 1023.0f);
+  auto ix = (uint32_t)fmin(fmax(x * 65536.0f, 0.0f), 65535.0f);
+  auto iy = (uint32_t)fmin(fmax(y * 65536.0f, 0.0f), 65535.0f);
   //  std::cout << std::bitset<10>(ix) << " " << std::bitset<10>(iy) << " " << std::bitset<10>(iz) << std::endl;
   ix = device_expand_bits2(ix);
   iy = device_expand_bits2(iy);

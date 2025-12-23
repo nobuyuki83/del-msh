@@ -116,9 +116,9 @@ void make_tree_from_binary_radix_tree(
     uint32_t num_dim,
     uint32_t* onodes,
     uint32_t* onode2depth,
-    uint32_t* onode2center,
+    float* onode2center,
     uint32_t* idx2onode,
-    uint32_t* idx2center)
+    float* idx2center)
 {
     const unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i >= num_vtx ) return;
