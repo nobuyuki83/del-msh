@@ -110,18 +110,7 @@ pub fn elastic3(
             let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
             let r = vec3::sub(co_i, co_j);
             let force_i = elastic.eval(&r, rhs_j);
-            /*
-            let r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
-            let r_eps = (r2 + eps * eps).sqrt();
-            let r_eps_inv = 1. / r_eps;
-            let r_eps3_inv = 1. / (r_eps * r_eps * r_eps);
-            let coeff_i = norm * ((a - b) * r_eps_inv + 0.5 * a * eps * eps * r_eps3_inv);
-            let coeff_rr_t = norm * b * r_eps3_inv;
-            let dot_rg = r[0] * rhs_j[0] + r[1] * rhs_j[1] + r[2] * rhs_j[2];
-             */
-            lhs_i[0] += force_i[0]; //coeff_i * rhs_j[0] + coeff_rr_t * dot_rg * r[0];
-            lhs_i[1] += force_i[1]; //coeff_i * rhs_j[1] + coeff_rr_t * dot_rg * r[1];
-            lhs_i[2] += force_i[2]; //coeff_i * rhs_j[2] + coeff_rr_t * dot_rg * r[2];
+            vec3::add_in_place(&mut lhs_i, &force_i);
         }
         wtx2lhs[i_wtx * 3] = lhs_i[0];
         wtx2lhs[i_wtx * 3 + 1] = lhs_i[1];
@@ -140,46 +129,52 @@ pub fn barnes_hut<M: Model>(
     spoisson: &M,
     vtx2xyz: &[f32],
     vtx2rhs: &[f32],
-    vtx2lhs: &mut [f32],
+    wtx2xyz: &[f32],
+    wtx2lhs: &mut [f32],
     transform_world2unit: &[f32; 16],
     octree: Octree,
-    idx2vtx: &[u32],
+    idx2jdx_offset: &[u32],
+    jdx2vtx: &[u32],
     onode2gcunit: &[[f32; 3]],
-    onode2rhs: &[[f32; 3]],
+    onode2rhs: &[f32],
+    theta: f32,
 ) {
-    let linear_world2unit =
-        del_geo_core::mat4_col_major::to_mat3_col_major_xyz(transform_world2unit);
-    let svd = del_geo_core::mat3_col_major::svd(
-        &linear_world2unit,
-        del_geo_core::mat3_sym::EigenDecompositionModes::JacobiNumIter(10),
-    )
-    .unwrap();
-    let svd_scale = svd.1;
-    dbg!(svd_scale);
-    let scale_unit2world = 1.0 / svd_scale[0];
+    let transform_unit2world = del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2unit).unwrap();
     let num_vtx = vtx2xyz.len() / 3;
+    assert_eq!(vtx2xyz.len(), num_vtx * 3);
     assert_eq!(vtx2rhs.len(), num_vtx * 3);
-    assert_eq!(vtx2lhs.len(), num_vtx * 3);
+    let num_wtx = wtx2xyz.len() / 3;
+    assert_eq!(wtx2xyz.len(), num_wtx * 3);
+    assert_eq!(wtx2lhs.len(), num_wtx * 3);
+    let num_onode = onode2gcunit.len();
+    //    assert_eq!(onode2rhs.len(), num_onode * 3);
+    assert_eq!(octree.onodes.len(), num_onode * 9);
+    assert_eq!(octree.onode2depth.len(), num_onode);
+    assert_eq!(octree.onode2center.len(), num_onode * 3);
     #[allow(clippy::too_many_arguments)]
     fn get_force<M: Model>(
         spoisson: &M,
-        lhs_i: &mut [f32; 3],
+        vtx2xyz: &[f32],
+        vtx2rhs: &[f32],
         pos_i_world: &[f32; 3],
+        lhs_i: &mut [f32; 3],
         pos_i_unit: &[f32; 3],
         j_onode: usize,
         onodes: &[u32],
         onode2center: &[f32],
         onode2depth: &[u32],
         onode2gcunit: &[[f32; 3]],
-        onode2rhs: &[[f32; 3]],
+        onode2rhs: &[f32],
         theta: f32,
-        scale_unit2world: f32,
-        idx2vtx: &[u32],
-        vtx2xyz: &[f32],
-        vtx2rhs: &[f32],
+        transform_unit2world: [f32;16],
+        idx2jdx_offset: &[u32],
+        jdx2vtx: &[u32],
     ) {
         let num_onode = onode2center.len() / 3;
-        let num_vtx = idx2vtx.len();
+        let num_vtx = vtx2xyz.len() / 3;
+        assert_eq!(vtx2xyz.len(), num_vtx * 3);
+        assert_eq!(vtx2rhs.len(), num_vtx * 3);
+        assert_eq!(jdx2vtx.len(), num_vtx);
         assert!(j_onode < num_onode);
         let center_unit = arrayref::array_ref![onode2center, j_onode * 3, 3];
         let gc_unit = onode2gcunit[j_onode];
@@ -188,10 +183,10 @@ pub fn barnes_hut<M: Model>(
         let delta_unit = del_geo_core::edge3::length(center_unit, &gc_unit);
         if dist_unit - delta_unit > 0. && celllen_unit < (dist_unit - delta_unit) * theta {
             // cell is enough far
-            let pos_relative_unit = del_geo_core::vec3::sub(pos_i_unit, &gc_unit);
+            let pos_gc_world = del_geo_core::mat4_col_major::transform_homogeneous(&transform_unit2world, &gc_unit).unwrap();
             let pos_relative_world =
-                del_geo_core::vec3::scale(&pos_relative_unit, scale_unit2world);
-            let rhs_j = &onode2rhs[j_onode];
+                del_geo_core::vec3::sub(&pos_i_world, &pos_gc_world);
+            let rhs_j = arrayref::array_ref![onode2rhs, j_onode * 3, 3];
             let force_i = spoisson.eval(&pos_relative_world, rhs_j);
             lhs_i[0] += force_i[0];
             lhs_i[1] += force_i[1];
@@ -205,21 +200,24 @@ pub fn barnes_hut<M: Model>(
             }
             let j_onode_child = j_onode_child as usize;
             if j_onode_child >= num_onode {
-                let jdx = j_onode_child - num_onode;
-                assert!(jdx < num_vtx);
-                let j_vtx = idx2vtx[jdx] as usize;
-                let pos_j_world = arrayref::array_ref![vtx2xyz, j_vtx * 3, 3];
-                let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, pos_j_world);
-                let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
-                let res = spoisson.eval(&pos_relative_world, rhs_j);
-                lhs_i[0] += res[0];
-                lhs_i[1] += res[1];
-                lhs_i[2] += res[2];
+                let idx = j_onode_child - num_onode;
+                for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx+1] {
+                    let j_vtx = jdx2vtx[jdx as usize] as usize;
+                    let pos_j_world = arrayref::array_ref![vtx2xyz, j_vtx * 3, 3];
+                    let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, pos_j_world);
+                    let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
+                    let res = spoisson.eval(&pos_relative_world, rhs_j);
+                    lhs_i[0] += res[0];
+                    lhs_i[1] += res[1];
+                    lhs_i[2] += res[2];
+                }
             } else {
                 get_force(
                     spoisson,
-                    lhs_i,
+                    vtx2xyz,
+                    vtx2rhs,
                     pos_i_world,
+                    lhs_i,
                     pos_i_unit,
                     j_onode_child,
                     onodes,
@@ -228,23 +226,24 @@ pub fn barnes_hut<M: Model>(
                     onode2gcunit,
                     onode2rhs,
                     theta,
-                    scale_unit2world,
-                    idx2vtx,
-                    vtx2xyz,
-                    vtx2rhs,
+                    transform_unit2world,
+                    idx2jdx_offset,
+                    jdx2vtx
                 );
             }
         }
     }
-    for i_vtx in 0..num_vtx {
-        let pos_world = arrayref::array_ref![vtx2xyz, i_vtx * 3, 3];
+    for i_wtx in 0..num_wtx {
+        let pos_world = arrayref::array_ref![wtx2xyz, i_wtx * 3, 3];
         let pos_unit =
             del_geo_core::mat4_col_major::transform_homogeneous(transform_world2unit, pos_world)
                 .unwrap();
         get_force(
             spoisson,
-            arrayref::array_mut_ref![vtx2lhs, i_vtx * 3, 3],
+            vtx2xyz,
+            vtx2rhs,
             pos_world,
+            arrayref::array_mut_ref![wtx2lhs, i_wtx * 3, 3],
             &pos_unit,
             0,
             octree.onodes,
@@ -252,11 +251,10 @@ pub fn barnes_hut<M: Model>(
             octree.onode2depth,
             onode2gcunit,
             onode2rhs,
-            0.2,
-            scale_unit2world,
-            idx2vtx,
-            vtx2xyz,
-            vtx2rhs,
+            theta,
+            transform_unit2world,
+            idx2jdx_offset,
+            jdx2vtx,
         );
     }
 }

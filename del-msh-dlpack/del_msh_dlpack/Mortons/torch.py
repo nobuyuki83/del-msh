@@ -23,7 +23,7 @@ def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor
 
     Mortons.vtx2morton_from_vtx2co(
         util_torch.to_dlpack_safe(vtx2co, stream_ptr),
-        util_torch.to_dlpack_safe(transform_co2unit, stream_ptr),
+        util_torch.to_dlpack_safe(transform_co2unit.T.clone().contiguous(), stream_ptr),
         util_torch.to_dlpack_safe(vtx2morton, stream_ptr),
         stream_ptr,
     )

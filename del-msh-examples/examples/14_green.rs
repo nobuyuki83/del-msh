@@ -64,106 +64,58 @@ fn main() {
             m3.mult_mat(&m2).mult_mat(&m1)
         };
         let mut vtx2morton = vec![0u32; num_vtx];
-        let mut idx2vtx = vec![0u32; num_vtx];
-        let mut idx2morton = vec![0u32; num_vtx];
+        let mut jdx2vtx = vec![0u32; num_vtx];
+        let mut jdx2morton = vec![0u32; num_vtx];
         del_msh_cpu::mortons::sorted_morten_code3(
-            &mut idx2vtx,
-            &mut idx2morton,
+            &mut jdx2vtx,
+            &mut jdx2morton,
             &mut vtx2morton,
             &vtx2xyz,
             &transform_world2unit,
         );
-        let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
-        let mut bnode2depth = vec![0u32; (num_vtx - 1) * 3];
-        del_msh_cpu::quad_oct_tree::binary_radix_tree_and_depth(
-            &idx2morton,
-            3,
-            max_depth,
-            &mut bnodes,
-            &mut bnode2depth,
-        );
-        let mut bnode2onode = vec![0u32; num_vtx - 1];
-        let mut idx2bnode = vec![0u32; num_vtx];
-        del_msh_cpu::quad_oct_tree::bnode2onode_and_idx2bnode(
-            &bnodes,
-            &bnode2depth,
-            &mut bnode2onode,
-            &mut idx2bnode,
-        );
-        let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
-        let mut onodes = vec![u32::MAX; num_onode * 9];
-        let mut onode2depth = vec![0u32; num_onode];
-        let mut onode2center = vec![0f32; num_onode * 3];
-        let mut idx2center = vec![0f32; num_vtx * 3];
-        let mut idx2onode = vec![0u32; num_vtx];
-        del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree(
-            &bnodes,
-            &bnode2onode,
-            &bnode2depth,
-            &idx2bnode,
-            &idx2morton,
-            num_onode,
-            max_depth,
-            3,
-            &mut onodes,
-            &mut onode2depth,
-            &mut onode2center,
-            &mut idx2onode,
-            &mut idx2center,
-        );
-        del_msh_cpu::quad_oct_tree::check_octree::<3>(
-            &idx2onode,
-            &idx2center,
-            &onodes,
-            &onode2depth,
-            &onode2center,
-            max_depth,
-        );
+        let mut jdx2idx = vec![0u32; num_vtx];
+        del_msh_cpu::array1d::unique_for_sorted_array(&jdx2morton, &mut jdx2idx);
+        let num_idx = *jdx2idx.last().unwrap() as usize + 1;
+        let mut idx2jdx_offset = vec![0u32; num_idx+1];
+        del_msh_cpu::map_idx::inverse(&jdx2idx, &mut idx2jdx_offset);
+        let idx2morton = {
+            let mut idx2morton = vec![0u32; num_idx];
+            for idx in 0..num_idx as usize {
+                let jdx = idx2jdx_offset[idx] as usize;
+                assert!(jdx < num_vtx as usize);
+                idx2morton[idx] = jdx2morton[jdx];
+            }
+            idx2morton
+        };
         del_msh_cpu::quad_oct_tree::check_octree_vtx2xyz::<3, 16>(
             &vtx2xyz,
             &transform_world2unit,
-            &idx2vtx,
+            &jdx2vtx,
             &idx2onode,
             &idx2center,
             max_depth,
             &onode2center,
             &onode2depth,
         );
-        let mut onode2nvtx = vec![0usize; num_onode];
         let mut onode2gcunit = vec![[0f32; 3]; num_onode];
-        let mut onode2rhs = vec![[0f32; 3]; num_onode];
-        for idx in 0..num_vtx {
-            let i_vtx = idx2vtx[idx] as usize;
-            let mut i_onode = idx2onode[idx] as usize;
-            assert!(i_onode < num_onode);
-            let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * 3, 3];
-            let pos_vtx_unit = del_geo_core::mat4_col_major::transform_homogeneous(
-                &transform_world2unit,
-                pos_vtx_world,
-            )
-            .unwrap();
-            loop {
-                onode2gcunit[i_onode][0] += pos_vtx_unit[0];
-                onode2gcunit[i_onode][1] += pos_vtx_unit[1];
-                onode2gcunit[i_onode][2] += pos_vtx_unit[2];
-                onode2nvtx[i_onode] += 1;
-                onode2rhs[i_onode][0] += vtx2rhs[i_vtx * 3 + 0];
-                onode2rhs[i_onode][1] += vtx2rhs[i_vtx * 3 + 1];
-                onode2rhs[i_onode][2] += vtx2rhs[i_vtx * 3 + 2];
-                if onodes[i_onode * 9] == u32::MAX {
-                    break;
-                }
-                i_onode = onodes[i_onode * 9] as usize;
-                assert!(i_onode < num_onode);
-            }
-        }
-        for i_onode in 0..num_onode {
-            assert!(onode2nvtx[i_onode] > 0);
-            let s = 1.0 / onode2nvtx[i_onode] as f32;
-            onode2gcunit[i_onode][0] *= s;
-            onode2gcunit[i_onode][1] *= s;
-            onode2gcunit[i_onode][2] *= s;
-        }
+        del_msh_cpu::quad_oct_tree::onode2gcuint_for_octree(
+            &jdx2vtx,
+            &idx2onode,
+            &vtx2xyz,
+            &transform_world2unit,
+            &onodes,
+            &mut onode2gcunit,
+        );
+        let mut onode2rhs = vec![0f32; num_onode * 3];
+        del_msh_cpu::quad_oct_tree::aggregate_with_map(
+            3,
+            &jdx2vtx,
+            &vtx2rhs,
+            &idx2onode,
+            9,
+            &onodes,
+            &mut onode2rhs,
+        );
         {
             // assertion
             let mut gc_world = [0f32; 3];
@@ -187,6 +139,7 @@ fn main() {
             &spoisson,
             &vtx2xyz,
             &vtx2rhs,
+            &vtx2xyz,
             &mut vtx2lhs,
             &transform_world2unit,
             del_msh_cpu::nbody::Octree {
@@ -194,15 +147,26 @@ fn main() {
                 onode2center: &onode2center,
                 onode2depth: &onode2depth,
             },
-            &idx2vtx,
+            &idx2jdx_offset,
+            &jdx2vtx,
             &onode2gcunit,
             &onode2rhs,
+            0.3,
         );
         vtx2lhs
     };
+    {
+        let diff = vtx2lhs0
+            .iter()
+            .zip(vtx2lhs1.iter())
+            .map(|(a, b)| (a - b).abs())
+            .reduce(f32::max)
+            .unwrap_or(0.0);
+        let scale = vtx2lhs0.iter().map(|a| a.abs()).sum::<f32>() / vtx2lhs0.len() as f32;
+        dbg!(diff, scale);
+    }
     hoge("target/green1b.obj".to_string(), &vtx2xyz, &vtx2lhs0);
     hoge("target/green1c.obj".to_string(), &vtx2xyz, &vtx2lhs1);
-
     del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz("target/green0.obj", &tri2vtx, &vtx2xyz, 3)
         .unwrap();
     //dbg!(tri2vtx);

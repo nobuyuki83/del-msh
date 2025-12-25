@@ -421,6 +421,7 @@ pub fn aggregate(
     onodes: &[u32],
     onode2aggval: &mut [f32],
 ) {
+    onode2aggval.fill(0.0);
     let num_onode = onodes.len() / num_link;
     let num_idx = idx2val.len() / num_vdim;
     //
@@ -441,6 +442,92 @@ pub fn aggregate(
             i_onode = onodes[i_onode * 9] as usize;
             assert!(i_onode < num_onode);
         }
+    }
+}
+
+pub fn aggregate_with_map(
+    num_vdim: usize,
+    idx2vtx: &[u32],
+    vtx2val: &[f32],
+    idx2onode: &[u32],
+    num_link: usize,
+    onodes: &[u32],
+    onode2aggval: &mut [f32],
+) {
+    let num_onode = onodes.len() / num_link;
+    let num_idx = idx2vtx.len();
+    //
+    assert_eq!(idx2onode.len(), num_idx);
+    assert_eq!(vtx2val.len(), num_idx * num_vdim);
+    assert_eq!(onodes.len(), num_onode * num_link);
+    assert_eq!(onode2aggval.len(), num_onode * num_vdim);
+    //
+    onode2aggval.fill(0.0);
+    for idx in 0..num_idx {
+        let mut i_onode = idx2onode[idx] as usize;
+        assert!(i_onode < num_onode);
+        let i_vtx = idx2vtx[idx] as usize;
+        assert!(i_vtx < num_idx);
+        let val = &vtx2val[i_vtx * num_vdim..(i_vtx + 1) * num_vdim];
+        loop {
+            for i_vdim in 0..num_vdim {
+                onode2aggval[i_onode * num_vdim + i_vdim] += val[i_vdim];
+            }
+            if onodes[i_onode * 9] == u32::MAX {
+                break;
+            }
+            i_onode = onodes[i_onode * 9] as usize;
+            assert!(i_onode < num_onode);
+        }
+    }
+}
+
+pub fn onode2gcuint_for_octree(
+    idx2vtx: &[u32],
+    idx2onode: &[u32],
+    vtx2xyz: &[f32],
+    transform_world2unit: &[f32; 16],
+    onodes: &[u32],
+    onode2gcunit: &mut [[f32; 3]],
+) {
+    let num_vtx = idx2vtx.len();
+    assert_eq!(idx2vtx.len(), num_vtx);
+    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let num_onode = onodes.len() / 9;
+    assert_eq!(onode2gcunit.len(), num_onode);
+    let mut onode2nvtx = vec![0f32; num_onode];
+    onode2gcunit.fill([0f32; 3]);
+    for idx in 0..num_vtx {
+        let i_vtx = idx2vtx[idx] as usize;
+        let mut i_onode = idx2onode[idx] as usize;
+        assert!(i_onode < num_onode);
+        let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * 3, 3];
+        loop {
+            onode2gcunit[i_onode][0] += pos_vtx_world[0];
+            onode2gcunit[i_onode][1] += pos_vtx_world[1];
+            onode2gcunit[i_onode][2] += pos_vtx_world[2];
+            onode2nvtx[i_onode] += 1.;
+            if onodes[i_onode * 9] == u32::MAX {
+                break;
+            }
+            i_onode = onodes[i_onode * 9] as usize;
+            assert!(i_onode < num_onode);
+        }
+    }
+    for i_onode in 0..num_onode {
+        assert!(onode2nvtx[i_onode] > 0.);
+        let s = 1.0 / onode2nvtx[i_onode] as f32;
+        onode2gcunit[i_onode][0] *= s;
+        onode2gcunit[i_onode][1] *= s;
+        onode2gcunit[i_onode][2] *= s;
+        let pos_vtx_unit = del_geo_core::mat4_col_major::transform_homogeneous(
+            &transform_world2unit,
+            &onode2gcunit[i_onode],
+        )
+        .unwrap();
+        onode2gcunit[i_onode][0] = pos_vtx_unit[0];
+        onode2gcunit[i_onode][1] = pos_vtx_unit[1];
+        onode2gcunit[i_onode][2] = pos_vtx_unit[2];
     }
 }
 
@@ -541,22 +628,23 @@ fn test_octree_3d() {
         let m2 = del_geo_core::mat4_col_major::from_scale_uniform(1. / 3.);
         del_geo_core::mat4_col_major::mult_mat_col_major(&m2, &m1)
     };
-    let mut idx2vtx = vec![0u32; num_vtx];
-    let mut idx2morton = vec![0u32; num_vtx];
+    let mut jdx2vtx = vec![0u32; num_vtx];
+    let mut jdx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
     crate::mortons::sorted_morten_code3(
-        &mut idx2vtx,
-        &mut idx2morton,
+        &mut jdx2vtx,
+        &mut jdx2morton,
         &mut vtx2morton,
         &vtx2xyz,
         &transform_world2unit,
     );
-    crate::mortons::check_morton_code_range_split(&idx2morton);
+
+    crate::mortons::check_morton_code_range_split(&jdx2morton);
     // bvh creation
     let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
     let mut bnode2depth = vec![0u32; num_vtx - 1];
-    binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
-    crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
+    binary_radix_tree_and_depth(&jdx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
+    crate::mortons::check_binary_radix_tree(&bnodes, &jdx2morton);
     let mut bnode2onode = vec![0u32; num_vtx - 1];
     let mut idx2bnode = vec![u32::MAX; num_vtx];
     bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
@@ -572,7 +660,7 @@ fn test_octree_3d() {
         &bnode2onode,
         &bnode2depth,
         &idx2bnode,
-        &idx2morton,
+        &jdx2morton,
         num_onode,
         max_depth,
         NDIM,
@@ -593,11 +681,62 @@ fn test_octree_3d() {
     check_octree_vtx2xyz::<3, 16>(
         &vtx2xyz,
         &transform_world2unit,
-        &idx2vtx,
+        &jdx2vtx,
         &idx2onode,
         &idx2center,
         max_depth,
         &onode2center,
         &onode2depth,
+    );
+}
+
+
+pub fn construct_octree(idx2morton: &[u32], max_depth: usize) {
+    let num_idx = idx2morton.len();
+    let mut bnodes = vec![0u32; (num_idx - 1) * 3];
+    let mut bnode2depth = vec![0u32; (num_idx - 1) * 3];
+    crate::quad_oct_tree::binary_radix_tree_and_depth(
+        &idx2morton,
+        3,
+        max_depth,
+        &mut bnodes,
+        &mut bnode2depth,
+    );
+    let mut bnode2onode = vec![0u32; num_idx - 1];
+    let mut idx2bnode = vec![0u32; num_idx];
+    crate::quad_oct_tree::bnode2onode_and_idx2bnode(
+        &bnodes,
+        &bnode2depth,
+        &mut bnode2onode,
+        &mut idx2bnode,
+    );
+    let num_onode = bnode2onode[num_idx - 2] as usize + 1;
+    let mut onodes = vec![u32::MAX; num_onode * 9];
+    let mut onode2depth = vec![0u32; num_onode];
+    let mut onode2center = vec![0f32; num_onode * 3];
+    let mut idx2center = vec![0f32; num_idx * 3];
+    let mut idx2onode = vec![0u32; num_idx];
+    make_tree_from_binary_radix_tree(
+        &bnodes,
+        &bnode2onode,
+        &bnode2depth,
+        &idx2bnode,
+        &idx2morton,
+        num_onode,
+        max_depth,
+        3,
+        &mut onodes,
+        &mut onode2depth,
+        &mut onode2center,
+        &mut idx2onode,
+        &mut idx2center,
+    );
+    check_octree::<3>(
+        &idx2onode,
+        &idx2center,
+        &onodes,
+        &onode2depth,
+        &onode2center,
+        max_depth,
     );
 }

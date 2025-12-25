@@ -5,6 +5,7 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(nbody_screened_poisson, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(nbody_elastic, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(nbody_screened_poisson_with_acceleration, m)?)?;
     Ok(())
 }
 
@@ -144,6 +145,91 @@ fn nbody_elastic(
             let _a = nu;
             let _b = epsilon;
             todo!();
+        }
+    }
+    Ok(())
+}
+
+
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn nbody_screened_poisson_with_acceleration(
+    _py: Python<'_>,
+    vtx2co: &Bound<'_, PyAny>,
+    vtx2rhs: &Bound<'_, PyAny>,
+    wtx2co: &Bound<'_, PyAny>,
+    wtx2lhs: &Bound<'_, PyAny>,
+    lambda: f32,
+    epsilon: f32,
+    transform_world2unit: &Bound<'_, PyAny>,
+    onodes: &Bound<'_, PyAny>,
+    onode2center: &Bound<'_, PyAny>,
+    onode2depth: &Bound<'_, PyAny>,
+    idx2jdx_offset: &Bound<'_, PyAny>,
+    jdx2vtx: &Bound<'_, PyAny>,
+    onode2gcunit: &Bound<'_, PyAny>,
+    onode2rhs: &Bound<'_, PyAny>,
+    theta: f32,
+    #[allow(unused_variables)] stream_ptr: u64,
+) -> PyResult<()> {
+    let vtx2co = del_dlpack::get_managed_tensor_from_pyany(vtx2co)?;
+    let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
+    let wtx2co = del_dlpack::get_managed_tensor_from_pyany(wtx2co)?;
+    let wtx2lhs = del_dlpack::get_managed_tensor_from_pyany(wtx2lhs)?;
+    let transform_world2unit  = del_dlpack::get_managed_tensor_from_pyany(transform_world2unit)?;
+    let onodes = del_dlpack::get_managed_tensor_from_pyany(onodes)?;
+    let onode2center = del_dlpack::get_managed_tensor_from_pyany(onode2center)?;
+    let onode2depth = del_dlpack::get_managed_tensor_from_pyany(onode2depth)?;
+    //
+    let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
+    let num_wtx = del_dlpack::get_shape_tensor(wtx2co, 0).unwrap();
+    let num_dim = del_dlpack::get_shape_tensor(vtx2co, 1).unwrap();
+    let num_vdim = del_dlpack::get_shape_tensor(vtx2rhs, 1).unwrap();
+    let num_onode = del_dlpack::get_shape_tensor(onodes, 0).unwrap();
+    let device = vtx2co.ctx.device_type;
+    //
+    del_dlpack::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(wtx2co, num_wtx, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
+    del_dlpack::check_1d_tensor::<f32>(transform_world2unit, 16, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(onodes, num_onode, 9, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(onode2center, num_onode, 3, device).unwrap();
+    del_dlpack::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
+    //
+    match device {
+        dlpack::device_type_codes::CPU => {
+            let vtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2co) }.unwrap();
+            let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
+            let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
+            let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
+            let transform_world2unit = unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2unit) }.unwrap();
+            let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 16];
+            let onodes = unsafe { del_dlpack::slice_from_tensor::<u32>(onodes) }.unwrap();
+            let onode2center = unsafe { del_dlpack::slice_from_tensor::<f32>(onode2center) }.unwrap();
+            let onode2depth = unsafe { del_dlpack::slice_from_tensor::<u32>(onode2depth) }.unwrap();
+            let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(lambda, epsilon);
+            del_msh_cpu::nbody::barnes_hut(
+                &spoisson,
+                vtx2co,
+                vtx2rhs,
+                wtx2co,
+                wtx2lhs,
+                transform_world2unit,
+                del_msh_cpu::nbody::Octree{
+                    onodes,
+                    onode2center,
+                    onode2depth
+                },
+                idx2jdx_offset,
+                jdx2vtx,
+                onode2gcunit,
+                onode2rhs,
+                theta);
+            //    &spoisson, wtx2co, wtx2lhs, vtx2co, vtx2rhs);
+        },
+        _ => {
+            todo!()
         }
     }
     Ok(())
