@@ -18,11 +18,26 @@ fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
 }
 
 fn main() {
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::io_wavefront_obj::load_tri_mesh::<_, u32, f32>(
-        "asset/spot/spot_triangulated.obj",
-        None,
-    )
-    .unwrap();
+    let vtx2xyz = {
+        use rand::{Rng, SeedableRng};
+        let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
+        let mut vtx2xyz: Vec<f32> = (0..1000)
+            .flat_map(|_i| {
+                [
+                    3.0 * rng.random::<f32>() - 1.0,
+                    5.0 * rng.random::<f32>() - 2.0,
+                    2.0 * rng.random::<f32>() - 3.0,
+                ]
+            })
+            .collect();
+        for _iter in 0..500 {
+            let i_vtx = rng.random_range(0..vtx2xyz.len() / 3);
+            vtx2xyz.push(vtx2xyz[i_vtx * 3 + 0]);
+            vtx2xyz.push(vtx2xyz[i_vtx * 3 + 1]);
+            vtx2xyz.push(vtx2xyz[i_vtx * 3 + 2]);
+        }
+        vtx2xyz
+    };
     let num_vtx = vtx2xyz.len() / 3;
     let vtx2rhs = {
         let mut grad0 = vec![0f32; vtx2xyz.len()];
@@ -73,48 +88,49 @@ fn main() {
             &vtx2xyz,
             &transform_world2unit,
         );
-        let mut jdx2idx = vec![0u32; num_vtx];
-        del_msh_cpu::array1d::unique_for_sorted_array(&jdx2morton, &mut jdx2idx);
-        let num_idx = *jdx2idx.last().unwrap() as usize + 1;
-        let mut idx2jdx_offset = vec![0u32; num_idx+1];
-        del_msh_cpu::map_idx::inverse(&jdx2idx, &mut idx2jdx_offset);
-        let idx2morton = {
-            let mut idx2morton = vec![0u32; num_idx];
-            for idx in 0..num_idx as usize {
-                let jdx = idx2jdx_offset[idx] as usize;
-                assert!(jdx < num_vtx as usize);
-                idx2morton[idx] = jdx2morton[jdx];
-            }
+        let (idx2morton, idx2jdx_offset) = {
+            let mut jdx2idx = vec![0u32; num_vtx];
+            del_msh_cpu::array1d::unique_for_sorted_array(&jdx2morton, &mut jdx2idx);
+            let num_idx = *jdx2idx.last().unwrap() as usize + 1;
+            let mut idx2jdx_offset = vec![0u32; num_idx + 1];
+            del_msh_cpu::map_idx::inverse(&jdx2idx, &mut idx2jdx_offset);
+            let idx2morton = {
+                let mut idx2morton = vec![0u32; num_idx];
+                for idx in 0..num_idx as usize {
+                    let jdx = idx2jdx_offset[idx] as usize;
+                    assert!(jdx < num_vtx as usize);
+                    idx2morton[idx] = jdx2morton[jdx];
+                }
+                (idx2morton, idx2jdx_offset)
+            };
             idx2morton
         };
-        del_msh_cpu::quad_oct_tree::check_octree_vtx2xyz::<3, 16>(
-            &vtx2xyz,
-            &transform_world2unit,
-            &jdx2vtx,
-            &idx2onode,
-            &idx2center,
-            max_depth,
-            &onode2center,
-            &onode2depth,
-        );
+        let (onode2idx_tree, idx2onode, onode2center, onode2depth) = {
+            let (onode2idx_tree, onode2center, onode2depth, idx2onode, idx2center) =
+                del_msh_cpu::quad_oct_tree::construct_octree(&idx2morton, 10);
+            del_msh_cpu::quad_oct_tree::check_octree_vtx2xyz::<3, 16>(
+                &vtx2xyz,
+                &transform_world2unit,
+                &idx2jdx_offset,
+                &jdx2vtx,
+                &idx2onode,
+                &idx2center,
+                max_depth,
+                &onode2center,
+                &onode2depth,
+            );
+            (onode2idx_tree, idx2onode, onode2center, onode2depth)
+        };
+        let num_onode = onode2idx_tree.len() / 9;
         let mut onode2gcunit = vec![[0f32; 3]; num_onode];
         del_msh_cpu::quad_oct_tree::onode2gcuint_for_octree(
+            &idx2jdx_offset,
             &jdx2vtx,
             &idx2onode,
             &vtx2xyz,
             &transform_world2unit,
-            &onodes,
+            &onode2idx_tree,
             &mut onode2gcunit,
-        );
-        let mut onode2rhs = vec![0f32; num_onode * 3];
-        del_msh_cpu::quad_oct_tree::aggregate_with_map(
-            3,
-            &jdx2vtx,
-            &vtx2rhs,
-            &idx2onode,
-            9,
-            &onodes,
-            &mut onode2rhs,
         );
         {
             // assertion
@@ -134,6 +150,17 @@ fn main() {
             use del_geo_core::vec3::Vec3;
             assert!(gc_unit.sub(&onode2gcunit[0]).norm() < 1.0e-6);
         }
+        let mut onode2rhs = vec![0f32; num_onode * 3];
+        del_msh_cpu::quad_oct_tree::aggregate_with_map(
+            &idx2jdx_offset,
+            3,
+            &jdx2vtx,
+            &vtx2rhs,
+            &idx2onode,
+            9,
+            &onode2idx_tree,
+            &mut onode2rhs,
+        );
         let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
         del_msh_cpu::nbody::barnes_hut(
             &spoisson,
@@ -143,7 +170,7 @@ fn main() {
             &mut vtx2lhs,
             &transform_world2unit,
             del_msh_cpu::nbody::Octree {
-                onodes: &onodes,
+                onodes: &onode2idx_tree,
                 onode2center: &onode2center,
                 onode2depth: &onode2depth,
             },
@@ -167,7 +194,5 @@ fn main() {
     }
     hoge("target/green1b.obj".to_string(), &vtx2xyz, &vtx2lhs0);
     hoge("target/green1c.obj".to_string(), &vtx2xyz, &vtx2lhs1);
-    del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz("target/green0.obj", &tri2vtx, &vtx2xyz, 3)
-        .unwrap();
     //dbg!(tri2vtx);
 }

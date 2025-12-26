@@ -139,7 +139,8 @@ pub fn barnes_hut<M: Model>(
     onode2rhs: &[f32],
     theta: f32,
 ) {
-    let transform_unit2world = del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2unit).unwrap();
+    let transform_unit2world =
+        del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2unit).unwrap();
     let num_vtx = vtx2xyz.len() / 3;
     assert_eq!(vtx2xyz.len(), num_vtx * 3);
     assert_eq!(vtx2rhs.len(), num_vtx * 3);
@@ -166,7 +167,7 @@ pub fn barnes_hut<M: Model>(
         onode2gcunit: &[[f32; 3]],
         onode2rhs: &[f32],
         theta: f32,
-        transform_unit2world: [f32;16],
+        transform_unit2world: [f32; 16],
         idx2jdx_offset: &[u32],
         jdx2vtx: &[u32],
     ) {
@@ -183,9 +184,12 @@ pub fn barnes_hut<M: Model>(
         let delta_unit = del_geo_core::edge3::length(center_unit, &gc_unit);
         if dist_unit - delta_unit > 0. && celllen_unit < (dist_unit - delta_unit) * theta {
             // cell is enough far
-            let pos_gc_world = del_geo_core::mat4_col_major::transform_homogeneous(&transform_unit2world, &gc_unit).unwrap();
-            let pos_relative_world =
-                del_geo_core::vec3::sub(&pos_i_world, &pos_gc_world);
+            let pos_gc_world = del_geo_core::mat4_col_major::transform_homogeneous(
+                &transform_unit2world,
+                &gc_unit,
+            )
+            .unwrap();
+            let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, &pos_gc_world);
             let rhs_j = arrayref::array_ref![onode2rhs, j_onode * 3, 3];
             let force_i = spoisson.eval(&pos_relative_world, rhs_j);
             lhs_i[0] += force_i[0];
@@ -201,7 +205,7 @@ pub fn barnes_hut<M: Model>(
             let j_onode_child = j_onode_child as usize;
             if j_onode_child >= num_onode {
                 let idx = j_onode_child - num_onode;
-                for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx+1] {
+                for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx + 1] {
                     let j_vtx = jdx2vtx[jdx as usize] as usize;
                     let pos_j_world = arrayref::array_ref![vtx2xyz, j_vtx * 3, 3];
                     let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, pos_j_world);
@@ -228,7 +232,7 @@ pub fn barnes_hut<M: Model>(
                     theta,
                     transform_unit2world,
                     idx2jdx_offset,
-                    jdx2vtx
+                    jdx2vtx,
                 );
             }
         }

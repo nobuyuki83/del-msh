@@ -97,7 +97,7 @@ def mat4_from_transfrom_world2unit(vtx2xyz):
     xyz_len = xyz_max - xyz_min
     scale = 1.0/xyz_len.max().item()
     xyz_center = (xyz_min + xyz_max)*0.5
-    print(xyz_min, xyz_max, xyz_len, xyz_center, scale)
+    # print(xyz_min, xyz_max, xyz_len, xyz_center, scale)
     m1 = mat4_from_translate(-xyz_center)
     m2 = mat4_from_uniform_scale(scale)
     m3 = mat4_from_translate([0.5, 0.5, 0.5])
@@ -117,12 +117,12 @@ class TreeAccelerator:
     def initialize(self, vtx2xyz):
         self.transform_world2unit = mat4_from_transfrom_world2unit(vtx2xyz)
         num_dim = vtx2xyz.shape[1]
-        self.vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+        vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
             vtx2xyz, self.transform_world2unit)
-        (self.jdx2vtx, self.jdx2morton) = del_msh_dlpack.Array1D.torch.argsort(self.vtx2morton)
-        self.jdx2idx, idx2morton, self.idx2jdx_offset = del_msh_dlpack.Array1D.torch.unique_for_sorted_array(self.jdx2morton)
+        (self.jdx2vtx, jdx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
+        jdx2idx, idx2morton, self.idx2jdx_offset = del_msh_dlpack.Array1D.torch.unique_for_sorted_array(jdx2morton)
         assert not del_msh_dlpack.Array1D.torch.has_duplicate_in_sorted_array(idx2morton)
-        assert torch.equal(idx2morton, torch.unique(self.jdx2morton.to(torch.int32)).to(torch.uint32))
+        assert torch.equal(idx2morton, torch.unique(jdx2morton.to(torch.int32)).to(torch.uint32))
         self.tree2idx.construct_from_idx2morton(idx2morton, num_dim, False)
         self.onode2cgunit = self.constract_center_of_gravity(self.idx2jdx_offset, self.jdx2vtx, vtx2xyz, self.transform_world2unit)
         self.vtx2xyz = vtx2xyz
@@ -144,20 +144,55 @@ class TreeAccelerator:
 
 
 def screened_poisson_with_acceleration(
-        acc: TreeAccelerator,
         vtx2rhs: torch.Tensor,
         lambda_: float ,
         eps: float,
-        wtx2xyz: TreeAccelerator,
+        wtx2xyz: torch.Tensor,
+        acc: TreeAccelerator,
         theta: float):
     num_vtx = vtx2rhs.shape[0]
+    num_wtx = wtx2xyz.shape[0]
+    num_idx = acc.idx2jdx_offset.shape[0] - 1
+    num_onode = acc.tree2idx.onodes.shape[0]
+    device = vtx2rhs.device
+    #
+    assert wtx2xyz.shape == (num_wtx, 3)
+    assert vtx2rhs.shape == (num_vtx, 3)
     assert acc.vtx2xyz.shape == (num_vtx, 3)
-    assert acc.vtx2morton.shape == (num_vtx, )
     assert acc.jdx2vtx.shape == (num_vtx, )
-    assert acc.jdx2idx.shape == (num_vtx, )
-    assert acc.jdx2morton.shape == (num_vtx, )
+    assert acc.tree2idx.idx2onode.shape == (num_idx, )
+    assert acc.tree2idx.onodes.shape == (num_onode, 9)
+    assert acc.tree2idx.onode2depth.shape == (num_onode, )
+    assert acc.tree2idx.onode2center.shape == (num_onode, 3)
     idx2aggrhs = del_msh_dlpack.OffsetArray.torch.aggregate(acc.idx2jdx_offset, acc.jdx2vtx, vtx2rhs)
     onode2aggrhs = acc.tree2idx.aggregate(idx2aggrhs)
+    wtx2lhs = torch.zeros((num_wtx, 3), dtype=torch.float32)
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
+    from .. import NBody
+
+    NBody.screened_poisson_with_acceleration(
+        util_torch.to_dlpack_safe(acc.vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
+        util_torch.to_dlpack_safe(wtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(wtx2lhs, stream_ptr),
+        lambda_,
+        eps,
+        util_torch.to_dlpack_safe(acc.transform_world2unit.permute(1, 0).contiguous().view(-1), stream_ptr),
+        util_torch.to_dlpack_safe(acc.idx2jdx_offset, stream_ptr),
+        util_torch.to_dlpack_safe(acc.jdx2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(acc.tree2idx.onodes, stream_ptr),
+        util_torch.to_dlpack_safe(acc.tree2idx.onode2center, stream_ptr),
+        util_torch.to_dlpack_safe(acc.tree2idx.onode2depth, stream_ptr),
+        util_torch.to_dlpack_safe(acc.onode2cgunit, stream_ptr),
+        util_torch.to_dlpack_safe(onode2aggrhs, stream_ptr),
+        theta,
+        stream_ptr)
+    return wtx2lhs
 
 
 

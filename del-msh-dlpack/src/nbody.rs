@@ -5,7 +5,10 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(nbody_screened_poisson, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(nbody_elastic, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(nbody_screened_poisson_with_acceleration, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        nbody_screened_poisson_with_acceleration,
+        m
+    )?)?;
     Ok(())
 }
 
@@ -150,7 +153,6 @@ fn nbody_elastic(
     Ok(())
 }
 
-
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
 fn nbody_screened_poisson_with_acceleration(
@@ -162,11 +164,11 @@ fn nbody_screened_poisson_with_acceleration(
     lambda: f32,
     epsilon: f32,
     transform_world2unit: &Bound<'_, PyAny>,
+    idx2jdx_offset: &Bound<'_, PyAny>,
+    jdx2vtx: &Bound<'_, PyAny>,
     onodes: &Bound<'_, PyAny>,
     onode2center: &Bound<'_, PyAny>,
     onode2depth: &Bound<'_, PyAny>,
-    idx2jdx_offset: &Bound<'_, PyAny>,
-    jdx2vtx: &Bound<'_, PyAny>,
     onode2gcunit: &Bound<'_, PyAny>,
     onode2rhs: &Bound<'_, PyAny>,
     theta: f32,
@@ -176,10 +178,14 @@ fn nbody_screened_poisson_with_acceleration(
     let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
     let wtx2co = del_dlpack::get_managed_tensor_from_pyany(wtx2co)?;
     let wtx2lhs = del_dlpack::get_managed_tensor_from_pyany(wtx2lhs)?;
-    let transform_world2unit  = del_dlpack::get_managed_tensor_from_pyany(transform_world2unit)?;
+    let transform_world2unit = del_dlpack::get_managed_tensor_from_pyany(transform_world2unit)?;
+    let idx2jdx_offset = del_dlpack::get_managed_tensor_from_pyany(idx2jdx_offset)?;
+    let jdx2vtx = del_dlpack::get_managed_tensor_from_pyany(jdx2vtx)?;
     let onodes = del_dlpack::get_managed_tensor_from_pyany(onodes)?;
     let onode2center = del_dlpack::get_managed_tensor_from_pyany(onode2center)?;
     let onode2depth = del_dlpack::get_managed_tensor_from_pyany(onode2depth)?;
+    let onode2gcunit = del_dlpack::get_managed_tensor_from_pyany(onode2gcunit)?;
+    let onode2rhs = del_dlpack::get_managed_tensor_from_pyany(onode2rhs)?;
     //
     let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
     let num_wtx = del_dlpack::get_shape_tensor(wtx2co, 0).unwrap();
@@ -194,7 +200,7 @@ fn nbody_screened_poisson_with_acceleration(
     del_dlpack::check_2d_tensor::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
     del_dlpack::check_1d_tensor::<f32>(transform_world2unit, 16, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(onodes, num_onode, 9, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(onode2center, num_onode, 3, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(onode2center, num_onode, 3, device).unwrap();
     del_dlpack::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
     //
     match device {
@@ -203,12 +209,20 @@ fn nbody_screened_poisson_with_acceleration(
             let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
             let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
             let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
-            let transform_world2unit = unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2unit) }.unwrap();
+            let transform_world2unit =
+                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2unit) }.unwrap();
             let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 16];
+            let idx2jdx_offset = unsafe { del_dlpack::slice_from_tensor(idx2jdx_offset) }.unwrap();
+            let jdx2vtx = unsafe { del_dlpack::slice_from_tensor(jdx2vtx) }.unwrap();
             let onodes = unsafe { del_dlpack::slice_from_tensor::<u32>(onodes) }.unwrap();
-            let onode2center = unsafe { del_dlpack::slice_from_tensor::<f32>(onode2center) }.unwrap();
+            let onode2center =
+                unsafe { del_dlpack::slice_from_tensor::<f32>(onode2center) }.unwrap();
             let onode2depth = unsafe { del_dlpack::slice_from_tensor::<u32>(onode2depth) }.unwrap();
+            let onode2gcunit =
+                unsafe { del_dlpack::slice_from_tensor::<f32>(onode2gcunit) }.unwrap();
+            let onode2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(onode2rhs) }.unwrap();
             let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(lambda, epsilon);
+            use slice_of_array::SliceNestExt;
             del_msh_cpu::nbody::barnes_hut(
                 &spoisson,
                 vtx2co,
@@ -216,18 +230,19 @@ fn nbody_screened_poisson_with_acceleration(
                 wtx2co,
                 wtx2lhs,
                 transform_world2unit,
-                del_msh_cpu::nbody::Octree{
+                del_msh_cpu::nbody::Octree {
                     onodes,
                     onode2center,
-                    onode2depth
+                    onode2depth,
                 },
                 idx2jdx_offset,
                 jdx2vtx,
-                onode2gcunit,
+                onode2gcunit.nest(),
                 onode2rhs,
-                theta);
+                theta,
+            );
             //    &spoisson, wtx2co, wtx2lhs, vtx2co, vtx2rhs);
-        },
+        }
         _ => {
             todo!()
         }
