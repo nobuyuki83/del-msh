@@ -529,7 +529,7 @@ pub fn onode2gcuint_for_octree(
     }
     for i_onode in 0..num_onode {
         assert!(onode2nvtx[i_onode] > 0.);
-        let s = 1.0 / onode2nvtx[i_onode] as f32;
+        let s = 1.0 / onode2nvtx[i_onode];
         onode2gcunit[i_onode][0] *= s;
         onode2gcunit[i_onode][1] *= s;
         onode2gcunit[i_onode][2] *= s;
