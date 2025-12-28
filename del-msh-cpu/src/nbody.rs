@@ -2,6 +2,80 @@ pub trait Model {
     fn eval(&self, pos_relative: &[f32; 3], rhs: &[f32; 3]) -> [f32; 3];
 }
 
+pub enum NBodyModel {
+    ScreenedPoison {
+        eps: f32,
+        norm: f32,
+        lambda: f32,
+        sqrt_lambda: f32,
+    },
+    Elastic {
+        nu: f32,
+        eps: f32,
+        norm: f32,
+        a: f32,
+        b: f32,
+    },
+}
+
+impl NBodyModel {
+    pub fn screened_poisson(lambda: f32, eps: f32) -> Self {
+        let sqrt_lambda = lambda.sqrt();
+        let norm = eps / (-eps / sqrt_lambda).exp(); // normalization factor
+        Self::ScreenedPoison {
+            lambda,
+            eps,
+            norm,
+            sqrt_lambda,
+        }
+    }
+
+    pub fn elastic(nu: f32, eps: f32) -> Self {
+        let a = 1. / (4. * std::f32::consts::PI);
+        let b = a / (4. * (1. - nu));
+        let norm = eps / (1.5 * a - b);
+        Self::Elastic {
+            nu,
+            eps,
+            norm,
+            a,
+            b,
+        }
+    }
+
+    fn eval(&self, r: &[f32; 3], rhs_j: &[f32; 3]) -> [f32; 3] {
+        match self {
+            NBodyModel::ScreenedPoison {
+                eps,
+                norm,
+                sqrt_lambda,
+                ..
+            } => {
+                let dist_squared = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+                let r_eps = (dist_squared + eps * eps).sqrt();
+                let k = norm * (-r_eps / sqrt_lambda).exp() / r_eps;
+                del_geo_core::vec3::scale(rhs_j, k)
+            }
+            NBodyModel::Elastic {
+                eps, norm, a, b, ..
+            } => {
+                let r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+                let r_eps = (r2 + eps * eps).sqrt();
+                let r_eps_inv = 1. / r_eps;
+                let r_eps3_inv = 1. / (r_eps * r_eps * r_eps);
+                let coeff_i = norm * ((a - b) * r_eps_inv + 0.5 * a * eps * eps * r_eps3_inv);
+                let coeff_rr_t = norm * b * r_eps3_inv;
+                let dot_rg = r[0] * rhs_j[0] + r[1] * rhs_j[1] + r[2] * rhs_j[2];
+                [
+                    coeff_i * rhs_j[0] + coeff_rr_t * dot_rg * r[0],
+                    coeff_i * rhs_j[1] + coeff_rr_t * dot_rg * r[1],
+                    coeff_i * rhs_j[2] + coeff_rr_t * dot_rg * r[2],
+                ]
+            }
+        }
+    }
+}
+
 pub struct ScreenedPoison {
     eps: f32,
     norm: f32,
@@ -37,7 +111,7 @@ pub struct Elastic {
 }
 
 impl Elastic {
-    fn new(nu: f32, eps: f32) -> Self {
+    pub fn new(nu: f32, eps: f32) -> Self {
         let a = 1. / (4. * std::f32::consts::PI);
         let b = a / (4. * (1. - nu));
         let norm = eps / (1.5 * a - b);
@@ -63,8 +137,8 @@ impl Model for Elastic {
     }
 }
 
-pub fn screened_poisson3<M: Model>(
-    spoisson: &M,
+pub fn filter_brute_force(
+    spoisson: &NBodyModel,
     wtx2co: &[f32],
     wtx2lhs: &mut [f32],
     vtx2co: &[f32],
@@ -81,40 +155,12 @@ pub fn screened_poisson3<M: Model>(
             use del_geo_core::vec3;
             let xyz_diff = vec3::sub(co_i, co_j);
             let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
-            let res = spoisson.eval(&xyz_diff, rhs_j);
-            vec3::add_in_place(&mut result, &res);
+            let lhs_i = spoisson.eval(&xyz_diff, rhs_j);
+            vec3::add_in_place(&mut result, &lhs_i);
         }
         wtx2lhs[i_wtx * 3] = result[0];
         wtx2lhs[i_wtx * 3 + 1] = result[1];
         wtx2lhs[i_wtx * 3 + 2] = result[2];
-    }
-}
-
-pub fn elastic3(
-    wtx2co: &[f32],
-    wtx2lhs: &mut [f32],
-    nu: f32,
-    eps: f32,
-    vtx2co: &[f32],
-    vtx2rhs: &[f32],
-) {
-    use del_geo_core::vec3;
-    let num_wtx = wtx2co.len() / 3;
-    let num_vtx = vtx2co.len() / 3;
-    let elastic = Elastic::new(nu, eps);
-    for i_wtx in 0..num_wtx {
-        let mut lhs_i = [0f32; 3];
-        let co_i = arrayref::array_ref![wtx2co, i_wtx * 3, 3];
-        for j_vtx in 0..num_vtx {
-            let co_j = arrayref::array_ref![vtx2co, j_vtx * 3, 3];
-            let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
-            let r = vec3::sub(co_i, co_j);
-            let force_i = elastic.eval(&r, rhs_j);
-            vec3::add_in_place(&mut lhs_i, &force_i);
-        }
-        wtx2lhs[i_wtx * 3] = lhs_i[0];
-        wtx2lhs[i_wtx * 3 + 1] = lhs_i[1];
-        wtx2lhs[i_wtx * 3 + 2] = lhs_i[2];
     }
 }
 
@@ -125,8 +171,8 @@ pub struct Octree<'a> {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn barnes_hut<M: Model>(
-    spoisson: &M,
+pub fn barnes_hut(
+    model: &NBodyModel,
     vtx2xyz: &[f32],
     vtx2rhs: &[f32],
     wtx2xyz: &[f32],
@@ -153,8 +199,8 @@ pub fn barnes_hut<M: Model>(
     assert_eq!(octree.onode2depth.len(), num_onode);
     assert_eq!(octree.onode2center.len(), num_onode * 3);
     #[allow(clippy::too_many_arguments)]
-    fn get_force<M: Model>(
-        spoisson: &M,
+    fn get_force(
+        model: &NBodyModel,
         vtx2xyz: &[f32],
         vtx2rhs: &[f32],
         pos_i_world: &[f32; 3],
@@ -164,7 +210,7 @@ pub fn barnes_hut<M: Model>(
         onodes: &[u32],
         onode2center: &[f32],
         onode2depth: &[u32],
-        onode2gcunit: &[[f32; 3]],
+        onode2cogunit: &[[f32; 3]],
         onode2rhs: &[f32],
         theta: f32,
         transform_unit2world: [f32; 16],
@@ -178,20 +224,20 @@ pub fn barnes_hut<M: Model>(
         assert_eq!(jdx2vtx.len(), num_vtx);
         assert!(j_onode < num_onode);
         let center_unit = arrayref::array_ref![onode2center, j_onode * 3, 3];
-        let gc_unit = onode2gcunit[j_onode];
+        let cog_unit = onode2cogunit[j_onode];
         let celllen_unit = 1.0 / (1 << onode2depth[j_onode]) as f32;
-        let dist_unit = del_geo_core::edge3::length(pos_i_unit, &gc_unit);
-        let delta_unit = del_geo_core::edge3::length(center_unit, &gc_unit);
+        let dist_unit = del_geo_core::edge3::length(pos_i_unit, &cog_unit);
+        let delta_unit = del_geo_core::edge3::length(center_unit, &cog_unit);
         if dist_unit - delta_unit > 0. && celllen_unit < (dist_unit - delta_unit) * theta {
             // cell is enough far
-            let pos_gc_world = del_geo_core::mat4_col_major::transform_homogeneous(
+            let pos_cog_world = del_geo_core::mat4_col_major::transform_homogeneous(
                 &transform_unit2world,
-                &gc_unit,
+                &cog_unit,
             )
             .unwrap();
-            let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, &pos_gc_world);
+            let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, &pos_cog_world);
             let rhs_j = arrayref::array_ref![onode2rhs, j_onode * 3, 3];
-            let force_i = spoisson.eval(&pos_relative_world, rhs_j);
+            let force_i = model.eval(&pos_relative_world, rhs_j);
             lhs_i[0] += force_i[0];
             lhs_i[1] += force_i[1];
             lhs_i[2] += force_i[2];
@@ -210,14 +256,14 @@ pub fn barnes_hut<M: Model>(
                     let pos_j_world = arrayref::array_ref![vtx2xyz, j_vtx * 3, 3];
                     let pos_relative_world = del_geo_core::vec3::sub(pos_i_world, pos_j_world);
                     let rhs_j = arrayref::array_ref![vtx2rhs, j_vtx * 3, 3];
-                    let res = spoisson.eval(&pos_relative_world, rhs_j);
+                    let res = model.eval(&pos_relative_world, rhs_j);
                     lhs_i[0] += res[0];
                     lhs_i[1] += res[1];
                     lhs_i[2] += res[2];
                 }
             } else {
                 get_force(
-                    spoisson,
+                    model,
                     vtx2xyz,
                     vtx2rhs,
                     pos_i_world,
@@ -227,7 +273,7 @@ pub fn barnes_hut<M: Model>(
                     onodes,
                     onode2center,
                     onode2depth,
-                    onode2gcunit,
+                    onode2cogunit,
                     onode2rhs,
                     theta,
                     transform_unit2world,
@@ -243,7 +289,7 @@ pub fn barnes_hut<M: Model>(
             del_geo_core::mat4_col_major::transform_homogeneous(transform_world2unit, pos_world)
                 .unwrap();
         get_force(
-            spoisson,
+            model,
             vtx2xyz,
             vtx2rhs,
             pos_world,

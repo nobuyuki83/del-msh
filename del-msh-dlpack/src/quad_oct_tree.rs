@@ -306,14 +306,6 @@ pub fn quad_oct_tree_aggregate(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            /*
-            let (fnc, _mdl) = del_cudarc_sys::load_function_in_module(
-                del_msh_cuda_kernel::QUAD_OCT_TREE,
-                "aggregate",
-            )
-            .unwrap();
-             */
-            //let fnc = crate::load_get_function("quad_oct_tree", "aggregate").unwrap();
             let fnc = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh::quad_oct_tree",
                 del_msh_cuda_kernels::get("quad_oct_tree").unwrap(),

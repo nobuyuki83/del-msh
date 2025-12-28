@@ -53,10 +53,10 @@ fn main() {
             .for_each(|v| *v = rng.random::<f32>() * 2.0 - 1.0);
         grad0
     };
-    let spoisson = del_msh_cpu::nbody::ScreenedPoison::new(10.0, 1.0e-3);
+    let spoisson = del_msh_cpu::nbody::NBodyModel::screened_poisson(10.0, 1.0e-3);
     let vtx2lhs0 = {
         let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
-        del_msh_cpu::nbody::screened_poisson3(
+        del_msh_cpu::nbody::filter_brute_force(
             &spoisson,
             &vtx2xyz,
             &mut vtx2lhs,

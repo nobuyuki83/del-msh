@@ -21,6 +21,7 @@ pyo3 = { version = "0.26.0", features = ["extension-module"] }
 del-msh-cpu.workspace = true
 arrayref.workspace = true
 slice-of-array.workspace = true
+del-geo-core.workspace = true
 
 # local crates
 del-msh-cuda-kernels = { path="../del-msh-cuda-kernels", optional = true }
