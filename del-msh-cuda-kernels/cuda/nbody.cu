@@ -58,7 +58,7 @@ __device__ void filter_with_acceleration(
     //
     float lhs[3] = {0.f};
     //
-    uint32_t stack_node[72];
+    uint32_t stack_node[56];
     int stack_top = 0;
     stack_node[stack_top++] = 0; // root node
 

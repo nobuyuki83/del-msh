@@ -4,6 +4,7 @@ import del_msh_dlpack.QuadOctTree.torch
 import del_msh_dlpack.Mortons.torch
 import del_msh_dlpack.Array1D.torch
 from .. import NBody
+import time
 
 
 def filter_brute_force(

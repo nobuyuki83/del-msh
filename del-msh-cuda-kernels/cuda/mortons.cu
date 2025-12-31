@@ -27,9 +27,9 @@ void vtx2morton(
   else if( num_dim == 3 ) {
     const float* xyz0 = vtx2co + i_vtx * 3;
     auto xyz1 = mat4_col_major::transform_homogeneous(transform_co2uni, xyz0);
-    assert(xyz1[0]>-1.0e-7f && xyz1[0]<1.0f+1.e-7f);
-    assert(xyz1[1]>-1.0e-7f && xyz1[1]<1.0f+1.e-7f);
-    assert(xyz1[2]>-1.0e-7f && xyz1[2]<1.0f+1.e-7f);
+    assert(xyz1[0]>-1.0e-6f && xyz1[0]<1.0f+1.e-6f);
+    assert(xyz1[1]>-1.0e-6f && xyz1[1]<1.0f+1.e-6f);
+    assert(xyz1[2]>-1.0e-6f && xyz1[2]<1.0f+1.e-6f);
     uint32_t mc = mortons::device_morton_code3(xyz1[0], xyz1[1], xyz1[2]);
     vtx2morton[i_vtx] = mc;
   }

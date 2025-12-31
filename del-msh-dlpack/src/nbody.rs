@@ -1,3 +1,4 @@
+use del_cudarc_sys::LaunchConfig;
 #[cfg(feature = "cuda")]
 use del_cudarc_sys::{cu::CUdeviceptr, CuVec};
 use del_dlpack::dlpack;
@@ -303,6 +304,16 @@ fn filter_with_acceleration(
                 del_msh_cpu::nbody::NBodyModel::Elastic {
                     nu, eps: epsilon, ..
                 } => {
+                    //let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32);
+                    let cfg = {
+                        const NUM_THREADS: u32 = 128;
+                        let num_blocks = (num_wtx as u32).div_ceil(NUM_THREADS);
+                        del_cudarc_sys::LaunchConfig {
+                            grid_dim: (num_blocks, 1, 1),
+                            block_dim: (NUM_THREADS, 1, 1),
+                            shared_mem_bytes: 0,
+                        }
+                    };
                     let func = del_cudarc_sys::cache_func::get_function_cached(
                         "del_msh::nbody",
                         del_msh_cuda_kernels::get("nbody").unwrap(),
@@ -329,12 +340,7 @@ fn filter_with_acceleration(
                     builder.arg_data(&onode2gcunit.data);
                     builder.arg_data(&onode2rhs.data);
                     builder.arg_f32(theta);
-                    builder
-                        .launch_kernel(
-                            func,
-                            del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
-                        )
-                        .unwrap();
+                    builder.launch_kernel(func, cfg).unwrap();
                 }
             }
         }
