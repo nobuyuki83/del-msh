@@ -17,3 +17,14 @@ def save_vtk(
     return io_vtk_write_mix_mesh(path_file, vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx)
 
 
+def to_polyhedron_mesh(
+    tet2vtx,
+    pyrmd2vtx,
+    prism2vtx,
+    elem2idx_offset,
+    idx2vtx):
+    from ..del_msh_dlpack import mix_mesh_to_polyhedron_mesh
+
+    return mix_mesh_to_polyhedron_mesh(tet2vtx, pyrmd2vtx, prism2vtx, elem2idx_offset, idx2vtx)
+
+

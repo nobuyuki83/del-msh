@@ -89,6 +89,29 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
     }
 }
 
+/// Build Axis-Aligned Bounding Boxes (AABBs) for all nodes in a BVH tree structure.
+///
+/// Generates a complete array of AABBs for a BVH tree built over uniform mesh elements.
+/// Each AABB encloses the geometry of one BVH node. Recursively computes AABBs from
+/// leaf nodes (containing elements/vertices) up to the root.
+///
+/// # Arguments
+/// * `i_bvhnode` - Root BVH node index to start building from (typically 0)
+/// * `bvhnodes` - BVH tree structure (3 indices per node: parent, child0, child1)
+/// * `elem2vtx` - Optional element-to-vertex mapping (vertex_indices, num_nodes_per_element).
+///               If None, BVH directly stores vertex indices (no element indirection)
+/// * `vtx2xyz0` - Vertex coordinates at time t=0 (required)
+/// * `vtx2xyz1` - Optional vertex coordinates at time t=1 for Continuous-Collision Detection (CCD).
+///               If provided, AABBs will enclose geometry swept through the motion
+///
+/// # Returns
+/// * `Vec<Real>` - Flattened AABB array where each node i has 4 values at indices [4*i..4*i+4]
+///                representing [x_min, y_min, x_max, y_max]
+///
+/// # Notes
+/// * AABBs are computed bottom-up: leaf nodes first, then branch nodes merge child AABBs
+/// * For CCD, the AABB represents the union of geometry at both start and end positions
+/// * All nodes are processed, even if not reachable from i_bvhnode (complete tree coverage)
 pub fn from_uniform_mesh_with_bvh<Index, Real>(
     i_bvhnode: usize,
     bvhnodes: &[Index],
@@ -100,8 +123,11 @@ where
     Real: num_traits::Float,
     Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
+    // Calculate total number of BVH nodes (each node stores 3 indices)
     let num_bvhnode = bvhnodes.len() / 3;
+    // Allocate AABB storage: 4 values per node (x_min, y_min, x_max, y_max)
     let mut bvhnode2aabb = vec![Real::zero(); num_bvhnode * 4];
+    // Recursively compute AABBs for entire tree from root node
     update_for_uniform_mesh_with_bvh::<Index, Real>(
         &mut bvhnode2aabb,
         i_bvhnode,

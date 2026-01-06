@@ -5,14 +5,14 @@ use num_traits::AsPrimitive;
 /// elements surrounding a vertex.
 /// The element can be mixture of line, polygon and polyhedron
 pub fn from_polygon_mesh(
-    elem2idx: &[usize],
+    elem2idx_offset: &[usize],
     idx2vtx: &[usize],
     num_vtx: usize,
 ) -> (Vec<usize>, Vec<usize>) {
-    let num_elem = elem2idx.len() - 1;
+    let num_elem = elem2idx_offset.len() - 1;
     let mut vtx2jdx = vec![0usize; num_vtx + 1];
     for i_elem in 0..num_elem {
-        for i0_vtx in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
+        for i0_vtx in &idx2vtx[elem2idx_offset[i_elem]..elem2idx_offset[i_elem + 1]] {
             vtx2jdx[i0_vtx + 1] += 1;
         }
     }
@@ -22,7 +22,7 @@ pub fn from_polygon_mesh(
     let num_jdx = vtx2jdx[num_vtx];
     let mut jdx2elem = vec![0; num_jdx];
     for i_elem in 0..num_elem {
-        for &i_vtx0 in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
+        for &i_vtx0 in &idx2vtx[elem2idx_offset[i_elem]..elem2idx_offset[i_elem + 1]] {
             let jdx0 = vtx2jdx[i_vtx0];
             jdx2elem[jdx0] = i_elem;
             vtx2jdx[i_vtx0] += 1;
