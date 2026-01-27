@@ -1,6 +1,5 @@
-use del_cudarc_sys::LaunchConfig;
 #[cfg(feature = "cuda")]
-use del_cudarc_sys::{cu::CUdeviceptr, CuVec};
+use del_cudarc_sys::{cu::CUdeviceptr, CuVec, LaunchConfig};
 use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
