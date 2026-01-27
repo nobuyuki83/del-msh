@@ -2,6 +2,7 @@
 
 use num_traits::AsPrimitive;
 
+/// Compute N×N covariance matrix for an N-dimensional polyline based on edge integration.
 pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> [[T; N]; N]
 where
     T: num_traits::Float + Copy + 'static + std::iter::Sum,
@@ -12,22 +13,32 @@ where
     let six = three + three;
     let num_vtx = vtx2xyz.len() / N;
     assert_eq!(vtx2xyz.len(), num_vtx * N);
+
+    // Compute center of geometry weighted by edge lengths
     let cog: [T; N] = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz);
     let mut cov = [[T::zero(); N]; N];
+
+    // Integrate covariance contributions from each edge
     for i_edge in 0..num_vtx - 1 {
         let iv0 = i_edge;
         let iv1 = i_edge + 1;
         use del_geo_core::vecn::VecN;
+
+        // Get edge endpoint coordinates centered at center of geometry
         let q0: &[T; N] = &vtx2xyz[iv0 * N..iv0 * N + N].try_into().unwrap();
-        let q0 = q0.sub(&cog);
+        let q0 = q0.sub(&cog); // Translate to COG
         let q1: &[T; N] = &vtx2xyz[iv1 * N..iv1 * N + N].try_into().unwrap();
-        let q1 = q1.sub(&cog);
+        let q1 = q1.sub(&cog); // Translate to COG
+
+        // Edge length for numerical integration weighting
         let l = q0.sub(&q1).norm();
+
+        // Accumulate covariance: integral uses l/3 for quadratic terms and l/6 for cross terms
         for i in 0..N {
             for j in 0..N {
                 cov[i][j] = cov[i][j]
-                    + (q0[i] * q0[j] + q1[i] * q1[j]) * (l / three)
-                    + (q0[i] * q1[j] + q1[i] * q0[j]) * (l / six);
+                    + (q0[i] * q0[j] + q1[i] * q1[j]) * (l / three) // Quadratic integration weight
+                    + (q0[i] * q1[j] + q1[i] * q0[j]) * (l / six); // Cross term integration weight
             }
         }
     }
@@ -75,6 +86,8 @@ where
     stroke
 }
 
+/// Resample polyline with fixed interval while preserving corner vertices.
+/// Inserts evenly-spaced points on each segment, keeping all original vertices.
 pub fn resample_preserve_corner<T, const NDIM: usize>(stroke0: &[[T; NDIM]], l: T) -> Vec<[T; NDIM]>
 where
     T: num_traits::Float + Copy + AsPrimitive<usize>,

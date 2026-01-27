@@ -6,13 +6,9 @@ def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor
     num_dim = vtx2co.shape[1]
     device = vtx2co.device
     #
-    assert len(vtx2co.shape) == 2
     assert num_dim == 2 or num_dim == 3
-    assert vtx2co.dtype == torch.float32
-    assert len(transform_co2unit.shape) == 2
-    assert transform_co2unit.shape[0] == num_dim + 1
-    assert transform_co2unit.shape[1] == num_dim + 1
-    assert transform_co2unit.dtype == torch.float32
+    util_torch.assert_shape_dtype_device(vtx2co, shape=(num_vtx, num_dim), dtype=torch.float32, device=device)
+    util_torch.assert_shape_dtype_device(transform_co2unit, shape=(num_dim+1, num_dim+1), dtype=torch.float32, device=device)
     #
     vtx2morton = torch.empty((num_vtx,), device=device, dtype=torch.uint32)
     stream_ptr = 0

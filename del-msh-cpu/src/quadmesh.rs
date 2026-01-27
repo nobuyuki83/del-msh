@@ -1,7 +1,9 @@
 //! method for quad mesh
 
 use num_traits::AsPrimitive;
-#[allow(clippy::identity_op)]
+
+/// Generate a regular grid quad mesh with nx×ny quads at integer coordinates.
+/// Returns (quad2vtx, vtx2xy) with counter-clockwise vertex ordering.
 pub fn from_grid<Real>(nx: usize, ny: usize) -> (Vec<usize>, Vec<Real>)
 where
     Real: num_traits::Float + 'static + Default,
@@ -11,6 +13,7 @@ where
     let np = (nx + 1) * (ny + 1);
     let mut vtx2xy: Vec<Real> = vec![Default::default(); np * 2];
     for iy in 0..ny + 1 {
+        #[allow(clippy::identity_op)]
         for ix in 0..nx + 1 {
             let ip = iy * (nx + 1) + ix;
             vtx2xy[ip * 2 + 0] = ix.as_();
@@ -19,6 +22,7 @@ where
     }
     let mut quad2vtx = vec![0; nx * ny * 4];
     for iy in 0..ny {
+        #[allow(clippy::identity_op)]
         for ix in 0..nx {
             let iq = iy * nx + ix;
             quad2vtx[iq * 4 + 0] = (iy + 0) * (nx + 1) + (ix + 0);

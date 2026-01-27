@@ -42,16 +42,20 @@ pub fn vtx2vtx(
     crate::vtx2vtx::from_uniform_mesh(elem2vtx, num_node, num_vtx, is_self)
 }
 
+/// Compute vertex-to-element adjacency.
+/// Returns (vtx2idx, idx2elem) where vtx2idx gives index ranges for each vertex's adjacent elements.
 pub fn vtx2elem(elem2vtx: &[usize], num_node: usize, num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
     crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx)
 }
 
+/// Compute element-to-element adjacency through shared faces.
+/// Returns flattened array where each element has one neighbor index per face.
 pub fn elem2elem(
     elem2vtx: &[usize],
     num_node: usize,
-    face2idx: &[usize],
+    face2idx_offset: &[usize],
     idx2node: &[usize],
     num_vtx: usize,
 ) -> Vec<usize> {
-    crate::elem2elem::from_uniform_mesh(elem2vtx, num_node, face2idx, idx2node, num_vtx)
+    crate::elem2elem::from_uniform_mesh(elem2vtx, num_node, face2idx_offset, idx2node, num_vtx)
 }

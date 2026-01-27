@@ -18,7 +18,7 @@ fn io_cfd_mesh_txt_load(
     pyo3::Py<PyAny>,
     pyo3::Py<PyAny>,
 )> {
-    let data = del_msh_cpu::io_cfd_mesh_txt::read(path);
+    let data = del_msh_cpu::io_cfd_mesh_txt::read::<_, u32>(path);
     let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
         py,
         vec![(data.vtx2xyz.len() as i64) / 3, 3],

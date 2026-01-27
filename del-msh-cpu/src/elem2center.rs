@@ -56,23 +56,25 @@ where
 }
 
 /// the center of gravity of each element where mass is lumped at the vertices
-pub fn from_polygon_mesh_as_points<T>(
-    elem2idx: &[usize],
-    idx2vtx: &[usize],
+pub fn from_polygon_mesh_as_points<T, IDX>(
+    elem2idx_offset: &[IDX],
+    idx2vtx: &[IDX],
     vtx2xyz: &[T],
     num_dim: usize,
 ) -> Vec<T>
 where
+    IDX: num_traits::PrimInt + AsPrimitive<usize>,
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     usize: AsPrimitive<T>,
 {
     let mut cog = vec![T::zero(); num_dim];
-    let num_elem = elem2idx.len() - 1;
+    let num_elem = elem2idx_offset.len() - 1;
     let mut elem2cog = Vec::<T>::with_capacity(num_elem * num_dim);
     for i_elem in 0..num_elem {
         cog.fill(T::zero());
-        let num_vtx_in_elem = elem2idx[i_elem + 1] - elem2idx[i_elem];
-        for i_vtx0 in &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]] {
+        let num_vtx_in_elem = (elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem]).as_();
+        for &i_vtx0 in &idx2vtx[elem2idx_offset[i_elem].as_()..elem2idx_offset[i_elem + 1].as_()] {
+            let i_vtx0: usize = i_vtx0.as_();
             for idim in 0..num_dim {
                 cog[idim] += vtx2xyz[i_vtx0 * num_dim + idim];
             }

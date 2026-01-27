@@ -5,11 +5,8 @@ def permute(old2val: torch.Tensor, new2old: torch.Tensor):
     n = old2val.shape[0]
     device = old2val.device
     #
-    assert old2val.dtype == torch.uint32
-    assert old2val.shape == (n,)
-    assert new2old.dtype == torch.uint32
-    assert new2old.device == device
-    assert new2old.shape == old2val.shape
+    util_torch.assert_shape_dtype_device(old2val, shape=(n, ), dtype=torch.uint32, device=device)
+    util_torch.assert_shape_dtype_device(new2old, shape=(n, ), dtype=torch.uint32, device=device)
     #
     new2val = torch.empty(size=(n,), device=device, dtype=torch.uint32)
     #

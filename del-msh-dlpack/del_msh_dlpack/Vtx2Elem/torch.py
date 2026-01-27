@@ -6,6 +6,7 @@ from .. import util_torch
 def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int):
     """make vertex surrounding vertex data from uniform mesh"""
     device = elem2vtx.device
+    #
     assert len(elem2vtx.shape) == 2
     assert elem2vtx.dtype == torch.uint32
     #
