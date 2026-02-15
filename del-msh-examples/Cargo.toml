@@ -17,9 +17,9 @@ anyhow.workspace = true
 del-msh-cpu.workspace = true
 del-geo-core.workspace = true
 rayon.workspace = true
-eframe = "0.31.1"
+eframe = {version = "0.31.1", default-features = false, features = ["glow", "default_fonts"]}
 env_logger = "0.11.8"
-image = "0.25.6"
+image = "=0.25.8"
 
 # crates specific to this crate
 glutin = "0.32.2"
