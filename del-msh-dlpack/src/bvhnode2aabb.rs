@@ -22,9 +22,15 @@ pub fn bvhnode2aabb_update_aabb(
     let vtx2xyz0 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz0)?;
     let vtx2xyz1 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz1)?;
     {
-        let sh = unsafe { std::slice::from_raw_parts(vtx2xyz1.shape, 2) };
+        if !vtx2xyz1.strides.is_null() {
+            let st = unsafe { std::slice::from_raw_parts(vtx2xyz1.strides, 3) };
+            dbg!(st);
+        }
         dbg!(vtx2xyz1.strides);
-        dbg!(sh);
+        {
+            let sh = unsafe { std::slice::from_raw_parts(vtx2xyz1.shape, 2) };
+            dbg!(sh);
+        }
         dbg!(vtx2xyz1.ndim);
         dbg!(vtx2xyz1.byte_offset);
     }
