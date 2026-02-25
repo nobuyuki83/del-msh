@@ -21,6 +21,13 @@ pub fn bvhnode2aabb_update_aabb(
     let elem2vtx = del_dlpack::get_managed_tensor_from_pyany(elem2vtx)?;
     let vtx2xyz0 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz0)?;
     let vtx2xyz1 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz1)?;
+    {
+        let sh = unsafe { std::slice::from_raw_parts(vtx2xyz1.shape, 2) };
+        dbg!(vtx2xyz1.strides);
+        dbg!(sh);
+        dbg!(vtx2xyz1.ndim);
+        dbg!(vtx2xyz1.byte_offset);
+    }
     let device = bvhnode2aabb.ctx.device_type;
     let num_vtx0 = del_dlpack::get_shape_tensor(vtx2xyz0, 0).unwrap();
     let num_vtx1 = del_dlpack::get_shape_tensor(vtx2xyz1, 0).unwrap();
