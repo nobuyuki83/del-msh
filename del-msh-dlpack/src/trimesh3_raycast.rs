@@ -26,40 +26,26 @@ pub fn trimesh3_raycast_update_pix2tri(
     //
     let device = pix2tri.ctx.device_type;
     let pix2tri_sh = unsafe { std::slice::from_raw_parts(pix2tri.shape, pix2tri.ndim as usize) };
-    let tri2vtx_sh = unsafe { std::slice::from_raw_parts(tri2vtx.shape, tri2vtx.ndim as usize) };
-    let vtx2xyz_sh = unsafe { std::slice::from_raw_parts(vtx2xyz.shape, vtx2xyz.ndim as usize) };
-    let bvhnodes_sh = unsafe { std::slice::from_raw_parts(bvhnodes.shape, bvhnodes.ndim as usize) };
-    let bvhnode2aabb_sh =
-        unsafe { std::slice::from_raw_parts(bvhnode2aabb.shape, bvhnode2aabb.ndim as usize) };
-    let transform_ndc2world_sh = unsafe {
-        std::slice::from_raw_parts(transform_ndc2world.shape, transform_ndc2world.ndim as usize)
-    };
-    let num_vtx = vtx2xyz_sh[0];
-    let num_tri = tri2vtx_sh[0];
-    let num_bvhnode = bvhnodes_sh[0];
+    let img_shape = [
+        del_dlpack::get_shape_tensor(pix2tri, 1).unwrap(),
+        del_dlpack::get_shape_tensor(pix2tri, 0).unwrap(),
+    ];
+    let num_tri = del_dlpack::get_shape_tensor(tri2vtx, 0).unwrap();
+    let num_vtx = del_dlpack::get_shape_tensor(vtx2xyz, 0).unwrap();
+    let num_bvhnode = del_dlpack::get_shape_tensor(bvhnodes, 0).unwrap();
     //
-    assert_eq!(vtx2xyz_sh, vec!(num_vtx, 3));
-    assert_eq!(tri2vtx_sh, vec!(num_tri, 3));
-    assert_eq!(num_tri * 2 - 1, num_bvhnode);
-    assert_eq!(bvhnodes_sh, vec![num_bvhnode, 3]);
-    assert_eq!(bvhnode2aabb_sh, vec![num_bvhnode, 6]);
-    assert_eq!(transform_ndc2world_sh, vec![16]);
-    assert!(del_dlpack::is_equal::<usize>(&pix2tri.dtype));
-    assert!(del_dlpack::is_equal::<usize>(&tri2vtx.dtype));
-    assert!(del_dlpack::is_equal::<f32>(&vtx2xyz.dtype));
-    assert!(del_dlpack::is_equal::<usize>(&bvhnodes.dtype));
-    assert!(del_dlpack::is_equal::<f32>(&bvhnode2aabb.dtype));
-    assert!(del_dlpack::is_equal::<f32>(&transform_ndc2world.dtype));
-    assert_eq!(tri2vtx.ctx.device_type, device);
-    assert_eq!(vtx2xyz.ctx.device_type, device);
-    assert!(unsafe { del_dlpack::is_tensor_c_contiguous(vtx2xyz) });
+    del_dlpack::check_2d_tensor::<u32>(pix2tri, img_shape[1], img_shape[0], device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(bvhnodes, num_bvhnode, 3, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(bvhnode2aabb, num_bvhnode, 6, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let pix2tri = unsafe { del_dlpack::slice_from_tensor_mut::<usize>(pix2tri).unwrap() };
-            let tri2vtx = unsafe { del_dlpack::slice_from_tensor::<usize>(tri2vtx).unwrap() };
+            let pix2tri = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(pix2tri).unwrap() };
+            let tri2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(tri2vtx).unwrap() };
             let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let bvhnodes = unsafe { del_dlpack::slice_from_tensor::<usize>(bvhnodes).unwrap() };
+            let bvhnodes = unsafe { del_dlpack::slice_from_tensor::<u32>(bvhnodes).unwrap() };
             let bvhnode2aabb =
                 unsafe { del_dlpack::slice_from_tensor::<f32>(bvhnode2aabb).unwrap() };
             let transform_ndc2world =

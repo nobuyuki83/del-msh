@@ -17,3 +17,4 @@ def assert_shape_dtype_device(t: torch.Tensor, shape: tuple[int,...], dtype: tor
     assert t.shape == shape
     assert t.dtype == dtype
     assert t.device == device
+    assert t.is_contiguous()

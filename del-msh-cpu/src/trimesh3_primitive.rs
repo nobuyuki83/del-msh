@@ -372,7 +372,7 @@ fn test_torus_tri3() {
 
 // --------------
 
-/// the spherical coordinate around y-axis
+/// the pole is y-axis
 #[allow(clippy::identity_op)]
 pub fn sphere_yup<Index, Real>(
     radius: Real,

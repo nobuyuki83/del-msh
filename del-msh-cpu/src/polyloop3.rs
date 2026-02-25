@@ -356,7 +356,6 @@ where
     vtx2xyz1
 }
 
-/// TODO: it might be better to specify the normal vector
 pub fn to_trimesh3_torus(
     vtx2xyz: &[f32],
     vtx2bin: &[f32],
@@ -397,4 +396,44 @@ pub fn to_trimesh3_torus(
         }
     }
     (tri2pnt, pnt2xyz)
+}
+
+pub fn gauss_linking_number<T>(vtx2xyz: &[T], wtx2xyz: &[T]) -> T
+where
+    T: num_traits::Float + num_traits::FloatConst,
+{
+    let one = T::one();
+    let four = one + one + one + one;
+
+    let num_vtx = vtx2xyz.len() / 3;
+    let num_wtx = wtx2xyz.len() / 3;
+
+    let mut sum = T::zero();
+    for i_vtx in 0..num_vtx {
+        let a = crate::vtx2xyz::to_vec3(vtx2xyz, i_vtx);
+        let b = crate::vtx2xyz::to_vec3(vtx2xyz, (i_vtx + 1) % num_vtx);
+        for i_wtx in 0..num_wtx {
+            let c = crate::vtx2xyz::to_vec3(wtx2xyz, i_wtx);
+            let d = crate::vtx2xyz::to_vec3(wtx2xyz, (i_wtx + 1) % num_wtx);
+            sum = sum + del_geo_core::tet::gauss_linking_number_edge_edge(a, b, c, d);
+        }
+    }
+
+    // Lk = (1/4π) * sum
+    sum / (four * T::PI())
+}
+
+#[test]
+fn test_gauss_linkling_number() {
+    let p = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0];
+    {
+        let q = vec![0.0, 0.0, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, -1.0, 0.0, 0.0, -1.0];
+        let lk: f64 = gauss_linking_number(&p, &q);
+        assert!(lk.abs() < 1.0e-10);
+    }
+    {
+        let q = vec![0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0, -1.0, 0.0, 0.0, -1.0];
+        let lk: f64 = gauss_linking_number(&p, &q);
+        assert!((lk - 1.0).abs() < 1.0e-10);
+    }
 }

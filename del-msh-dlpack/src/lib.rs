@@ -4,6 +4,7 @@ use pyo3::prelude::PyModuleMethods;
 use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 mod array1d;
+mod bvhnode2aabb;
 mod edge2vtx;
 mod io_cfd_mesh_txt;
 mod io_nastran;
@@ -16,6 +17,7 @@ mod offset_array;
 mod polyhedron_mesh;
 mod quad_oct_tree;
 mod trimesh3;
+mod trimesh3_primitive;
 mod trimesh3_raycast;
 mod vtx2elem;
 mod vtx2vtx;
@@ -25,8 +27,9 @@ mod vtx2vtx;
 fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(pyo3::wrap_pyfunction!(get_cuda_driver_version, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(get_ptx_compiler_version, m)?)?;
-    trimesh3_raycast::add_functions(_py, m)?;
     trimesh3::add_functions(_py, m)?;
+    trimesh3_raycast::add_functions(_py, m)?;
+    trimesh3_primitive::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
     vtx2vtx::add_functions(_py, m)?;
     vtx2elem::add_functions(_py, m)?;
@@ -36,6 +39,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     quad_oct_tree::add_functions(_py, m)?;
     polyhedron_mesh::add_functions(_py, m)?;
     offset_array::add_functions(_py, m)?;
+    bvhnode2aabb::add_functions(_py, m)?;
     nbody::add_functions(_py, m)?;
     io_nastran::add_functions(_py, m)?;
     io_wavefront_obj::add_functions(_py, m)?;
