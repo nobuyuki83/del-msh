@@ -22,13 +22,21 @@ pub fn bvhnode2aabb_update_aabb(
     let vtx2xyz0 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz0)?;
     let vtx2xyz1 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz1)?;
     let device = bvhnode2aabb.ctx.device_type;
-    let ndim = del_dlpack::get_shape_tensor(vtx2xyz0, 1).unwrap();
+    let num_vtx0 = del_dlpack::get_shape_tensor(vtx2xyz0, 0).unwrap();
+    let num_vtx1 = del_dlpack::get_shape_tensor(vtx2xyz1, 0).unwrap();
+    let num_dim = del_dlpack::get_shape_tensor(vtx2xyz0, 1).unwrap();
     let num_bvhnode = del_dlpack::get_shape_tensor(bvhnode2aabb, 0).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(bvhnode2aabb, num_bvhnode, ndim * 2, device).unwrap();
+    let num_elem = del_dlpack::get_shape_tensor(elem2vtx, 0).unwrap();
+    let num_noel = del_dlpack::get_shape_tensor(elem2vtx, 1).unwrap();
+    //
+    del_dlpack::check_2d_tensor::<f32>(bvhnode2aabb, num_bvhnode, num_dim * 2, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(bvhnodes, num_bvhnode, 3, device).unwrap();
-    let num_elem = (num_bvhnode + 1) / 2;
+    del_dlpack::check_2d_tensor::<f32>(vtx2xyz0, num_vtx0, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(vtx2xyz1, num_vtx1, num_dim, device).unwrap();
+    del_dlpack::check_2d_tensor::<u32>(elem2vtx, num_elem, num_noel, device).unwrap();
+    //
     match device {
-        del_dlpack::dlpack::device_type_codes::CPU => match ndim {
+        del_dlpack::dlpack::device_type_codes::CPU => match num_dim {
             3 => {
                 let bvhnode2aabb =
                     unsafe { del_dlpack::slice_from_tensor_mut(bvhnode2aabb) }.unwrap();
@@ -40,9 +48,8 @@ pub fn bvhnode2aabb_update_aabb(
                 } else {
                     None
                 };
-                let elem2vtx = unsafe { del_dlpack::slice_from_tensor(elem2vtx) };
-                let elem2vtx =
-                    elem2vtx.map(|elem2vtx| (elem2vtx, elem2vtx.len() / num_elem as usize));
+                let elem2vtx = unsafe { del_dlpack::slice_from_tensor(elem2vtx) }.unwrap();
+                let elem2vtx = Some((elem2vtx, num_noel as usize));
                 del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<u32, f32>(
                     bvhnode2aabb,
                     i_bvhnode,
