@@ -193,7 +193,7 @@ fn hoge() {
     );
     let bvhnodes = crate::bvhnodes_morton::from_vtx2xyz::<u32>(&elem2cog, 3);
     crate::bvhnodes::check_bvh_topology(&bvhnodes, elem2idx_offset.len() - 1);
-    let bvhnode2aabb = crate::bvhnode2aabb3::from_polygon_polyhedron_mesh_with_bvh(
+    let _bvhnode2aabb = crate::bvhnode2aabb3::from_polygon_polyhedron_mesh_with_bvh(
         0,
         &bvhnodes,
         &elem2idx_offset,
