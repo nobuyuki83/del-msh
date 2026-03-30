@@ -148,7 +148,7 @@ fn main() -> anyhow::Result<()> {
                     *a = 1f32;
                 }
             });
-        del_msh_cpu::antialias_nvdiffrast::fwd(
+        del_msh_cpu::antialias_nvdiffrast::antialias(
             &edge2vtx_contour,
             &vtx2xyz,
             &transform_world2pix,
@@ -183,7 +183,7 @@ fn main() -> anyhow::Result<()> {
             .sum::<f32>();
         let dldw_vtx2xyz = {
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
-            del_msh_cpu::antialias_nvdiffrast::bwd_wrt_vtx2xyz(
+            del_msh_cpu::antialias_nvdiffrast::bwd_antialias(
                 &edge2vtx_contour,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
@@ -220,7 +220,7 @@ fn main() -> anyhow::Result<()> {
                             *a = 1f32;
                         }
                     });
-                del_msh_cpu::antialias_nvdiffrast::fwd(
+                del_msh_cpu::antialias_nvdiffrast::antialias(
                     &edge2vtx_contour,
                     &vtx2xyz1,
                     &transform_world2pix,

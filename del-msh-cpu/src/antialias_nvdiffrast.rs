@@ -51,7 +51,7 @@ impl Iterator for Neighbour {
         Some((i_pix0, c0, i_pix1, c1))
     }
 }
-pub fn fwd(
+pub fn antialias(
     edge2vtx_contour: &[u32],
     vtx2xyz: &[f32],
     transform_world2pix: &[f32; 16],
@@ -95,13 +95,13 @@ pub fn fwd(
     }
 }
 
-pub fn bwd_wrt_vtx2xyz(
+pub fn bwd_antialias(
     edge2vtx_contour: &[u32],
     vtx2xyz: &[f32],
     dldw_vtx2xyz: &mut [f32],
     transform_world2pix: &[f32; 16],
     img_shape: (usize, usize),
-    dldw_img_data: &[f32],
+    dldw_pixval: &[f32],
     pix2tri: &[u32],
 ) {
     use del_geo_core::mat2x3_col_major;
@@ -130,9 +130,9 @@ pub fn bwd_wrt_vtx2xyz(
                 // ---------------------------------
                 assert!((0. ..=1.0).contains(&rc));
                 let dldr0 = if rc < 0.5 {
-                    dldw_img_data[i_pix0]
+                    dldw_pixval[i_pix0]
                 } else {
-                    dldw_img_data[i_pix1]
+                    dldw_pixval[i_pix1]
                 };
                 let (_dlc0, _dlc1, dldq1, dldq0) =
                     del_geo_core::edge2::dldw_intersection_edge2(&c0, &c1, &q1, &q0, dldr0, 0.0);
@@ -152,25 +152,191 @@ pub fn bwd_wrt_vtx2xyz(
     }
 }
 
+pub fn bwd_microedge(
+    tri2vtx: &[u32],
+    vtx2xyz: &[f32],
+    dldw_vtx2xyz: &mut [f32],
+    transform_world2pix: &[f32; 16],
+    (img_w, img_h): (usize, usize),
+    dldw_pixval: &[f32],
+    pix2tri: &[u32],
+) {
+    use del_geo_core::mat4_col_major::Mat4ColMajor;
+    let fn_barycentric = |pixcntr0: &[f32; 2], itri1: u32| {
+        if itri1 == u32::MAX {
+            None
+        } else {
+            use del_geo_core::mat4_col_major::Mat4ColMajor;
+            use del_geo_core::vec3::Vec3;
+            let itri1 = itri1 as usize;
+            let i0 = tri2vtx[itri1 * 3] as usize;
+            let i1 = tri2vtx[itri1 * 3 + 1] as usize;
+            let i2 = tri2vtx[itri1 * 3 + 2] as usize;
+            let xyz0 = arrayref::array_ref![vtx2xyz, i0 * 3, 3];
+            let xyz1 = arrayref::array_ref![vtx2xyz, i1 * 3, 3];
+            let xyz2 = arrayref::array_ref![vtx2xyz, i2 * 3, 3];
+            let p0 = transform_world2pix
+                .transform_homogeneous(xyz0)
+                .unwrap()
+                .xy();
+            let p1 = transform_world2pix
+                .transform_homogeneous(xyz1)
+                .unwrap()
+                .xy();
+            let p2 = transform_world2pix
+                .transform_homogeneous(xyz2)
+                .unwrap()
+                .xy();
+            del_geo_core::tri2::barycentric_coords(&p0, &p1, &p2, pixcntr0)
+        }
+    };
+    let fn_inside = |b: Option<(f32, f32, f32)>| {
+        if let Some(b0) = b {
+            if (b0.0 >= 0. && b0.1 >= 0. && b0.2 >= 0.) ||
+                (b0.0 <= 0. && b0.1 <= 0. && b0.2 <= 0.) {
+                return true;
+            }
+            false
+        } else {
+            true
+        }
+    };
+    let transform_pix2world = transform_world2pix.transpose();
+    // horizontal edge
+    for iw in 0..img_w {
+        for ih0 in 0..img_h - 1 {
+            let ih1 = ih0 + 1;
+            let ipix0 = ih0 * img_w + iw;
+            let ipix1 = ih1 * img_w + iw;
+            let itri0 = pix2tri[ipix0];
+            let itri1 = pix2tri[ipix1];
+            if itri0 == itri1 {
+                continue;
+            } // no edge
+            let pixcntr0 = [iw as f32 + 0.5, ih0 as f32 + 0.5];
+            let pixcntr1 = [iw as f32 + 0.5, ih1 as f32 + 0.5];
+            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(&pixcntr0, itri1));
+            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(&pixcntr1, itri0));
+            if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
+                continue;
+            }
+            let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
+            let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
+            let dldpa = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
+                dbg!("todo");
+                continue;
+            } else {
+                if is_pixcentr1_inside_tri0 {
+                    // only tri1 recieve gradient
+                    let b = fn_barycentric(&pixcntr1, itri1).unwrap();
+                    let b = [b.0, b.1, b.2];
+                    let itri1 = itri1 as usize;
+                    use del_geo_core::mat4_col_major::Mat4ColMajor;
+                    let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
+                    for inode in 0..3 {
+                        let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    }
+                } else {
+                    // only tri0 recieve gradient
+                    let b = fn_barycentric(&pixcntr0, itri0).unwrap();
+                    let b = [b.0, b.1, b.2];
+                    let itri0 = itri0 as usize;
+                    use del_geo_core::mat4_col_major::Mat4ColMajor;
+                    let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
+                    for inode in 0..3 {
+                        let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    }
+                }
+            }
+        }
+    }
+
+    // horizontal edge
+    for iw0 in 0..img_w - 1 {
+        for ih in 0..img_h {
+            let iw1 = iw0 + 1;
+            let ipix0 = ih * img_w + iw0;
+            let ipix1 = ih * img_w + iw1;
+            let itri0 = pix2tri[ipix0];
+            let itri1 = pix2tri[ipix1];
+            if itri0 == itri1 {
+                continue;
+            } // no edge
+            let pixcntr0 = [iw0 as f32 + 0.5, ih as f32 + 0.5];
+            let pixcntr1 = [iw1 as f32 + 0.5, ih as f32 + 0.5];
+            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(&pixcntr0, itri1));
+            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(&pixcntr1, itri0));
+            if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
+                continue;
+            }
+            let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
+            let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
+            let dldpa = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
+                dbg!("todo");
+                continue;
+            } else {
+                if is_pixcentr1_inside_tri0 {
+                    // only tri1 recieve gradient
+                    let b = fn_barycentric(&pixcntr1, itri1).unwrap();
+                    let b = [b.0, b.1, b.2];
+                    let itri1 = itri1 as usize;
+                    use del_geo_core::mat4_col_major::Mat4ColMajor;
+                    let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
+                    for inode in 0..3 {
+                        let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    }
+                } else {
+                    // only tri0 recieve gradient
+                    let b = fn_barycentric(&pixcntr0, itri0).unwrap();
+                    let b = [b.0, b.1, b.2];
+                    let itri0 = itri0 as usize;
+                    use del_geo_core::mat4_col_major::Mat4ColMajor;
+                    let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
+                    for inode in 0..3 {
+                        let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    const IMG_RES: usize = 256;
+    const IMG_RES: usize = 128;
 
-    fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16]) {
+    fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16], Vec<f32>) {
         let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
             let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
+            //let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.6+eps, 0.0]);
             let transform1 = del_geo_core::mat4_col_major::from_translate(&[eps, 0.6, 0.0]);
             let transform =
                 del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
             crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
         };
         let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
-        (tri2vtx, vtx2xyz, transform_world2ndc)
+        //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 1., 0.]).collect();
+        let dxyz: Vec<f32> = (0..vtx2xyz.len() / 3).flat_map(|_| [1., 0., 0.]).collect();
+        (tri2vtx, vtx2xyz, transform_world2ndc, dxyz)
     }
 
     fn sample(eps: f32, img_shape: (usize, usize), num_sample: usize) -> Vec<f32> {
-        let (tri2vtx, vtx2xyz, transform_world2ndc) = geometry(eps);
+        let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(eps);
         // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
         let transform_ndc2world =
             del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
@@ -265,7 +431,7 @@ mod tests {
 
     fn nvdiffrast(eps: f32) -> Vec<f32> {
         let img_shape = (IMG_RES, IMG_RES);
-        let (tri2vtx, vtx2xyz, transform_world2ndc) = geometry(eps);
+        let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(eps);
         let transform_ndc2world =
             del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
         let transform_ndc2pix = del_geo_core::mat4_col_major::from_transform_ndc2pix(img_shape);
@@ -275,10 +441,7 @@ mod tests {
         );
         //
         let num_vtx = vtx2xyz.len() / 3;
-        let (_vtx2idx, _idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, num_vtx, false);
         let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
-        let _num_tri = tri2vtx.len() / 3;
-        let _num_edge = edge2vtx.len() / 2;
         let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
         //
         let edge2vtx_contour = crate::edge2vtx::contour_for_triangle_mesh::<u32>(
@@ -313,7 +476,7 @@ mod tests {
             .iter()
             .map(|&v| if v == u32::MAX { 0. } else { 1. })
             .collect();
-        crate::antialias_nvdiffrast::fwd(
+        crate::antialias_nvdiffrast::antialias(
             &edge2vtx_contour,
             &vtx2xyz,
             &transform_world2pix,
@@ -327,7 +490,7 @@ mod tests {
     #[test]
     fn test_nvdiffrast() {
         let img_shape = (IMG_RES, IMG_RES);
-        let (tri2vtx, vtx2xyz, transform_world2ndc) = geometry(0.);
+        let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
         let transform_ndc2world =
             del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
         let transform_ndc2pix = del_geo_core::mat4_col_major::from_transform_ndc2pix(img_shape);
@@ -335,21 +498,21 @@ mod tests {
             &transform_ndc2pix,
             &transform_world2ndc,
         );
-        //
-        let num_vtx = vtx2xyz.len() / 3;
-        // let (_vtx2idx, _idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, num_vtx, false);
-        let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
-        let _num_tri = tri2vtx.len() / 3;
-        let _num_edge = edge2vtx.len() / 2;
-        let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
-        //
-        let edge2vtx_contour = crate::edge2vtx::contour_for_triangle_mesh::<u32>(
-            &tri2vtx,
-            &vtx2xyz,
-            &transform_world2ndc,
-            &edge2vtx,
-            &edge2tri,
-        );
+        let edge2vtx_contour = {
+            //
+            let num_vtx = vtx2xyz.len() / 3;
+            // let (_vtx2idx, _idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, num_vtx, false);
+            let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
+            let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+            //
+            crate::edge2vtx::contour_for_triangle_mesh::<u32>(
+                &tri2vtx,
+                &vtx2xyz,
+                &transform_world2ndc,
+                &edge2vtx,
+                &edge2tri,
+            )
+        };
         //
         {
             let mut pix2val_edge = vec![1f32; img_shape.0 * img_shape.1];
@@ -384,15 +547,15 @@ mod tests {
             )
             .unwrap();
         }
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-        let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            Some((&tri2vtx, 3)),
-            &vtx2xyz,
-            None,
-        );
         let pix2tri = {
+            let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+                0,
+                &bvhnodes,
+                Some((&tri2vtx, 3)),
+                &vtx2xyz,
+                None,
+            );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
             crate::trimesh3_raycast::update_pix2tri(
                 &mut pix2tri,
@@ -410,7 +573,7 @@ mod tests {
                 .iter()
                 .map(|&v| if v == u32::MAX { 0. } else { 1. })
                 .collect();
-            crate::antialias_nvdiffrast::fwd(
+            crate::antialias_nvdiffrast::antialias(
                 &edge2vtx_contour,
                 &vtx2xyz,
                 &transform_world2pix,
@@ -425,7 +588,6 @@ mod tests {
             )
             .unwrap()
         }
-        let dxyz: Vec<f32> = (0..num_vtx).flat_map(|_| [1., 0., 0.]).collect();
         let mut pix2rgb_diff: Vec<_> = vec![0f32; img_shape.0 * img_shape.1 * 3];
         for i_pix in 0..IMG_RES * IMG_RES {
             let dldw_img = {
@@ -434,7 +596,7 @@ mod tests {
                 dldw_pix2val
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
-            crate::antialias_nvdiffrast::bwd_wrt_vtx2xyz(
+            crate::antialias_nvdiffrast::bwd_antialias(
                 &edge2vtx_contour,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
@@ -486,5 +648,77 @@ mod tests {
             &pix2rgb_diff,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn test_microedge() {
+        let img_shape = (IMG_RES, IMG_RES);
+        let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
+        let transform_ndc2world =
+            del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
+        let transform_ndc2pix = del_geo_core::mat4_col_major::from_transform_ndc2pix(img_shape);
+        let transform_world2pix = del_geo_core::mat4_col_major::mult_mat_col_major(
+            &transform_ndc2pix,
+            &transform_world2ndc,
+        );
+        let pix2tri = {
+            let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+                0,
+                &bvhnodes,
+                Some((&tri2vtx, 3)),
+                &vtx2xyz,
+                None,
+            );
+            let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
+            crate::trimesh3_raycast::update_pix2tri(
+                &mut pix2tri,
+                &tri2vtx,
+                &vtx2xyz,
+                &bvhnodes,
+                &bvhnode2aabb,
+                img_shape,
+                &transform_ndc2world,
+            );
+            pix2tri
+        };
+        let mut pix2rgb_diff: Vec<_> = vec![0f32; img_shape.0 * img_shape.1 * 3];
+        for i_pix in 0..IMG_RES * IMG_RES {
+            let dldw_pixval = {
+                let mut dldw_pix2val = vec![0f32; IMG_RES * IMG_RES];
+                dldw_pix2val[i_pix] = 1.0;
+                dldw_pix2val
+            };
+            let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
+            //
+            crate::antialias_nvdiffrast::bwd_microedge(
+                &tri2vtx,
+                &vtx2xyz,
+                &mut dldw_vtx2xyz,
+                &transform_world2pix,
+                img_shape,
+                &dldw_pixval,
+                &pix2tri,
+            );
+            //
+            let dpix: f32 = dxyz
+                .iter()
+                .zip(dldw_vtx2xyz.iter())
+                .map(|(&v0, &v1)| v0 * v1)
+                .sum();
+            let c = del_canvas::colormap::apply_colormap(
+                dpix,
+                -(IMG_RES as f32),
+                IMG_RES as f32,
+                del_canvas::colormap::COLORMAP_BWR,
+            );
+            pix2rgb_diff[i_pix * 3..(i_pix + 1) * 3].copy_from_slice(&c);
+        }
+        del_canvas::write_png_from_float_image_rgb(
+            "../target/silhouette_diff_microedge.png",
+            &img_shape,
+            &pix2rgb_diff,
+        )
+        .unwrap();
     }
 }

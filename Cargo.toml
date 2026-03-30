@@ -42,7 +42,7 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for development
 # candle-core = { git="https://github.com/huggingface/candle.git" }
-# del-geo-core = { path="../del-geo/del-geo-core"}
+#del-geo-core = { path="../del-geo/del-geo-core"}
 # del-canvas = {path="../del-canvas"} # for color map
 
 # for GitHub push
