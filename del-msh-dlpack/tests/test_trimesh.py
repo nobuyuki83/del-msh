@@ -1,50 +1,44 @@
-
-#
 import numpy
 import torch
-
 #
-import del_msh_numpy.TriMesh
-import del_msh_numpy.BVH
 import del_msh_dlpack.Raycast
 import del_msh_dlpack.TriMesh3.numpy
 import del_msh_dlpack.TriMesh3.torch
 
 
 def test_01():
-    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
-    tri2vtx = tri2vtx.astype(numpy.uint32)
-    np_tri2normal = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz)
+    ptcpu_tri2vtx, ptcpu_vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 128, 64)
+    np_tri2vtx = ptcpu_tri2vtx.numpy()
+    np_vtx2xyz = ptcpu_vtx2xyz.numpy()
+    np_tri2normal = del_msh_dlpack.TriMesh3.numpy.tri2normal(np_tri2vtx, np_vtx2xyz)
     tri2area = numpy.linalg.norm(np_tri2normal, axis=1)
     area = tri2area.sum() * 0.5
     area0 = 0.8 * 0.8 * 4.0 * numpy.pi
     assert abs(area - area0) / area0 < 0.001
     rng = numpy.random.default_rng(seed=42)
-    np_dw_tri2nrm = rng.random(tri2vtx.shape).astype(numpy.float32)
+    np_dw_tri2nrm = rng.random(ptcpu_tri2vtx.shape).astype(numpy.float32)
     np_dw_vtx2xyz = del_msh_dlpack.TriMesh3.numpy.bwd_tri2normal(
-        tri2vtx, vtx2xyz, np_dw_tri2nrm
+        np_tri2vtx, np_vtx2xyz, np_dw_tri2nrm
     )
     #
-    tri2vtx = torch.from_numpy(tri2vtx)
-    vtx2xyz = torch.from_numpy(vtx2xyz)
-    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.torch.tri2normal(tri2vtx, vtx2xyz)
+    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.torch.tri2normal(ptcpu_tri2vtx, ptcpu_vtx2xyz)
     ptcpu_area = ptcpu_tri2normal.norm(dim=1).sum() * 0.5
     assert abs(area - ptcpu_area.item()) < 1.0e-20
     ptcpu_dw_vtx2xyz = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
-        tri2vtx, vtx2xyz, torch.from_numpy(np_dw_tri2nrm)
+        ptcpu_tri2vtx, ptcpu_vtx2xyz, torch.from_numpy(np_dw_tri2nrm)
     )
     assert numpy.linalg.norm(np_dw_vtx2xyz - ptcpu_dw_vtx2xyz.numpy()) < 1.0e-20
     if torch.cuda.is_available():
         print('test "tri2nrm" and "dw_tri2nrm" on gpu')
         ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.torch.tri2normal(
-            tri2vtx.cuda(), vtx2xyz.cuda()
+            ptcpu_tri2vtx.cuda(), ptcpu_vtx2xyz.cuda()
         )
         # print(ptcuda_tri2normal)
         n0 = torch.norm(ptcpu_tri2normal - ptcuda_tri2nrm.cpu())
         n1 = torch.norm(ptcuda_tri2nrm)
         assert n0 / n1 < 1.0e-7, n0 / n1
         ptcuda_dw_vtx2xyz = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
-            tri2vtx.cuda(), vtx2xyz.cuda(), torch.from_numpy(np_dw_tri2nrm).cuda()
+            ptcpu_tri2vtx.cuda(), ptcpu_vtx2xyz.cuda(), torch.from_numpy(np_dw_tri2nrm).cuda()
         )
         n0 = torch.norm(ptcuda_dw_vtx2xyz.cpu() - ptcpu_dw_vtx2xyz)
         n1 = torch.norm(ptcpu_dw_vtx2xyz)
@@ -55,22 +49,24 @@ def test_02():
     """
     test raycast
     """
-    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 64, 32)
-    bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
+    tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 64, 32)
+    tri2vtx = tri2vtx.numpy()
+    vtx2xyz = vtx2xyz.numpy()
+    print("hoge", tri2vtx.shape, tri2vtx.dtype)
+#    bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
+    bvhnodes, bvhnode2aabb = del_msh_dlpack.TriMesh3.numpy.bvh_aabb(tri2vtx, vtx2xyz)
     assert bvhnodes.shape[1] == 3
-    bvhnode2aabb = del_msh_numpy.BVH.aabb_uniform_mesh(
-        tri2vtx, vtx2xyz, bvhnodes, aabbs=None, vtx2xyz1=None
-    )
     assert bvhnode2aabb.shape[1] == 6
+    #
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
     #
-    pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint64)
-
+    pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint32)
+    #
     del_msh_dlpack.Raycast.pix2tri(
         pix2tri, tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world
     )
 
-    mask = pix2tri != numpy.iinfo(numpy.uint64).max
+    mask = pix2tri != numpy.iinfo(numpy.uint32).max
     num_true = numpy.count_nonzero(mask)
     ratio0 = float(num_true) / float(mask.shape[0] * mask.shape[1])
     ratio1 = 0.8 * 0.8 * numpy.pi * 0.25
@@ -103,14 +99,15 @@ def test_02():
 
 
 def test_03():
-    tri2vtx, vtx2xyz0 = del_msh_numpy.TriMesh.sphere(0.8, 4, 4)
-    tri2vtx = tri2vtx.astype(numpy.uint32)
+    tri2vtx, vtx2xyz0 = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 4, 4)
+    tri2vtx = tri2vtx.numpy()
+    vtx2xyz0 = vtx2xyz0.numpy()
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz0.shape[0]
     rng = numpy.random.default_rng(seed=42)
     dw_tri2nrm = rng.random((num_tri, 3)).astype(numpy.float32)
-    tri2nrm0 = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz0)
-    loss0 = numpy.tensordot(dw_tri2nrm, tri2nrm0)
+    np_tri2nrm0 = del_msh_dlpack.TriMesh3.numpy.tri2normal(tri2vtx, vtx2xyz0)
+    loss0 = numpy.tensordot(dw_tri2nrm, np_tri2nrm0)
     dw_vtx2xyz = del_msh_dlpack.TriMesh3.numpy.bwd_tri2normal(
         tri2vtx, vtx2xyz0, dw_tri2nrm
     )
@@ -128,11 +125,7 @@ def test_03():
 
 
 def test_04():
-    tri2vtx, vtx2xyz = del_msh_numpy.TriMesh.sphere(0.8, 128, 64)
-    tri2vtx, vtx2xyz = (
-        torch.from_numpy(tri2vtx).to(torch.uint32),
-        torch.from_numpy(vtx2xyz),
-    )
+    tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 128, 64)
     dw_tri2nrm = torch.rand(size=tri2vtx.shape, dtype=torch.float32)
     dw_vtx2xyz0 = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
         tri2vtx, vtx2xyz, dw_tri2nrm
@@ -165,3 +158,12 @@ def test_04():
         print(loss1)
         print(dw_vtx2xyz2)
         print(dw_vtx2xyz1)
+
+
+def test_05():
+    from pathlib import Path
+    path = Path(__file__).resolve().parent.parent.parent
+    tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.torus(1.0, 0.3, 16, 16)
+    del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(tri2vtx, vtx2xyz, str(path / "target" / "torus.obj"))
+    tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 8, 32)
+    del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(tri2vtx, vtx2xyz, str(path / "target" / "sphere.obj"))

@@ -6,6 +6,7 @@ Cargo.lock
 
 .idea
 .DS_Store
+.claude/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

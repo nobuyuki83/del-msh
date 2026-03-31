@@ -99,14 +99,14 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
 /// * `i_bvhnode` - Root BVH node index to start building from (typically 0)
 /// * `bvhnodes` - BVH tree structure (3 indices per node: parent, child0, child1)
 /// * `elem2vtx` - Optional element-to-vertex mapping (vertex_indices, num_nodes_per_element).
-///               If None, BVH directly stores vertex indices (no element indirection)
+///   If None, BVH directly stores vertex indices (no element indirection)
 /// * `vtx2xyz0` - Vertex coordinates at time t=0 (required)
 /// * `vtx2xyz1` - Optional vertex coordinates at time t=1 for Continuous-Collision Detection (CCD).
-///               If provided, AABBs will enclose geometry swept through the motion
+///   If provided, AABBs will enclose geometry swept through the motion
 ///
 /// # Returns
 /// * `Vec<Real>` - Flattened AABB array where each node i has 4 values at indices [4*i..4*i+4]
-///                representing [x_min, y_min, x_max, y_max]
+///   representing [x_min, y_min, x_max, y_max]
 ///
 /// # Notes
 /// * AABBs are computed bottom-up: leaf nodes first, then branch nodes merge child AABBs

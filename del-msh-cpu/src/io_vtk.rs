@@ -105,8 +105,13 @@ where
     }
     for av in prism2vtx.chunks(6) {
         write!(writer, "6")?;
-        av.iter().for_each(|v| write!(writer, " {v}").unwrap());
-        writeln!(writer)?;
+        //av.iter().for_each(|v| write!(writer, " {v}").unwrap());
+        writeln!(
+            writer,
+            " {} {} {} {} {} {}",
+            av[0], av[2], av[1], av[3], av[5], av[4]
+        )
+        .unwrap();
     }
     writeln!(writer, "CELL_TYPES {num_elem}")?;
     for _ in 0..num_tet {

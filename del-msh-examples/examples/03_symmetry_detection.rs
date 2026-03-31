@@ -177,7 +177,6 @@ pub fn sym_detector(
             if sum_weight < sum_weight_pre * 1.01 {
                 break;
             }
-            sum_weight_pre = sum_weight_pre;
         }
         // dbg!(cur_trans, max_weight_and_pair);
         let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&cur_trans);

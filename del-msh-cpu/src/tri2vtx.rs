@@ -72,7 +72,7 @@ pub fn find_node_tri(tri2vtx: &[usize], i_vtx: usize) -> usize {
     if tri2vtx[2] == i_vtx {
         return 2;
     }
-    panic!();
+    panic!("vertex {} not found in triangle", i_vtx);
 }
 
 /// triangle surrounding triangle
