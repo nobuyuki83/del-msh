@@ -336,7 +336,7 @@ mod tests {
     }
 
     fn sample(eps: f32, img_shape: (usize, usize), num_sample: usize) -> Vec<f32> {
-        let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(eps);
+        let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(eps);
         // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
         let transform_ndc2world =
             del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
@@ -476,7 +476,7 @@ mod tests {
             .iter()
             .map(|&v| if v == u32::MAX { 0. } else { 1. })
             .collect();
-        crate::antialias_nvdiffrast::antialias(
+        crate::differential_rasterizer::antialias(
             &edge2vtx_contour,
             &vtx2xyz,
             &transform_world2pix,
@@ -573,7 +573,7 @@ mod tests {
                 .iter()
                 .map(|&v| if v == u32::MAX { 0. } else { 1. })
                 .collect();
-            crate::antialias_nvdiffrast::antialias(
+            crate::differential_rasterizer::antialias(
                 &edge2vtx_contour,
                 &vtx2xyz,
                 &transform_world2pix,
@@ -596,7 +596,7 @@ mod tests {
                 dldw_pix2val
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
-            crate::antialias_nvdiffrast::bwd_antialias(
+            crate::differential_rasterizer::bwd_antialias(
                 &edge2vtx_contour,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
@@ -691,7 +691,7 @@ mod tests {
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
             //
-            crate::antialias_nvdiffrast::bwd_microedge(
+            crate::differential_rasterizer::bwd_microedge(
                 &tri2vtx,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,

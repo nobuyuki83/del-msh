@@ -6,6 +6,7 @@ use pyo3::{types::PyModule, Bound, PyResult, Python};
 mod array1d;
 mod bvhnode2aabb;
 mod edge2vtx;
+mod edge2elem;
 mod io_cfd_mesh_txt;
 mod io_nastran;
 mod io_vtk;
@@ -31,6 +32,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     trimesh3_raycast::add_functions(_py, m)?;
     trimesh3_primitive::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
+    edge2elem::add_functions(_py, m)?;
     vtx2vtx::add_functions(_py, m)?;
     vtx2elem::add_functions(_py, m)?;
     mix_mesh::add_functions(_py, m)?;

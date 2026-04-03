@@ -1,12 +1,13 @@
 import torch
+#
 from .. import util_torch
 from .. import _CapsuleAsDLPack
 
 
-def tri2centroid(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Tensor:
+def make_tri2centroid(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Tensor:
     """compute centroids of triangles
 
-    Args:
+    Args:b
         tri2vtx: (num_tri, 3) uint32
         vtx2xyz: (num_vtx, 3) float32
     Returns:
@@ -18,7 +19,7 @@ def tri2centroid(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Tensor:
     return (vtx2xyz[idx[:, 0]] + vtx2xyz[idx[:, 1]] + vtx2xyz[idx[:, 2]]) / 3.0
 
 
-def tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
+def make_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
     assert len(tri2vtx.shape) == 2
@@ -80,7 +81,7 @@ class Tri2Normal(torch.autograd.Function):
     @staticmethod
     def forward(ctx, tri2vtx, vtx2xyz):
         ctx.save_for_backward(tri2vtx, vtx2xyz)
-        return tri2normal(tri2vtx.detach(), vtx2xyz.detach())
+        return make_tri2normal(tri2vtx.detach(), vtx2xyz.detach())
 
     @staticmethod
     def backward(ctx, dw_tri2nrm):
@@ -130,19 +131,35 @@ def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
     return tri2vtx, vtx2xyz
 
 
-
-def bvhnodes(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
+def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
-    util_torch.check_tensor(tri2vtx, (num_tri,3), torch.uint32, device)
-    util_torch.check_tensor(vtx2xyz, (num_vtx,3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
     #
-    tri2centroid = tri2centroid(tri2vtx, vtx2xyz)
-    from ..Vtx2Xyz.torch import normalize_to_unit_cube
-    transform_co2unit = normalize_to_unit_cube(vtx2xyz)
+    tri2centroid = make_tri2centroid(tri2vtx, vtx2xyz)
+    from ..Vtx2Xyz.torch import make_mat44_from_fit_into_unit_cube
+    transform_co2unit = make_mat44_from_fit_into_unit_cube(tri2centroid)
     #
-    from ..Mortons import torch
-    tri2morton = torch.vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
-    tri2tri = torch.arrange(num_tri, dtype=torch.uint32, device=device)
-    bvhnodes = torch.make_bvh(tri2tri, tri2morton)
+    from ..Mortons.torch import make_vtx2morton_from_vtx2co
+    tri2morton = make_vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
+    tri2tri = torch.arange(num_tri, dtype=torch.int32, device=device).to(dtype=torch.uint32)
+    from ..Array1D.torch import argsort
+    idx2tri, idx2morton = argsort(tri2morton)
+    from ..Mortons.torch import make_bvhnodes
+    bvhnodes = make_bvhnodes(idx2tri, idx2morton)
+    num_bvhnodes = bvhnodes.shape[0]
+    #
+    bvhnode2aabb = torch.empty((num_bvhnodes, 6), dtype=torch.float32, device=device)
+    vtx2xyz1 = torch.zeros((0,3), dtype=torch.float32, device=device)
+    from .. import TriMesh3
+    TriMesh3.make_bvhnode2aabb_from_bvhnodes(
+        tri2vtx.__dlpack__(),
+        vtx2xyz.__dlpack__(),
+        vtx2xyz1.__dlpack__(),
+        bvhnodes.__dlpack__(),
+        bvhnode2aabb.__dlpack__(),
+    )
+    return bvhnodes, bvhnode2aabb
+

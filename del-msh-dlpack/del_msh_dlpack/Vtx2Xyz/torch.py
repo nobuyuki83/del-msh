@@ -1,7 +1,7 @@
 import torch
 
 
-def normalize_to_unit_cube(vtx2xyz: torch.Tensor) -> torch.Tensor:
+def make_mat44_from_fit_into_unit_cube(vtx2xyz: torch.Tensor) -> torch.Tensor:
     """fit vertices into a unit cube [-0.5, 0.5]^3 with uniform scale,
     returned as a 4x4 affine matrix (row-major, applied as p' = mat @ [p, 1]^T)
 
@@ -20,5 +20,5 @@ def normalize_to_unit_cube(vtx2xyz: torch.Tensor) -> torch.Tensor:
     mat[1, 1] = s
     mat[2, 2] = s
     mat[3, 3] = 1.0
-    mat[:3, 3] = -center * s
+    mat[:3, 3] = -center * s + 0.5
     return mat

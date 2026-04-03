@@ -13,25 +13,26 @@ use num_traits::AsPrimitive;
 ///
 /// # Returns
 /// * `Vec<Index>` - Flattened edge list (pairs of vertex indices)
-pub fn from_vtx2vtx<Index>(vtx2idx: &[Index], idx2vtx: &[Index]) -> Vec<Index>
+pub fn from_vtx2vtx<Index>(vtx2idx: &[Index], idx2vtx: &[Index], edge2vtx: &mut [Index])
 where
     Index: AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    // Pre-allocate assuming each vertex connects to multiple others
-    let mut line2vtx = Vec::<Index>::with_capacity(idx2vtx.len() * 2);
+    assert_eq!(edge2vtx.len(), idx2vtx.len() * 2);
 
     // Process each vertex and its adjacent vertices
+    let mut icnt = 0usize;
     for i_vtx in 0..vtx2idx.len() - 1 {
         let idx0 = vtx2idx[i_vtx].as_();
         let idx1 = vtx2idx[i_vtx + 1].as_();
         // Add an edge from current vertex to each of its neighbors
         for &j_vtx in &idx2vtx[idx0..idx1] {
-            line2vtx.push(i_vtx.as_()); // Source vertex
-            line2vtx.push(j_vtx); // Target vertex
+            edge2vtx[icnt] = i_vtx.as_(); // Source vertex
+            icnt += 1;
+            edge2vtx[icnt] = j_vtx; // Target vertex
+            icnt += 1;
         }
     }
-    line2vtx
 }
 
 /// Extract specific edges from a uniform mesh (elements with same number of nodes).
@@ -69,7 +70,9 @@ where
         false, // Don't include duplicate edges
     );
     // Convert vertex adjacency to edge list
-    from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
+    let mut edge2vtx = vec!(Index::zero(); vtx2vtx.1.len()*2);
+    from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
+    edge2vtx
 }
 
 /// Extract all edges from a triangle mesh.
@@ -116,7 +119,9 @@ pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) 
         false, // Don't include duplicate edges
     );
     // Convert to edge list
-    from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1)
+    let mut edge2vtx = vec!(0usize; vtx2vtx.1.len()*2);
+    from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
+    edge2vtx
 }
 
 /// Create edge connectivity for a closed polygon loop.

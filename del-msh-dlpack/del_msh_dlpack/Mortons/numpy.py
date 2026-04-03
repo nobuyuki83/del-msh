@@ -13,7 +13,7 @@ def vtx2morton_from_vtx2co(vtx2co: np.ndarray, transform_co2unit: np.ndarray) ->
     vtx2morton = np.empty((num_vtx,), dtype=np.uint32)
     from .. import Mortons
 
-    Mortons.vtx2morton_from_vtx2co(
+    Mortons.make_vtx2morton_from_vtx2co(
         vtx2co.__dlpack__(),
         np.ascontiguousarray(transform_co2unit.T).__dlpack__(),
         vtx2morton.__dlpack__(),
@@ -21,7 +21,7 @@ def vtx2morton_from_vtx2co(vtx2co: np.ndarray, transform_co2unit: np.ndarray) ->
     return vtx2morton
 
 
-def make_bvh(idx2obj: np.ndarray, idx2morton: np.ndarray) -> np.ndarray:
+def make_bvhnodes_from_sorted_mortons(idx2obj: np.ndarray, idx2morton: np.ndarray) -> np.ndarray:
     n = idx2obj.shape[0]
     #
     assert idx2obj.dtype == np.uint32 and idx2obj.ndim == 1
@@ -31,7 +31,7 @@ def make_bvh(idx2obj: np.ndarray, idx2morton: np.ndarray) -> np.ndarray:
     bvhnodes = np.empty((n * 2 - 1, 3), dtype=np.uint32)
     from .. import Mortons
 
-    Mortons.make_bvh(
+    Mortons.make_bvhnodes_from_sorted_mortons(
         idx2obj.__dlpack__(),
         idx2morton.__dlpack__(),
         bvhnodes.__dlpack__(),

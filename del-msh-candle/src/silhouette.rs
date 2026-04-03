@@ -47,7 +47,7 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
         );
         let transform_world2pix = arrayref::array_ref![transform_world2pix, 0, 16];
         get_cpu_slice_and_storage_from_tensor!(pix2tri, _s_pix2tri, self.pix2tri, u32);
-        del_msh_cpu::antialias_nvdiffrast::bwd_antialias(
+        del_msh_cpu::differential_rasterizer::bwd_antialias(
             edge2vtx_contour,
             vtx2xyz.as_slice()?,
             dldw_vtx2xyz,
@@ -160,7 +160,7 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
                     }
                 });
         }
-        del_msh_cpu::antialias_nvdiffrast::antialias(
+        del_msh_cpu::differential_rasterizer::antialias(
             edge2vtx_contour,
             vtx2xyz,
             transform_world2pix,

@@ -68,7 +68,7 @@ pub mod vtx2group;
 
 pub mod adaptive_distance_field3;
 pub mod alias_table;
-pub mod antialias_nvdiffrast;
+pub mod differential_rasterizer;
 pub mod array1d;
 pub mod grid2;
 pub mod io_cfd_mesh_txt;

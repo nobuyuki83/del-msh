@@ -1,7 +1,7 @@
 import torch
 from .. import util_torch
 
-def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor):
+def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor):
     num_vtx = vtx2co.shape[0]
     num_dim = vtx2co.shape[1]
     device = vtx2co.device
@@ -17,16 +17,16 @@ def vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
     from .. import Mortons
 
-    Mortons.vtx2morton_from_vtx2co(
+    Mortons.make_vtx2morton_from_vtx2co(
         util_torch.to_dlpack_safe(vtx2co, stream_ptr),
-        util_torch.to_dlpack_safe(transform_co2unit.T.clone().contiguous(), stream_ptr),
+        util_torch.to_dlpack_safe(transform_co2unit.T.contiguous(), stream_ptr),
         util_torch.to_dlpack_safe(vtx2morton, stream_ptr),
         stream_ptr,
     )
     return vtx2morton
 
 
-def make_bvh(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
+def make_bvhnodes(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
     n = idx2obj.shape[0]
     device = idx2obj.device
     #
@@ -43,7 +43,7 @@ def make_bvh(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
     from .. import Mortons
 
-    Mortons.make_bvh(
+    Mortons.make_bvhnodes_from_sorted_mortons(
         util_torch.to_dlpack_safe(idx2obj, stream_ptr),
         util_torch.to_dlpack_safe(idx2morton, stream_ptr),
         util_torch.to_dlpack_safe(bvhnodes, stream_ptr)

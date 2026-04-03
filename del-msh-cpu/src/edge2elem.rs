@@ -22,15 +22,16 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
     tri2vtx: &[INDEX],
     vtx2idx: &[INDEX],
     idx2tri: &[INDEX],
-) -> Vec<INDEX>
+    edge2tri: &mut [INDEX],
+)
 where
     INDEX: num_traits::PrimInt + 'static + AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<INDEX>,
 {
     use num_traits::AsPrimitive;
     // Initialize result array with max values (indicating no triangle found)
-    let mut edge2tri = vec![INDEX::max_value(); edge2vtx.len()];
-
+    let num_edge = edge2vtx.len() / 2;
+    assert_eq!(edge2tri.len(), num_edge*2);
     // Process each edge
     for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
@@ -66,7 +67,6 @@ where
             }
         }
     }
-    edge2tri
 }
 
 pub fn from_edge2vtx_of_tri2vtx<INDEX>(
@@ -79,7 +79,10 @@ where
     usize: num_traits::AsPrimitive<INDEX>,
 {
     let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, 3, num_vtx);
-    from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri)
+    let num_edge = edge2vtx.len() / 2;
+    let mut edge2tri = vec!(INDEX::zero(); num_edge*2);
+    from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri, &mut edge2tri);
+    edge2tri
 }
 
 #[test]

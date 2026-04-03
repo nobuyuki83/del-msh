@@ -149,13 +149,15 @@ where
 #[test]
 fn hoge() {
     let data = read::<_, u32>("../asset/cfd_mesh.txt").unwrap();
-    let mut file = std::fs::File::create("../target/cfd_mesh.vtk").expect("file not found.");
-    crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz, 3).unwrap();
     assert_eq!(data.tet2vtx.len(), 4);
     assert_eq!(data.pyrmd2vtx.len(), 5);
     assert_eq!(data.prism2vtx.len(), 6);
-    crate::io_vtk::write_vtk_cells_mix(&mut file, &data.tet2vtx, &data.pyrmd2vtx, &data.prism2vtx)
-        .unwrap();
+    {
+        let mut file = std::fs::File::create("../target/cfd_mesh.vtk").expect("file not found.");
+        crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz, 3).unwrap();
+        crate::io_vtk::write_vtk_cells_mix(&mut file, &data.tet2vtx, &data.pyrmd2vtx, &data.prism2vtx)
+            .unwrap();
+    }
     let (elem2idx_offset, idx2vtx) = {
         let num_tet = data.tet2vtx.len() / 4;
         let num_pyrmd = data.pyrmd2vtx.len() / 5;

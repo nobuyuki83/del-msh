@@ -1,7 +1,6 @@
 import numpy
 import torch
 #
-import del_msh_dlpack.Raycast
 import del_msh_dlpack.TriMesh3.numpy
 import del_msh_dlpack.TriMesh3.torch
 
@@ -21,7 +20,7 @@ def test_01():
         np_tri2vtx, np_vtx2xyz, np_dw_tri2nrm
     )
     #
-    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.torch.tri2normal(ptcpu_tri2vtx, ptcpu_vtx2xyz)
+    ptcpu_tri2normal = del_msh_dlpack.TriMesh3.torch.make_tri2normal(ptcpu_tri2vtx, ptcpu_vtx2xyz)
     ptcpu_area = ptcpu_tri2normal.norm(dim=1).sum() * 0.5
     assert abs(area - ptcpu_area.item()) < 1.0e-20
     ptcpu_dw_vtx2xyz = del_msh_dlpack.TriMesh3.torch.bwd_tri2normal(
@@ -30,7 +29,7 @@ def test_01():
     assert numpy.linalg.norm(np_dw_vtx2xyz - ptcpu_dw_vtx2xyz.numpy()) < 1.0e-20
     if torch.cuda.is_available():
         print('test "tri2nrm" and "dw_tri2nrm" on gpu')
-        ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.torch.tri2normal(
+        ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.torch.make_tri2normal(
             ptcpu_tri2vtx.cuda(), ptcpu_vtx2xyz.cuda()
         )
         # print(ptcuda_tri2normal)
@@ -52,18 +51,20 @@ def test_02():
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 64, 32)
     tri2vtx = tri2vtx.numpy()
     vtx2xyz = vtx2xyz.numpy()
-    print("hoge", tri2vtx.shape, tri2vtx.dtype)
-#    bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
-    bvhnodes, bvhnode2aabb = del_msh_dlpack.TriMesh3.numpy.bvh_aabb(tri2vtx, vtx2xyz)
+    #print("hoge", tri2vtx.shape, tri2vtx.dtype)
+    #bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
+    bvhnodes, bvhnode2aabb = del_msh_dlpack.TriMesh3.numpy.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
     assert bvhnodes.shape[1] == 3
     assert bvhnode2aabb.shape[1] == 6
     #
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
     #
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint32)
+    pix2tri.fill(numpy.iinfo(numpy.uint32).max)
     #
-    del_msh_dlpack.Raycast.pix2tri(
-        pix2tri, tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world
+    from del_msh_dlpack.TriMesh3Raycast.numpy import update_pix2tri
+    update_pix2tri(
+        tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri
     )
 
     mask = pix2tri != numpy.iinfo(numpy.uint32).max

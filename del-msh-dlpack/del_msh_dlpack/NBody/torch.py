@@ -4,7 +4,6 @@ import del_msh_dlpack.QuadOctTree.torch
 import del_msh_dlpack.Mortons.torch
 import del_msh_dlpack.Array1D.torch
 from .. import NBody
-import time
 
 
 def filter_brute_force(
@@ -120,7 +119,7 @@ class TreeAccelerator:
         num_dim = vtx2xyz.shape[1]
         assert vtx2xyz.dtype == torch.float
         self.transform_world2unit = mat4_from_transfrom_world2unit(vtx2xyz, device)
-        vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+        vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
             vtx2xyz, self.transform_world2unit)
         (self.jdx2vtx, jdx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
         jdx2idx, idx2morton, self.idx2jdx_offset = del_msh_dlpack.Array1D.torch.unique_for_sorted_array(jdx2morton)

@@ -13,7 +13,7 @@ def test_tree_construction():
         torch.manual_seed(0)
         vtx2co = torch.rand((1000_000, num_dim))
         transform_co2unit = torch.eye(num_dim+1)
-        vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+        vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
             vtx2co, transform_co2unit
         )
         (idx2vtx, idx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
@@ -25,7 +25,7 @@ def test_tree_construction():
         tree2jdx.construct_from_idx2morton(jdx2morton, num_dim, True)
 
         if torch.cuda.is_available():
-            d_vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+            d_vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
                 vtx2co.cuda(), transform_co2unit.cuda()
             )
             assert torch.equal(vtx2morton, d_vtx2morton.cpu())
@@ -60,7 +60,7 @@ def test_tree_aggregation():
     transform_co2unit = torch.eye(num_dim+1)
     vtx2val = torch.ones(size=(vtx2co.shape[0], num_vdim), dtype=torch.float32)
     #
-    vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+    vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
         vtx2co, transform_co2unit
     )
     (jdx2vtx, jdx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
@@ -77,7 +77,7 @@ def test_tree_aggregation():
     assert torch.equal(onode2aggval.cpu()[0,:], torch.full((num_vdim, ), num_vtx))
     #
     if torch.cuda.is_available():
-        d_vtx2morton = del_msh_dlpack.Mortons.torch.vtx2morton_from_vtx2co(
+        d_vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
             vtx2co.cuda(), transform_co2unit.cuda()
         )
         assert torch.equal(vtx2morton, d_vtx2morton.cpu())
