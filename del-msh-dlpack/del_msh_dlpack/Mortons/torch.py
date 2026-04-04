@@ -37,7 +37,7 @@ def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.T
     return vtx2morton
 
 
-def make_bvhnodes(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
+def make_bvhnodes_from_sorted_mortons(idx2obj: torch.Tensor, idx2morton: torch.Tensor):
     """Build a BVH tree from sorted Morton codes.
 
     Constructs a binary BVH with `2*n - 1` nodes from `n` objects sorted by

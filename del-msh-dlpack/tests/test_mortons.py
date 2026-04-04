@@ -12,7 +12,7 @@ def test_01():
     )
     # print("vtx2morton", vtx2morton)
     (idx2vtx, idx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
-    bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes(idx2vtx, idx2morton)
+    bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes_from_sorted_mortons(idx2vtx, idx2morton)
 
     if torch.cuda.is_available():
         d_vtx2co = vtx2co.cuda()
@@ -25,7 +25,7 @@ def test_01():
         #print("d_vtx2morton", d_vtx2morton)
         assert torch.equal(d_idx2vtx.cpu(), idx2vtx)
         assert torch.equal(d_idx2morton.cpu(), idx2morton)
-        d_bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes(idx2vtx, idx2morton)
+        d_bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes_from_sorted_mortons(idx2vtx, idx2morton)
         #print("bvhnodes", bvhnodes)
         #print("d_bvhnodes", d_bvhnodes)
         assert torch.equal(d_bvhnodes.cpu(), bvhnodes)
@@ -39,7 +39,7 @@ def test_02():
         vtx2co, transform_co2unit
     )
     (idx2vtx, idx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
-    bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes(idx2vtx, idx2morton)
+    bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes_from_sorted_mortons(idx2vtx, idx2morton)
 
     if torch.cuda.is_available():
         d_vtx2co = vtx2co.cuda()
@@ -51,7 +51,7 @@ def test_02():
         (d_idx2vtx, d_idx2morton) = del_msh_dlpack.Array1D.torch.argsort(d_vtx2morton)
         assert torch.equal(d_idx2vtx.cpu(), idx2vtx)
         assert torch.equal(d_idx2morton.cpu(), idx2morton)
-        d_bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes(idx2vtx, idx2morton)
+        d_bvhnodes = del_msh_dlpack.Mortons.torch.make_bvhnodes_from_sorted_mortons(idx2vtx, idx2morton)
         #print("bvhnodes", bvhnodes)
         #print("d_bvhnodes", d_bvhnodes)
         assert torch.equal(d_bvhnodes.cpu(), bvhnodes)

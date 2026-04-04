@@ -206,16 +206,16 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
     #
     tri2centroid = make_tri2centroid(tri2vtx, vtx2xyz)
-    from ..Vtx2Xyz.torch import make_mat44_from_fit_into_unit_cube
-    transform_co2unit = make_mat44_from_fit_into_unit_cube(tri2centroid)
+    from ..Mat44.torch import from_fit_vtx2xyz_into_unit_cube
+    transform_co2unit = from_fit_vtx2xyz_into_unit_cube(tri2centroid)
     #
     from ..Mortons.torch import make_vtx2morton_from_vtx2co
     tri2morton = make_vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
     tri2tri = torch.arange(num_tri, dtype=torch.int32, device=device).to(dtype=torch.uint32)
     from ..Array1D.torch import argsort
     idx2tri, idx2morton = argsort(tri2morton)
-    from ..Mortons.torch import make_bvhnodes
-    bvhnodes = make_bvhnodes(idx2tri, idx2morton)
+    from ..Mortons.torch import make_bvhnodes_from_sorted_mortons
+    bvhnodes = make_bvhnodes_from_sorted_mortons(idx2tri, idx2morton)
     num_bvhnodes = bvhnodes.shape[0]
     #
     bvhnode2aabb = torch.empty((num_bvhnodes, 6), dtype=torch.float32, device=device)
