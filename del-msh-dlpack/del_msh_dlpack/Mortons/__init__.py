@@ -8,6 +8,6 @@ def make_vtx2morton_from_vtx2co(vtx2co, transform_co2unit, vtx2morton, stream_pt
 
 
 def make_bvhnodes_from_sorted_mortons(idx2obj, idx2morton, bvhnodes, stream_ptr=0):
-    from ..del_msh_dlpack import mortons_make_bvh
+    from ..del_msh_dlpack import mortons_make_bvhnodes_from_sorted_mortons
 
-    mortons_make_bvh(idx2obj, idx2morton, bvhnodes, stream_ptr)
+    mortons_make_bvhnodes_from_sorted_mortons(idx2obj, idx2morton, bvhnodes, stream_ptr)

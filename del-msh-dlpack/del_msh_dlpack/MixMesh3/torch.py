@@ -3,6 +3,16 @@ from .. import util_torch
 from .. import _CapsuleAsDLPack
 
 def load_cfd_mesh(path: str):
+    """Load a CFD mesh from file.
+
+    Args:
+        path: path to the CFD mesh file
+    Returns:
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
+        pyrmd2vtx: (num_pyrmd, 5) uint32 - pyramid connectivity
+        prism2vtx: (num_prism, 6) uint32 - prism connectivity
+    """
     from .. import MixMesh3
     cap_vtx2xyz, cap_tet2vtx, cap_pyrmd2vtx, cap_prism2vtx = MixMesh3.load_cfd_mesh(path)
     vtx2xyz = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2xyz))
@@ -18,6 +28,15 @@ def save_vtk(
     tet2vtx: torch.Tensor,
     pyrmd2vtx: torch.Tensor,
     prism2vtx: torch.Tensor):
+    """Save a mixed-element mesh to a VTK file.
+
+    Args:
+        path_file: output file path
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
+        pyrmd2vtx: (num_pyrmd, 5) uint32 - pyramid connectivity
+        prism2vtx: (num_prism, 6) uint32 - prism connectivity
+    """
     #
     num_vtx = vtx2xyz.shape[0]
     num_tet = tet2vtx.shape[0]
@@ -42,6 +61,16 @@ def to_polyhedral_mesh(
     tet2vtx: torch.Tensor,
     pyrmd2vtx: torch.Tensor,
     prism2vtx: torch.Tensor):
+    """Convert a mixed-element mesh to a polyhedral mesh (offset-array format).
+
+    Args:
+        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
+        pyrmd2vtx: (num_pyrmd, 5) uint32 - pyramid connectivity
+        prism2vtx: (num_prism, 6) uint32 - prism connectivity
+    Returns:
+        elem2idx_offset: (num_elem+1,) uint32 - offset array into idx2vtx per element
+        idx2vtx: (num_idx,) uint32 - concatenated vertex indices for all elements
+    """
     #
     device = tet2vtx.device
     num_tet = tet2vtx.shape[0]

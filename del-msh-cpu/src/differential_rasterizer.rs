@@ -513,6 +513,7 @@ mod tests {
                 &edge2tri,
             )
         };
+        dbg!(&edge2vtx_contour);
         //
         {
             let mut pix2val_edge = vec![1f32; img_shape.0 * img_shape.1];

@@ -5,6 +5,18 @@ def aggregate(
     idx2jdx_offset: torch.Tensor,
     jdx2kdx: torch.Tensor,
     kdx2val: torch.Tensor):
+    """Aggregate values from a source array into a target array using an offset-array index.
+
+    For each entry `i`, sums the values at `kdx2val[jdx2kdx[j]]` for all `j` in
+    `[idx2jdx_offset[i], idx2jdx_offset[i+1])` and stores the result in `idx2aggval[i]`.
+
+    Args:
+        idx2jdx_offset: (num_idx+1,) uint32 - offset array defining ranges in jdx2kdx per idx entry
+        jdx2kdx: (num_jdx,) uint32 - indices into kdx2val
+        kdx2val: (num_jdx, num_dim) float32 - values to aggregate
+    Returns:
+        idx2aggval: (num_idx, num_dim) float32 - aggregated values per idx entry
+    """
     #
     num_idx = idx2jdx_offset.shape[0] - 1
     num_jdx = jdx2kdx.shape[0]

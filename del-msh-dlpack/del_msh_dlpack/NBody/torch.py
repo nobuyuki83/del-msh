@@ -3,6 +3,7 @@ from .. import util_torch
 import del_msh_dlpack.QuadOctTree.torch
 import del_msh_dlpack.Mortons.torch
 import del_msh_dlpack.Array1D.torch
+import del_msh_dlpack.Mat44.torch as Mat44
 from .. import NBody
 
 
@@ -11,6 +12,19 @@ def filter_brute_force(
         vtx2rhs: torch.Tensor,
         model: NBody.Model,
         wtx2co: torch.Tensor):
+    """Evaluate an N-body filter using brute-force O(N*M) summation.
+
+    For each query point in wtx2co, sums contributions from all source points
+    in vtx2co weighted by vtx2rhs using the given kernel model.
+
+    Args:
+        vtx2co: (num_vtx, 3) float32 - source point positions
+        vtx2rhs: (num_vtx, 3) float32 - source point values (right-hand side)
+        model: NBody.Model - kernel model defining the interaction
+        wtx2co: (num_wtx, 3) float32 - query point positions
+    Returns:
+        wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
+    """
     num_vtx = vtx2co.shape[0]
     num_wtx = wtx2co.shape[0]
     device = vtx2co.device
@@ -45,6 +59,20 @@ def elastic(
         nu: float,
         epsilon: float,
         wtx2co: torch.Tensor):
+    """Evaluate an elastic N-body filter using brute-force O(N*M) summation.
+
+    Computes elastic kernel interactions (e.g. Stokeslet-based) between source
+    and query points using Poisson's ratio nu and regularization epsilon.
+
+    Args:
+        vtx2co: (num_vtx, 3) float32 - source point positions
+        vtx2rhs: (num_vtx, 3) float32 - source point values (right-hand side)
+        nu: float - Poisson's ratio
+        epsilon: float - regularization parameter
+        wtx2co: (num_wtx, 3) float32 - query point positions
+    Returns:
+        wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
+    """
     num_vtx = vtx2co.shape[0]
     num_wtx = wtx2co.shape[0]
     device = vtx2co.device
@@ -74,51 +102,26 @@ def elastic(
     return wtx2lhs
 
 
-def mat4_from_translate(t, device):
-    return torch.tensor([
-        [1., 0., 0., t[0]],
-        [0., 1., 0., t[1]],
-        [0., 0., 1., t[2]],
-        [0., 0., 0., 1.]
-    ], device = device)
-
-
-def mat4_from_uniform_scale(s, device):
-    return torch.tensor([
-        [s, 0., 0., 0.],
-        [0., s, 0., 0.],
-        [0., 0., s, 0.],
-        [0., 0., 0., 1.]
-    ], device = device)
-
-def mat4_from_transfrom_world2unit(vtx2xyz, device):
-    xyz_min = vtx2xyz.min(dim=0).values
-    xyz_max = vtx2xyz.max(dim=0).values
-    xyz_len = xyz_max - xyz_min
-    scale = 1.0/xyz_len.max().item()
-    xyz_center = (xyz_min + xyz_max)*0.5
-    # print(xyz_min, xyz_max, xyz_len, xyz_center, scale)
-    m1 = mat4_from_translate(-xyz_center, device)
-    m2 = mat4_from_uniform_scale(scale, device)
-    m3 = mat4_from_translate([0.5, 0.5, 0.5], device)
-    return m3 @ m2 @ m1
-
-def vtx2xyz_transform_affine(vtx2xyz, transform):
-    ones = torch.ones((vtx2xyz.shape[0], 1), dtype=torch.float, device=vtx2xyz.device)
-    vtx2xyzw = torch.cat([vtx2xyz, ones], dim=1)  # (N,4)
-    return (vtx2xyzw @ transform.T)[:, 0:3].clone()
-
-
 class TreeAccelerator:
+    """Acceleration structure for N-body filtering using a quad/oct-tree with Morton codes.
+
+    Organizes source points into a hierarchical tree to enable fast approximate
+    N-body summation via the `filter_with_acceleration` function.
+    """
 
     def __init__(self):
         self.tree2idx = del_msh_dlpack.QuadOctTree.torch.QuadOctTree()
 
     def initialize(self, vtx2xyz: torch.Tensor):
+        """Build the tree from a set of source points.
+
+        Args:
+            vtx2xyz: (num_vtx, 3) float32 - source point positions
+        """
         device = vtx2xyz.device
         num_dim = vtx2xyz.shape[1]
         assert vtx2xyz.dtype == torch.float
-        self.transform_world2unit = mat4_from_transfrom_world2unit(vtx2xyz, device)
+        self.transform_world2unit = Mat44.from_transfrom_world2unit(vtx2xyz, device)
         vtx2morton = del_msh_dlpack.Mortons.torch.make_vtx2morton_from_vtx2co(
             vtx2xyz, self.transform_world2unit)
         (self.jdx2vtx, jdx2morton) = del_msh_dlpack.Array1D.torch.argsort(vtx2morton)
@@ -128,6 +131,7 @@ class TreeAccelerator:
         self.vtx2xyz = vtx2xyz
 
     def construct_center_of_gravity(self, idx2jdx_offset, jdx2vtx, vtx2xyz, transform_world2unit):
+        """Compute the center of gravity of each tree node in unit-cube coordinates."""
         num_vtx = jdx2vtx.shape[0]
         device = idx2jdx_offset.device
         assert vtx2xyz.shape[0] == num_vtx
@@ -150,6 +154,20 @@ def filter_with_acceleration(
         wtx2xyz: torch.Tensor,
         acc: TreeAccelerator,
         theta: float):
+    """Evaluate an N-body filter using tree-based acceleration (Barnes-Hut style).
+
+    Approximates the full O(N*M) summation by grouping distant source points into
+    tree nodes. The theta parameter controls accuracy vs. speed trade-off.
+
+    Args:
+        vtx2rhs: (num_vtx, 3) float32 - source point values (right-hand side)
+        model: NBody.Model - kernel model defining the interaction
+        wtx2xyz: (num_wtx, 3) float32 - query point positions
+        acc: TreeAccelerator - pre-built acceleration structure over source points
+        theta: float - opening angle threshold; smaller = more accurate but slower
+    Returns:
+        wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
+    """
     num_vtx = vtx2rhs.shape[0]
     num_wtx = wtx2xyz.shape[0]
     num_idx = acc.idx2jdx_offset.shape[0] - 1

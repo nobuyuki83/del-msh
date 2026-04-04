@@ -13,23 +13,31 @@ def make_tri2centroid(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Ten
     Returns:
         tri2centroid: (num_tri, 3) float32
     """
-    assert tri2vtx.shape[1] == 3 and tri2vtx.dtype == torch.uint32
-    assert vtx2xyz.shape[1] == 3 and vtx2xyz.dtype == torch.float32
+    num_tri = tri2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
+    device = tri2vtx.device
+    #
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
     idx = tri2vtx.long()
     return (vtx2xyz[idx[:, 0]] + vtx2xyz[idx[:, 1]] + vtx2xyz[idx[:, 2]]) / 3.0
 
 
 def make_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
+    """Compute the unit normal vector of each triangle.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        tri2nrm: (num_tri, 3) float32 - unit normal per triangle
+    """
     num_tri = tri2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
     device = tri2vtx.device
-    assert len(tri2vtx.shape) == 2
-    assert tri2vtx.shape[1] == 3
-    assert tri2vtx.dtype == torch.uint32
     #
-    assert len(vtx2xyz.shape) == 2
-    assert vtx2xyz.shape[1] == 3
-    assert vtx2xyz.dtype == torch.float32
-    assert vtx2xyz.device == device, "vtx2xyz should be on the same device as tri2vtx"
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -52,13 +60,22 @@ def make_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
 def bwd_tri2normal(
     tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
 ):
+    """Backward pass of make_tri2normal: propagate loss gradient to vertex positions.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+        dw_tri2nrm: (num_tri, 3) float32 - loss gradient w.r.t. triangle normals
+    Returns:
+        dw_vtx2xyz: (num_vtx, 3) float32 - loss gradient w.r.t. vertex positions
+    """
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
     #
-    assert tri2vtx.shape == (num_tri,3) and tri2vtx.dtype == torch.uint32
-    assert vtx2xyz.shape == (num_vtx,3) and vtx2xyz.dtype == torch.float32 and vtx2xyz.device == device
-    assert dw_tri2nrm.shape == (num_tri,3) and dw_tri2nrm.dtype == torch.float32 and dw_tri2nrm.device == device
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(dw_tri2nrm, (num_tri, 3), torch.float32, device)
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -78,6 +95,8 @@ def bwd_tri2normal(
 
 
 class Tri2Normal(torch.autograd.Function):
+    """Differentiable triangle normal computation as a torch.autograd.Function."""
+
     @staticmethod
     def forward(ctx, tri2vtx, vtx2xyz):
         ctx.save_for_backward(tri2vtx, vtx2xyz)
@@ -92,6 +111,14 @@ class Tri2Normal(torch.autograd.Function):
 
 def load_nastran(
         path_file: str):
+    """Load a triangle mesh from a Nastran file.
+
+    Args:
+        path_file: path to the Nastran file
+    Returns:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    """
     from .. import TriMesh3
 
     cap_tri2vtx, cap_vtx2xyz = TriMesh3.load_nastran(path_file)
@@ -101,6 +128,13 @@ def load_nastran(
 
 
 def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: str):
+    """Save a triangle mesh to a Wavefront OBJ file.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity (CPU only)
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions (CPU only)
+        path_file: output file path
+    """
     assert tri2vtx.device.type == "cpu"
     assert vtx2xyz.device.type == "cpu"
 
@@ -114,6 +148,17 @@ def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: 
 
 
 def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor: int):
+    """Generate a torus triangle mesh.
+
+    Args:
+        major_raidus: radius from the center of the tube to the center of the torus
+        minor_radius: radius of the tube
+        ndiv_major: number of divisions around the major axis
+        ndiv_minor: number of divisions around the tube
+    Returns:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    """
     from .. import TriMesh3
 
     cap_tri2vtx, cap_vtx2xyz = TriMesh3.torus(major_raidus, minor_radius, ndiv_major, ndiv_minor)
@@ -123,6 +168,16 @@ def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor:
 
 
 def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
+    """Generate a sphere triangle mesh.
+
+    Args:
+        raidus: radius of the sphere
+        ndiv_longtitude: number of divisions along longitude
+        ndiv_latitude: number of divisions along latitude
+    Returns:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    """
     from .. import TriMesh3
 
     cap_tri2vtx, cap_vtx2xyz = TriMesh3.sphere(raidus, ndiv_longtitude, ndiv_latitude)
@@ -132,9 +187,21 @@ def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
 
 
 def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
+    """Build a BVH (Bounding Volume Hierarchy) for a triangle mesh.
+
+    Constructs BVH nodes and their AABBs using Morton-code sorting of triangle centroids.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        bvhnodes: (2*num_tri-1, 3) uint32 - BVH node data (left, right, parent)
+        bvhnode2aabb: (2*num_tri-1, 6) float32 - axis-aligned bounding box per node
+    """
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
+    #
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
     #

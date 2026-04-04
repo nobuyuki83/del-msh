@@ -5,6 +5,15 @@ def elem2volume(
     elem2idx_offset: torch.Tensor,
     idx2vtx: torch.Tensor,
     vtx2xyz: torch.Tensor):
+    """Compute the volume of each polyhedral element.
+
+    Args:
+        elem2idx_offset: (num_elem+1,) uint32 - offset array into idx2vtx per element
+        idx2vtx: (num_idx,) uint32 - concatenated vertex indices for all elements
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        elem2volume: (num_elem,) float32 - volume of each element
+    """
     #
     num_elem = elem2idx_offset.shape[0] - 1
     num_idx = idx2vtx.shape[0]

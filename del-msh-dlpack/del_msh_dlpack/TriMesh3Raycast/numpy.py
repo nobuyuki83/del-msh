@@ -18,10 +18,10 @@ def update_pix2tri(
     print(num_bvhnode, num_tri, num_vtx)
     assert num_bvhnode == num_tri * 2 - 1
     util_numpy.assert_shape_dtype(tri2vtx, (num_tri,3), np.uint32)
-    util_torch.assert_shape_dtype(vtx2xyz, (num_vtx, 3), np.float32)
-    util_torch.assert_shape_dtype(bvhnodes, (num_bvhnode, 3), np.uint32)
-    util_torch.assert_shape_dtype(bvhnode2aabb, (num_bvhnode, 6), np.float32)
-    util_torch.assert_shape_dtype(pix2tri, (img_h, img_w), np.uint32)
+    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx, 3), np.float32)
+    util_numpy.assert_shape_dtype(bvhnodes, (num_bvhnode, 3), np.uint32)
+    util_numpy.assert_shape_dtype(bvhnode2aabb, (num_bvhnode, 6), np.float32)
+    util_numpy.assert_shape_dtype(pix2tri, (img_h, img_w), np.uint32)
     #
     from ..TriMesh3Raycast import update_pix2tri
 
@@ -30,6 +30,6 @@ def update_pix2tri(
         vtx2xyz.__dlpack__(),
         bvhnodes.__dlpack__(),
         bvhnode2aabb.__dlpack__(),
-        transform_ndc2world.T.contiguous().__dlpack__(),
+        transform_ndc2world.T.copy().__dlpack__(),
         pix2tri.__dlpack__(),
     )

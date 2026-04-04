@@ -2,6 +2,14 @@ import torch
 from .. import util_torch
 
 def permute(old2val: torch.Tensor, new2old: torch.Tensor):
+    """Permute a 1D array according to an index mapping.
+
+    Args:
+        old2val: (n,) uint32 - source array
+        new2old: (n,) uint32 - mapping from new indices to old indices
+    Returns:
+        new2val: (n,) uint32 - permuted array where new2val[i] = old2val[new2old[i]]
+    """
     n = old2val.shape[0]
     device = old2val.device
     #
@@ -26,6 +34,14 @@ def permute(old2val: torch.Tensor, new2old: torch.Tensor):
 
 
 def argsort(idx2val: torch.Tensor):
+    """Sort a 1D array and return both the sorted indices and sorted values.
+
+    Args:
+        idx2val: (n,) uint32 - array to sort
+    Returns:
+        jdx2idx: (n,) uint32 - original indices in sorted order (argsort result)
+        jdx2val: (n,) uint32 - sorted values
+    """
     n = idx2val.shape[0]
     device = idx2val.device
     #
@@ -52,6 +68,13 @@ def argsort(idx2val: torch.Tensor):
 # below sorted
 
 def has_duplicate_in_sorted_array(idx2val: torch.Tensor):
+    """Check whether a sorted array contains any duplicate values.
+
+    Args:
+        idx2val: (n,) uint32 - sorted array to check
+    Returns:
+        bool - True if any duplicate values exist
+    """
     n = idx2val.shape[0]
     device = idx2val.device
     #
@@ -73,6 +96,15 @@ def has_duplicate_in_sorted_array(idx2val: torch.Tensor):
 
 
 def unique_for_sorted_array(idx2val: torch.Tensor):
+    """Compute unique values and their groupings from a sorted array.
+
+    Args:
+        idx2val: (num_idx,) uint32 - sorted array (must be sorted)
+    Returns:
+        idx2jdx: (num_idx,) uint32 - maps each element to its unique group index
+        jdx2val: (num_jdx,) uint32 - unique values
+        jdx2idx_offset: (num_jdx+1,) uint32 - offset array into idx2val per unique group
+    """
     from .. import Array1D
     #
     num_idx = idx2val.shape[0]

@@ -4,7 +4,7 @@ use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(mortons_vtx2morton_from_vtx2co, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(mortons_make_bvh, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(mortons_make_bvhnodes_from_sorted_mortons, m)?)?;
     Ok(())
 }
 
@@ -77,7 +77,7 @@ fn mortons_vtx2morton_from_vtx2co(
 }
 
 #[pyfunction]
-fn mortons_make_bvh(
+fn mortons_make_bvhnodes_from_sorted_mortons(
     _py: Python<'_>,
     idx2obj: &Bound<'_, PyAny>,
     idx2morton: &Bound<'_, PyAny>,
