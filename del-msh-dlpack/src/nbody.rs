@@ -1,6 +1,9 @@
 #[cfg(feature = "cuda")]
 use del_cudarc_sys::{cu::CUdeviceptr, CuVec};
-use del_dlpack::dlpack;
+use del_dlpack::{
+    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, slice, slice_mut,
+};
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -25,29 +28,31 @@ fn filter_brute_force(
     wtx2lhs: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2co = del_dlpack::get_managed_tensor_from_pyany(vtx2co)?;
-    let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
-    let wtx2co = del_dlpack::get_managed_tensor_from_pyany(wtx2co)?;
-    let wtx2lhs = del_dlpack::get_managed_tensor_from_pyany(wtx2lhs)?;
+    let vtx2co = get_tensor(vtx2co)?;
+    let vtx2rhs = get_tensor(vtx2rhs)?;
+    let wtx2co = get_tensor(wtx2co)?;
+    let wtx2lhs = get_tensor(wtx2lhs)?;
     //
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
-    let num_wtx = del_dlpack::get_shape_tensor(wtx2co, 0).unwrap();
-    let num_dim = del_dlpack::get_shape_tensor(vtx2co, 1).unwrap();
-    let num_vdim = del_dlpack::get_shape_tensor(vtx2rhs, 1).unwrap();
+    let num_vtx = shape(vtx2co, 0).unwrap();
+    let num_wtx = shape(wtx2co, 0).unwrap();
+    let num_dim = shape(vtx2co, 1).unwrap();
+    let num_vdim = shape(vtx2rhs, 1).unwrap();
     let device = vtx2co.ctx.device_type;
     //
-    del_dlpack::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(wtx2co, num_wtx, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
+    chk2::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    chk2::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
+    chk2::<f32>(wtx2co, num_wtx, num_dim, device).unwrap();
+    chk2::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2co) }.unwrap();
-            let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
-            let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
-            let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
-            del_msh_cpu::nbody::filter_brute_force(&model, wtx2co, wtx2lhs, vtx2co, vtx2rhs);
+            del_msh_cpu::nbody::filter_brute_force(
+                &model,
+                slice!(wtx2co, f32).unwrap(),
+                slice_mut!(wtx2lhs, f32).unwrap(),
+                slice!(vtx2co, f32).unwrap(),
+                slice!(vtx2rhs, f32).unwrap(),
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -177,75 +182,59 @@ fn filter_with_acceleration(
     theta: f32,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2co = del_dlpack::get_managed_tensor_from_pyany(vtx2co)?;
-    let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
-    let wtx2co = del_dlpack::get_managed_tensor_from_pyany(wtx2co)?;
-    let wtx2lhs = del_dlpack::get_managed_tensor_from_pyany(wtx2lhs)?;
-    let transform_world2unit = del_dlpack::get_managed_tensor_from_pyany(transform_world2unit)?;
-    let idx2jdx_offset = del_dlpack::get_managed_tensor_from_pyany(idx2jdx_offset)?;
-    let jdx2vtx = del_dlpack::get_managed_tensor_from_pyany(jdx2vtx)?;
-    let onode2idx_tree = del_dlpack::get_managed_tensor_from_pyany(onode2idx_tree)?;
-    let onode2center = del_dlpack::get_managed_tensor_from_pyany(onode2center)?;
-    let onode2depth = del_dlpack::get_managed_tensor_from_pyany(onode2depth)?;
-    let onode2gcunit = del_dlpack::get_managed_tensor_from_pyany(onode2gcunit)?;
-    let onode2rhs = del_dlpack::get_managed_tensor_from_pyany(onode2rhs)?;
+    let vtx2co = get_tensor(vtx2co)?;
+    let vtx2rhs = get_tensor(vtx2rhs)?;
+    let wtx2co = get_tensor(wtx2co)?;
+    let wtx2lhs = get_tensor(wtx2lhs)?;
+    let transform_world2unit = get_tensor(transform_world2unit)?;
+    let idx2jdx_offset = get_tensor(idx2jdx_offset)?;
+    let jdx2vtx = get_tensor(jdx2vtx)?;
+    let onode2idx_tree = get_tensor(onode2idx_tree)?;
+    let onode2center = get_tensor(onode2center)?;
+    let onode2depth = get_tensor(onode2depth)?;
+    let onode2gcunit = get_tensor(onode2gcunit)?;
+    let onode2rhs = get_tensor(onode2rhs)?;
     //
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
-    let num_wtx = del_dlpack::get_shape_tensor(wtx2co, 0).unwrap();
-    let num_dim = del_dlpack::get_shape_tensor(vtx2co, 1).unwrap();
-    let num_vdim = del_dlpack::get_shape_tensor(vtx2rhs, 1).unwrap();
-    let num_onode = del_dlpack::get_shape_tensor(onode2idx_tree, 0).unwrap();
-    let num_idx = del_dlpack::get_shape_tensor(idx2jdx_offset, 0).unwrap() - 1;
+    let num_vtx = shape(vtx2co, 0).unwrap();
+    let num_wtx = shape(wtx2co, 0).unwrap();
+    let num_dim = shape(vtx2co, 1).unwrap();
+    let num_vdim = shape(vtx2rhs, 1).unwrap();
+    let num_onode = shape(onode2idx_tree, 0).unwrap();
+    let num_idx = shape(idx2jdx_offset, 0).unwrap() - 1;
     let device = vtx2co.ctx.device_type;
     //
-    del_dlpack::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(wtx2co, num_wtx, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
-    del_dlpack::check_1d_tensor::<f32>(transform_world2unit, 16, device).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(idx2jdx_offset, num_idx + 1, device).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(jdx2vtx, num_vtx, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(onode2idx_tree, num_onode, 9, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(onode2center, num_onode, 3, device).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(onode2depth, num_onode, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(onode2gcunit, num_onode, 3, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(onode2rhs, num_onode, 3, device).unwrap();
+    chk2::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    chk2::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
+    chk2::<f32>(wtx2co, num_wtx, num_dim, device).unwrap();
+    chk2::<f32>(wtx2lhs, num_wtx, num_vdim, device).unwrap();
+    chk1::<f32>(transform_world2unit, 16, device).unwrap();
+    chk1::<u32>(idx2jdx_offset, num_idx + 1, device).unwrap();
+    chk1::<u32>(jdx2vtx, num_vtx, device).unwrap();
+    chk2::<u32>(onode2idx_tree, num_onode, 9, device).unwrap();
+    chk2::<f32>(onode2center, num_onode, 3, device).unwrap();
+    chk1::<u32>(onode2depth, num_onode, device).unwrap();
+    chk2::<f32>(onode2gcunit, num_onode, 3, device).unwrap();
+    chk2::<f32>(onode2rhs, num_onode, 3, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2co) }.unwrap();
-            let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs) }.unwrap();
-            let wtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(wtx2co) }.unwrap();
-            let wtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(wtx2lhs) }.unwrap();
-            let transform_world2unit =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2unit) }.unwrap();
-            let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 16];
-            let idx2jdx_offset = unsafe { del_dlpack::slice_from_tensor(idx2jdx_offset) }.unwrap();
-            let jdx2vtx = unsafe { del_dlpack::slice_from_tensor(jdx2vtx) }.unwrap();
-            let onodes = unsafe { del_dlpack::slice_from_tensor::<u32>(onode2idx_tree) }.unwrap();
-            let onode2center =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(onode2center) }.unwrap();
-            let onode2depth = unsafe { del_dlpack::slice_from_tensor::<u32>(onode2depth) }.unwrap();
-            let onode2gcunit =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(onode2gcunit) }.unwrap();
-            let onode2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(onode2rhs) }.unwrap();
             use slice_of_array::SliceNestExt;
             del_msh_cpu::nbody::barnes_hut(
                 &model,
-                vtx2co,
-                vtx2rhs,
-                wtx2co,
-                wtx2lhs,
-                transform_world2unit,
+                slice!(vtx2co, f32).unwrap(),
+                slice!(vtx2rhs, f32).unwrap(),
+                slice!(wtx2co, f32).unwrap(),
+                slice_mut!(wtx2lhs, f32).unwrap(),
+                arrayref::array_ref![slice!(transform_world2unit, f32).unwrap(), 0, 16],
                 del_msh_cpu::nbody::Octree {
-                    onodes,
-                    onode2center,
-                    onode2depth,
+                    onodes: slice!(onode2idx_tree, u32).unwrap(),
+                    onode2center: slice!(onode2center, f32).unwrap(),
+                    onode2depth: slice!(onode2depth, u32).unwrap(),
                 },
-                idx2jdx_offset,
-                jdx2vtx,
-                onode2gcunit.nest(),
-                onode2rhs,
+                slice!(idx2jdx_offset, u32).unwrap(),
+                slice!(jdx2vtx, u32).unwrap(),
+                slice!(onode2gcunit, f32).unwrap().nest(),
+                slice!(onode2rhs, f32).unwrap(),
                 theta,
             );
         }

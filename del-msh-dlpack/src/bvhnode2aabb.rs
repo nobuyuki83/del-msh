@@ -1,4 +1,7 @@
-use del_dlpack::dlpack;
+use del_dlpack::{
+    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_2d_tensor as chk2, slice, slice_mut,
+};
 use pyo3::{Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -18,46 +21,42 @@ pub fn bvhnode2aabb_update_aabb(
     vtx2xyz1: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let bvhnode2aabb = del_dlpack::get_managed_tensor_from_pyany(bvhnode2aabb)?;
-    let bvhnodes = del_dlpack::get_managed_tensor_from_pyany(bvhnodes)?;
-    let elem2vtx = del_dlpack::get_managed_tensor_from_pyany(elem2vtx)?;
-    let vtx2xyz0 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz0)?;
-    let vtx2xyz1 = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz1)?;
+    let bvhnode2aabb = get_tensor(bvhnode2aabb)?;
+    let bvhnodes = get_tensor(bvhnodes)?;
+    let elem2vtx = get_tensor(elem2vtx)?;
+    let vtx2xyz0 = get_tensor(vtx2xyz0)?;
+    let vtx2xyz1 = get_tensor(vtx2xyz1)?;
     //
     let device = bvhnode2aabb.ctx.device_type;
-    let num_vtx0 = del_dlpack::get_shape_tensor(vtx2xyz0, 0).unwrap();
-    let num_vtx1 = del_dlpack::get_shape_tensor(vtx2xyz1, 0).unwrap();
-    let num_dim = del_dlpack::get_shape_tensor(vtx2xyz0, 1).unwrap();
-    let num_bvhnode = del_dlpack::get_shape_tensor(bvhnode2aabb, 0).unwrap();
-    let num_elem = del_dlpack::get_shape_tensor(elem2vtx, 0).unwrap();
-    let num_noel = del_dlpack::get_shape_tensor(elem2vtx, 1).unwrap();
+    let num_vtx0 = shape(vtx2xyz0, 0).unwrap();
+    let num_vtx1 = shape(vtx2xyz1, 0).unwrap();
+    let num_dim = shape(vtx2xyz0, 1).unwrap();
+    let num_bvhnode = shape(bvhnode2aabb, 0).unwrap();
+    let num_elem = shape(elem2vtx, 0).unwrap();
+    let num_noel = shape(elem2vtx, 1).unwrap();
     //
-    del_dlpack::check_2d_tensor::<f32>(bvhnode2aabb, num_bvhnode, num_dim * 2, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(bvhnodes, num_bvhnode, 3, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz0, num_vtx0, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz1, num_vtx1, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(elem2vtx, num_elem, num_noel, device).unwrap();
+    chk2::<f32>(bvhnode2aabb, num_bvhnode, num_dim * 2, device).unwrap();
+    chk2::<u32>(bvhnodes, num_bvhnode, 3, device).unwrap();
+    chk2::<f32>(vtx2xyz0, num_vtx0, num_dim, device).unwrap();
+    chk2::<f32>(vtx2xyz1, num_vtx1, num_dim, device).unwrap();
+    chk2::<u32>(elem2vtx, num_elem, num_noel, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let bvhnode2aabb =
-                unsafe { del_dlpack::slice_from_tensor_mut(bvhnode2aabb) }.unwrap();
-            let bvhnodes = unsafe { del_dlpack::slice_from_tensor(bvhnodes) }.unwrap();
-            let vtx2xyz0 = unsafe { del_dlpack::slice_from_tensor(vtx2xyz0) }.unwrap();
-            let vtx2xyz1 = unsafe { del_dlpack::slice_from_tensor(vtx2xyz1) }.unwrap();
+            let vtx2xyz0 = slice!(vtx2xyz0, f32).unwrap();
+            let vtx2xyz1 = slice!(vtx2xyz1, f32).unwrap();
             let vtx2xyz1 = if vtx2xyz0.len() == vtx2xyz1.len() {
                 Some(vtx2xyz1)
             } else {
                 None
             };
-            let elem2vtx = unsafe { del_dlpack::slice_from_tensor(elem2vtx) }.unwrap();
             match num_dim {
                 3 => {
                     del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<u32, f32>(
-                        bvhnode2aabb,
+                        slice_mut!(bvhnode2aabb, f32).unwrap(),
                         i_bvhnode,
-                        bvhnodes,
-                        elem2vtx,
+                        slice!(bvhnodes, u32).unwrap(),
+                        slice!(elem2vtx, u32).unwrap(),
                         num_noel as usize,
                         vtx2xyz0,
                         vtx2xyz1,

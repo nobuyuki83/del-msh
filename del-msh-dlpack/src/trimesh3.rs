@@ -1,4 +1,7 @@
-use del_dlpack::dlpack;
+use del_dlpack::{
+    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_2d_tensor as chk2, slice, slice_mut,
+};
 use pyo3::{prelude::PyModule, pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -16,23 +19,24 @@ pub fn trimesh3_tri2normal(
     tri2nrm: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
-    let vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
-    let tri2nrm = del_dlpack::get_managed_tensor_from_pyany(tri2nrm)?;
+    let tri2vtx = get_tensor(tri2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let tri2nrm = get_tensor(tri2nrm)?;
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = del_dlpack::get_shape_tensor(tri2vtx, 0).unwrap();
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2xyz, 0).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
     //
-    del_dlpack::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(tri2nrm, num_tri, 3, device_type).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    chk2::<f32>(tri2nrm, num_tri, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let tri2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(tri2vtx).unwrap() };
-            let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let tri2nrm = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(tri2nrm).unwrap() };
-            del_msh_cpu::trimesh3::tri2normal::<f32, u32>(tri2vtx, vtx2xyz, tri2nrm);
+            del_msh_cpu::trimesh3::tri2normal::<f32, u32>(
+                slice!(tri2vtx, u32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap(),
+                slice_mut!(tri2nrm, f32).unwrap(),
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -74,29 +78,28 @@ pub fn trimesh3_bwd_tri2normal(
     dw_vtx2xyz: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
-    let vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
-    let dw_tri2nrm = del_dlpack::get_managed_tensor_from_pyany(dw_tri2nrm)?;
-    let dw_vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(dw_vtx2xyz)?;
+    let tri2vtx = get_tensor(tri2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let dw_tri2nrm = get_tensor(dw_tri2nrm)?;
+    let dw_vtx2xyz = get_tensor(dw_vtx2xyz)?;
     //
     let device_type = tri2vtx.ctx.device_type;
-    let num_tri = del_dlpack::get_shape_tensor(tri2vtx, 0).unwrap();
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2xyz, 0).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
     //
-    del_dlpack::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(dw_tri2nrm, num_tri, 3, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(dw_vtx2xyz, num_vtx, 3, device_type).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device_type).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device_type).unwrap();
+    chk2::<f32>(dw_tri2nrm, num_tri, 3, device_type).unwrap();
+    chk2::<f32>(dw_vtx2xyz, num_vtx, 3, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let tri2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(tri2vtx).unwrap() };
-            let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let dw_tri2nrm =
-                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(dw_tri2nrm).unwrap() };
-            let dw_vtx2xyz =
-                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(dw_vtx2xyz).unwrap() };
-            del_msh_cpu::trimesh3::bwd_tri2normal::<u32>(tri2vtx, vtx2xyz, dw_tri2nrm, dw_vtx2xyz);
+            del_msh_cpu::trimesh3::bwd_tri2normal::<u32>(
+                slice!(tri2vtx, u32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap(),
+                slice_mut!(dw_tri2nrm, f32).unwrap(),
+                slice_mut!(dw_vtx2xyz, f32).unwrap(),
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

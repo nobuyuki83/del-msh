@@ -1,4 +1,7 @@
-use del_dlpack::dlpack;
+use del_dlpack::{
+    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_2d_tensor as chk2, slice, slice_mut,
+};
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -11,54 +14,42 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 #[pyo3::pyfunction]
 pub fn differential_rasterizer_bwd_antialias(
     _py: Python<'_>,
-    edge2vtx_contour: &Bound<'_, PyAny>,
+    cedge2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
     dldw_vtx2xyz: &Bound<'_, PyAny>,
     transform_world2pix: &Bound<'_, PyAny>,
     dldw_pixval: &Bound<'_, PyAny>,
     pix2tri: &Bound<'_, PyAny>,
 ) -> PyResult<()> {
-    let edge2vtx_contour = del_dlpack::get_managed_tensor_from_pyany(edge2vtx_contour)?;
-    let vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
-    let dldw_vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(dldw_vtx2xyz)?;
-    let transform_world2pix = del_dlpack::get_managed_tensor_from_pyany(transform_world2pix)?;
-    let dldw_pixval = del_dlpack::get_managed_tensor_from_pyany(dldw_pixval)?;
-    let pix2tri = del_dlpack::get_managed_tensor_from_pyany(pix2tri)?;
+    let cedge2vtx = get_tensor(cedge2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let dldw_vtx2xyz = get_tensor(dldw_vtx2xyz)?;
+    let transform_world2pix = get_tensor(transform_world2pix)?;
+    let dldw_pix2occ = get_tensor(dldw_pixval)?;
+    let pix2tri = get_tensor(pix2tri)?;
     //
-    let num_contour = del_dlpack::get_shape_tensor(&edge2vtx_contour, 0).unwrap();
-    let num_vtx = del_dlpack::get_shape_tensor(&vtx2xyz, 0).unwrap();
-    let img_h = del_dlpack::get_shape_tensor(&dldw_pixval, 0).unwrap();
-    let img_w = del_dlpack::get_shape_tensor(&dldw_pixval, 1).unwrap();
-    let device = edge2vtx_contour.ctx.device_type;
+    let num_contour = shape(&cedge2vtx, 0).unwrap();
+    let num_vtx = shape(&vtx2xyz, 0).unwrap();
+    let img_h = shape(&dldw_pix2occ, 0).unwrap();
+    let img_w = shape(&dldw_pix2occ, 1).unwrap();
+    let device = cedge2vtx.ctx.device_type;
     //
-    del_dlpack::check_2d_tensor::<u32>(edge2vtx_contour, num_contour, 2, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(dldw_vtx2xyz, num_vtx, 3, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(dldw_pixval, img_h, img_w, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(pix2tri, img_h, img_w, device).unwrap();
+    chk2::<u32>(cedge2vtx, num_contour, 2, device).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(dldw_vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(dldw_pix2occ, img_h, img_w, device).unwrap();
+    chk2::<u32>(pix2tri, img_h, img_w, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let edge2vtx_contour =
-                unsafe { del_dlpack::slice_from_tensor::<u32>(edge2vtx_contour).unwrap() };
-            let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let dldw_vtx2xyz =
-                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(dldw_vtx2xyz).unwrap() };
-            let transform_world2pix =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2pix).unwrap() };
-            let transform_world2pix = arrayref::array_ref![transform_world2pix, 0, 16];
-            let dldw_pixval =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(dldw_pixval).unwrap() };
-            let pix2tri = unsafe { del_dlpack::slice_from_tensor::<u32>(pix2tri).unwrap() };
-            //
             del_msh_cpu::differential_rasterizer::bwd_antialias(
-                edge2vtx_contour,
-                vtx2xyz,
-                dldw_vtx2xyz,
-                transform_world2pix,
+                slice!(cedge2vtx, u32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap(),
+                slice_mut!(dldw_vtx2xyz, f32).unwrap(),
+                arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),
-                dldw_pixval,
-                pix2tri,
+                slice!(dldw_pix2occ, f32).unwrap(),
+                slice!(pix2tri, u32).unwrap(),
             );
             Ok(())
         }
@@ -71,53 +62,67 @@ pub fn differential_rasterizer_bwd_antialias(
 #[pyo3::pyfunction]
 pub fn differential_rasterizer_antialias(
     _py: Python<'_>,
-    edge2vtx_contour: &Bound<'_, PyAny>,
+    cedge2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
     transform_world2pix: &Bound<'_, PyAny>,
     pix2tri: &Bound<'_, PyAny>,
-    img_data: &Bound<'_, PyAny>,
+    pic2occ: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let edge2vtx_contour = del_dlpack::get_managed_tensor_from_pyany(edge2vtx_contour)?;
-    let vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
-    let transform_world2pix = del_dlpack::get_managed_tensor_from_pyany(transform_world2pix)?;
-    let pix2tri = del_dlpack::get_managed_tensor_from_pyany(pix2tri)?;
-    let img_data = del_dlpack::get_managed_tensor_from_pyany(img_data)?;
+    let cedge2vtx = get_tensor(cedge2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let transform_world2pix = get_tensor(transform_world2pix)?;
+    let pix2tri = get_tensor(pix2tri)?;
+    let pix2occ = get_tensor(pic2occ)?;
     //
-    let num_contour = del_dlpack::get_shape_tensor(&edge2vtx_contour, 0).unwrap();
-    let num_vtx = del_dlpack::get_shape_tensor(&vtx2xyz, 0).unwrap();
-    let img_h = del_dlpack::get_shape_tensor(&img_data, 0).unwrap();
-    let img_w = del_dlpack::get_shape_tensor(&img_data, 1).unwrap();
-    let device = edge2vtx_contour.ctx.device_type;
+    let num_cedge = shape(&cedge2vtx, 0).unwrap();
+    let num_vtx = shape(&vtx2xyz, 0).unwrap();
+    let img_h = shape(&pix2occ, 0).unwrap();
+    let img_w = shape(&pix2occ, 1).unwrap();
+    let device = cedge2vtx.ctx.device_type;
     //
-    del_dlpack::check_2d_tensor::<u32>(edge2vtx_contour, num_contour, 2, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(img_data, img_h, img_w, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(pix2tri, img_h, img_w, device).unwrap();
+    chk2::<u32>(cedge2vtx, num_cedge, 2, device).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(pix2occ, img_h, img_w, device).unwrap();
+    chk2::<u32>(pix2tri, img_h, img_w, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let edge2vtx_contour =
-                unsafe { del_dlpack::slice_from_tensor::<u32>(edge2vtx_contour).unwrap() };
-            let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz).unwrap() };
-            let transform_world2pix =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_world2pix).unwrap() };
-            let transform_world2pix = arrayref::array_ref![transform_world2pix, 0, 16];
-            let img_data =
-                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(img_data).unwrap() };
-            let pix2tri = unsafe { del_dlpack::slice_from_tensor::<u32>(pix2tri).unwrap() };
-            //
             del_msh_cpu::differential_rasterizer::antialias(
-                edge2vtx_contour,
-                vtx2xyz,
-                transform_world2pix,
+                slice!(cedge2vtx, u32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap(),
+                arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),
-                img_data,
-                pix2tri,
+                slice_mut!(pix2occ, f32).unwrap(),
+                slice!(pix2tri, u32).unwrap(),
             );
-            Ok(())
-        }
+        },
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::differentiable_rasterizer",
+                del_msh_cuda_kernels::get("differentiable_rasterizer").unwrap(),
+                "antialias_fwd",
+            ).unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_cedge as u32);
+            builder.arg_data(&cedge2vtx.data);
+            builder.arg_u32(img_w as u32);
+            builder.arg_u32(img_h as u32);
+            builder.arg_data(&pix2occ.data);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_data(&vtx2xyz.data);
+            builder.arg_data(&transform_world2pix.data);
+            builder
+                .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_cedge as u32))
+                .unwrap();
+        },
         _ => {
             todo!()
         }
     }
+    Ok(())
 }

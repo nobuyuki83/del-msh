@@ -1,6 +1,9 @@
-use del_dlpack::dlpack;
-use del_dlpack::pyo3;
-//
+use del_dlpack::{
+    dlpack, pyo3,
+    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_1d_tensor as chk1, check_2d_tensor as chk2,
+    make_capsule_from_vec as capsule, slice, slice_mut,
+};
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
@@ -29,40 +32,33 @@ fn vtx2vtx_laplacian_smoothing(
     vtx2lhstmp: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2idx_offset = del_dlpack::get_managed_tensor_from_pyany(vtx2idx)?;
-    let idx2vtx = del_dlpack::get_managed_tensor_from_pyany(idx2vtx)?;
-    let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
-    let vtx2lhs = del_dlpack::get_managed_tensor_from_pyany(vtx2lhs)?;
-    let vtx2lhstmp = del_dlpack::get_managed_tensor_from_pyany(vtx2lhstmp)?;
+    let vtx2idx_offset = get_tensor(vtx2idx)?;
+    let idx2vtx = get_tensor(idx2vtx)?;
+    let vtx2rhs = get_tensor(vtx2rhs)?;
+    let vtx2lhs = get_tensor(vtx2lhs)?;
+    let vtx2lhstmp = get_tensor(vtx2lhstmp)?;
     //
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2idx_offset, 0).unwrap() - 1;
-    let num_dim = del_dlpack::get_shape_tensor(vtx2rhs, 1).unwrap();
+    let num_vtx = shape(vtx2idx_offset, 0).unwrap() - 1;
+    let num_dim = shape(vtx2rhs, 1).unwrap();
     let device_type = vtx2idx_offset.ctx.device_type;
     //
-    del_dlpack::check_1d_tensor::<u32>(vtx2idx_offset, num_vtx + 1, device_type).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(idx2vtx, -1, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_dim, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_dim, device_type).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2lhstmp, num_vtx, num_dim, device_type).unwrap();
+    chk1::<u32>(vtx2idx_offset, num_vtx + 1, device_type).unwrap();
+    chk1::<u32>(idx2vtx, -1, device_type).unwrap();
+    chk2::<f32>(vtx2rhs, num_vtx, num_dim, device_type).unwrap();
+    chk2::<f32>(vtx2lhs, num_vtx, num_dim, device_type).unwrap();
+    chk2::<f32>(vtx2lhstmp, num_vtx, num_dim, device_type).unwrap();
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            let vtx2idx_offset =
-                unsafe { del_dlpack::slice_from_tensor::<u32>(vtx2idx_offset).unwrap() };
-            let idx2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2vtx).unwrap() };
-            let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
-            let vtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
-            let vtx2lhstmp =
-                unsafe { del_dlpack::slice_from_tensor_mut::<f32>(vtx2lhstmp).unwrap() };
             del_msh_cpu::vtx2vtx::laplacian_smoothing::<u32>(
-                vtx2idx_offset,
-                idx2vtx,
+                slice!(vtx2idx_offset, u32).unwrap(),
+                slice!(idx2vtx, u32).unwrap(),
                 lambda,
                 3,
-                vtx2lhs,
-                vtx2rhs,
+                slice_mut!(vtx2lhs, f32).unwrap(),
+                slice!(vtx2rhs, f32).unwrap(),
                 num_iter,
-                vtx2lhstmp,
+                slice_mut!(vtx2lhstmp, f32).unwrap(),
             );
         }
         #[cfg(feature = "cuda")]
@@ -138,33 +134,29 @@ fn vtx2vtx_multiply_graph_laplacian(
     vtx2lhs: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2idx = del_dlpack::get_managed_tensor_from_pyany(vtx2idx_offset)?;
-    let idx2vtx = del_dlpack::get_managed_tensor_from_pyany(idx2vtx)?;
-    let vtx2rhs = del_dlpack::get_managed_tensor_from_pyany(vtx2rhs)?;
-    let vtx2lhs = del_dlpack::get_managed_tensor_from_pyany(vtx2lhs)?;
+    let vtx2idx = get_tensor(vtx2idx_offset)?;
+    let idx2vtx = get_tensor(idx2vtx)?;
+    let vtx2rhs = get_tensor(vtx2rhs)?;
+    let vtx2lhs = get_tensor(vtx2lhs)?;
     //
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2idx, 0).unwrap() - 1;
-    let num_vdim = del_dlpack::get_shape_tensor(vtx2lhs, 1).unwrap();
-    let num_idx = del_dlpack::get_shape_tensor(idx2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2idx, 0).unwrap() - 1;
+    let num_vdim = shape(vtx2lhs, 1).unwrap();
+    let num_idx = shape(idx2vtx, 0).unwrap();
     let device = vtx2idx.ctx.device_type;
     //
-    del_dlpack::check_1d_tensor::<u32>(vtx2idx, num_vtx + 1, device).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(idx2vtx, num_idx, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(vtx2lhs, num_vtx, num_vdim, device).unwrap();
+    chk1::<u32>(vtx2idx, num_vtx + 1, device).unwrap();
+    chk1::<u32>(idx2vtx, num_idx, device).unwrap();
+    chk2::<f32>(vtx2rhs, num_vtx, num_vdim, device).unwrap();
+    chk2::<f32>(vtx2lhs, num_vtx, num_vdim, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2idx = unsafe { del_dlpack::slice_from_tensor::<u32>(vtx2idx).unwrap() };
-            let idx2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2vtx).unwrap() };
-            let vtx2rhs = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2rhs).unwrap() };
-            let vtx2lhs = unsafe { del_dlpack::slice_from_tensor_mut::<f32>(vtx2lhs).unwrap() };
             del_msh_cpu::vtx2vtx::multiply_graph_laplacian::<u32>(
-                vtx2idx,
-                idx2vtx,
+                slice!(vtx2idx, u32).unwrap(),
+                slice!(idx2vtx, u32).unwrap(),
                 num_vdim as usize,
-                vtx2rhs,
-                vtx2lhs,
+                slice!(vtx2rhs, f32).unwrap(),
+                slice_mut!(vtx2lhs, f32).unwrap(),
             );
         }
         #[cfg(feature = "cuda")]
@@ -204,27 +196,25 @@ fn vtx2vtx_from_uniform_mesh(
     is_self: bool,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
-    let elem2vtx = del_dlpack::get_managed_tensor_from_pyany(elem2vtx)?;
+    let elem2vtx = get_tensor(elem2vtx)?;
     //
-    let num_elem = del_dlpack::get_shape_tensor(elem2vtx, 0).unwrap();
-    let num_node = del_dlpack::get_shape_tensor(elem2vtx, 1).unwrap();
+    let num_elem = shape(elem2vtx, 0).unwrap();
+    let num_node = shape(elem2vtx, 1).unwrap();
     let device = elem2vtx.ctx.device_type;
-    del_dlpack::check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
+    chk2::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let elem2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(elem2vtx).unwrap() };
             let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
-                elem2vtx,
+                slice!(elem2vtx, u32).unwrap(),
                 num_node as usize,
                 num_vtx,
                 is_self,
             );
-            let vtx2idx_cap =
-                del_dlpack::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
-            let idx2vtx_cap =
-                del_dlpack::make_capsule_from_vec(py, vec![idx2vtx.len() as i64], idx2vtx);
-            Ok((vtx2idx_cap, idx2vtx_cap))
+            Ok((
+                capsule(py, vec![vtx2idx.len() as i64], vtx2idx),
+                capsule(py, vec![idx2vtx.len() as i64], idx2vtx),
+            ))
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

@@ -1,4 +1,7 @@
-use del_dlpack::dlpack;
+use del_dlpack::{
+    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, slice, slice_mut,
+};
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -16,31 +19,25 @@ fn mortons_vtx2morton_from_vtx2co(
     vtx2morton: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let vtx2co = del_dlpack::get_managed_tensor_from_pyany(vtx2co)?;
-    let transform_co2unit = del_dlpack::get_managed_tensor_from_pyany(transform_co2unit)?;
-    let vtx2morton = del_dlpack::get_managed_tensor_from_pyany(vtx2morton)?;
+    let vtx2co = get_tensor(vtx2co)?;
+    let transform_co2unit = get_tensor(transform_co2unit)?;
+    let vtx2morton = get_tensor(vtx2morton)?;
     //
-    let num_vtx = del_dlpack::get_shape_tensor(vtx2co, 0).unwrap();
-    let num_dim = del_dlpack::get_shape_tensor(vtx2co, 1).unwrap();
+    let num_vtx = shape(vtx2co, 0).unwrap();
+    let num_dim = shape(vtx2co, 1).unwrap();
     assert!(num_dim == 2 || num_dim == 3);
     let device = vtx2co.ctx.device_type;
-    del_dlpack::check_2d_tensor::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
-    del_dlpack::check_2d_tensor::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device)
-        .unwrap();
-    del_dlpack::check_1d_tensor::<u32>(vtx2morton, num_vtx, device).unwrap();
+    chk2::<f32>(vtx2co, num_vtx, num_dim, device).unwrap();
+    chk2::<f32>(transform_co2unit, num_dim + 1, num_dim + 1, device).unwrap();
+    chk1::<u32>(vtx2morton, num_vtx, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2co = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2co) }.unwrap();
-            let transform_co2unit =
-                unsafe { del_dlpack::slice_from_tensor::<f32>(transform_co2unit) }.unwrap();
-            let vtx2morton =
-                unsafe { del_dlpack::slice_from_tensor_mut::<u32>(vtx2morton) }.unwrap();
             del_msh_cpu::mortons::vtx2morton_from_vtx2co(
                 num_dim as usize,
-                vtx2co,
-                transform_co2unit,
-                vtx2morton,
+                slice!(vtx2co, f32).unwrap(),
+                slice!(transform_co2unit, f32).unwrap(),
+                slice_mut!(vtx2morton, u32).unwrap(),
             );
         }
         #[cfg(feature = "cuda")]
@@ -82,23 +79,24 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
     bhvnodes: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
-    let idx2obj = del_dlpack::get_managed_tensor_from_pyany(idx2obj)?;
-    let idx2morton = del_dlpack::get_managed_tensor_from_pyany(idx2morton)?;
-    let bvhnodes = del_dlpack::get_managed_tensor_from_pyany(bhvnodes)?;
+    let idx2obj = get_tensor(idx2obj)?;
+    let idx2morton = get_tensor(idx2morton)?;
+    let bvhnodes = get_tensor(bhvnodes)?;
     //
-    let n = del_dlpack::get_shape_tensor(idx2obj, 0).unwrap();
+    let n = shape(idx2obj, 0).unwrap();
     let device = idx2obj.ctx.device_type;
     //
-    del_dlpack::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
-    del_dlpack::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();
-    del_dlpack::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
+    chk1::<u32>(idx2obj, n, device).unwrap();
+    chk1::<u32>(idx2morton, n, device).unwrap();
+    chk2::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2obj = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2obj) }.unwrap();
-            let idx2morton = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2morton) }.unwrap();
-            let bvhnodes = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(bvhnodes) }.unwrap();
-            del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes, idx2obj, idx2morton);
+            del_msh_cpu::bvhnodes_morton::update_bvhnodes(
+                slice_mut!(bvhnodes, u32).unwrap(),
+                slice!(idx2obj, u32).unwrap(),
+                slice!(idx2morton, u32).unwrap(),
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

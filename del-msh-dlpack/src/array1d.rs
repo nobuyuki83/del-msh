@@ -201,9 +201,10 @@ pub fn array1d_unique_for_sorted_array(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let idx2val = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2val) }.unwrap();
-            let idx2jdx = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(idx2jdx) }.unwrap();
-            del_msh_cpu::array1d::unique_for_sorted_array(idx2val, idx2jdx);
+            del_msh_cpu::array1d::unique_for_sorted_array(
+                del_dlpack::slice!(idx2val, u32).unwrap(),
+                del_dlpack::slice_mut!(idx2jdx, u32).unwrap(),
+            );
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

@@ -5,9 +5,8 @@ import torch
 from PIL import Image
 #
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
-import del_msh_dlpack.Mortons.torch
-import del_msh_dlpack.TriMesh3Raycast.torch
-import del_msh_dlpack.Vtx2Elem.torch
+import del_msh_dlpack.TriMesh3Raycast.torch as TriMesh3Raycast
+import del_msh_dlpack.Vtx2Elem.torch 
 import del_msh_dlpack.Edge2Elem.torch
 import del_msh_dlpack.Edge2Vtx.torch
 import del_msh_dlpack.Vtx2Vtx.torch
@@ -42,7 +41,7 @@ def test_save_fwd_diff_image():
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
     pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32)
     pix2tri.fill_(torch.iinfo(torch.uint32).max)
-    del_msh_dlpack.TriMesh3Raycast.torch.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    TriMesh3Raycast.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
     #
     vtx2idx_offset, idx2vtx = del_msh_dlpack.Vtx2Vtx.torch.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
     edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32)
@@ -146,10 +145,27 @@ def test_match_cpu_cuda():
     del_msh_dlpack.Edge2Elem.torch.from_edge2vtx_of_tri2vtx_with_vtx2vtx(d_edge2vtx, d_tri2vtx, d_vtx2jdx_offset, d_jdx2tri, d_edge2tri)
     assert torch.equal(edge2tri, d_edge2tri.cpu())
     #
-    edge2vtx_contour = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
-    d_edge2vtx_contour = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
-    assert torch.equal(edge2vtx_contour, d_edge2vtx_contour.cpu())
-
+    cedge2vtx = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
+    d_cedge2vtx = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
+    assert torch.equal(cedge2vtx, d_cedge2vtx.cpu())
+    #
+    pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
+    DifferentialRasterizer.antialias(
+        cedge2vtx,
+        vtx2xyz,
+        transform_world2pix,
+        pix2tri,
+        pix2occ,
+    )
+    d_pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32).cuda()
+    DifferentialRasterizer.antialias(
+        d_cedge2vtx,
+        d_vtx2xyz,
+        transform_world2pix.cuda(),
+        d_pix2tri,
+        d_pix2occ,
+    )
+    assert (pix2occ-d_pix2occ.cpu()).abs().max().item() < 0.008
 
 
 

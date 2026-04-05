@@ -1,6 +1,8 @@
-use del_dlpack::dlpack;
-use del_dlpack::pyo3;
-//
+use del_dlpack::{
+    dlpack, pyo3,
+    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    check_2d_tensor as chk2, make_capsule_from_vec as capsule, slice,
+};
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -16,23 +18,24 @@ fn vtx2elem_from_uniform_mesh(
     num_vtx: usize,
     #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
-    let elem2vtx = del_dlpack::get_managed_tensor_from_pyany(elem2vtx)?;
+    let elem2vtx = get_tensor(elem2vtx)?;
     //
-    let num_elem = del_dlpack::get_shape_tensor(elem2vtx, 0).unwrap();
-    let num_node = del_dlpack::get_shape_tensor(elem2vtx, 1).unwrap();
+    let num_elem = shape(elem2vtx, 0).unwrap();
+    let num_node = shape(elem2vtx, 1).unwrap();
     let device = elem2vtx.ctx.device_type;
-    del_dlpack::check_2d_tensor::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
+    chk2::<u32>(elem2vtx, num_elem, num_node, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let elem2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(elem2vtx).unwrap() };
-            let (vtx2idx, idx2elem) =
-                del_msh_cpu::vtx2elem::from_uniform_mesh(elem2vtx, num_node as usize, num_vtx);
-            let vtx2idx_cap =
-                del_dlpack::make_capsule_from_vec(py, vec![vtx2idx.len() as i64], vtx2idx);
-            let idx2elem_cap =
-                del_dlpack::make_capsule_from_vec(py, vec![idx2elem.len() as i64], idx2elem);
-            Ok((vtx2idx_cap, idx2elem_cap))
+            let (vtx2idx, idx2elem) = del_msh_cpu::vtx2elem::from_uniform_mesh(
+                slice!(elem2vtx, u32).unwrap(),
+                num_node as usize,
+                num_vtx,
+            );
+            Ok((
+                capsule(py, vec![vtx2idx.len() as i64], vtx2idx),
+                capsule(py, vec![idx2elem.len() as i64], idx2elem),
+            ))
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

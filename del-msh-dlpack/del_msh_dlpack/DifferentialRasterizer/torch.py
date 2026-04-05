@@ -34,6 +34,11 @@ def antialias(
     util_torch.assert_shape_dtype_device(img_data, (img_h, img_w), torch.float32, device)
     util_torch.assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
     #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     from .. import DifferentialRasterizer
 
     DifferentialRasterizer.antialias(
@@ -42,6 +47,7 @@ def antialias(
         transform_world2pix.T.contiguous().__dlpack__(),
         pix2tri.__dlpack__(),
         img_data.__dlpack__(),
+        stream_ptr=stream_ptr
     )
 
 
