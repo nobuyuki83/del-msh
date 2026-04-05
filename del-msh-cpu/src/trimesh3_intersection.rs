@@ -227,7 +227,8 @@ mod tests {
             &mut aabb,
             0,
             &bvhnodes,
-            Some((&tri2vtx, 3)),
+            &tri2vtx, 
+            3,
             &vtx2xyz,
             None,
         );

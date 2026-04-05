@@ -13,12 +13,18 @@ def from_vtx2vtx(vtx2idx_offset: torch.Tensor, idx2vtx: torch.Tensor, edge2vtx: 
     util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
     util_torch.assert_shape_dtype_device(edge2vtx, (num_edge, 2), torch.uint32, device)
     #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     from .. import Edge2Vtx
 
     Edge2Vtx.from_vtx2vtx(
         vtx2idx_offset.__dlpack__(),
         idx2vtx.__dlpack__(),
-        edge2vtx.__dlpack__()
+        edge2vtx.__dlpack__(),
+        stream_ptr
     )
 
 def contour_for_triangle_mesh(
@@ -38,6 +44,11 @@ def contour_for_triangle_mesh(
     util_torch.assert_shape_dtype_device(edge2vtx, (num_edge, 2), torch.uint32, device)
     util_torch.assert_shape_dtype_device(edge2tri, (num_edge, 2), torch.uint32, device)
     #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     from .. import Edge2Vtx, _CapsuleAsDLPack
 
     cap = Edge2Vtx.contour_for_triangle_mesh(
@@ -45,7 +56,8 @@ def contour_for_triangle_mesh(
         vtx2xyz.__dlpack__(),
         transform_world2ndc.T.contiguous().__dlpack__(),
         edge2vtx.__dlpack__(),
-        edge2tri.__dlpack__()
+        edge2tri.__dlpack__(),
+        stream_ptr=stream_ptr
     )
     return torch.from_dlpack(_CapsuleAsDLPack(cap)).clone()
 

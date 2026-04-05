@@ -75,18 +75,6 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
             {
-                /*
-                let (function, _module) = del_cudarc_sys::load_function_in_module(
-                    del_msh_cuda_kernel::QUAD_OCT_TREE,
-                    "binary_radix_tree_and_depth",
-                )
-                .unwrap();
-                 */
-                /*
-                let function =
-                    crate::load_get_function("quad_oct_tree", "binary_radix_tree_and_depth")
-                        .unwrap();
-                 */
                 let function = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::quad_oct_tree",
                     del_msh_cuda_kernels::get("quad_oct_tree").unwrap(),
@@ -108,18 +96,6 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 del_cudarc_sys::CuVec::<u32>::with_capacity(num_bnode as usize).unwrap();
             bnode2isonode.set_zeros(stream).unwrap();
             {
-                /*
-                let (function, _module) = del_cudarc_sys::load_function_in_module(
-                    del_msh_cuda_kernel::QUAD_OCT_TREE,
-                    "bnode2isonode_and_idx2bnode",
-                )
-                .unwrap();
-                 */
-                /*
-                let function =
-                    crate::load_get_function("quad_oct_tree", "bnode2isonode_and_idx2bnode")
-                        .unwrap();
-                 */
                 let function = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::quad_oct_tree",
                     del_msh_cuda_kernels::get("quad_oct_tree").unwrap(),

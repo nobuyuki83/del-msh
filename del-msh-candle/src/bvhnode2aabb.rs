@@ -39,8 +39,9 @@ impl candle_core::InplaceOp3 for Layer {
             3 => del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
                 bvhnode2aabb,
                 0,
-                bvhnodes,
-                Some((tri2vtx, num_node)),
+                bvhnodes, 
+                tri2vtx, 
+                num_node,
                 vtx2xyz,
                 None,
             ),

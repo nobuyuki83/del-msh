@@ -125,12 +125,8 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     assert_eq!(aabbs.shape()[1], 6);
     let aabbs = aabbs.as_slice_mut().unwrap();
     let bvhnodes = bvhnodes.as_slice().unwrap();
-    let elem2vtx = if elem2vtx.len() != 0 {
-        let num_noel = elem2vtx.shape()[1];
-        Some((elem2vtx.as_slice().unwrap(), num_noel))
-    } else {
-        None
-    };
+    let num_noel = elem2vtx.shape()[1];
+    let elem2vtx = elem2vtx.as_slice().unwrap();
     let vtx2xyz1 = if vtx2xyz0.shape() == vtx2xyz1.shape() {
         Some(vtx2xyz1.as_slice().unwrap())
     } else {
@@ -142,6 +138,7 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
         i_bvhnode_root,
         bvhnodes,
         elem2vtx,
+        num_noel,
         vtx2xyz0,
         vtx2xyz1,
     );

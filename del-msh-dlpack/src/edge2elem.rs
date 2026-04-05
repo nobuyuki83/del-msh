@@ -20,6 +20,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     vtx2idx_offset: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
     edge2tri: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let edge2vtx = del_dlpack::get_managed_tensor_from_pyany(edge2vtx)?;
     let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
@@ -55,6 +56,27 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
                 edge2tri
             );
         },
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::edge2elem",
+                del_msh_cuda_kernels::get("edge2elem").unwrap(),
+                "edge2elem_from_edge2vtx_of_tri2vtx",
+            ).unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_edge as u32);
+            builder.arg_data(&edge2vtx.data);
+            builder.arg_data(&tri2vtx.data);
+            builder.arg_data(&vtx2idx_offset.data);
+            builder.arg_data(&idx2vtx.data);
+            builder.arg_data(&edge2tri.data);
+            builder
+                .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32))
+                .unwrap();
+        }
         _ => {}
     }
     Ok(())

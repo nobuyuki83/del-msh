@@ -27,47 +27,47 @@ void tri2cntr(
 
 __global__
 void kernel_MortonCode_BVHTopology(
-    const uint32_t nMC,
-    uint32_t* dNodeBVH,
-    const uint32_t *dSortedMC,
-    const uint32_t *dSortedId)
+    const uint32_t num_idx,
+    uint32_t* bvhnodes,
+    const uint32_t *idx2morton,
+    const uint32_t *idx2obj)
 {
   const unsigned int idx = blockDim.x * blockIdx.x + threadIdx.x;
-  if (idx >= nMC-1) return;
+  if (idx >= num_idx-1) return;
   const unsigned int ini = idx;
-  const unsigned int nni = nMC-1;
+  const unsigned int nni = num_idx-1;
   // -------------------------------
-  const int2 range = mortons::device_MortonCode_DeterminRange(dSortedMC,nMC,ini);
-  const int isplit = mortons::device_MortonCode_FindSplit(dSortedMC,range.x,range.y);
+  const int2 range = mortons::device_MortonCode_DeterminRange(idx2morton,num_idx,ini);
+  const int isplit = mortons::device_MortonCode_FindSplit(idx2morton,range.x,range.y);
   // printf("%d --> %d %d  %d\n",ini, range.x, range.y, isplit);
   // -------------------------------
   if( range.x == isplit ){
     const unsigned int inlA = nni+isplit;
-    dNodeBVH[ini*3+1] = inlA;
-    dNodeBVH[inlA*3] = ini;
-    dNodeBVH[inlA*3+1] = dSortedId[isplit];
-    dNodeBVH[inlA*3+2] = UINT_MAX;
+    bvhnodes[ini*3+1] = inlA;
+    bvhnodes[inlA*3] = ini;
+    bvhnodes[inlA*3+1] = idx2obj[isplit];
+    bvhnodes[inlA*3+2] = UINT_MAX;
   }
   else{
     const unsigned int iniA = isplit;
-    dNodeBVH[ini*3+1] = iniA;
-    dNodeBVH[iniA*3] = ini;
+    bvhnodes[ini*3+1] = iniA;
+    bvhnodes[iniA*3] = ini;
   }
   // ----
   if( range.y == isplit+1 ){
     const unsigned int inlB = nni+isplit+1;
-    dNodeBVH[ini*3+2] = inlB;
-    dNodeBVH[inlB*3] = ini;
-    dNodeBVH[inlB*3+1] = dSortedId[isplit+1];
-    dNodeBVH[inlB*3+2] = UINT_MAX;
+    bvhnodes[ini*3+2] = inlB;
+    bvhnodes[inlB*3] = ini;
+    bvhnodes[inlB*3+1] = idx2obj[isplit+1];
+    bvhnodes[inlB*3+2] = UINT_MAX;
   }
   else{
     const unsigned int iniB = isplit+1;
-    dNodeBVH[ini*3+2] = iniB;
-    dNodeBVH[iniB*3] = ini;
+    bvhnodes[ini*3+2] = iniB;
+    bvhnodes[iniB*3] = ini;
   }
   if (idx == 0) {
-    dNodeBVH[0] = UINT_MAX;
+    bvhnodes[0] = UINT_MAX;
   }
 }
 

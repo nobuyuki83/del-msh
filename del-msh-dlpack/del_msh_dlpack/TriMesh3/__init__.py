@@ -35,8 +35,8 @@ def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
     return trimesh3_primitive_sphere_yup(raidus, ndiv_longtitude, ndiv_latitude)
 
 
-def make_bvhnode2aabb_from_bvhnodes(tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, bvhnode2aabb):
+def make_bvhnode2aabb_from_bvhnodes(tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, bvhnode2aabb, stream_ptr=0):
     from ..del_msh_dlpack import bvhnode2aabb_update_aabb
 
     bvhnode2aabb_update_aabb(
-        bvhnode2aabb, 0, bvhnodes, tri2vtx, vtx2xyz0, vtx2xyz1)
+        bvhnode2aabb, 0, bvhnodes, tri2vtx, vtx2xyz0, vtx2xyz1, stream_ptr)

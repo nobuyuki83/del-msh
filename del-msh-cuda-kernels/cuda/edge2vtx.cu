@@ -1,8 +1,30 @@
 
-#include "mat4_col_major.h"
-#include "tri3.h"
+#include "del_geo/mat4_col_major.h"
+#include "del_geo/tri3.h"
 
 extern "C" {
+
+__global__
+void edge2vtx_from_vtx2vtx(
+    const uint32_t num_vtx,
+    const uint32_t* vtx2idx_offset,
+    const uint32_t* idx2vtx,
+    uint32_t* edge2vtx
+    )
+{
+    int i_vtx = blockDim.x * blockIdx.x + threadIdx.x;
+    if ( i_vtx >= num_vtx ){ return; }
+    //
+    const auto idx0 = vtx2idx_offset[i_vtx];
+    const auto idx1 = vtx2idx_offset[i_vtx + 1];
+    for (uint32_t idx = idx0; idx < idx1; ++idx) {
+        const auto j_vtx = idx2vtx[idx];
+        edge2vtx[idx*2 + 0] = i_vtx;
+        edge2vtx[idx*2 + 1] = j_vtx;
+    }
+}
+
+
 __global__
 void edge2vtx_contour_set_flag(
   const uint32_t num_edge,

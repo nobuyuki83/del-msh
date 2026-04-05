@@ -31,6 +31,11 @@ def from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
     util_torch.assert_shape_dtype_device(edge2tri, (num_edge, 2), torch.uint32, device)
     #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     from .. import Edge2Elem
 
     Edge2Elem.from_edge2vtx_of_tri2vtx_with_vtx2vtx(
@@ -38,5 +43,6 @@ def from_edge2vtx_of_tri2vtx_with_vtx2vtx(
         tri2vtx.__dlpack__(),
         vtx2idx_offset.__dlpack__(),
         idx2vtx.__dlpack__(),
-        edge2tri.__dlpack__()
+        edge2tri.__dlpack__(),
+        stream_ptr = stream_ptr
     )

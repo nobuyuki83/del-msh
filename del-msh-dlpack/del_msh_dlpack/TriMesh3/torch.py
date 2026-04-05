@@ -205,6 +205,11 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
     #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     tri2centroid = make_tri2centroid(tri2vtx, vtx2xyz)
     from ..Mat44.torch import from_fit_vtx2xyz_into_unit_cube
     transform_co2unit = from_fit_vtx2xyz_into_unit_cube(tri2centroid)
@@ -227,6 +232,7 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
         vtx2xyz1.__dlpack__(),
         bvhnodes.__dlpack__(),
         bvhnode2aabb.__dlpack__(),
+        stream_ptr=stream_ptr,
     )
     return bvhnodes, bvhnode2aabb
 

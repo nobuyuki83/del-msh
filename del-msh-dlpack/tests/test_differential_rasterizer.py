@@ -105,15 +105,63 @@ def test_match_cpu_cuda():
         print("cuda is not available, skip test")
         return
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
+    d_tri2vtx = tri2vtx.cuda()
+    d_vtx2xyz = vtx2xyz.cuda()
+    #
     transform_ndc2world = transform_world2ndc.inverse()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
-    ##
+    #
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-
-    d_tri2vtx = tri2vtx.cuda()
-    d_vtx2xyz = vtx2xyz.cuda()
     d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+    assert torch.equal(bvhnodes, d_bvhnodes.cpu())
+    assert torch.equal(bvhnode2aabb, d_bvhnode2aabb.cpu())
+    #
+    pix2tri = torch.full((img_shape[1], img_shape[0]),
+                         torch.iinfo(torch.uint32).max, device=torch.device("cpu"), dtype=torch.uint32)
+    del_msh_dlpack.TriMesh3Raycast.torch.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    d_pix2tri = torch.full((img_shape[1], img_shape[0]),
+                         torch.iinfo(torch.uint32).max, device=torch.device("cuda"), dtype=torch.uint32)
+    del_msh_dlpack.TriMesh3Raycast.torch.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
+    assert torch.equal(pix2tri, d_pix2tri.cpu())
+    #
+    vtx2idx_offset, idx2vtx = del_msh_dlpack.Vtx2Vtx.torch.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
+    d_vtx2idx_offset, d_idx2vtx = del_msh_dlpack.Vtx2Vtx.torch.from_uniform_mesh(d_tri2vtx, vtx2xyz.shape[0], False)
+    assert torch.equal(vtx2idx_offset, d_vtx2idx_offset.cpu())
+    assert torch.equal(idx2vtx, d_idx2vtx.cpu())
+    #
+    edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32)
+    del_msh_dlpack.Edge2Vtx.torch.from_vtx2vtx(vtx2idx_offset, idx2vtx, edge2vtx)
+    d_edge2vtx = torch.empty((d_idx2vtx.shape[0], 2), dtype=torch.uint32, device=torch.device("cuda"))
+    del_msh_dlpack.Edge2Vtx.torch.from_vtx2vtx(d_vtx2idx_offset, d_idx2vtx, d_edge2vtx)
+    assert torch.equal(edge2vtx, d_edge2vtx.cpu())
+    #
+    vtx2jdx_offset, jdx2tri = del_msh_dlpack.Vtx2Elem.torch.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0])
+    d_vtx2jdx_offset, d_jdx2tri = del_msh_dlpack.Vtx2Elem.torch.from_uniform_mesh(d_tri2vtx, vtx2xyz.shape[0])
+    #
+    num_edge = edge2vtx.shape[0]
+    edge2tri = torch.empty((num_edge, 2), dtype=torch.uint32)
+    del_msh_dlpack.Edge2Elem.torch.from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri)
+    d_edge2tri = torch.empty((num_edge, 2), dtype=torch.uint32, device=torch.device("cuda"))
+    del_msh_dlpack.Edge2Elem.torch.from_edge2vtx_of_tri2vtx_with_vtx2vtx(d_edge2vtx, d_tri2vtx, d_vtx2jdx_offset, d_jdx2tri, d_edge2tri)
+    assert torch.equal(edge2tri, d_edge2tri.cpu())
+    #
+    edge2vtx_contour = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
+    d_edge2vtx_contour = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
+    assert torch.equal(edge2vtx_contour, d_edge2vtx_contour.cpu())
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

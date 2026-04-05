@@ -16,6 +16,7 @@ pub fn trimesh3_raycast_update_pix2tri(
     bvhnodes: &Bound<'_, PyAny>,
     bvhnode2aabb: &Bound<'_, PyAny>,
     transform_ndc2world: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let pix2tri = del_dlpack::get_managed_tensor_from_pyany(pix2tri)?;
     let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
@@ -39,6 +40,7 @@ pub fn trimesh3_raycast_update_pix2tri(
     del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(bvhnodes, num_bvhnode, 3, device).unwrap();
     del_dlpack::check_2d_tensor::<f32>(bvhnode2aabb, num_bvhnode, 6, device).unwrap();
+    del_dlpack::check_2d_tensor::<f32>(transform_ndc2world, 4, 4, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -61,10 +63,40 @@ pub fn trimesh3_raycast_update_pix2tri(
                 img_shape,
                 transform_ndc2world,
             );
-            Ok(())
+        }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            //
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::pix2tri",
+                del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                "pix_to_tri",
+            )
+                .unwrap();
+            let num_pix = (img_shape[0] * img_shape[1]) as usize;
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_u32(num_tri as u32);
+            builder.arg_data(&tri2vtx.data);
+            builder.arg_data(&vtx2xyz.data);
+            builder.arg_u32(img_shape[0] as u32);
+            builder.arg_u32(img_shape[1] as u32);
+            builder.arg_data(&transform_ndc2world.data);
+            builder.arg_data(&bvhnodes.data);
+            builder.arg_data(&bvhnode2aabb.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                )
+                .unwrap();
         }
         _ => {
             todo!()
         }
     }
+    Ok(())
 }

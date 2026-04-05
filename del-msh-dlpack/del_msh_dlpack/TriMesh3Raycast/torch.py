@@ -37,4 +37,5 @@ def update_pix2tri(
         bvhnode2aabb.__dlpack__(),
         transform_ndc2world.T.contiguous().__dlpack__(),
         pix2tri.__dlpack__(),
+        stream_ptr=stream_ptr,
     )

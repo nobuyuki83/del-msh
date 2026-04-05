@@ -22,6 +22,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     transform_world2ndc: &Bound<'_, PyAny>,
     edge2vtx: &Bound<'_, PyAny>,
     edge2tri: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<pyo3::Py<PyAny>> {
     let tri2vtx = del_dlpack::get_managed_tensor_from_pyany(tri2vtx)?;
     let vtx2xyz = del_dlpack::get_managed_tensor_from_pyany(vtx2xyz)?;
@@ -34,6 +35,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     let num_edge = del_dlpack::get_shape_tensor(&edge2vtx, 0).unwrap();
     let device = tri2vtx.ctx.device_type;
     //
+    del_dlpack::check_2d_tensor::<f32>(transform_world2ndc, 4, 4, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(tri2vtx, num_tri, 3, device).unwrap();
     del_dlpack::check_2d_tensor::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(edge2vtx, num_edge, 2, device).unwrap();
@@ -63,6 +65,43 @@ pub fn edge2vtx_contour_for_triangle_mesh(
                 edge2vtx_contour,
             ))
         }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check, CuVec};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let edge2flag = CuVec::<u32>::alloc_zeros(num_edge as usize + 1, stream).unwrap();
+            let transform_ndc2world = {
+                let slice = CuVec::<f32>::from_dptr(transform_world2ndc.data as cu::CUdeviceptr, 16).copy_to_host().unwrap();
+                let arr = arrayref::array_ref![slice, 0, 16];
+                let inv = del_geo_core::mat4_col_major::try_inverse_with_pivot(arr).unwrap();
+                CuVec::from_slice(&inv).unwrap()
+            };
+            {
+                let func = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::edge2vtx",
+                    del_msh_cuda_kernels::get("edge2vtx").unwrap(),
+                    "edge2vtx_contour_set_flag",
+                )
+                    .unwrap();
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_u32(num_edge as u32);
+                builder.arg_dptr(edge2flag.dptr);
+                builder.arg_data(&edge2vtx.data);
+                builder.arg_data(&edge2tri.data);
+                builder.arg_data(&tri2vtx.data);
+                builder.arg_data(&vtx2xyz.data);
+                builder.arg_data(&transform_world2ndc.data);
+                builder.arg_dptr(transform_ndc2world.dptr);
+                builder
+                    .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32))
+                    .unwrap();
+            }
+            let edge2vtx = CuVec::<u32>::from_dptr(edge2vtx.data as cu::CUdeviceptr, num_edge as usize * 2);
+            let cedge2vtx = del_cudarc_sys::array1d::compaction_u32(stream, &edge2flag, 2, &edge2vtx);
+            let num_cedge = cedge2vtx.n / 2;
+            Ok(del_dlpack::make_capsule_from_cuvec(py, 0, vec![num_cedge as i64, 2], cedge2vtx))
+        }
         _ => {
             todo!();
         }
@@ -75,6 +114,7 @@ pub fn edge2vtx_from_vtx2vtx(
     vtx2idx_offset: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
     edge2vtx: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let vtx2idx_offset = del_dlpack::get_managed_tensor_from_pyany(vtx2idx_offset)?;
     let idx2vtx = del_dlpack::get_managed_tensor_from_pyany(idx2vtx)?;
@@ -97,7 +137,32 @@ pub fn edge2vtx_from_vtx2vtx(
             let edge2vtx = unsafe { del_dlpack::slice_from_tensor_mut::<u32>(edge2vtx).unwrap() };
             del_msh_cpu::edge2vtx::from_vtx2vtx(vtx2idx_offset, idx2vtx, edge2vtx);
         },
-        _ => {todo!()}
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::edge2vtx",
+                del_msh_cuda_kernels::get("edge2vtx").unwrap(),
+                "edge2vtx_from_vtx2vtx",
+            )
+                .unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_vtx as u32);
+            builder.arg_data(&vtx2idx_offset.data);
+            builder.arg_data(&idx2vtx.data);
+            builder.arg_data(&edge2vtx.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
+                )
+                .unwrap();
+        }
+        _ => {
+            todo!()
+        }
     }
     Ok(())
 }

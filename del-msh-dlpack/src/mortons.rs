@@ -48,26 +48,24 @@ fn mortons_vtx2morton_from_vtx2co(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            {
-                let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::mortons",
-                    del_msh_cuda_kernels::get("mortons").unwrap(),
-                    "vtx2morton",
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::mortons",
+                del_msh_cuda_kernels::get("mortons").unwrap(),
+                "vtx2morton",
+            )
+            .unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_vtx as u32);
+            builder.arg_data(&vtx2co.data);
+            builder.arg_u32(num_dim as u32);
+            builder.arg_data(&transform_co2unit.data);
+            builder.arg_data(&vtx2morton.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
                 )
                 .unwrap();
-                let mut builder = del_cudarc_sys::Builder::new(stream);
-                builder.arg_u32(num_vtx as u32);
-                builder.arg_data(&vtx2co.data);
-                builder.arg_u32(num_dim as u32);
-                builder.arg_data(&transform_co2unit.data);
-                builder.arg_data(&vtx2morton.data);
-                builder
-                    .launch_kernel(
-                        func,
-                        del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
-                    )
-                    .unwrap();
-            }
         }
         _ => {
             todo!()
@@ -87,11 +85,14 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
     let idx2obj = del_dlpack::get_managed_tensor_from_pyany(idx2obj)?;
     let idx2morton = del_dlpack::get_managed_tensor_from_pyany(idx2morton)?;
     let bvhnodes = del_dlpack::get_managed_tensor_from_pyany(bhvnodes)?;
+    //
     let n = del_dlpack::get_shape_tensor(idx2obj, 0).unwrap();
     let device = idx2obj.ctx.device_type;
+    //
     del_dlpack::check_1d_tensor::<u32>(idx2obj, n, device).unwrap();
     del_dlpack::check_1d_tensor::<u32>(idx2morton, n, device).unwrap();
     del_dlpack::check_2d_tensor::<u32>(bvhnodes, 2 * n - 1, 3, device).unwrap();
+    //
     match device {
         dlpack::device_type_codes::CPU => {
             let idx2obj = unsafe { del_dlpack::slice_from_tensor::<u32>(idx2obj) }.unwrap();
@@ -104,28 +105,21 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            let func = del_cudarc_sys::load_get_function(
-                "bvhnodes_morton",
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::bvhnodes_morton",
+                del_msh_cuda_kernels::get("bvhnodes_morton").unwrap(),
                 "kernel_MortonCode_BVHTopology",
             )
-            .unwrap();
+                .unwrap();            
             {
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(n as u32);
                 builder.arg_dptr(bvhnodes.data as cu::CUdeviceptr);
                 builder.arg_dptr(idx2morton.data as cu::CUdeviceptr);
                 builder.arg_dptr(idx2obj.data as cu::CUdeviceptr);
-                /*
-                builder.arg_i32(num_vtx as i32);
-                builder.arg_data(&vtx2co.data);
-                builder.arg_i32(num_dim as i32);
-                builder.arg_data(&transform_co2unit.data);
-                builder.arg_data(&vtx2morton.data);
-                 */
                 builder
                     .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(n as u32))
                     .unwrap();
-                todo!()
             }
         }
         _ => {
