@@ -20,6 +20,7 @@ pub fn differential_rasterizer_bwd_antialias(
     transform_world2pix: &Bound<'_, PyAny>,
     dldw_pixval: &Bound<'_, PyAny>,
     pix2tri: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
 ) -> PyResult<()> {
     let cedge2vtx = get_tensor(cedge2vtx)?;
     let vtx2xyz = get_tensor(vtx2xyz)?;
@@ -28,13 +29,13 @@ pub fn differential_rasterizer_bwd_antialias(
     let dldw_pix2occ = get_tensor(dldw_pixval)?;
     let pix2tri = get_tensor(pix2tri)?;
     //
-    let num_contour = shape(&cedge2vtx, 0).unwrap();
+    let num_cedge = shape(&cedge2vtx, 0).unwrap();
     let num_vtx = shape(&vtx2xyz, 0).unwrap();
     let img_h = shape(&dldw_pix2occ, 0).unwrap();
     let img_w = shape(&dldw_pix2occ, 1).unwrap();
     let device = cedge2vtx.ctx.device_type;
     //
-    chk2::<u32>(cedge2vtx, num_contour, 2, device).unwrap();
+    chk2::<u32>(cedge2vtx, num_cedge, 2, device).unwrap();
     chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
     chk2::<f32>(dldw_vtx2xyz, num_vtx, 3, device).unwrap();
     chk2::<f32>(dldw_pix2occ, img_h, img_w, device).unwrap();
@@ -51,12 +52,39 @@ pub fn differential_rasterizer_bwd_antialias(
                 slice!(dldw_pix2occ, f32).unwrap(),
                 slice!(pix2tri, u32).unwrap(),
             );
-            Ok(())
         }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::differentiable_rasterizer",
+                del_msh_cuda_kernels::get("differentiable_rasterizer").unwrap(),
+                "antialias_bwd",
+            ).unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_cedge as u32);
+            builder.arg_data(&cedge2vtx.data);
+            builder.arg_data(&vtx2xyz.data);
+            builder.arg_data(&dldw_vtx2xyz.data);
+            builder.arg_u32(img_w as u32);
+            builder.arg_u32(img_h as u32);
+            builder.arg_data(&dldw_pix2occ.data);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_data(&transform_world2pix.data);
+            const NUM_THREADS_BWD: u32 = 128;
+            builder.launch_kernel(func, del_cudarc_sys::LaunchConfig {
+                grid_dim: ((num_cedge as u32).div_ceil(NUM_THREADS_BWD), 1, 1),
+                block_dim: (NUM_THREADS_BWD, 1, 1),
+                shared_mem_bytes: 0,
+            }).unwrap();
+        },
         _ => {
             todo!()
         }
     }
+    Ok(())
 }
 
 #[pyo3::pyfunction]
@@ -116,9 +144,12 @@ pub fn differential_rasterizer_antialias(
             builder.arg_data(&pix2tri.data);
             builder.arg_data(&vtx2xyz.data);
             builder.arg_data(&transform_world2pix.data);
-            builder
-                .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_cedge as u32))
-                .unwrap();
+            const NUM_THREADS_FWD: u32 = 128;
+            builder.launch_kernel(func, del_cudarc_sys::LaunchConfig {
+                grid_dim: ((num_cedge as u32).div_ceil(NUM_THREADS_FWD), 1, 1),
+                block_dim: (NUM_THREADS_FWD, 1, 1),
+                shared_mem_bytes: 0,
+            }).unwrap();
         },
         _ => {
             todo!()

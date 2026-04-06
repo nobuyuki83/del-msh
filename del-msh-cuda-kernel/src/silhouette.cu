@@ -167,8 +167,8 @@ void silhouette_bwd(
         const auto dqdp1_2x3 = mat3_col_major::to_mat2x3_col_major_xy(dqdp1_3x3.data()); // 2x3 matrix
         const auto dldp0 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp0_2x3.data(), dldq0.data());
         const auto dldp1 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp1_2x3.data(), dldq1.data());
-        vec3::add_in_place(dldw_p0, dldp0.data());
-        vec3::add_in_place(dldw_p1, dldp1.data());
+        vec3::add_inplace(dldw_p0, dldp0.data());
+        vec3::add_inplace(dldw_p1, dldp1.data());
       }
       if( !dda.is_valid() ){ break; } // this is here to allow overrun one pixel to make the line connected.
       dda.move();

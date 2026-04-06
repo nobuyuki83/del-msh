@@ -117,21 +117,21 @@ void antialias_fwd(
 
 __global__
 void antialias_bwd(
-       uint32_t num_edge,
-       const uint32_t *edge2vtx_contour,
+       uint32_t num_cedge,
+       const uint32_t *cedge2vtx,
        const float *vtx2xyz,
        float *dldw_vtx2xyz,
        uint32_t img_w,
        uint32_t img_h,
-       const float *dldw_pix2occl,
+       const float *dldw_pix2occ,
        const uint32_t *pix2tri,
        const float* transform_world2pix)
 {
     int i_edge = blockDim.x * blockIdx.x + threadIdx.x;
-    if( i_edge >= num_edge ){ return; }
+    if( i_edge >= num_cedge ){ return; }
     //
-    const uint32_t i0_vtx = edge2vtx_contour[i_edge*2+0];
-    const uint32_t i1_vtx = edge2vtx_contour[i_edge*2+1];
+    const uint32_t i0_vtx = cedge2vtx[i_edge*2+0];
+    const uint32_t i1_vtx = cedge2vtx[i_edge*2+1];
     const float* p0 = vtx2xyz + i0_vtx*3;
     const float* p1 = vtx2xyz + i1_vtx*3;
     const auto q0 = mat4_col_major::transform_homogeneous(transform_world2pix, p0);
@@ -156,7 +156,7 @@ void antialias_bwd(
         if( !res ){ continue; }
         const float rc = res.value().r0;
         assert( 0.f <= rc && rc <= 1.f);
-        float dldr0 = ( rc < 0.5f ) ? dldw_pix2occl[ni.i_pix0] : dldw_pix2occl[ni.i_pix1];
+        float dldr0 = ( rc < 0.5f ) ? dldw_pix2occ[ni.i_pix0] : dldw_pix2occ[ni.i_pix1];
         const auto diff =
           edge2::dldw_intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data(), dldr0, 0.f);
         const auto dldq1 = diff.dlds1;

@@ -4,6 +4,7 @@ import del_msh_dlpack.QuadOctTree.torch
 import del_msh_dlpack.Mortons.torch
 import del_msh_dlpack.Array1D.torch
 import del_msh_dlpack.Mat44.torch as Mat44
+import del_msh_dlpack.OffsetArray.torch
 from .. import NBody
 
 
@@ -52,54 +53,6 @@ def filter_brute_force(
 
     return wtx2lhs
 
-
-def elastic(
-        vtx2co: torch.Tensor,
-        vtx2rhs: torch.Tensor,
-        nu: float,
-        epsilon: float,
-        wtx2co: torch.Tensor):
-    """Evaluate an elastic N-body filter using brute-force O(N*M) summation.
-
-    Computes elastic kernel interactions (e.g. Stokeslet-based) between source
-    and query points using Poisson's ratio nu and regularization epsilon.
-
-    Args:
-        vtx2co: (num_vtx, 3) float32 - source point positions
-        vtx2rhs: (num_vtx, 3) float32 - source point values (right-hand side)
-        nu: float - Poisson's ratio
-        epsilon: float - regularization parameter
-        wtx2co: (num_wtx, 3) float32 - query point positions
-    Returns:
-        wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
-    """
-    num_vtx = vtx2co.shape[0]
-    num_wtx = wtx2co.shape[0]
-    device = vtx2co.device
-    #
-    assert vtx2co.shape == (num_vtx, 3) and vtx2rhs.dtype == torch.float32
-    assert vtx2rhs.shape == (num_vtx, 3) and vtx2rhs.device == device and vtx2rhs.dtype == torch.float32
-    assert wtx2co.shape == (num_wtx, 3) and wtx2co.device == device and wtx2co.dtype == torch.float32
-    #
-    wtx2lhs = torch.zeros(size=(num_wtx, 3), dtype=torch.float32, device=device)
-    #
-    stream_ptr = 0
-    if device.type == "cuda":
-        torch.cuda.set_device(device)
-        stream_ptr = torch.cuda.current_stream(device).cuda_stream
-    from .. import NBody
-
-    NBody.elastic(
-        util_torch.to_dlpack_safe(vtx2co, stream_ptr),
-        util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
-        util_torch.to_dlpack_safe(wtx2co, stream_ptr),
-        util_torch.to_dlpack_safe(wtx2lhs, stream_ptr),
-        nu,
-        epsilon,
-        stream_ptr
-    )
-
-    return wtx2lhs
 
 
 class TreeAccelerator:

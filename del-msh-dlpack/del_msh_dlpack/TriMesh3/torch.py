@@ -236,3 +236,32 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     )
     return bvhnodes, bvhnode2aabb
 
+
+def make_edge2vtx(tri2vtx: torch.Tensor, num_vtx: int):
+    assert tri2vtx.ndim == 2 and tri2vtx.shape[1] == 3
+    assert tri2vtx.is_contiguous()
+    assert tri2vtx.dtype == torch.uint32
+    #
+    from del_msh_dlpack.Vtx2Vtx.torch import from_uniform_mesh
+    vtx2idx_offset, idx2vtx = from_uniform_mesh(tri2vtx, num_vtx, False)
+    edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32)
+    from del_msh_dlpack.Edge2Vtx.torch import from_vtx2vtx
+    from_vtx2vtx(vtx2idx_offset, idx2vtx, edge2vtx)
+    return edge2vtx
+
+
+def make_edge2tri(tri2vtx: torch.Tensor, num_vtx: int, edge2vtx: torch.Tensor):
+    assert tri2vtx.ndim == 2 and tri2vtx.shape[1] == 3
+    assert tri2vtx.is_contiguous()
+    assert tri2vtx.dtype == torch.uint32
+    assert edge2vtx.ndim == 2 and edge2vtx.shape[1] == 2
+    assert edge2vtx.is_contiguous()
+    assert edge2vtx.dtype == torch.uint32
+    assert tri2vtx.device == edge2vtx.device
+    #
+    from del_msh_dlpack.Vtx2Elem.torch import from_uniform_mesh
+    vtx2jdx_offset, jdx2tri = from_uniform_mesh(tri2vtx, num_vtx)
+    edge2tri = torch.empty((edge2vtx.shape[0], 2), dtype=torch.uint32)
+    from del_msh_dlpack.Edge2Elem.torch import from_edge2vtx_of_tri2vtx_with_vtx2vtx
+    from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri)
+    return edge2tri
