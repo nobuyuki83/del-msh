@@ -125,7 +125,6 @@ where
 
     // near branch is checked first. Check which branch (left or right) is near
     let near_is_left = {
-        let mut near_is_left = true;
         let t_aabb_left = del_geo_core::aabb3::from_aabbs(
             trimesh3.bvhnode2aabb,
             trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_(),
@@ -136,17 +135,15 @@ where
             trimesh3.bvhnodes[i_bvhnode * 3 + 2].as_(),
         )
         .intersections_against_ray(ray_org, ray_dir);
-        if let Some(t_aabb_left) = t_aabb_left {
-            if let Some(t_aabb_right) = t_aabb_right {
-                if t_aabb_right < t_aabb_left {
-                    near_is_left = false;
-                }
-            }
+        match (t_aabb_left, t_aabb_right) {
+            (Some(tl), Some(tr)) => tl < tr,
+            (None, None) => { return None; },
+            (Some(_), None) => true,
+            (None, Some(_)) => false,
         }
-        near_is_left
     };
 
-    // check left branch
+    // check near branch
     let res_near = {
         let idx_bvhnode_near = if near_is_left {
             i_bvhnode * 3 + 1
@@ -176,8 +173,13 @@ where
             del_geo_core::aabb::intersections_against_ray(aabb_far, ray_org, ray_dir)
         {
             if t_aabb_far > t_near {
+                // the ray hit the far branch, but it is farther than the current nearest 
                 return res_near;
             }
+        }
+        else {
+            // the ray does not hit the far-branch.
+            return res_near;
         }
     }
 

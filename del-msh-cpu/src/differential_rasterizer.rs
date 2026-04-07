@@ -56,7 +56,7 @@ pub fn antialias(
     vtx2xyz: &[f32],
     transform_world2pix: &[f32; 16],
     img_shape: (usize, usize),
-    img_data: &mut [f32],
+    pix2val: &mut [f32],
     pix2tri: &[u32],
 ) {
     for node2vtx in edge2vtx_contour.chunks(2) {
@@ -76,8 +76,7 @@ pub fn antialias(
         for &i_pix in list_pix.iter() {
             let hoge = Neighbour::new(i_pix, img_shape.0, is_horizontal);
             for (i_pix0, c0, i_pix1, c1) in hoge {
-                // dbg!(i_pix0, c0, i_pix1, c1);
-                if pix2tri[i_pix0] == u32::MAX || pix2tri[i_pix1] != u32::MAX {
+                if pix2tri[i_pix0] == u32::MAX || pix2tri[i_pix1] != u32::MAX { // pix0 is background
                     continue;
                 }
                 let Some((rc, _re)) = del_geo_core::edge2::intersection_edge2(&c0, &c1, &q1, &q0)
@@ -86,9 +85,9 @@ pub fn antialias(
                 };
                 assert!((0. ..1.0).contains(&rc));
                 if rc < 0.5 {
-                    img_data[i_pix0] = 0.5 + rc;
+                    pix2val[i_pix0] = 0.5 + rc;
                 } else {
-                    img_data[i_pix1] = rc - 0.5;
+                    pix2val[i_pix1] = rc - 0.5;
                 }
             }
         }
@@ -317,12 +316,20 @@ pub fn bwd_microedge(
 
 #[cfg(test)]
 mod tests {
+
     const IMG_RES: usize = 128;
+
+    enum RenderMode {
+        Occlusion,
+        Depth,
+    }
+
 
     fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16], Vec<f32>) {
         let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
             let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
+            //let transform0 = del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI*0.25);
             //let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.6+eps, 0.0]);
             let transform1 = del_geo_core::mat4_col_major::from_translate(&[eps, 0.6, 0.0]);
             let transform =
@@ -335,7 +342,7 @@ mod tests {
         (tri2vtx, vtx2xyz, transform_world2ndc, dxyz)
     }
 
-    fn sample(eps: f32, img_shape: (usize, usize), num_sample: usize) -> Vec<f32> {
+    fn sample(eps: f32, img_shape: (usize, usize), num_sample: usize, mode: &RenderMode) -> Vec<f32> {
         let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(eps);
         // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
         let transform_ndc2world =
@@ -366,7 +373,7 @@ mod tests {
                         &(img_shape.0 as f32, img_shape.1 as f32),
                         &transform_ndc2world,
                     );
-                if let Some((_t, _i_tri)) = crate::search_bvh3::first_intersection_ray(
+                if let Some((t, _i_tri)) = crate::search_bvh3::first_intersection_ray(
                     &ray_org,
                     &ray_dir,
                     &crate::search_bvh3::TriMeshWithBvh {
@@ -378,7 +385,12 @@ mod tests {
                     0,
                     f32::INFINITY,
                 ) {
-                    sum += 1.0;
+                    match mode {
+                        RenderMode::Depth => {
+                            sum += 1.0 - t;
+                        }
+                        RenderMode::Occlusion => { sum += 1.0; }
+                    }
                 }
             }
             sum / num_sample as f32
@@ -392,22 +404,21 @@ mod tests {
         pix2val
     }
 
-    #[test]
-    fn test_sample() {
+    fn test_sample_mode(mode: &RenderMode, str_mode: &str) {
         let num_sample = 2056;
         let img_shape = (IMG_RES, IMG_RES);
         let eps = 1.0e-1 / IMG_RES as f32;
-        let pix2val0 = sample(-eps, img_shape, num_sample);
+        let pix2val0 = sample(-eps, img_shape, num_sample, mode);
         {
-            let pix2val1 = sample(0., img_shape, num_sample);
+            let pix2val1 = sample(0., img_shape, num_sample, mode);
             del_canvas::write_png_from_float_image_grayscale(
-                "../target/silhouette_ren_finitesample.png",
+                format!("../target/differentiable_rasterization_ren_finitesample_{}.png", str_mode),
                 img_shape,
                 &pix2val1,
             )
             .unwrap()
         }
-        let pix2val2 = sample(eps, img_shape, num_sample);
+        let pix2val2 = sample(eps, img_shape, num_sample, mode);
         let pix2rgb_diff: Vec<_> = pix2val0
             .iter()
             .zip(pix2val2.iter())
@@ -415,22 +426,28 @@ mod tests {
                 let grad = (v1 - v0) / (2.0 * eps);
                 let c = del_canvas::colormap::apply_colormap(
                     grad,
-                    -(IMG_RES as f32),
-                    IMG_RES as f32,
+                    -(IMG_RES as f32)*0.5,
+                    (IMG_RES as f32)*0.5,
                     del_canvas::colormap::COLORMAP_BWR,
                 );
                 c
             })
             .collect();
         del_canvas::write_png_from_float_image_rgb(
-            "../target/silhouette_diff_finitesample.png",
+            format!("../target/differentiable_rasterization_diff_finitesample_{}.png", str_mode),
             &img_shape,
             &pix2rgb_diff,
         )
         .unwrap()
     }
 
-    fn nvdiffrast(eps: f32) -> Vec<f32> {
+    #[test]
+    fn test_sample() {
+        test_sample_mode(&RenderMode::Depth, "depth");
+        test_sample_mode(&RenderMode::Occlusion, "occ");
+    }
+
+    fn nvdiffrast_occ(eps: f32) -> Vec<f32> {
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(eps);
         let transform_ndc2world =
@@ -445,23 +462,23 @@ mod tests {
         let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
         let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
         //
-        let edge2vtx_contour = crate::edge2vtx::contour_for_triangle_mesh::<u32>(
+        let cedge2vtx = crate::edge2vtx::contour_for_triangle_mesh::<u32>(
             &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
         );
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-        let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            &tri2vtx,
-            3,
-            &vtx2xyz,
-            None,
-        );
         let pix2tri = {
+            let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+                0,
+                &bvhnodes,
+                &tri2vtx,
+                3,
+                &vtx2xyz,
+                None,
+            );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
             crate::trimesh3_raycast::update_pix2tri(
                 &mut pix2tri,
@@ -474,19 +491,19 @@ mod tests {
             );
             pix2tri
         };
-        let mut img_data: Vec<f32> = pix2tri
+        let mut pic2val: Vec<f32> = pix2tri
             .iter()
             .map(|&v| if v == u32::MAX { 0. } else { 1. })
             .collect();
         crate::differential_rasterizer::antialias(
-            &edge2vtx_contour,
+            &cedge2vtx,
             &vtx2xyz,
             &transform_world2pix,
             img_shape,
-            &mut img_data,
+            &mut pic2val,
             &pix2tri,
         );
-        img_data
+        pic2val
     }
 
     #[test]
@@ -500,7 +517,7 @@ mod tests {
             &transform_ndc2pix,
             &transform_world2ndc,
         );
-        let edge2vtx_contour = {
+        let cedge2vtx = {
             //
             let num_vtx = vtx2xyz.len() / 3;
             // let (_vtx2idx, _idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, num_vtx, false);
@@ -515,11 +532,10 @@ mod tests {
                 &edge2tri,
             )
         };
-        dbg!(&edge2vtx_contour);
-        //
         {
+            // draw edge image
             let mut pix2val_edge = vec![1f32; img_shape.0 * img_shape.1];
-            for chunk in edge2vtx_contour.chunks(2) {
+            for chunk in cedge2vtx.chunks(2) {
                 let (iv0, iv1) = (chunk[0] as usize, chunk[1] as usize);
                 let xyz0_world = crate::vtx2xyz::to_vec3(&vtx2xyz, iv0);
                 let xyz1_world = crate::vtx2xyz::to_vec3(&vtx2xyz, iv1);
@@ -544,7 +560,7 @@ mod tests {
                 );
             }
             del_canvas::write_png_from_float_image_grayscale(
-                "../target/silhouette_edge.png",
+                "../target/differentiable_rasterizer_edge.png",
                 img_shape,
                 &pix2val_edge,
             )
@@ -578,7 +594,7 @@ mod tests {
                 .map(|&v| if v == u32::MAX { 0. } else { 1. })
                 .collect();
             crate::differential_rasterizer::antialias(
-                &edge2vtx_contour,
+                &cedge2vtx,
                 &vtx2xyz,
                 &transform_world2pix,
                 img_shape,
@@ -601,7 +617,7 @@ mod tests {
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
             crate::differential_rasterizer::bwd_antialias(
-                &edge2vtx_contour,
+                &cedge2vtx,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
@@ -630,8 +646,8 @@ mod tests {
         .unwrap();
         //
         let eps = 1.0e-3;
-        let pix2val0 = nvdiffrast(-eps);
-        let pix2val2 = nvdiffrast(eps);
+        let pix2val0 = nvdiffrast_occ(-eps);
+        let pix2val2 = nvdiffrast_occ(eps);
         let pix2rgb_diff: Vec<_> = pix2val0
             .iter()
             .zip(pix2val2.iter())
