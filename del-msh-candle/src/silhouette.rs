@@ -9,6 +9,7 @@ pub struct BackwardAntiAliasSilhouette {
     edge2vtx_contour: Tensor,
     transform_world2pix: Tensor,
     pix2tri: Tensor,
+    pix2occl: Tensor
 }
 
 impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
@@ -27,6 +28,7 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
         assert!(self.pix2tri.device().is_cpu());
         assert!(self.transform_world2pix.device().is_cpu());
         assert!(self.edge2vtx_contour.device().is_cpu());
+        assert!(self.pix2occl.device().is_cpu());
         let dldw_vtx2xyz = match dldw_vtx2xyz {
             CpuStorage::F32(cpu_storage) => cpu_storage,
             _ => panic!(),
@@ -47,12 +49,14 @@ impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
         );
         let transform_world2pix = arrayref::array_ref![transform_world2pix, 0, 16];
         get_cpu_slice_and_storage_from_tensor!(pix2tri, _s_pix2tri, self.pix2tri, u32);
-        del_msh_cpu::differential_rasterizer::bwd_antialias(
+        get_cpu_slice_and_storage_from_tensor!(pix2occl, _s_pix2occl, self.pix2occl, f32);
+        del_msh_cpu::antialias::bwd_antialias(
             edge2vtx_contour,
             vtx2xyz.as_slice()?,
             dldw_vtx2xyz,
             transform_world2pix,
             img_shape,
+            pix2occl,
             dldw_pix2occl,
             pix2tri,
         );
@@ -148,27 +152,31 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
         );
         let transform_world2pix = arrayref::array_ref![transform_world2pix, 0, 16];
         let vtx2xyz = vtx2xyz.as_slice()?;
-        let mut img = vec![0f32; img_shape.0 * img_shape.1];
-        {
+        let pix2vin = {
+            let mut pix2vin = vec![0f32; img_shape.0 * img_shape.1];
             // initial aliased silhouette image
             use rayon::prelude::*;
-            img.par_iter_mut()
+            pix2vin
+                .par_iter_mut()
                 .zip(pix2tri.par_iter())
                 .for_each(|(a, &b)| {
                     if b != u32::MAX {
                         *a = 1f32;
                     }
                 });
-        }
-        del_msh_cpu::differential_rasterizer::antialias(
+            pix2vin
+        };
+        let mut pix2vout = pix2vin.clone();
+        del_msh_cpu::antialias::antialias(
             edge2vtx_contour,
             vtx2xyz,
             transform_world2pix,
             img_shape,
-            &mut img,
             pix2tri,
+            &pix2vin,
+            &mut pix2vout,
         );
-        Ok((CpuStorage::F32(img), (img_shape.1, img_shape.0).into()))
+        Ok((CpuStorage::F32(pix2vout), (img_shape.1, img_shape.0).into()))
     }
 
     #[cfg(feature = "cuda")]
@@ -237,6 +245,7 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
             edge2vtx_contour: self.edge2vtx_contour.clone(),
             transform_world2pix: self.transform_world2pix.clone(),
             pix2tri: self.pix2tri.clone(),
+            pix2occl: pix2occl.clone()
         };
         dldw_vtx2xyz.inplace_op3(vtx2xyz, dldw_pix2occl, &op)?;
         Ok(Some(dldw_vtx2xyz))

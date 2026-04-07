@@ -29,12 +29,7 @@ fn main() -> anyhow::Result<()> {
      */
     let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
     let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0,
-        &bvhnodes,
-        &tri2vtx, 
-        3,
-        &vtx2xyz,
-        None,
+        0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
     );
     let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
     del_msh_cpu::trimesh3_raycast::update_pix2tri(

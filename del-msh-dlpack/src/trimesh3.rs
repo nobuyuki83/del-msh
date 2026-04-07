@@ -1,6 +1,6 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_2d_tensor as chk2, slice, slice_mut,
+    check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
+    get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{prelude::PyModule, pyfunction, Bound, PyAny, PyResult, Python};
 

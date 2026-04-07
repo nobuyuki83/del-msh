@@ -1,7 +1,7 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_1d_tensor as chk1, check_2d_tensor as chk2, make_capsule_from_vec as capsule,
-    slice, slice_mut,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
+    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
+    make_capsule_from_vec as capsule, slice, slice_mut,
 };
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
@@ -11,10 +11,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         edge2vtx_contour_for_triangle_mesh,
         m
     )?)?;
-    m.add_function(pyo3::wrap_pyfunction!(
-        edge2vtx_from_vtx2vtx,
-        m
-    )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(edge2vtx_from_vtx2vtx, m)?)?;
     Ok(())
 }
 
@@ -50,7 +47,10 @@ pub fn edge2vtx_contour_for_triangle_mesh(
             let edge2vtx_contour = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
                 slice!(tri2vtx, u32).unwrap(),
                 slice!(vtx2xyz, f32).unwrap(),
-                slice!(transform_world2ndc, f32).unwrap().try_into().unwrap(),
+                slice!(transform_world2ndc, f32)
+                    .unwrap()
+                    .try_into()
+                    .unwrap(),
                 slice!(edge2vtx, u32).unwrap(),
                 slice!(edge2tri, u32).unwrap(),
             );
@@ -64,7 +64,10 @@ pub fn edge2vtx_contour_for_triangle_mesh(
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let edge2flag = CuVec::<u32>::alloc_zeros(num_edge as usize + 1, stream).unwrap();
             let transform_ndc2world = {
-                let slice = CuVec::<f32>::from_dptr(transform_world2ndc.data as cu::CUdeviceptr, 16).copy_to_host().unwrap();
+                let slice =
+                    CuVec::<f32>::from_dptr(transform_world2ndc.data as cu::CUdeviceptr, 16)
+                        .copy_to_host()
+                        .unwrap();
                 let arr = arrayref::array_ref![slice, 0, 16];
                 let inv = del_geo_core::mat4_col_major::try_inverse_with_pivot(arr).unwrap();
                 CuVec::from_slice(&inv).unwrap()
@@ -75,7 +78,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
                     del_msh_cuda_kernels::get("edge2vtx").unwrap(),
                     "edge2vtx_contour_set_flag",
                 )
-                    .unwrap();
+                .unwrap();
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_edge as u32);
                 builder.arg_dptr(edge2flag.dptr);
@@ -86,13 +89,23 @@ pub fn edge2vtx_contour_for_triangle_mesh(
                 builder.arg_data(&transform_world2ndc.data);
                 builder.arg_dptr(transform_ndc2world.dptr);
                 builder
-                    .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32))
+                    .launch_kernel(
+                        func,
+                        del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32),
+                    )
                     .unwrap();
             }
-            let edge2vtx = CuVec::<u32>::from_dptr(edge2vtx.data as cu::CUdeviceptr, num_edge as usize * 2);
-            let cedge2vtx = del_cudarc_sys::array1d::compaction_u32(stream, &edge2flag, 2, &edge2vtx);
+            let edge2vtx =
+                CuVec::<u32>::from_dptr(edge2vtx.data as cu::CUdeviceptr, num_edge as usize * 2);
+            let cedge2vtx =
+                del_cudarc_sys::array1d::compaction_u32(stream, &edge2flag, 2, &edge2vtx);
             let num_cedge = cedge2vtx.n / 2;
-            Ok(del_dlpack::make_capsule_from_cuvec(py, 0, vec![num_cedge as i64, 2], cedge2vtx))
+            Ok(del_dlpack::make_capsule_from_cuvec(
+                py,
+                0,
+                vec![num_cedge as i64, 2],
+                cedge2vtx,
+            ))
         }
         _ => {
             todo!();
@@ -129,7 +142,7 @@ pub fn edge2vtx_from_vtx2vtx(
                 slice!(idx2vtx, u32).unwrap(),
                 slice_mut!(edge2vtx, u32).unwrap(),
             );
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
@@ -140,7 +153,7 @@ pub fn edge2vtx_from_vtx2vtx(
                 del_msh_cuda_kernels::get("edge2vtx").unwrap(),
                 "edge2vtx_from_vtx2vtx",
             )
-                .unwrap();
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_vtx as u32);
             builder.arg_data(&vtx2idx_offset.data);
@@ -159,4 +172,3 @@ pub fn edge2vtx_from_vtx2vtx(
     }
     Ok(())
 }
-

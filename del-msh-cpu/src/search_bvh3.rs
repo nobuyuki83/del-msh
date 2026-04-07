@@ -137,7 +137,9 @@ where
         .intersections_against_ray(ray_org, ray_dir);
         match (t_aabb_left, t_aabb_right) {
             (Some(tl), Some(tr)) => tl < tr,
-            (None, None) => { return None; },
+            (None, None) => {
+                return None;
+            }
             (Some(_), None) => true,
             (None, Some(_)) => false,
         }
@@ -173,11 +175,10 @@ where
             del_geo_core::aabb::intersections_against_ray(aabb_far, ray_org, ray_dir)
         {
             if t_aabb_far > t_near {
-                // the ray hit the far branch, but it is farther than the current nearest 
+                // the ray hit the far branch, but it is farther than the current nearest
                 return res_near;
             }
-        }
-        else {
+        } else {
             // the ray does not hit the far-branch.
             return res_near;
         }
@@ -243,14 +244,8 @@ fn is_point_closer(aabb: &[f32; 6], ray_dir: &[f32; 3], t: f32) -> bool {
 fn test_first_intersection_ray() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0,
-        &bvhnodes,
-        &tri2vtx,
-        3,
-        &vtx2xyz,
-        None,
-    );
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
     use rand::Rng;
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);

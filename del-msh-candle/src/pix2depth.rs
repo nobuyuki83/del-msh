@@ -20,8 +20,8 @@ pub fn update_bwd_wrt_vtx2xyz(
             continue;
         }
         let (ray_org, ray_dir) =
-            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                ((i_pix % width) as f32, (i_pix / width) as f32),
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                ((i_pix % width) as f32 + 0.5, (i_pix / width) as f32 + 0.5),
                 &(width as f32, height as f32),
                 transform_ndc2world,
             );
@@ -193,8 +193,8 @@ impl candle_core::CustomOp1 for Pix2Depth {
                 return None;
             }
             let (ray_org, ray_dir) =
-                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (i_w as f32, i_h as f32),
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                    (i_w as f32 + 0.5, i_h as f32 + 0.5),
                     &(img_shape.0 as f32, img_shape.1 as f32),
                     transform_ndc2world,
                 );

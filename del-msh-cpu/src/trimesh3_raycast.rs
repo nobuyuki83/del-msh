@@ -18,8 +18,8 @@ pub fn update_pix2tri<Index>(
         let i_w = i_pix - i_h * img_shape.0;
         //
         let (ray_org, ray_dir) =
-            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                (i_w as f32, i_h as f32),
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                (i_w as f32 + 0.5, i_h as f32 + 0.5),
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
@@ -62,8 +62,8 @@ pub fn render_depth_bvh(
     for ih in 0..height {
         for iw in 0..width {
             let (ray_org, ray_dir) =
-                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (iw as f32, ih as f32),
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                    (iw as f32 + 0.5, ih as f32 + 0.5),
                     &(image_size.0 as f32, image_size.1 as f32),
                     transform_ndc2world,
                 );
@@ -144,8 +144,8 @@ where
     for ih in 0..height {
         for iw in 0..width {
             let (ray_org, ray_dir) =
-                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinate(
-                    (iw as f32, ih as f32),
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                    (iw as f32 + 0.5, ih as f32 + 0.5),
                     &(img_shape.0 as f32, img_shape.1 as f32),
                     transform_ndc2world,
                 );
@@ -235,12 +235,7 @@ fn test_depthmap() {
         dbg!(aabb3);
         let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            &tri2vtx,
-            3,
-            &vtx2xyz,
-            None,
+            0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
         );
         let img_shape = (300, 300);
         let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];
@@ -272,4 +267,197 @@ fn test_depthmap() {
         )
         .unwrap();
     }
+}
+
+pub trait RenderTri {
+    fn fwd(&self, t: f32, i_tri: u32, tri2vtx: &[u32], vtx2xyz: &[f32]) -> f32;
+
+    fn bwd(
+        &self,
+        dldw_val: f32,
+        p0: &[f32; 3],
+        p1: &[f32; 3],
+        p2: &[f32; 3],
+        ray_org: &[f32; 3],
+        ray_dir: &[f32; 3],
+    ) -> ([f32; 3], [f32; 3], [f32; 3]);
+}
+pub struct Occlusion;
+
+impl RenderTri for Occlusion {
+    fn fwd(&self, _: f32, i_tri: u32, _: &[u32], _: &[f32]) -> f32 {
+        if i_tri == u32::MAX {
+            0.
+        } else {
+            1.
+        }
+    }
+
+    fn bwd(
+        &self,
+        _: f32,
+        _: &[f32; 3],
+        _: &[f32; 3],
+        _: &[f32; 3],
+        _: &[f32; 3],
+        _: &[f32; 3],
+    ) -> ([f32; 3], [f32; 3], [f32; 3]) {
+        ([0f32; 3], [0f32; 3], [0f32; 3])
+    }
+}
+
+pub struct Depth;
+
+impl RenderTri for Depth {
+    fn fwd(&self, t: f32, i_tri: u32, _: &[u32], _: &[f32]) -> f32 {
+        if i_tri == u32::MAX {
+            return 0.;
+        };
+        1.0 - t
+    }
+
+    fn bwd(
+        &self,
+        dldw_val: f32,
+        p0: &[f32; 3],
+        p1: &[f32; 3],
+        p2: &[f32; 3],
+        ray_org: &[f32; 3],
+        ray_dir: &[f32; 3],
+    ) -> ([f32; 3], [f32; 3], [f32; 3]) {
+        let (_t, _u, _v, dp0, dp1, dp2) = del_geo_core::tri3::intersection_against_line_bwd_wrt_tri(
+            p0, p1, p2, ray_org, ray_dir, -dldw_val, 0., 0.,
+        );
+        (dp0, dp1, dp2)
+    }
+}
+
+pub fn bwd_continuous<T: RenderTri>(
+    pix2tri: &[u32],
+    tri2vtx: &[u32],
+    vtx2xyz: &[f32],
+    dldw_pix2val: &[f32],
+    transform_ndc2world: &[f32; 16],
+    img_shape: (usize, usize),
+    dldw_vtx2xyz: &mut [f32],
+    mode: &T,
+) {
+    for (i_pix, &i_tri) in pix2tri.iter().enumerate() {
+        if i_tri == u32::MAX {
+            continue;
+        }
+        let i_w = i_pix % img_shape.0;
+        let i_h = i_pix / img_shape.0;
+        let (ray_org, ray_dir) =
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                (i_w as f32 + 0.5, i_h as f32 + 0.5),
+                &(img_shape.0 as f32, img_shape.1 as f32),
+                transform_ndc2world,
+            );
+        let i_tri = i_tri as usize;
+        let i0 = tri2vtx[i_tri * 3] as usize;
+        let i1 = tri2vtx[i_tri * 3 + 1] as usize;
+        let i2 = tri2vtx[i_tri * 3 + 2] as usize;
+        let p0 = arrayref::array_ref![vtx2xyz, i0 * 3, 3];
+        let p1 = arrayref::array_ref![vtx2xyz, i1 * 3, 3];
+        let p2 = arrayref::array_ref![vtx2xyz, i2 * 3, 3];
+        let dldw_val = dldw_pix2val[i_pix];
+        let (dp0, dp1, dp2) = mode.bwd(dldw_val, p0, p1, p2, &ray_org, &ray_dir);
+        use del_geo_core::vec3::Vec3;
+        arrayref::array_mut_ref![dldw_vtx2xyz, i0 * 3, 3].add_in_place(&dp0);
+        arrayref::array_mut_ref![dldw_vtx2xyz, i1 * 3, 3].add_in_place(&dp1);
+        arrayref::array_mut_ref![dldw_vtx2xyz, i2 * 3, 3].add_in_place(&dp2);
+    }
+}
+
+pub fn fwd_continuous<T: RenderTri>(
+    pix2tri: &[u32],
+    img_shape: (usize, usize),
+    tri2vtx: &[u32],
+    vtx2xyz: &[f32],
+    transform_ndc2world: &[f32; 16],
+    model: &T,
+) -> Vec<f32> {
+    let mut pix2vin = vec![0.; pix2tri.len()];
+    for (i_pix, &i_tri) in pix2tri.iter().enumerate() {
+        if i_tri == u32::MAX {
+            continue;
+        }
+        let i_w = i_pix % img_shape.0;
+        let i_h = i_pix / img_shape.0;
+        let (ray_org, ray_dir) =
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                (i_w as f32 + 0.5, i_h as f32 + 0.5),
+                &(img_shape.0 as f32, img_shape.1 as f32),
+                &transform_ndc2world,
+            );
+        let Some(t) = crate::trimesh3::to_tri3(&tri2vtx, &vtx2xyz, i_tri as usize)
+            .intersection_against_ray(&ray_org, &ray_dir)
+        else {
+            unreachable!()
+        };
+        pix2vin[i_pix] = model.fwd(t, i_tri, tri2vtx, vtx2xyz);
+    }
+    pix2vin
+}
+
+pub fn multi_sample<T, F, R>(
+    tri2vtx: &[u32],
+    vtx2xyz: &[f32],
+    transform_world2ndc: &[f32; 16],
+    img_shape: (usize, usize),
+    num_sample: usize,
+    mode: &T,
+    rng_factory: F,
+) -> Vec<f32>
+where
+    T: RenderTri + std::marker::Sync,
+    F: Fn(usize) -> R + Sync,
+    R: rand::Rng,
+{
+    // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
+    let transform_ndc2world =
+        del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
+    let fn_pix2val = |i_pix: usize| -> f32 {
+        let mut rng = rng_factory(i_pix);
+        let i_h = i_pix / img_shape.0;
+        let i_w = i_pix - i_h * img_shape.0;
+        //
+        let mut sum = 0.0f32;
+        for _itr in 0..num_sample {
+            let x_offset = rng.random_range(0.0..1.);
+            let y_offset = rng.random_range(0.0..1.0);
+            let (ray_org, ray_dir) =
+                del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                    (i_w as f32 + x_offset, i_h as f32 + y_offset),
+                    &(img_shape.0 as f32, img_shape.1 as f32),
+                    &transform_ndc2world,
+                );
+            if let Some((t, i_tri)) = crate::search_bvh3::first_intersection_ray(
+                &ray_org,
+                &ray_dir,
+                &crate::search_bvh3::TriMeshWithBvh {
+                    tri2vtx: &tri2vtx,
+                    vtx2xyz: &vtx2xyz,
+                    bvhnodes: &bvhnodes,
+                    bvhnode2aabb: &bvhnode2aabb,
+                },
+                0,
+                f32::INFINITY,
+            ) {
+                sum += mode.fwd(t, i_tri as u32, tri2vtx, vtx2xyz);
+            }
+        }
+        sum / num_sample as f32
+    };
+    let mut pix2val = vec![0f32; img_shape.0 * img_shape.1];
+    use rayon::prelude::*;
+    pix2val
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(i_pix, i_tri)| *i_tri = fn_pix2val(i_pix));
+    pix2val
 }

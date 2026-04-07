@@ -1,6 +1,6 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_2d_tensor as chk2, slice, slice_mut,
+    check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
+    get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{Bound, PyAny, PyResult, Python};
 
@@ -66,7 +66,7 @@ pub fn bvhnode2aabb_update_aabb(
                     todo!()
                 }
             }
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
@@ -74,14 +74,15 @@ pub fn bvhnode2aabb_update_aabb(
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
             let num_branch = num_elem - 1;
-            let bvhbranch2flag = del_cudarc_sys::CuVec::<u32>::alloc_zeros(num_branch as usize, stream).unwrap();
+            let bvhbranch2flag =
+                del_cudarc_sys::CuVec::<u32>::alloc_zeros(num_branch as usize, stream).unwrap();
             //
             let func = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh::bvhnode2aabb",
                 del_msh_cuda_kernels::get("bvhnode2aabb").unwrap(),
                 "from_trimesh3",
             )
-                .unwrap();
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_data(&bvhnode2aabb.data);
             builder.arg_dptr(bvhbranch2flag.dptr);

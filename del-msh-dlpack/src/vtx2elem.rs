@@ -1,7 +1,6 @@
 use del_dlpack::{
-    dlpack, pyo3,
-    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_2d_tensor as chk2, make_capsule_from_vec as capsule, slice,
+    check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
+    get_shape_tensor as shape, make_capsule_from_vec as capsule, pyo3, slice,
 };
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 

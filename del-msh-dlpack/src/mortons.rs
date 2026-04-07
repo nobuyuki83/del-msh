@@ -1,13 +1,16 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_1d_tensor as chk1, check_2d_tensor as chk2, slice, slice_mut,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
+    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(mortons_vtx2morton_from_vtx2co, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(mortons_make_bvhnodes_from_sorted_mortons, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        mortons_make_bvhnodes_from_sorted_mortons,
+        m
+    )?)?;
     Ok(())
 }
 
@@ -108,7 +111,7 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
                 del_msh_cuda_kernels::get("bvhnodes_morton").unwrap(),
                 "kernel_MortonCode_BVHTopology",
             )
-                .unwrap();            
+            .unwrap();
             {
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(n as u32);

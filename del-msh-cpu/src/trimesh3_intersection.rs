@@ -224,13 +224,7 @@ mod tests {
         let mut aabb = Vec::<f32>::new();
         aabb.resize(bvhnodes.len() / 3 * 6, 0.);
         crate::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
-            &mut aabb,
-            0,
-            &bvhnodes,
-            &tri2vtx, 
-            3,
-            &vtx2xyz,
-            None,
+            &mut aabb, 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
         );
         let mut pairs = Vec::<IntersectingPair<f32>>::new();
         crate::trimesh3_intersection::search_with_bvh_inside_branch(

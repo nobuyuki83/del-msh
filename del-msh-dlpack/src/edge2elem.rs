@@ -1,7 +1,6 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_1d_tensor as chk1, check_2d_tensor as chk2,
-    slice, slice_mut,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
+    get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
@@ -39,7 +38,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     assert_eq!(num_edge, num_idx);
     chk2::<u32>(&edge2vtx, num_edge, 2, device).unwrap();
     chk2::<u32>(&tri2vtx, num_tri, 3, device).unwrap();
-    chk1::<u32>(&vtx2idx_offset, num_vtx+1, device).unwrap();
+    chk1::<u32>(&vtx2idx_offset, num_vtx + 1, device).unwrap();
     chk1::<u32>(&idx2vtx, num_idx, device).unwrap();
     chk2::<u32>(&edge2tri, num_edge, 2, device).unwrap();
     //
@@ -52,7 +51,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
                 slice!(idx2vtx, u32).unwrap(),
                 slice_mut!(edge2tri, u32).unwrap(),
             );
-        },
+        }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
@@ -62,7 +61,8 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
                 "del_msh::edge2elem",
                 del_msh_cuda_kernels::get("edge2elem").unwrap(),
                 "edge2elem_from_edge2vtx_of_tri2vtx",
-            ).unwrap();
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_edge as u32);
             builder.arg_data(&edge2vtx.data);
@@ -71,7 +71,10 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
             builder.arg_data(&idx2vtx.data);
             builder.arg_data(&edge2tri.data);
             builder
-                .launch_kernel(func, del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32))
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32),
+                )
                 .unwrap();
         }
         _ => {}

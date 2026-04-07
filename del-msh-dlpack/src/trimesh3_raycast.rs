@@ -1,6 +1,6 @@
 use del_dlpack::{
-    dlpack, get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
-    check_2d_tensor as chk2, slice, slice_mut,
+    check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
+    get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
@@ -64,7 +64,7 @@ pub fn trimesh3_raycast_update_pix2tri(
                 del_msh_cuda_kernels::get("pix2tri").unwrap(),
                 "pix_to_tri",
             )
-                .unwrap();
+            .unwrap();
             let num_pix = (img_shape[0] * img_shape[1]) as usize;
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_data(&pix2tri.data);

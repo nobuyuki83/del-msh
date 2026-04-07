@@ -70,7 +70,7 @@ where
         false, // Don't include duplicate edges
     );
     // Convert vertex adjacency to edge list
-    let mut edge2vtx = vec!(Index::zero(); vtx2vtx.1.len()*2);
+    let mut edge2vtx = vec![Index::zero(); vtx2vtx.1.len() * 2];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
 }
@@ -119,7 +119,7 @@ pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) 
         false, // Don't include duplicate edges
     );
     // Convert to edge list
-    let mut edge2vtx = vec!(0usize; vtx2vtx.1.len()*2);
+    let mut edge2vtx = vec![0usize; vtx2vtx.1.len() * 2];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
 }
@@ -434,14 +434,8 @@ pub fn test_contour() {
     };
     //
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0,
-        &bvhnodes,
-        &tri2vtx, 
-        3,
-        &vtx2xyz,
-        None,
-    );
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_slice(), vtx2xyz.len() / 3);
     let edge2tri =
         crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len() / 3);
