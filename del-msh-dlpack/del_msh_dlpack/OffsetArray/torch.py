@@ -18,14 +18,15 @@ def aggregate(
         idx2aggval: (num_idx, num_dim) float32 - aggregated values per idx entry
     """
     #
+    kdx2val = kdx2val.detach()
     num_idx = idx2jdx_offset.shape[0] - 1
     num_jdx = jdx2kdx.shape[0]
     device = idx2jdx_offset.device
     num_dim = kdx2val.shape[1]
     #
-    assert idx2jdx_offset.shape == (num_idx+1,)
-    assert jdx2kdx.shape == (num_jdx,) and jdx2kdx.device == device and jdx2kdx.dtype == torch.uint32
-    assert kdx2val.shape == (num_jdx,num_dim) and kdx2val.device == device and kdx2val.dtype == torch.float32
+    util_torch.assert_shape_dtype_device(idx2jdx_offset, (num_idx+1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(jdx2kdx, (num_jdx,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(kdx2val, (num_jdx, num_dim), torch.float32, device)    #assert kdx2val.shape == (num_jdx,num_dim) and kdx2val.device == device and kdx2val.dtype == torch.float32
     #
     idx2aggval = torch.zeros(size=(num_idx,num_dim), device=device, dtype=torch.float32)
     #

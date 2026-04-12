@@ -5,12 +5,13 @@ import torch
 from PIL import Image
 #
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
-import del_msh_dlpack.TriMesh3Raycast.torch as TriMesh3Raycast
-import del_msh_dlpack.Vtx2Elem.torch 
+import del_msh_dlpack.Pix2Tri.torch as Pix2Tri
+import del_msh_dlpack.Vtx2Elem.torch
 import del_msh_dlpack.Edge2Elem.torch
-import del_msh_dlpack.Edge2Vtx.torch
+import del_msh_dlpack.Edge2Vtx.torch as Edge2Vtx
 import del_msh_dlpack.Vtx2Vtx.torch
-import del_msh_dlpack.DifferentialRasterizer.torch as DifferentialRasterizer
+import del_msh_dlpack.Pix2Depth.torch as Pix2Depth
+import del_msh_dlpack.DifferentiableAntialias.torch as DifferentiableAntialias
 import del_msh_dlpack.Mat44.torch as Mat44
 import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
 
@@ -41,22 +42,22 @@ def test_save_fwd_diff_image():
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
     pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32)
     pix2tri.fill_(torch.iinfo(torch.uint32).max)
-    TriMesh3Raycast.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
     #
     edge2vtx = TriMesh3.make_edge2vtx(tri2vtx, vtx2xyz.shape[0])
     edge2tri = TriMesh3.make_edge2tri(tri2vtx, vtx2xyz.shape[0], edge2vtx)
     cedge2vtx = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
-    img_data = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
+    pix2occin = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
     #
-    DifferentialRasterizer.antialias(
+    pix2occout = DifferentiableAntialias.antialias(
         cedge2vtx,
         vtx2xyz,
         transform_world2pix,
         pix2tri,
-        img_data,
+        pix2occin
     )
     #
-    img = (img_data.numpy() * 255).clip(0, 255).astype('uint8')
+    img = (pix2occout.numpy() * 255).clip(0, 255).astype('uint8')
     path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__antialias.png"
     path0.parent.mkdir(exist_ok=True)
     Image.fromarray(img, mode="L").save(path0)
@@ -73,12 +74,11 @@ def test_save_fwd_diff_image():
     for i_pix in range(num_pix):
         dldw_pix2occ = torch.zeros((img_h, img_w), dtype=torch.float32)
         dldw_pix2occ.view(-1)[i_pix] = 1.0
-        dldw_vtx2xyz = torch.zeros((num_vtx, 3), dtype=torch.float32)
-        DifferentialRasterizer.bwd_antialias(
+        dldw_vtx2xyz = DifferentiableAntialias.bwd_antialias(
             cedge2vtx,
             vtx2xyz,
-            dldw_vtx2xyz,
             transform_world2pix,
+            pix2occin,
             dldw_pix2occ,
             pix2tri,
         )
@@ -110,10 +110,10 @@ def test_match_cpu_cuda():
     #
     pix2tri = torch.full((img_shape[1], img_shape[0]),
                          torch.iinfo(torch.uint32).max, device=torch.device("cpu"), dtype=torch.uint32)
-    del_msh_dlpack.TriMesh3Raycast.torch.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    del_msh_dlpack.Pix2Tri.torch.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
     d_pix2tri = torch.full((img_shape[1], img_shape[0]),
                          torch.iinfo(torch.uint32).max, device=torch.device("cuda"), dtype=torch.uint32)
-    del_msh_dlpack.TriMesh3Raycast.torch.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
+    del_msh_dlpack.Pix2Tri.torch.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
     assert torch.equal(pix2tri, d_pix2tri.cpu())
     #
     vtx2idx_offset, idx2vtx = del_msh_dlpack.Vtx2Vtx.torch.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
@@ -141,57 +141,81 @@ def test_match_cpu_cuda():
     d_cedge2vtx = del_msh_dlpack.Edge2Vtx.torch.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
     assert torch.equal(cedge2vtx, d_cedge2vtx.cpu())
     #
-    pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
-    DifferentialRasterizer.antialias(
+    pix2occin = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
+    pix2occ = DifferentiableAntialias.antialias(
         cedge2vtx,
         vtx2xyz,
         transform_world2pix,
         pix2tri,
-        pix2occ,
+        pix2occin,
     )
-    d_pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32).cuda()
-    DifferentialRasterizer.antialias(
+    d_pix2occin = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32).cuda()
+    d_pix2occ = DifferentiableAntialias.antialias(
         d_cedge2vtx,
         d_vtx2xyz,
         transform_world2pix.cuda(),
         d_pix2tri,
-        d_pix2occ,
+        d_pix2occin,
     )
     assert (pix2occ-d_pix2occ.cpu()).abs().max().item() < 0.008
     #
     dldw_pix2occ = torch.rand((img_shape[1], img_shape[0]), dtype=torch.float32)
-    dldw_vtx2xyz = torch.zeros(vtx2xyz.shape, dtype=torch.float32)
-    DifferentialRasterizer.bwd_antialias(
+    dldw_vtx2xyz = DifferentiableAntialias.bwd_antialias(
         cedge2vtx,
         vtx2xyz,
-        dldw_vtx2xyz,
         transform_world2pix,
+        pix2occin,
         dldw_pix2occ,
         pix2tri,
     )
     d_dldw_pix2occ = dldw_pix2occ.cuda()
-    d_dldw_vtx2xyz = torch.zeros(vtx2xyz.shape, dtype=torch.float32, device=torch.device("cuda"))
-    DifferentialRasterizer.bwd_antialias(
+    d_dldw_vtx2xyz = DifferentiableAntialias.bwd_antialias(
         d_cedge2vtx,
         d_vtx2xyz,
-        d_dldw_vtx2xyz,
         transform_world2pix.cuda(),
+        d_pix2occin,
         d_dldw_pix2occ,
         d_pix2tri,
     )
     assert (dldw_vtx2xyz-d_dldw_vtx2xyz.cpu()).abs().max().item() < 1.0e-4
 
 
-
-
-
-
-
-
-
-
-
-
+def test_autograd():
+    tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
+    transform_ndc2world = transform_world2ndc.inverse().contiguous()
+    transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
+    transform_world2pix = transform_ndc2pix @ transform_world2ndc
+    #
+    vtx2xyz.requires_grad_(True)
+    edge2vtx = TriMesh3.make_edge2vtx(tri2vtx, vtx2xyz.shape[0])
+    edge2tri = TriMesh3.make_edge2tri(tri2vtx, vtx2xyz.shape[0], edge2vtx)
+    #
+    bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
+    pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
+    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    depth = Pix2Depth.Pix2DepthFunction.apply(vtx2xyz, pix2tri, tri2vtx, transform_ndc2world)
+    cedge2vtx = Edge2Vtx.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
+    deptha = DifferentiableAntialias.DifferentiableAntialiasFunction.apply(cedge2vtx, vtx2xyz, transform_world2pix, pix2tri, depth)
+    trgt = torch.rand((img_shape[1], img_shape[0]), dtype=torch.float32)
+    loss = torch.dot(trgt.flatten(), deptha.flatten())
+    loss.backward()
+    grad = vtx2xyz.grad
+    vtx2xyz1 = vtx2xyz + vtx2xyz.grad * 0.1
+    if torch.cuda.is_available():
+        (d_tri2vtx, d_vtx2xyz) = (tri2vtx.cuda(), vtx2xyz.detach().clone().cuda().requires_grad_(True))
+        d_edge2vtx = TriMesh3.make_edge2vtx(d_tri2vtx, d_vtx2xyz.shape[0])
+        d_edge2tri = TriMesh3.make_edge2tri(d_tri2vtx, d_vtx2xyz.shape[0], d_edge2vtx)
+        d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+        d_pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32, device=torch.device("cuda"))
+        Pix2Tri.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
+        d_depth = Pix2Depth.Pix2DepthFunction.apply(d_vtx2xyz, d_pix2tri, d_tri2vtx, transform_ndc2world.cuda())
+        d_cedge2vtx = Edge2Vtx.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
+        d_deptha = DifferentiableAntialias.DifferentiableAntialiasFunction.apply(d_cedge2vtx, d_vtx2xyz, transform_world2pix.cuda(), d_pix2tri, d_depth)
+        d_loss = torch.dot(trgt.cuda().flatten(), d_deptha.flatten())
+        d_loss.backward()
+        d_grad = d_vtx2xyz.grad
+        assert( (loss - d_loss.cpu()).abs() < 0.002 )
+        assert (d_grad.cpu() - grad).abs().max() < 1.0e-4
 
 
 

@@ -13,6 +13,7 @@ def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.T
     Returns:
         vtx2morton: (num_vtx,) uint32 - Morton code per vertex
     """
+    vtx2co = vtx2co.detach()
     num_vtx = vtx2co.shape[0]
     num_dim = vtx2co.shape[1]
     device = vtx2co.device
@@ -29,9 +30,9 @@ def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.T
     from .. import Mortons
 
     Mortons.make_vtx2morton_from_vtx2co(
-        util_torch.to_dlpack_safe(vtx2co, stream_ptr),
-        util_torch.to_dlpack_safe(transform_co2unit.T.contiguous(), stream_ptr),
-        util_torch.to_dlpack_safe(vtx2morton, stream_ptr),
+        vtx2co.detach().__dlpack__(),
+        transform_co2unit.detach().T.contiguous().__dlpack__(),
+        vtx2morton.detach().__dlpack__(),
         stream_ptr,
     )
     return vtx2morton

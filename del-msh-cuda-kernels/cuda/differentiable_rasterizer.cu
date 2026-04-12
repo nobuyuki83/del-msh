@@ -67,46 +67,53 @@ extern "C" {
 
 __global__
 void antialias_fwd(
-  const uint32_t num_edge,
-  uint32_t *edge2vtx,
+  const uint32_t num_cedge,
+  uint32_t *cedge2vtx,
+  const float *vtx2xyz,
+  const float *transform_world2pix,
   const uint32_t img_w,
   const uint32_t img_h,
-  float* pix2occu,
   const uint32_t* pix2tri,
-  const float *vtx2xyz,
-  const float *transform_world2pix)
+  const float* pix2vin,
+  float* pix2vout)
 {
     int i_edge = blockDim.x * blockIdx.x + threadIdx.x;
-    if( i_edge >= num_edge ){ return; }
+    if( i_edge >= num_cedge ){ return; }
     //
-    const uint32_t i0_vtx = edge2vtx[i_edge*2+0];
-    const uint32_t i1_vtx = edge2vtx[i_edge*2+1];
+    const uint32_t i0_vtx = cedge2vtx[i_edge*2+0];
+    const uint32_t i1_vtx = cedge2vtx[i_edge*2+1];
     const float* p0 = vtx2xyz + i0_vtx*3;
     const float* p1 = vtx2xyz + i1_vtx*3;
     const auto q0 = mat4_col_major::transform_homogeneous(transform_world2pix, p0);
     const auto q1 = mat4_col_major::transform_homogeneous(transform_world2pix, p1);
     float v01[2] = {q1[0]-q0[0], q1[1]-q0[1]};
+    if( v01[0] == 0.f && v01[1] == 0.f ){ return; } // degenerate edge: zero length in screen space
     const bool is_horizontal = abs(v01[0]) < abs(v01[1]);
     auto dda = DDA(q0.data(), q1.data(), img_w, img_h);
     while(true) {
       const auto pixel_coord = dda.pixel();
       auto iw = pixel_coord.ix;
       auto ih = pixel_coord.iy;
-      if( iw < 0 || ih < 0 || iw >= img_w || ih >= img_h ){ continue; }
-      auto ne = Neighbour(ih * img_w + iw, img_w, is_horizontal);
-      for(uint32_t i_cnt=0;i_cnt<4;++i_cnt) {
-        auto ni = ne.get(i_cnt);
-        if( pix2tri[ni.i_pix0] == UINT32_MAX || pix2tri[ni.i_pix1] != UINT32_MAX ){
-            continue;
-        }
-        auto res = edge2::intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data());
-        if( !res ){ continue; }
-        const float rc = res.value().r0;
-        assert( 0.f<=rc && rc <= 1.f);
-        if( rc < 0.5  ){
-            pix2occu[ni.i_pix0] = 0.5f + rc;
-        } else {
-            pix2occu[ni.i_pix1] = rc - 0.5f;
+      if( iw >= 0 && ih >= 0 && iw < img_w && ih < img_h ) {
+        auto ne = Neighbour(ih * img_w + iw, img_w, is_horizontal);
+        const uint32_t total_pix = img_w * img_h;
+        for(uint32_t i_cnt=0;i_cnt<4;++i_cnt) {
+          auto ni = ne.get(i_cnt);
+          if( ni.i_pix0 >= total_pix || ni.i_pix1 >= total_pix ){ continue; }
+          if( pix2tri[ni.i_pix0] == UINT32_MAX || pix2tri[ni.i_pix1] != UINT32_MAX ){
+              continue;
+          }
+          auto res = edge2::intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data());
+          if( !res ){ continue; }
+          const float rc = res.value().r0;
+          assert( 0.f<=rc && rc <= 1.f);
+          if( rc < 0.5  ){
+              const float r0 = 0.5f + rc;
+              pix2vout[ni.i_pix0] = r0 * pix2vin[ni.i_pix0] + (1.0-r0) * pix2vin[ni.i_pix1];
+          } else {
+              const float r0 = rc - 0.5f;
+              pix2vout[ni.i_pix1] = r0 * pix2vin[ni.i_pix0] + (1.0-r0) * pix2vin[ni.i_pix1];
+          }
         }
       }
       if( !dda.is_valid() ){ break; } // this is here to allow overrun one pixel to make the line connected.
@@ -121,11 +128,12 @@ void antialias_bwd(
        const uint32_t *cedge2vtx,
        const float *vtx2xyz,
        float *dldw_vtx2xyz,
+       const float* transform_world2pix,
        uint32_t img_w,
        uint32_t img_h,
-       const float *dldw_pix2occ,
-       const uint32_t *pix2tri,
-       const float* transform_world2pix)
+       const float* pix2val,
+       const float *dldw_pix2val,
+       const uint32_t *pix2tri)
 {
     int i_edge = blockDim.x * blockIdx.x + threadIdx.x;
     if( i_edge >= num_cedge ){ return; }
@@ -137,6 +145,7 @@ void antialias_bwd(
     const auto q0 = mat4_col_major::transform_homogeneous(transform_world2pix, p0);
     const auto q1 = mat4_col_major::transform_homogeneous(transform_world2pix, p1);
     float v01[2] = {q1[0]-q0[0], q1[1]-q0[1]};
+    if( v01[0] == 0.f && v01[1] == 0.f ){ return; } // degenerate edge: zero length in screen space
     const bool is_horizontal = abs(v01[0]) < abs(v01[1]);
     auto dda = DDA(q0.data(), q1.data(), img_w, img_h);
     float dldw_p0[3] = {0.f, 0.f, 0.f};
@@ -145,30 +154,34 @@ void antialias_bwd(
       const auto pixel_coord = dda.pixel();
       auto iw = pixel_coord.ix;
       auto ih = pixel_coord.iy;
-      if( iw < 0 || ih < 0 || iw >= img_w || ih >= img_h ){ continue; }
-      auto ne = Neighbour(ih * img_w + iw, img_w, is_horizontal);
-      for(uint32_t i_cnt=0;i_cnt<4;++i_cnt) {
-        const auto ni = ne.get(i_cnt);
-        if( pix2tri[ni.i_pix0] == UINT32_MAX || pix2tri[ni.i_pix1] != UINT32_MAX ){
-            continue;
+      if( iw >= 0 && ih >= 0 && iw < img_w && ih < img_h ) {
+        auto ne = Neighbour(ih * img_w + iw, img_w, is_horizontal);
+        const uint32_t total_pix = img_w * img_h;
+        for(uint32_t i_cnt=0;i_cnt<4;++i_cnt) {
+          const auto ni = ne.get(i_cnt);
+          if( ni.i_pix0 >= total_pix || ni.i_pix1 >= total_pix ){ continue; }
+          if( pix2tri[ni.i_pix0] == UINT32_MAX || pix2tri[ni.i_pix1] != UINT32_MAX ){
+              continue;
+          }
+          auto res = edge2::intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data());
+          if( !res ){ continue; }
+          const float rc = res.value().r0;
+          assert( 0.f <= rc && rc <= 1.f);
+          const float dv = pix2val[ni.i_pix0] - pix2val[ni.i_pix1];
+          const float dldr0 =  rc < 0.5f ? dldw_pix2val[ni.i_pix0] * dv : dldw_pix2val[ni.i_pix1] * dv;
+          const auto diff =
+            edge2::dldw_intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data(), dldr0, 0.f);
+          const auto dldq1 = diff.dlds1;
+          const auto dldq0 = diff.dlde1;
+          const auto dqdp0_3x3 = mat4_col_major::jacobian_transform(transform_world2pix, p0);
+          const auto dqdp1_3x3 = mat4_col_major::jacobian_transform(transform_world2pix, p1);
+          const auto dqdp0_2x3 = mat3_col_major::to_mat2x3_col_major_xy(dqdp0_3x3.data()); // 2x3 matrix
+          const auto dqdp1_2x3 = mat3_col_major::to_mat2x3_col_major_xy(dqdp1_3x3.data()); // 2x3 matrix
+          const auto dldp0 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp0_2x3.data(), dldq0.data());
+          const auto dldp1 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp1_2x3.data(), dldq1.data());
+          vec3::add_inplace(dldw_p0, dldp0.data());
+          vec3::add_inplace(dldw_p1, dldp1.data());
         }
-        auto res = edge2::intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data());
-        if( !res ){ continue; }
-        const float rc = res.value().r0;
-        assert( 0.f <= rc && rc <= 1.f);
-        float dldr0 = ( rc < 0.5f ) ? dldw_pix2occ[ni.i_pix0] : dldw_pix2occ[ni.i_pix1];
-        const auto diff =
-          edge2::dldw_intersection_edge2(ni.c0.data(), ni.c1.data(), q1.data(), q0.data(), dldr0, 0.f);
-        const auto dldq1 = diff.dlds1;
-        const auto dldq0 = diff.dlde1;
-        const auto dqdp0_3x3 = mat4_col_major::jacobian_transform(transform_world2pix, p0);
-        const auto dqdp1_3x3 = mat4_col_major::jacobian_transform(transform_world2pix, p1);
-        const auto dqdp0_2x3 = mat3_col_major::to_mat2x3_col_major_xy(dqdp0_3x3.data()); // 2x3 matrix
-        const auto dqdp1_2x3 = mat3_col_major::to_mat2x3_col_major_xy(dqdp1_3x3.data()); // 2x3 matrix
-        const auto dldp0 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp0_2x3.data(), dldq0.data());
-        const auto dldp1 = mat2x3_col_major::vec3_from_mult_transpose_vec2(dqdp1_2x3.data(), dldq1.data());
-        vec3::add_inplace(dldw_p0, dldp0.data());
-        vec3::add_inplace(dldw_p1, dldp1.data());
       }
       if( !dda.is_valid() ){ break; } // this is here to allow overrun one pixel to make the line connected.
       dda.move();

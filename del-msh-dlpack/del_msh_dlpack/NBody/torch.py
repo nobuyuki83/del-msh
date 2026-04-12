@@ -121,6 +121,7 @@ def filter_with_acceleration(
     Returns:
         wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
     """
+    wtx2xyz = wtx2xyz.detach()
     num_vtx = vtx2rhs.shape[0]
     num_wtx = wtx2xyz.shape[0]
     num_idx = acc.idx2jdx_offset.shape[0] - 1
@@ -129,7 +130,7 @@ def filter_with_acceleration(
     #
     util_torch.assert_shape_dtype_device(wtx2xyz, (num_wtx,3), torch.float32, device)
     util_torch.assert_shape_dtype_device(vtx2rhs, (num_vtx,3), torch.float32, device)
-    util_torch.assert_shape_dtype_device(acc.vtx2xyz, (num_vtx,3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(acc.vtx2xyz.detach(), (num_vtx,3), torch.float32, device)
     util_torch.assert_shape_dtype_device(acc.jdx2vtx, (num_vtx,), torch.uint32, device)
     util_torch.assert_shape_dtype_device(acc.tree2idx.idx2onode, (num_idx, ), torch.uint32, device)
     util_torch.assert_shape_dtype_device(acc.tree2idx.onodes, (num_onode, 9), torch.uint32, device)
@@ -148,7 +149,7 @@ def filter_with_acceleration(
     from .. import NBody
 
     NBody.filter_with_acceleration(
-        util_torch.to_dlpack_safe(acc.vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(acc.vtx2xyz.detach(), stream_ptr),
         util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
         util_torch.to_dlpack_safe(wtx2xyz, stream_ptr),
         util_torch.to_dlpack_safe(wtx2lhs, stream_ptr),

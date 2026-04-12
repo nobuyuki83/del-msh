@@ -33,6 +33,7 @@ def contour_for_triangle_mesh(
         transform_world2ndc: torch.Tensor,
         edge2vtx: torch.Tensor,
         edge2tri: torch.Tensor) -> torch.Tensor:
+    vtx2xyz = vtx2xyz.detach()
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     num_edge = edge2vtx.shape[0]
@@ -51,7 +52,7 @@ def contour_for_triangle_mesh(
     #
     from .. import Edge2Vtx, _CapsuleAsDLPack
 
-    cap = Edge2Vtx.contour_for_triangle_mesh(
+    cap_cedge2vtx = Edge2Vtx.contour_for_triangle_mesh(
         tri2vtx.__dlpack__(),
         vtx2xyz.__dlpack__(),
         transform_world2ndc.T.contiguous().__dlpack__(),
@@ -59,5 +60,5 @@ def contour_for_triangle_mesh(
         edge2tri.__dlpack__(),
         stream_ptr=stream_ptr
     )
-    return torch.from_dlpack(_CapsuleAsDLPack(cap)).clone()
+    return torch.from_dlpack(_CapsuleAsDLPack(cap_cedge2vtx)).clone()
 

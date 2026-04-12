@@ -1,7 +1,6 @@
 import torch
 
 def to_dlpack_safe(t: torch.Tensor, stream_ptr: int):
-    assert not t.requires_grad
     assert t.is_contiguous()
 
     dev = t.device.type
@@ -18,3 +17,4 @@ def assert_shape_dtype_device(t: torch.Tensor, shape: tuple[int,...], dtype: tor
     assert t.dtype == dtype
     assert t.device == device
     assert t.is_contiguous()
+    assert not t.requires_grad

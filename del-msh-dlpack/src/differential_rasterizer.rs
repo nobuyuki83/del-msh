@@ -33,20 +33,20 @@ pub fn differential_rasterizer_bwd_antialias(
     let vtx2xyz = get_tensor(vtx2xyz)?;
     let dldw_vtx2xyz = get_tensor(dldw_vtx2xyz)?;
     let transform_world2pix = get_tensor(transform_world2pix)?;
-    let pix2occ = get_tensor(pix2val)?;
-    let dldw_pix2occ = get_tensor(dldw_pixval)?;
+    let pix2val = get_tensor(pix2val)?;
+    let dldw_pix2val = get_tensor(dldw_pixval)?;
     let pix2tri = get_tensor(pix2tri)?;
     //
     let num_cedge = shape(&cedge2vtx, 0).unwrap();
     let num_vtx = shape(&vtx2xyz, 0).unwrap();
-    let img_h = shape(&dldw_pix2occ, 0).unwrap();
-    let img_w = shape(&dldw_pix2occ, 1).unwrap();
+    let img_h = shape(&dldw_pix2val, 0).unwrap();
+    let img_w = shape(&dldw_pix2val, 1).unwrap();
     let device = cedge2vtx.ctx.device_type;
     //
     chk2::<u32>(cedge2vtx, num_cedge, 2, device).unwrap();
     chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
     chk2::<f32>(dldw_vtx2xyz, num_vtx, 3, device).unwrap();
-    chk2::<f32>(dldw_pix2occ, img_h, img_w, device).unwrap();
+    chk2::<f32>(dldw_pix2val, img_h, img_w, device).unwrap();
     chk2::<u32>(pix2tri, img_h, img_w, device).unwrap();
     //
     match device {
@@ -57,8 +57,8 @@ pub fn differential_rasterizer_bwd_antialias(
                 slice_mut!(dldw_vtx2xyz, f32).unwrap(),
                 arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),
-                slice!(pix2occ, f32).unwrap(),
-                slice!(dldw_pix2occ, f32).unwrap(),
+                slice!(pix2val, f32).unwrap(),
+                slice!(dldw_pix2val, f32).unwrap(),
                 slice!(pix2tri, u32).unwrap(),
             );
         }
@@ -78,11 +78,12 @@ pub fn differential_rasterizer_bwd_antialias(
             builder.arg_data(&cedge2vtx.data);
             builder.arg_data(&vtx2xyz.data);
             builder.arg_data(&dldw_vtx2xyz.data);
+            builder.arg_data(&transform_world2pix.data);
             builder.arg_u32(img_w as u32);
             builder.arg_u32(img_h as u32);
-            builder.arg_data(&dldw_pix2occ.data);
+            builder.arg_data(&pix2val.data);
+            builder.arg_data(&dldw_pix2val.data);
             builder.arg_data(&pix2tri.data);
-            builder.arg_data(&transform_world2pix.data);
             const NUM_THREADS_BWD: u32 = 128;
             builder
                 .launch_kernel(
@@ -158,12 +159,13 @@ pub fn differential_rasterizer_antialias(
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_cedge as u32);
             builder.arg_data(&cedge2vtx.data);
-            builder.arg_u32(img_w as u32);
-            builder.arg_u32(img_h as u32);
-            builder.arg_data(&pix2vin.data);
-            builder.arg_data(&pix2tri.data);
             builder.arg_data(&vtx2xyz.data);
             builder.arg_data(&transform_world2pix.data);
+            builder.arg_u32(img_w as u32);
+            builder.arg_u32(img_h as u32);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_data(&pix2vin.data);
+            builder.arg_data(&pix2vout.data);
             const NUM_THREADS_FWD: u32 = 128;
             builder
                 .launch_kernel(

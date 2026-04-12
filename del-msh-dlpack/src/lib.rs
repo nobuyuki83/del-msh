@@ -20,6 +20,7 @@ mod polyhedron_mesh;
 mod quad_oct_tree;
 mod trimesh3;
 mod trimesh3_primitive;
+mod pix2depth;
 mod trimesh3_raycast;
 mod vtx2elem;
 mod vtx2vtx;
@@ -31,6 +32,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(pyo3::wrap_pyfunction!(get_ptx_compiler_version, m)?)?;
     trimesh3::add_functions(_py, m)?;
     trimesh3_raycast::add_functions(_py, m)?;
+    pix2depth::add_functions(_py, m)?;
     trimesh3_primitive::add_functions(_py, m)?;
     edge2vtx::add_functions(_py, m)?;
     edge2elem::add_functions(_py, m)?;

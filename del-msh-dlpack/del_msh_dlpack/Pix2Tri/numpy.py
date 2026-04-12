@@ -23,7 +23,7 @@ def update_pix2tri(
     util_numpy.assert_shape_dtype(bvhnode2aabb, (num_bvhnode, 6), np.float32)
     util_numpy.assert_shape_dtype(pix2tri, (img_h, img_w), np.uint32)
     #
-    from ..TriMesh3Raycast import update_pix2tri
+    from ..Pix2Tri import update_pix2tri
 
     update_pix2tri(
         tri2vtx.__dlpack__(),

@@ -62,7 +62,7 @@ def test_02():
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint32)
     pix2tri.fill(numpy.iinfo(numpy.uint32).max)
     #
-    from del_msh_dlpack.TriMesh3Raycast.numpy import update_pix2tri
+    from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
     update_pix2tri(
         tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri
     )

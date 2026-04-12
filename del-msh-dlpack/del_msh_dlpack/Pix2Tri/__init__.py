@@ -1,6 +1,3 @@
-
-
-
 def update_pix2tri(
         tri2vtx,
         vtx2xyz,

@@ -47,6 +47,47 @@ pub fn update_pix2tri<Index>(
         .for_each(|(i_pix, i_tri)| *i_tri = tri_for_pix(i_pix));
 }
 
+pub fn pix2depth_from_pix2tri(
+    pix2depth: &mut [f32],
+    pix2tri: &[u32],
+    tri2vtx: &[u32],
+    vtx2xyz: &[f32],
+    img_shape: (usize, usize), // (width, height)
+    transform_ndc2world: &[f32; 16],
+) {
+    let transform_world2ndc =
+        del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
+    let fn_pix2depth = |i_pix: usize| -> f32 {
+        let i_tri = pix2tri[i_pix];
+        if i_tri == u32::MAX {
+            return 0f32;
+        }
+        let i_w = i_pix % img_shape.0;
+        let i_h = i_pix / img_shape.0;
+        let (ray_org, ray_dir) =
+            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
+                (i_w as f32 + 0.5, i_h as f32 + 0.5),
+                &(img_shape.0 as f32, img_shape.1 as f32),
+                transform_ndc2world,
+            );
+        let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize);
+        let coeff = del_geo_core::tri3::intersection_against_line(
+            tri.p0, tri.p1, tri.p2, &ray_org, &ray_dir,
+        )
+        .unwrap();
+        let pos_world = del_geo_core::vec3::axpy(coeff, &ray_dir, &ray_org);
+        let pos_ndc =
+            del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &pos_world)
+                .unwrap();
+        (pos_ndc[2] + 1f32) * 0.5f32
+    };
+    use rayon::prelude::*;
+    pix2depth
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(i_pix, depth)| *depth = fn_pix2depth(i_pix));
+}
+
 pub fn render_depth_bvh(
     image_size: (usize, usize),
     pix2depth: &mut [f32],

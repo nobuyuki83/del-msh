@@ -142,7 +142,7 @@ def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: 
 
     TriMesh3.save_wavefront_obj(
         tri2vtx.__dlpack__(),
-        vtx2xyz.__dlpack__(),
+        vtx2xyz.detach().__dlpack__(),
         path_file
     )
 
@@ -201,6 +201,7 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
+    vtx2xyz = vtx2xyz.detach()
     #
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
@@ -216,7 +217,6 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     #
     from ..Mortons.torch import make_vtx2morton_from_vtx2co
     tri2morton = make_vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
-    tri2tri = torch.arange(num_tri, dtype=torch.int32, device=device).to(dtype=torch.uint32)
     from ..Array1D.torch import argsort
     idx2tri, idx2morton = argsort(tri2morton)
     from ..Mortons.torch import make_bvhnodes_from_sorted_mortons
@@ -227,11 +227,11 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     vtx2xyz1 = torch.zeros((0,3), dtype=torch.float32, device=device)
     from .. import TriMesh3
     TriMesh3.make_bvhnode2aabb_from_bvhnodes(
-        tri2vtx.__dlpack__(),
-        vtx2xyz.__dlpack__(),
-        vtx2xyz1.__dlpack__(),
-        bvhnodes.__dlpack__(),
-        bvhnode2aabb.__dlpack__(),
+        tri2vtx.detach().__dlpack__(),
+        vtx2xyz.detach().__dlpack__(),
+        vtx2xyz1.detach().__dlpack__(),
+        bvhnodes.detach().__dlpack__(),
+        bvhnode2aabb.detach().__dlpack__(),
         stream_ptr=stream_ptr,
     )
     return bvhnodes, bvhnode2aabb
@@ -244,7 +244,7 @@ def make_edge2vtx(tri2vtx: torch.Tensor, num_vtx: int):
     #
     from del_msh_dlpack.Vtx2Vtx.torch import from_uniform_mesh
     vtx2idx_offset, idx2vtx = from_uniform_mesh(tri2vtx, num_vtx, False)
-    edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32)
+    edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device)
     from del_msh_dlpack.Edge2Vtx.torch import from_vtx2vtx
     from_vtx2vtx(vtx2idx_offset, idx2vtx, edge2vtx)
     return edge2vtx
@@ -261,7 +261,7 @@ def make_edge2tri(tri2vtx: torch.Tensor, num_vtx: int, edge2vtx: torch.Tensor):
     #
     from del_msh_dlpack.Vtx2Elem.torch import from_uniform_mesh
     vtx2jdx_offset, jdx2tri = from_uniform_mesh(tri2vtx, num_vtx)
-    edge2tri = torch.empty((edge2vtx.shape[0], 2), dtype=torch.uint32)
+    edge2tri = torch.empty((edge2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device)
     from del_msh_dlpack.Edge2Elem.torch import from_edge2vtx_of_tri2vtx_with_vtx2vtx
     from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri)
     return edge2tri

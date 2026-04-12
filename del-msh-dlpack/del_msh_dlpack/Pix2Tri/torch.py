@@ -15,6 +15,7 @@ def update_pix2tri(
     img_w = pix2tri.shape[1]
     img_h = pix2tri.shape[0]
     device = tri2vtx.device
+    vtx2xyz = vtx2xyz.detach()
     #
     assert num_bvhnode == num_tri * 2 - 1
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
@@ -28,11 +29,11 @@ def update_pix2tri(
         torch.cuda.set_device(device)
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
 
-    from ..TriMesh3Raycast import update_pix2tri
+    from ..Pix2Tri import update_pix2tri
 
     update_pix2tri(
         tri2vtx.__dlpack__(),
-        vtx2xyz.__dlpack__(),
+        vtx2xyz.detach().__dlpack__(),
         bvhnodes.__dlpack__(),
         bvhnode2aabb.__dlpack__(),
         transform_ndc2world.T.contiguous().__dlpack__(),
