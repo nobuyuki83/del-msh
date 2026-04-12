@@ -17,6 +17,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
 pub fn differential_rasterizer_bwd_antialias(
     _py: Python<'_>,
@@ -37,10 +38,10 @@ pub fn differential_rasterizer_bwd_antialias(
     let dldw_pix2val = get_tensor(dldw_pixval)?;
     let pix2tri = get_tensor(pix2tri)?;
     //
-    let num_cedge = shape(&cedge2vtx, 0).unwrap();
-    let num_vtx = shape(&vtx2xyz, 0).unwrap();
-    let img_h = shape(&dldw_pix2val, 0).unwrap();
-    let img_w = shape(&dldw_pix2val, 1).unwrap();
+    let num_cedge = shape(cedge2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let img_h = shape(dldw_pix2val, 0).unwrap();
+    let img_w = shape(dldw_pix2val, 1).unwrap();
     let device = cedge2vtx.ctx.device_type;
     //
     chk2::<u32>(cedge2vtx, num_cedge, 2, device).unwrap();
@@ -103,6 +104,7 @@ pub fn differential_rasterizer_bwd_antialias(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
 pub fn differential_rasterizer_antialias(
     _py: Python<'_>,
@@ -121,10 +123,10 @@ pub fn differential_rasterizer_antialias(
     let pix2vin = get_tensor(pic2vin)?;
     let pix2vout = get_tensor(pic2vout)?;
     //
-    let num_cedge = shape(&cedge2vtx, 0).unwrap();
-    let num_vtx = shape(&vtx2xyz, 0).unwrap();
-    let img_h = shape(&pix2vin, 0).unwrap();
-    let img_w = shape(&pix2vin, 1).unwrap();
+    let num_cedge = shape(cedge2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let img_h = shape(pix2vin, 0).unwrap();
+    let img_w = shape(pix2vin, 1).unwrap();
     let device = cedge2vtx.ctx.device_type;
     //
     chk2::<u32>(cedge2vtx, num_cedge, 2, device).unwrap();

@@ -28,15 +28,15 @@ pub fn pix2depth_update(
     let transform_ndc2world = get_tensor(transform_ndc2world)?;
     //
     let device = pix2depth.ctx.device_type;
-    let img_shape = [shape(&pix2depth, 1).unwrap(), shape(&pix2depth, 0).unwrap()];
-    let num_tri = shape(&tri2vtx, 0).unwrap();
-    let num_vtx = shape(&vtx2xyz, 0).unwrap();
+    let img_shape = [shape(pix2depth, 1).unwrap(), shape(pix2depth, 0).unwrap()];
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
     //
-    chk2::<f32>(&pix2depth, img_shape[1], img_shape[0], device).unwrap();
-    chk2::<u32>(&pix2tri, img_shape[1], img_shape[0], device).unwrap();
-    chk2::<u32>(&tri2vtx, num_tri, 3, device).unwrap();
-    chk2::<f32>(&vtx2xyz, num_vtx, 3, device).unwrap();
-    chk2::<f32>(&transform_ndc2world, 4, 4, device).unwrap();
+    chk2::<f32>(pix2depth, img_shape[1], img_shape[0], device).unwrap();
+    chk2::<u32>(pix2tri, img_shape[1], img_shape[0], device).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(transform_ndc2world, 4, 4, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -96,6 +96,7 @@ pub fn pix2depth_update(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
 pub fn pix2depth_bwd_wrt_vtx2xyz(
     _py: Python<'_>,
@@ -115,16 +116,16 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
     let transform_ndc2world = get_tensor(transform_ndc2world)?;
     //
     let device = dldw_vtx2xyz.ctx.device_type;
-    let num_vtx = shape(&vtx2xyz, 0).unwrap();
-    let num_tri = shape(&tri2vtx, 0).unwrap();
-    let img_shape = [shape(&pix2tri, 1).unwrap(), shape(&pix2tri, 0).unwrap()];
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let img_shape = [shape(pix2tri, 1).unwrap(), shape(pix2tri, 0).unwrap()];
     //
-    chk2::<f32>(&dldw_vtx2xyz, num_vtx, 3, device).unwrap();
-    chk2::<u32>(&pix2tri, img_shape[1], img_shape[0], device).unwrap();
-    chk2::<u32>(&tri2vtx, num_tri, 3, device).unwrap();
-    chk2::<f32>(&vtx2xyz, num_vtx, 3, device).unwrap();
-    chk2::<f32>(&dldw_pix2depth, img_shape[1], img_shape[0], device).unwrap();
-    chk2::<f32>(&transform_ndc2world, 4, 4, device).unwrap();
+    chk2::<f32>(dldw_vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<u32>(pix2tri, img_shape[1], img_shape[0], device).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(dldw_pix2depth, img_shape[1], img_shape[0], device).unwrap();
+    chk2::<f32>(transform_ndc2world, 4, 4, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

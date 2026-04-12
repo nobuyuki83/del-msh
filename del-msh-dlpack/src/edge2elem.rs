@@ -30,17 +30,17 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     let edge2tri = get_tensor(edge2tri)?;
     //
     let device = edge2vtx.ctx.device_type;
-    let num_edge = shape(&edge2vtx, 0).unwrap();
-    let num_tri = shape(&tri2vtx, 0).unwrap();
-    let num_vtx = shape(&vtx2idx_offset, 0).unwrap() - 1;
-    let num_idx = shape(&idx2vtx, 0).unwrap();
+    let num_edge = shape(edge2vtx, 0).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2idx_offset, 0).unwrap() - 1;
+    let num_idx = shape(idx2vtx, 0).unwrap();
     //
     assert_eq!(num_edge, num_idx);
-    chk2::<u32>(&edge2vtx, num_edge, 2, device).unwrap();
-    chk2::<u32>(&tri2vtx, num_tri, 3, device).unwrap();
-    chk1::<u32>(&vtx2idx_offset, num_vtx + 1, device).unwrap();
-    chk1::<u32>(&idx2vtx, num_idx, device).unwrap();
-    chk2::<u32>(&edge2tri, num_edge, 2, device).unwrap();
+    chk2::<u32>(edge2vtx, num_edge, 2, device).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device).unwrap();
+    chk1::<u32>(vtx2idx_offset, num_vtx + 1, device).unwrap();
+    chk1::<u32>(idx2vtx, num_idx, device).unwrap();
+    chk2::<u32>(edge2tri, num_edge, 2, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {

@@ -10,6 +10,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
 pub fn trimesh3_raycast_update_pix2tri(
     _py: Python<'_>,

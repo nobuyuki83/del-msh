@@ -31,9 +31,9 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     let edge2vtx = get_tensor(edge2vtx)?;
     let edge2tri = get_tensor(edge2tri)?;
     //
-    let num_tri = shape(&tri2vtx, 0).unwrap();
-    let num_vtx = shape(&vtx2xyz, 0).unwrap();
-    let num_edge = shape(&edge2vtx, 0).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let num_edge = shape(edge2vtx, 0).unwrap();
     let device = tri2vtx.ctx.device_type;
     //
     chk2::<f32>(transform_world2ndc, 4, 4, device).unwrap();
@@ -125,9 +125,9 @@ pub fn edge2vtx_from_vtx2vtx(
     let idx2vtx = get_tensor(idx2vtx)?;
     let edge2vtx = get_tensor(edge2vtx)?;
     //
-    let num_vtx = shape(&vtx2idx_offset, 0).unwrap() - 1;
-    let num_idx = shape(&idx2vtx, 0).unwrap();
-    let num_edge = shape(&edge2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2idx_offset, 0).unwrap() - 1;
+    let num_idx = shape(idx2vtx, 0).unwrap();
+    let num_edge = shape(edge2vtx, 0).unwrap();
     let device = vtx2idx_offset.ctx.device_type;
     //
     assert_eq!(num_edge, num_idx);

@@ -10,6 +10,7 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
 pub fn bvhnode2aabb_update_aabb(
     _py: Python<'_>,

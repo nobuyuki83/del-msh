@@ -72,33 +72,31 @@ pub fn bwd_microedge(
             if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
                 dbg!("todo");
                 continue;
+            } else if is_pixcentr1_inside_tri0 {
+                // only tri1 recieve gradient
+                let b = fn_barycentric(&pixcntr1, itri1).unwrap();
+                let b = [b.0, b.1, b.2];
+                let itri1 = itri1 as usize;
+                use del_geo_core::mat4_col_major::Mat4ColMajor;
+                let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
+                for inode in 0..3 {
+                    let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                }
             } else {
-                if is_pixcentr1_inside_tri0 {
-                    // only tri1 recieve gradient
-                    let b = fn_barycentric(&pixcntr1, itri1).unwrap();
-                    let b = [b.0, b.1, b.2];
-                    let itri1 = itri1 as usize;
-                    use del_geo_core::mat4_col_major::Mat4ColMajor;
-                    let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
-                    for inode in 0..3 {
-                        let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
-                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
-                    }
-                } else {
-                    // only tri0 recieve gradient
-                    let b = fn_barycentric(&pixcntr0, itri0).unwrap();
-                    let b = [b.0, b.1, b.2];
-                    let itri0 = itri0 as usize;
-                    use del_geo_core::mat4_col_major::Mat4ColMajor;
-                    let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
-                    for inode in 0..3 {
-                        let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
-                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
-                    }
+                // only tri0 recieve gradient
+                let b = fn_barycentric(&pixcntr0, itri0).unwrap();
+                let b = [b.0, b.1, b.2];
+                let itri0 = itri0 as usize;
+                use del_geo_core::mat4_col_major::Mat4ColMajor;
+                let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
+                for inode in 0..3 {
+                    let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
                 }
             }
         }
@@ -128,33 +126,31 @@ pub fn bwd_microedge(
             if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
                 dbg!("todo");
                 continue;
+            } else if is_pixcentr1_inside_tri0 {
+                // only tri1 recieve gradient
+                let b = fn_barycentric(&pixcntr1, itri1).unwrap();
+                let b = [b.0, b.1, b.2];
+                let itri1 = itri1 as usize;
+                use del_geo_core::mat4_col_major::Mat4ColMajor;
+                let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
+                for inode in 0..3 {
+                    let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                }
             } else {
-                if is_pixcentr1_inside_tri0 {
-                    // only tri1 recieve gradient
-                    let b = fn_barycentric(&pixcntr1, itri1).unwrap();
-                    let b = [b.0, b.1, b.2];
-                    let itri1 = itri1 as usize;
-                    use del_geo_core::mat4_col_major::Mat4ColMajor;
-                    let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
-                    for inode in 0..3 {
-                        let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
-                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
-                    }
-                } else {
-                    // only tri0 recieve gradient
-                    let b = fn_barycentric(&pixcntr0, itri0).unwrap();
-                    let b = [b.0, b.1, b.2];
-                    let itri0 = itri0 as usize;
-                    use del_geo_core::mat4_col_major::Mat4ColMajor;
-                    let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
-                    for inode in 0..3 {
-                        let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
-                        dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                        dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
-                    }
+                // only tri0 recieve gradient
+                let b = fn_barycentric(&pixcntr0, itri0).unwrap();
+                let b = [b.0, b.1, b.2];
+                let itri0 = itri0 as usize;
+                use del_geo_core::mat4_col_major::Mat4ColMajor;
+                let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
+                for inode in 0..3 {
+                    let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
                 }
             }
         }
