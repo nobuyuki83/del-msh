@@ -29,9 +29,9 @@ mod tests {
                 let c = del_canvas::colormap::apply_colormap(
                     grad,
                     //-0.5,
-                    -(IMG_RES as f32)*0.5,
+                    -(IMG_RES as f32) * 0.5,
                     //0.5,
-                    (IMG_RES as f32)*0.5,
+                    (IMG_RES as f32) * 0.5,
                     del_canvas::colormap::COLORMAP_BWR,
                 );
                 c

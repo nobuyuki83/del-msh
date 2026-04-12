@@ -9,7 +9,7 @@ pub struct BackwardAntiAliasSilhouette {
     edge2vtx_contour: Tensor,
     transform_world2pix: Tensor,
     pix2tri: Tensor,
-    pix2occl: Tensor
+    pix2occl: Tensor,
 }
 
 impl candle_core::InplaceOp3 for BackwardAntiAliasSilhouette {
@@ -245,7 +245,7 @@ impl candle_core::CustomOp1 for AntiAliasSilhouette {
             edge2vtx_contour: self.edge2vtx_contour.clone(),
             transform_world2pix: self.transform_world2pix.clone(),
             pix2tri: self.pix2tri.clone(),
-            pix2occl: pix2occl.clone()
+            pix2occl: pix2occl.clone(),
         };
         dldw_vtx2xyz.inplace_op3(vtx2xyz, dldw_pix2occl, &op)?;
         Ok(Some(dldw_vtx2xyz))

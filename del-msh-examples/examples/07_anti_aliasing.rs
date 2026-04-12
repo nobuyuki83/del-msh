@@ -198,8 +198,7 @@ fn main() -> anyhow::Result<()> {
         };
         // the vertex to move
         let list_vtx_on_silhouette = {
-            let unique: std::collections::HashSet<u32> =
-                cedge2vtx.clone().into_iter().collect();
+            let unique: std::collections::HashSet<u32> = cedge2vtx.clone().into_iter().collect();
             Vec::from_iter(unique)
         };
         // check gradient

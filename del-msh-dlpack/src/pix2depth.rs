@@ -61,7 +61,10 @@ pub fn pix2depth_update(
             )
             .unwrap();
             let transform_world2ndc = {
-                let transform_ndc2world = del_cudarc_sys::CuVec::<f32>::from_dptr(transform_ndc2world.data as del_cudarc_sys::cu::CUdeviceptr, 16);
+                let transform_ndc2world = del_cudarc_sys::CuVec::<f32>::from_dptr(
+                    transform_ndc2world.data as del_cudarc_sys::cu::CUdeviceptr,
+                    16,
+                );
                 let transform_ndc2world = transform_ndc2world.copy_to_host().unwrap();
                 let ndc2world = arrayref::array_ref![&transform_ndc2world, 0, 16];
                 del_geo_core::mat4_col_major::try_inverse(ndc2world).unwrap()
