@@ -373,6 +373,7 @@ impl RenderTri for Depth {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn bwd_continuous<T: RenderTri>(
     pix2tri: &[u32],
     tri2vtx: &[u32],
@@ -430,9 +431,9 @@ pub fn fwd_continuous<T: RenderTri>(
             del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
                 (i_w as f32 + 0.5, i_h as f32 + 0.5),
                 &(img_shape.0 as f32, img_shape.1 as f32),
-                &transform_ndc2world,
+                transform_ndc2world,
             );
-        let Some(t) = crate::trimesh3::to_tri3(&tri2vtx, &vtx2xyz, i_tri as usize)
+        let Some(t) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
             .intersection_against_ray(&ray_org, &ray_dir)
         else {
             unreachable!()
@@ -458,10 +459,10 @@ where
 {
     // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
     let transform_ndc2world =
-        del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+        del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2ndc).unwrap();
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz, 3);
     let bvhnode2aabb =
-        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, tri2vtx, 3, vtx2xyz, None);
     let fn_pix2val = |i_pix: usize| -> f32 {
         let mut rng = rng_factory(i_pix);
         let i_h = i_pix / img_shape.0;
@@ -481,8 +482,8 @@ where
                 &ray_org,
                 &ray_dir,
                 &crate::search_bvh3::TriMeshWithBvh {
-                    tri2vtx: &tri2vtx,
-                    vtx2xyz: &vtx2xyz,
+                    tri2vtx,
+                    vtx2xyz,
                     bvhnodes: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },

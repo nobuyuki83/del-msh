@@ -98,6 +98,7 @@ pub fn antialias(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn bwd_antialias(
     cedge2vtx: &[u32],
     vtx2xyz: &[f32],
