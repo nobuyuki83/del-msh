@@ -68,7 +68,7 @@ fn mortons_vtx2morton_from_vtx2co(
                 .unwrap();
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
     Ok(())
@@ -124,7 +124,7 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
             }
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
     Ok(())

@@ -62,7 +62,7 @@ pub fn array1d_permute(
             del_cudarc_sys::array1d::permute(stream, &new2val, &new2old, &old2val);
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
     Ok(())
@@ -177,7 +177,7 @@ pub fn array1d_has_duplicate_sorted_array(
             del_cudarc_sys::sorted_array1d::has_duplicates(stream, &idx2val)
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     };
 
@@ -190,9 +190,9 @@ pub fn array1d_unique_for_sorted_array(
     idx2val: &Bound<'_, PyAny>,
     idx2jdx: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
-) {
-    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val).unwrap();
-    let idx2jdx = del_dlpack::get_managed_tensor_from_pyany(idx2jdx).unwrap();
+) -> PyResult<()> {
+    let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val)?;
+    let idx2jdx = del_dlpack::get_managed_tensor_from_pyany(idx2jdx)?;
     let n = del_dlpack::get_shape_tensor(idx2val, 0).unwrap();
     let device = idx2val.ctx.device_type;
     //
@@ -223,9 +223,10 @@ pub fn array1d_unique_for_sorted_array(
             del_cudarc_sys::sorted_array1d::unique(stream, &idx2val, &idx2jdx);
         }
         _ => {
-            todo!();
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
         }
     }
+    Ok(())
 }
 
 #[pyo3::pyfunction]
@@ -236,7 +237,7 @@ pub fn array1d_unique_jdx2val_jdx2idx(
     jdx2val: &Bound<'_, PyAny>,
     jdx2idx_offset: &Bound<'_, PyAny>,
     #[allow(unused_variables)] stream_ptr: u64,
-) {
+) -> PyResult<()> {
     let idx2val = del_dlpack::get_managed_tensor_from_pyany(idx2val).unwrap();
     let idx2jdx = del_dlpack::get_managed_tensor_from_pyany(idx2jdx).unwrap();
     let jdx2val = del_dlpack::get_managed_tensor_from_pyany(jdx2val).unwrap();
@@ -290,7 +291,8 @@ pub fn array1d_unique_jdx2val_jdx2idx(
             del_cudarc_sys::array1d::permute(stream, &jdx2val, &jdx2idx_offset, &idx2val);
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
         }
     }
+    Ok(())
 }

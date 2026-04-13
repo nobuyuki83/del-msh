@@ -51,9 +51,10 @@ fn main() -> anyhow::Result<()> {
             &vtx2xyz,
             &pix2tri,
         );
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "target/05_trimesh3_normalmap.png",
-            &img_shape,
+            img_shape,
+            3,
             &pix2rgb,
         )?;
     }
@@ -70,9 +71,10 @@ fn main() -> anyhow::Result<()> {
             &bvhnodes,
             &aabbs,
         );
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             "target/05_trimesh3_depth.png",
             img_shape,
+            1,
             &img_data,
         )?;
     }
@@ -93,9 +95,10 @@ fn main() -> anyhow::Result<()> {
             &tex_data,
             &del_msh_cpu::grid2::Interpolation::Nearest,
         );
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "target/05_trimesh3_texture_nearest.png",
-            &img_shape,
+            img_shape,
+            3,
             &img_data,
         )?;
         //
@@ -110,9 +113,10 @@ fn main() -> anyhow::Result<()> {
             &tex_data,
             &del_msh_cpu::grid2::Interpolation::Bilinear,
         );
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "target/05_trimesh3_texture_bilinear.png",
-            &img_shape,
+            img_shape,
+            3,
             &img_data,
         )?;
     }

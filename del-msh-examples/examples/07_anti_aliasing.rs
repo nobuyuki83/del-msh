@@ -46,9 +46,10 @@ fn write_silhouette_on_magnified_image(
                 [0., 1., 1.],
             );
         }
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "target/07_anti_aliasing_hires.png",
-            &img_shape_hires,
+            img_shape_hires,
+            3,
             &img_hires,
         )?;
     }
@@ -110,9 +111,10 @@ fn main() -> anyhow::Result<()> {
             &vtx2xyz,
             &pix2tri,
         );
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "target/07_anti_aliasing_normalmap.png",
-            &img_shape,
+            img_shape,
+            3,
             &img_out,
         )?;
     }
@@ -157,9 +159,10 @@ fn main() -> anyhow::Result<()> {
             &pix2vin,
             &mut pix2vout,
         );
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             "target/07_anti_aliasing_lowres.png",
             img_shape,
+            1,
             &pix2vout,
         )?;
         pix2vout

@@ -60,7 +60,7 @@ fn vtx2elem_from_uniform_mesh(
             Ok((vtx2idx_cap, idx2elem_cap))
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
 }

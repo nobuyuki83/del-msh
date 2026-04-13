@@ -93,6 +93,6 @@ fn main() -> anyhow::Result<()> {
     }
     use slice_of_array::SliceFlatExt;
     let img_data = img_data.flat();
-    del_canvas::write_png_from_float_image_rgb("target/06_silhouette.png", &img_shape, img_data)?;
+    del_canvas::write_png_from_float_image("target/06_silhouette.png", img_shape, 3, img_data)?;
     Ok(())
 }

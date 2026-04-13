@@ -181,7 +181,7 @@ fn vtx2vtx_multiply_graph_laplacian(
             );
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
     Ok(())
@@ -240,7 +240,7 @@ fn vtx2vtx_from_uniform_mesh(
             Ok((vtx2idx_cap, idx2vtx_cap))
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
 }

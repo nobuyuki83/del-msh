@@ -62,8 +62,7 @@ pub fn trimesh3_tri2normal(
                 .unwrap();
         }
         _ => {
-            println!("Unknown device type {}", device_type);
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
         }
     }
     Ok(())
@@ -140,7 +139,7 @@ pub fn trimesh3_bwd_tri2normal(
             }
         }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
         }
     }
     Ok(())
