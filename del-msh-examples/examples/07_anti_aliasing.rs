@@ -173,7 +173,7 @@ fn main() -> anyhow::Result<()> {
     )?;
     {
         // compute loss for random target image
-        use rand::Rng;
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
         let img_data_trg: Vec<f32> = (0..pix2tri.len()).map(|_i| rng.random::<f32>()).collect();

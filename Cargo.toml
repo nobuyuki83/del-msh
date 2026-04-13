@@ -15,7 +15,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.44"
+version = "0.1.45"  # change the del-msh-dlpack and del-msh-numpy's version too
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -26,12 +26,12 @@ description = "mesh utility library for computer graphics research and prototypi
 
 [workspace.dependencies]
 anyhow = "1.0.100"
-rand = "0.9.1"
-rand_chacha = "0.9.0"
+rand = "0.10.1"
+rand_chacha = "0.10.0"
 num-traits = "0.2.19"
 arrayref = "0.3.9"
 slice-of-array = "0.3.2"
-numpy = "0.26.0"
+numpy = "0.28.0"
 rayon = "1.11.0"
 
 # internal
@@ -46,16 +46,16 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 # del-canvas = {path="../del-canvas"} # for color map
 
 # for GitHub push
-candle-core = "=0.9.0"
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
-del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
+#candle-core = "=0.9.0"
+#del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git"}
+#del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
 
 
 # for deploy
 # del-cudarc = "=0.1.2"
-# candle-core = "=0.9.0"
-# del-geo-core = "=0.1.36"
-# del-canvas = "=0.1.7"
+candle-core = "=0.9.0"
+del-geo-core = "=0.1.37"
+del-canvas = "=0.1.8"
 
 
 

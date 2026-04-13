@@ -311,9 +311,10 @@ fn test_cpu() -> anyhow::Result<()> {
             (img_shape.1 as f32) * 0.4f32,
             1f32,
         );
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             "../target/silhouette_trg.png",
             img_shape,
+            1,
             &img_trg,
         )?;
 
@@ -349,9 +350,10 @@ fn test_cpu() -> anyhow::Result<()> {
             vtx2xyz.apply_op1(layer_silhouette)?
         };
         if iter % 10 == 0 {
-            del_canvas::write_png_from_float_image_grayscale(
+            del_canvas::write_png_from_float_image(
                 format!("../target/del-raycast-candle__silhouette_{iter}.png"),
                 img_shape,
+                1,
                 &img.flatten_all()?.to_vec1::<f32>()?,
             )?;
             {

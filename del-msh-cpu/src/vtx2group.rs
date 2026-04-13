@@ -34,7 +34,7 @@ fn test_vtx2dist_for_vtx2vtx() {
         crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, vtx2xyz.len() / 3, false);
     let num_group = 30;
     let vtx2group = from_vtx2vtx(&vtx2idx, &idx2vtx, num_group);
-    use rand::Rng;
+    use rand::RngExt;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
     let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.random::<f32>()).collect();

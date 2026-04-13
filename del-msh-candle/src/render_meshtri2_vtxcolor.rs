@@ -217,7 +217,7 @@ fn test_optimize_vtxcolor() -> anyhow::Result<()> {
         )?
     };
     let vtx2color = {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         let vals: Vec<f32> = (0..num_vtx).map(|_| rng.random::<f32>()).collect();
         candle_core::Var::from_vec(
@@ -244,9 +244,10 @@ fn test_optimize_vtxcolor() -> anyhow::Result<()> {
         let dw_vtx2color = grad.get(&vtx2color).unwrap();
         if i_itr % 10 == 0 {
             let img_out_vec: Vec<f32> = img_out.flatten_all()?.to_vec1()?;
-            del_canvas::write_png_from_float_image_grayscale(
+            del_canvas::write_png_from_float_image(
                 format!("../target/render_meshtri2_vtxcolor-test_optimize_vtxcolor_{i_itr}.png"),
                 img_shape,
+                1,
                 &img_out_vec,
             )?;
         }

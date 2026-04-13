@@ -279,7 +279,7 @@ fn test_laplacian_smoothing() {
         crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, vtx2xyz.len() / 3, false);
     let num_vdim = 3;
     let vtx2rhs = {
-        use rand::Rng;
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
         (0..vtx2xyz.len() / 3 * num_vdim)

@@ -75,7 +75,7 @@ fn edge_length_constraint() -> anyhow::Result<()> {
     // let edge_length = 2.0f32 * std::f32::consts::PI / num_vtx as f32;
     let mut vtx2xy = del_msh_cpu::polyloop2::from_circle(1.0, num_vtx);
     {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         for vtx in vtx2xy.chunks_mut(2) {
             vtx[0] += rng.random::<f32>();

@@ -1,6 +1,7 @@
 //! methods for 2D poly loop
 
 use num_traits::AsPrimitive;
+use rand::RngExt;
 
 pub fn winding_number<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
 where
@@ -311,7 +312,7 @@ where
     usize: AsPrimitive<Real>,
 {
     let aabb = crate::vtx2xy::aabb2(vtx2xy);
-    use rand::Rng;
+    use rand::RngExt;
     let base_pos = [
         aabb[0] - cell_len * rng.random::<Real>(),
         aabb[1] - cell_len * rng.random::<Real>(),

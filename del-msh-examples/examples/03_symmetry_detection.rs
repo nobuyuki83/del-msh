@@ -89,7 +89,7 @@ pub fn sym_detector(
         vtx2xyz.len() / 3,
     );
     // use del_geo_core::vec3::Vec3;
-    use rand::Rng;
+    use rand::RngExt;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
     let tri2cumsumarea = del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz, 3);
@@ -158,7 +158,7 @@ pub fn sym_detector(
             pair2trans[i_pair]
         };
         let window_size = 1.0;
-        let mut sum_weight_pre = 0f32;
+        let sum_weight_pre = 0f32;
         let mut max_weight_and_pair = (0f32, usize::MAX, usize::MAX);
         for _itr in 0..100 {
             // TODO: accelerate using Kd-tree
@@ -209,13 +209,13 @@ pub fn sym_detector(
 
 fn main() -> anyhow::Result<()> {
     use del_geo_core::vec3::Vec3;
-    use rand::Rng;
     let (tri2vtx, vtx2xyz) = del_msh_cpu::io_wavefront_obj::load_tri_mesh::<_, usize, f32>(
         "asset/spot/spot_triangulated.obj",
         None,
     )
     .unwrap();
     let vtx2xyz = {
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
         let rot = del_geo_core::mat3_col_major::from_bryant_angles(

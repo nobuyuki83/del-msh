@@ -17,7 +17,7 @@ cuda = [
 ]
 
 [dependencies]
-pyo3 = { version = "0.26.0", features = ["extension-module"] }
+pyo3 = { version = "0.28.3", features = ["extension-module"] }
 del-msh-cpu.workspace = true
 arrayref.workspace = true
 slice-of-array.workspace = true

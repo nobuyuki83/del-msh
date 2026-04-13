@@ -176,7 +176,7 @@ fn test_from_vtx2xyz() -> anyhow::Result<()> {
     let num_vtx = 1000;
     let vtx2xyz = {
         let vtx2xyz: Vec<f32> = {
-            use rand::Rng;
+            use rand::RngExt;
             let mut rng = rand::rng();
             (0..num_vtx * 3).map(|_| rng.random::<f32>()).collect()
         };

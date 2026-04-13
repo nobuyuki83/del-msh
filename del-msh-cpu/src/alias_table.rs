@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::collections::VecDeque;
 
 /// 離散分布を O(1) でサンプリングする Alias Table

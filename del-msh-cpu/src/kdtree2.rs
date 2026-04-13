@@ -395,7 +395,7 @@ mod tests {
             let half: Real = 0.4_f64.as_();
             let mut ps = Vec::<Real>::with_capacity(num_xy * 2);
             for _i in 0..num_xy {
-                use rand::Rng;
+                use rand::RngExt;
                 let x: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
                 let y: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
                 ps.push(x);
@@ -426,7 +426,7 @@ mod tests {
         let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
         // let time_nearest = time::Instant::now();
         for _ in 0..10000 {
-            use rand::Rng;
+            use rand::RngExt;
             let p0 = [rng.random::<Real>(), rng.random::<Real>()];
             let mut pos_near = ([Real::MAX, Real::MAX], usize::MAX);
             nearest(
@@ -444,7 +444,7 @@ mod tests {
         }
         // dbg!(time_nearest.elapsed());
         for _ in 0..10000 {
-            use rand::Rng;
+            use rand::RngExt;
             let p0 = [rng.random::<Real>(), rng.random::<Real>()];
             let mut pos_near = ([Real::MAX, Real::MAX], usize::MAX);
             nearest(
@@ -476,7 +476,7 @@ mod tests {
         let rad: Real = 0.03;
         // let time_inside_square = time::Instant::now();
         for _ in 0..10000 {
-            use rand::Rng;
+            use rand::RngExt;
             let p0 = [rng.random::<Real>(), rng.random::<Real>()];
             let mut pos_near = Vec::<usize>::new();
             crate::kdtree2::inside_square(
@@ -496,7 +496,7 @@ mod tests {
         // dbg!(time_inside_square.elapsed());
         //
         for _ in 0..10000 {
-            use rand::Rng;
+            use rand::RngExt;
             let p0 = [rng.random::<Real>(), rng.random::<Real>()];
             let mut idxs0 = Vec::<usize>::new();
             crate::kdtree2::inside_square(

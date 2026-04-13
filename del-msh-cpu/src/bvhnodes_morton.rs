@@ -53,7 +53,7 @@ where
 fn test_3d() {
     let num_vtx = 100000;
     let vtx2xyz: Vec<f32> = {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         (0..num_vtx * 3).map(|_| rng.random::<f32>()).collect()
     };
@@ -81,7 +81,7 @@ fn test_3d() {
 fn test_2d() {
     let num_vtx = 100000;
     let vtx2xy: Vec<f32> = {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         (0..num_vtx * 2).map(|_| rng.random::<f32>()).collect()
     };

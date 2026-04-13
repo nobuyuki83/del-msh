@@ -4,7 +4,7 @@ use del_msh_cpu::bvhnodes_morton::from_vtx2xyz;
 fn bvh_morton(c: &mut Criterion) {
     let num_vtx = 100000;
     let vtx2xy: Vec<f32> = {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         (0..num_vtx * 2).map(|_| rng.random::<f32>()).collect()
     };

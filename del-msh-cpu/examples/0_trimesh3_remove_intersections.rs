@@ -3,7 +3,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         let (tri2vtx, mut vtx2xyz) =
             del_msh_cpu::trimesh3_primitive::capsule_yup(0.3, 1.0, 16, 8, 16);
         // adding little noise (my program has a bug when there is co-planer triangles)
-        use rand::Rng;
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
         vtx2xyz

@@ -19,7 +19,7 @@ fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
 
 fn main() {
     let vtx2xyz = {
-        use rand::{Rng, SeedableRng};
+        use rand::{RngExt, SeedableRng};
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
         let mut vtx2xyz: Vec<f32> = (0..1000)
             .flat_map(|_i| {
@@ -46,7 +46,7 @@ fn main() {
         grad0[1] = 0.0;
         grad0[2] = 0.0;
          */
-        use rand::{Rng, SeedableRng};
+        use rand::{RngExt, SeedableRng};
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
         grad0
             .iter_mut()

@@ -1,4 +1,5 @@
 use num_traits::AsPrimitive;
+use rand::RngExt;
 
 pub fn update_pix2tri<Index>(
     pix2tri: &mut [Index],
@@ -292,9 +293,10 @@ fn test_depthmap() {
             &bvhnode2aabb,
         );
         pix2depth.iter_mut().for_each(|v| *v = (*v) + 0.0);
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             format!("../target/trimesh3_raycast_depth_{i_case}.png"),
             img_shape,
+            1,
             &pix2depth,
         )
         .unwrap();

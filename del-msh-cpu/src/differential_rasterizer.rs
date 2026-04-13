@@ -37,7 +37,7 @@ mod tests {
                 c
             })
             .collect();
-        del_canvas::write_png_from_float_image_rgb(path, &img_shape, &pix2rgb_diff).unwrap()
+        del_canvas::write_png_from_float_image(path, img_shape, 3, &pix2rgb_diff).unwrap()
     }
 
     fn test_sample_for_model<T: crate::trimesh3_raycast::RenderTri + Sync>(
@@ -71,12 +71,13 @@ mod tests {
                 &mode,
                 |i_pix| rand_chacha::ChaChaRng::seed_from_u64(i_pix as u64),
             );
-            del_canvas::write_png_from_float_image_grayscale(
+            del_canvas::write_png_from_float_image(
                 format!(
                     "../target/differentiable_rasterization_ren_finitesample_{}.png",
                     str_mode
                 ),
                 img_shape,
+                1,
                 &pix2val1,
             )
             .unwrap()
@@ -206,9 +207,10 @@ mod tests {
                 0.,
             );
         }
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             "../target/differentiable_rasterizer_edge.png",
             img_shape,
+            1,
             &pix2isedge,
         )
         .unwrap();
@@ -226,12 +228,13 @@ mod tests {
         );
         // -------------------
         let (pix2vout, pix2vin, pix2tri, cedge2vtx) = nvdiffrast(0., mode);
-        del_canvas::write_png_from_float_image_grayscale(
+        del_canvas::write_png_from_float_image(
             &format!(
                 "../target/differentiable_rasterizer_ren_nvdiffrast_{}.png",
                 suffix
             ),
             img_shape,
+            1,
             &pix2vout,
         )
         .unwrap();
@@ -366,9 +369,10 @@ mod tests {
             );
             pix2rgb_diff[i_pix * 3..(i_pix + 1) * 3].copy_from_slice(&c);
         }
-        del_canvas::write_png_from_float_image_rgb(
+        del_canvas::write_png_from_float_image(
             "../target/silhouette_diff_microedge.png",
-            &img_shape,
+            img_shape,
+            3,
             &pix2rgb_diff,
         )
         .unwrap();

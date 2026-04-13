@@ -550,7 +550,7 @@ fn test_octree_2d() {
     const NDIM: usize = 2;
     let max_depth = 16;
     let vtx2xyz: Vec<f32> = {
-        use rand::Rng;
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(3);
         (0..num_vtx * NDIM)
@@ -650,7 +650,7 @@ fn test_octree_3d() {
     const NDIM: usize = 3;
     let max_depth = 10;
     let vtx2xyz: Vec<f32> = {
-        use rand::Rng;
+        use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
         (0..num_vtx * NDIM)

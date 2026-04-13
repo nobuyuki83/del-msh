@@ -246,7 +246,7 @@ fn test_first_intersection_ray() {
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
     let bvhnode2aabb =
         crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
-    use rand::Rng;
+    use rand::RngExt;
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
     for _iter in 0..1000 {
