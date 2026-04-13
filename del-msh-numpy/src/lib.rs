@@ -49,55 +49,60 @@ fn del_msh_(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     gradient_distance_extension::add_functions(_py, m)?;
     vtx2area::add_functions(_py, m)?;
     vtx2vtx::add_functions(_py, m)?;
-
-    #[pyfn(m)]
-    pub fn areas_of_triangles_of_mesh<'a>(
-        py: Python<'a>,
-        tri2vtx: PyReadonlyArray2<'a, usize>,
-        vtx2xyz: PyReadonlyArray2<'a, f32>,
-    ) -> Bound<'a, PyArray1<f32>> {
-        assert!(tri2vtx.is_c_contiguous());
-        assert!(vtx2xyz.is_c_contiguous());
-        let tri2area = match vtx2xyz.shape()[1] {
-            2 => del_msh_cpu::trimesh2::tri2area(
-                tri2vtx.as_slice().unwrap(),
-                vtx2xyz.as_slice().unwrap(),
-            ),
-            3 => del_msh_cpu::trimesh3::tri2area(
-                tri2vtx.as_slice().unwrap(),
-                vtx2xyz.as_slice().unwrap(),
-            ),
-            _ => {
-                panic!();
-            }
-        };
-        numpy::ndarray::Array1::from_shape_vec(tri2vtx.shape()[0], tri2area)
-            .unwrap()
-            .into_pyarray(py)
-    }
-
-    #[pyfn(m)]
-    pub fn circumcenters_of_triangles_of_mesh<'a>(
-        py: Python<'a>,
-        tri2vtx: PyReadonlyArray2<'a, usize>,
-        vtx2xyz: PyReadonlyArray2<'a, f32>,
-    ) -> pyo3::Bound<'a, PyArray2<f32>> {
-        assert!(tri2vtx.is_c_contiguous());
-        assert!(vtx2xyz.is_c_contiguous());
-        let num_dim = vtx2xyz.shape()[1];
-        let tri2cc = match num_dim {
-            2 => del_msh_cpu::trimesh2::tri2circumcenter(
-                tri2vtx.as_slice().unwrap(),
-                vtx2xyz.as_slice().unwrap(),
-            ),
-            _ => {
-                panic!();
-            }
-        };
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc)
-            .unwrap()
-            .into_pyarray(py)
-    }
-
+    use pyo3::prelude::PyModuleMethods;
+    m.add_function(pyo3::wrap_pyfunction!(areas_of_triangles_of_mesh, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        circumcenters_of_triangles_of_mesh,
+        m
+    )?)?;
     Ok(())
+}
+
+#[pyo3::pyfunction]
+pub fn areas_of_triangles_of_mesh<'a>(
+    py: Python<'a>,
+    tri2vtx: PyReadonlyArray2<'a, usize>,
+    vtx2xyz: PyReadonlyArray2<'a, f32>,
+) -> Bound<'a, PyArray1<f32>> {
+    assert!(tri2vtx.is_c_contiguous());
+    assert!(vtx2xyz.is_c_contiguous());
+    let tri2area = match vtx2xyz.shape()[1] {
+        2 => del_msh_cpu::trimesh2::tri2area(
+            tri2vtx.as_slice().unwrap(),
+            vtx2xyz.as_slice().unwrap(),
+        ),
+        3 => del_msh_cpu::trimesh3::tri2area(
+            tri2vtx.as_slice().unwrap(),
+            vtx2xyz.as_slice().unwrap(),
+        ),
+        _ => {
+            panic!();
+        }
+    };
+    numpy::ndarray::Array1::from_shape_vec(tri2vtx.shape()[0], tri2area)
+        .unwrap()
+        .into_pyarray(py)
+}
+
+#[pyo3::pyfunction]
+pub fn circumcenters_of_triangles_of_mesh<'a>(
+    py: Python<'a>,
+    tri2vtx: PyReadonlyArray2<'a, usize>,
+    vtx2xyz: PyReadonlyArray2<'a, f32>,
+) -> pyo3::Bound<'a, PyArray2<f32>> {
+    assert!(tri2vtx.is_c_contiguous());
+    assert!(vtx2xyz.is_c_contiguous());
+    let num_dim = vtx2xyz.shape()[1];
+    let tri2cc = match num_dim {
+        2 => del_msh_cpu::trimesh2::tri2circumcenter(
+            tri2vtx.as_slice().unwrap(),
+            vtx2xyz.as_slice().unwrap(),
+        ),
+        _ => {
+            panic!();
+        }
+    };
+    numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc)
+        .unwrap()
+        .into_pyarray(py)
 }
