@@ -62,7 +62,9 @@ pub fn trimesh3_tri2normal(
                 .unwrap();
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ));
         }
     }
     Ok(())
@@ -139,7 +141,9 @@ pub fn trimesh3_bwd_tri2normal(
             }
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ))
         }
     }
     Ok(())

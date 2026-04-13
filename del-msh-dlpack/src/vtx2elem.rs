@@ -59,8 +59,8 @@ fn vtx2elem_from_uniform_mesh(
                 del_dlpack::make_capsule_from_cuvec(py, 0, vec![idx2elem.n as i64], idx2elem);
             Ok((vtx2idx_cap, idx2elem_cap))
         }
-        _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
-        }
+        _ => Err(pyo3::exceptions::PyNotImplementedError::new_err(
+            "GPU not supported (compile with --features cuda)",
+        )),
     }
 }

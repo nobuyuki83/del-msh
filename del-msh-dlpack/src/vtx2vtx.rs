@@ -181,7 +181,9 @@ fn vtx2vtx_multiply_graph_laplacian(
             );
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ))
         }
     }
     Ok(())
@@ -239,8 +241,8 @@ fn vtx2vtx_from_uniform_mesh(
                 del_dlpack::make_capsule_from_cuvec(py, 0, vec![idx2vtx.n as i64], idx2vtx);
             Ok((vtx2idx_cap, idx2vtx_cap))
         }
-        _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
-        }
+        _ => Err(pyo3::exceptions::PyNotImplementedError::new_err(
+            "GPU not supported (compile with --features cuda)",
+        )),
     }
 }

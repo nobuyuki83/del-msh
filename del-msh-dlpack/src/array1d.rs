@@ -62,7 +62,9 @@ pub fn array1d_permute(
             del_cudarc_sys::array1d::permute(stream, &new2val, &new2old, &old2val);
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ))
         }
     }
     Ok(())
@@ -177,7 +179,9 @@ pub fn array1d_has_duplicate_sorted_array(
             del_cudarc_sys::sorted_array1d::has_duplicates(stream, &idx2val)
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"))
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ))
         }
     };
 
@@ -223,7 +227,9 @@ pub fn array1d_unique_for_sorted_array(
             del_cudarc_sys::sorted_array1d::unique(stream, &idx2val, &idx2jdx);
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ));
         }
     }
     Ok(())
@@ -291,7 +297,9 @@ pub fn array1d_unique_jdx2val_jdx2idx(
             del_cudarc_sys::array1d::permute(stream, &jdx2val, &jdx2idx_offset, &idx2val);
         }
         _ => {
-            return Err(pyo3::exceptions::PyNotImplementedError::new_err("GPU not supported (compile with --features cuda)"));
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ));
         }
     }
     Ok(())
