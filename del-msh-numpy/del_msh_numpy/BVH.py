@@ -53,3 +53,35 @@ def aabb_uniform_mesh(
     else:
         pass
     return aabbs
+
+def aabb_points(
+        vtx2xyz0: numpy.typing.NDArray,
+        bvhnodes: numpy.typing.NDArray,
+        aabbs: numpy.typing.NDArray | None,
+        vtx2xyz1: numpy.typing.NDArray | None,
+        root=0):
+    """ compute Axis-Aligned Bounding Box (AABB) for elements of an uniform mesh
+    :param elem2vtx: if `None` is provided, build aabb for vertices
+    :param vtx2xyz0: list of vertex coordinate
+    :param bvhnodes: BVH tree structure
+    :param aabbs: (optional) provide numpy array if you want to update values
+    :param vtx2xyz1: (optional) for Continuous Collision Detection (CCD)
+    :param root: (optional) default is zero
+    :return:
+    """
+    if aabbs is None:
+        if vtx2xyz0.shape[1] == 3:
+            aabbs = numpy.zeros((bvhnodes.shape[0], 6), dtype=vtx2xyz0.dtype)
+        else:
+            print("TODO", vtx2xyz0.shape)
+    if vtx2xyz1 is None:
+        vtx2xyz1 = numpy.zeros((0, 0), dtype=vtx2xyz0.dtype)
+    if vtx2xyz0.dtype == numpy.float32:
+        from .del_msh_numpy import build_bvh_geometry_aabb_points_f32
+        build_bvh_geometry_aabb_points_f32(aabbs, bvhnodes, vtx2xyz0, root, vtx2xyz1)
+    elif vtx2xyz0.dtype == numpy.float64:
+        from .del_msh_numpy import build_bvh_geometry_aabb_points_f64
+        build_bvh_geometry_aabb_points_f64(aabbs, bvhnodes, vtx2xyz0, root, vtx2xyz1)
+    else:
+        pass
+    return aabbs

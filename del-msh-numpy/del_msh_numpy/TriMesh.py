@@ -348,10 +348,10 @@ def aabb_vtxedgetri(
     """
     assert len(roots) == 3
     from del_msh_numpy.BVH import aabb_uniform_mesh
+    from del_msh_numpy.BVH import aabb_points
     # vertex
-    aabbs = aabb_uniform_mesh(
-        numpy.zeros((0, 0), dtype=numpy.uint64), vtx2xyz0, bvhnodes,
-        aabbs=aabbs, root=roots[0], vtx2xyz1=vtx2xyz1)
+    aabbs = aabb_points(
+        vtx2xyz0, bvhnodes, aabbs=aabbs, root=roots[0], vtx2xyz1=vtx2xyz1)
     # edge
     aabbs = aabb_uniform_mesh(
         edge2vtx, vtx2xyz0, bvhnodes,
