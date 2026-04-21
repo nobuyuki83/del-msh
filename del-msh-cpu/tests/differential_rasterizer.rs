@@ -4,7 +4,8 @@ mod tests {
     const IMG_RES: usize = 128;
 
     fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16], Vec<f32>) {
-        let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
+        let (tri2vtx, vtx2xyz) =
+            del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
             let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
             //let transform0 = del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI*0.25);
@@ -130,7 +131,8 @@ mod tests {
         );
         let num_vtx = vtx2xyz.len() / 3;
         let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
-        let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+        let edge2tri =
+            del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
         let cedge2vtx = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
             &tri2vtx,
             &vtx2xyz,
@@ -216,7 +218,10 @@ mod tests {
         .unwrap();
     }
 
-    fn test_nvdiffrast_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri>(mode: &T, suffix: &str) {
+    fn test_nvdiffrast_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri>(
+        mode: &T,
+        suffix: &str,
+    ) {
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
         let transform_ndc2world =

@@ -58,7 +58,6 @@ pub fn elem2volume(
     }
 }
 
-
 /// Returns the nearest point on the element and the 3 parametric coordinates at that point.
 /// - Tet (4):    (r0, r1, r2); r3 = 1-r0-r1-r2 is implicit
 /// - Pyramid (5): (r, s, t) with r,s in [0,1], t in [0,1]
@@ -163,15 +162,43 @@ fn nearest_elem_bvh(
     } else {
         let i_child0 = bvhnodes[i_bvhnode * 3 + 1] as usize;
         let i_child1 = bvhnodes[i_bvhnode * 3 + 2] as usize;
-        let d0 = del_geo_core::aabb3::min_sq_dist_to_point3(arrayref::array_ref!(bvhnode2aabb, i_child0 * 6, 6), query);
-        let d1 = del_geo_core::aabb3::min_sq_dist_to_point3(arrayref::array_ref!(bvhnode2aabb, i_child1 * 6, 6), query);
+        let d0 = del_geo_core::aabb3::min_sq_dist_to_point3(
+            arrayref::array_ref!(bvhnode2aabb, i_child0 * 6, 6),
+            query,
+        );
+        let d1 = del_geo_core::aabb3::min_sq_dist_to_point3(
+            arrayref::array_ref!(bvhnode2aabb, i_child1 * 6, 6),
+            query,
+        );
         let (first, second) = if d0 <= d1 {
             (i_child0, i_child1)
         } else {
             (i_child1, i_child0)
         };
-        nearest_elem_bvh(query, bvhnodes, bvhnode2aabb, elem2idx_offset, idx2vtx, vtx2xyz, first, best_dist_sq, best_elem, best_weights);
-        nearest_elem_bvh(query, bvhnodes, bvhnode2aabb, elem2idx_offset, idx2vtx, vtx2xyz, second, best_dist_sq, best_elem, best_weights);
+        nearest_elem_bvh(
+            query,
+            bvhnodes,
+            bvhnode2aabb,
+            elem2idx_offset,
+            idx2vtx,
+            vtx2xyz,
+            first,
+            best_dist_sq,
+            best_elem,
+            best_weights,
+        );
+        nearest_elem_bvh(
+            query,
+            bvhnodes,
+            bvhnode2aabb,
+            elem2idx_offset,
+            idx2vtx,
+            vtx2xyz,
+            second,
+            best_dist_sq,
+            best_elem,
+            best_weights,
+        );
     }
 }
 
@@ -197,12 +224,19 @@ pub fn nearest_elem_for_points(
         let mut best_elem = 0usize;
         let mut best_weights = [0f32; 3];
         nearest_elem_bvh(
-            query, bvhnodes, bvhnode2aabb, elem2idx_offset, idx2vtx, vtx2xyz,
-            0, &mut best_dist_sq, &mut best_elem, &mut best_weights,
+            query,
+            bvhnodes,
+            bvhnode2aabb,
+            elem2idx_offset,
+            idx2vtx,
+            vtx2xyz,
+            0,
+            &mut best_dist_sq,
+            &mut best_elem,
+            &mut best_weights,
         );
         wtx2elem[i_wtx] = best_elem as u32;
         wtx2param[i_wtx * 3..i_wtx * 3 + 3].copy_from_slice(&best_weights);
     }
     (wtx2elem, wtx2param)
 }
-

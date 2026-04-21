@@ -76,11 +76,9 @@ pub mod microedge;
 pub mod mixed_mesh;
 pub mod mortons;
 pub mod nbody;
+pub mod pix2tri;
 pub mod polygon_mesh;
 pub mod polygon_mesh2;
 pub mod polyhedron_mesh;
 pub mod quad_oct_tree;
 pub mod trimesh3_raycast;
-pub mod pix2tri;
-
-

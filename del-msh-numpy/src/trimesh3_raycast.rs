@@ -3,7 +3,10 @@ use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(pyo3::wrap_pyfunction!(trimesh3_raycast_pix2tri_by_raycast, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        trimesh3_raycast_pix2tri_by_raycast,
+        m
+    )?)?;
     m.add_function(pyo3::wrap_pyfunction!(
         trimesh3_raycast_render_depth_bvh,
         m

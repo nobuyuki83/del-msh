@@ -98,9 +98,7 @@ pub fn pix2tri_by_rasterization<Index>(
             (1. - ndc2[1]) * 0.5 * height as f32,
         ];
 
-        for [ix, iy] in
-            del_geo_core::tri2_scanline::TriangleScanlineIter::new(px0, px1, px2)
-        {
+        for [ix, iy] in del_geo_core::tri2_scanline::TriangleScanlineIter::new(px0, px1, px2) {
             if ix < 0 || iy < 0 || ix >= width as i32 || iy >= height as i32 {
                 continue;
             }
@@ -120,19 +118,16 @@ pub fn pix2tri_by_rasterization<Index>(
     }
 }
 
-
-
 #[test]
 fn test_pix2tri() {
     const IMG_RES: usize = 256;
     let img_shape = (IMG_RES, IMG_RES);
-//    let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
+    //    let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
     let vtx2xyz = {
         let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
         let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.01, 0.61, 0.03]);
-        let transform =
-            del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
+        let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
         crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
     };
     let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);

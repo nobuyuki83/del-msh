@@ -8,8 +8,14 @@ pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(polyhedron_mesh_elem2volume, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(polyhedron_mesh_elem2center, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(polyhedron_mesh_bvhnode2aabb_from_bvhnodes, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(polyhedron_mesh_nearest_elem_for_points, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        polyhedron_mesh_bvhnode2aabb_from_bvhnodes,
+        m
+    )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        polyhedron_mesh_nearest_elem_for_points,
+        m
+    )?)?;
     Ok(())
 }
 
@@ -88,7 +94,9 @@ fn polyhedron_mesh_elem2center(
                 slice!(vtx2xyz, f32).unwrap(),
                 num_dim.try_into().unwrap(),
             );
-            slice_mut!(elem2center, f32).unwrap().copy_from_slice(&result);
+            slice_mut!(elem2center, f32)
+                .unwrap()
+                .copy_from_slice(&result);
         }
         _ => {
             todo!()
@@ -193,8 +201,12 @@ fn polyhedron_mesh_nearest_elem_for_points(
                 slice!(vtx2xyz, f32).unwrap(),
                 slice!(wtx2xyz, f32).unwrap(),
             );
-            slice_mut!(wtx2elem, u32).unwrap().copy_from_slice(&res_elem);
-            slice_mut!(wtx2param, f32).unwrap().copy_from_slice(&res_param);
+            slice_mut!(wtx2elem, u32)
+                .unwrap()
+                .copy_from_slice(&res_elem);
+            slice_mut!(wtx2param, f32)
+                .unwrap()
+                .copy_from_slice(&res_param);
         }
         _ => {
             todo!()
