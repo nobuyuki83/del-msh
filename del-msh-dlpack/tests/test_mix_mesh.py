@@ -23,7 +23,7 @@ def test_01():
         pyrmd2vtx.to(torch.uint32),
         prism2vtx.to(torch.uint32))
     print(vtx2xyz.shape)
-    elem2volume = del_msh_dlpack.PolyhedronMesh.torch.elem2volume(
+    elem2volume = del_msh_dlpack.PolyhedronMesh.torch.make_elem2volume(
         elem2idx_offset,
         idx2vtx,
         vtx2xyz)
