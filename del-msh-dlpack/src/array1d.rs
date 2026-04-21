@@ -139,8 +139,11 @@ pub fn array1d_argsort(
                 idx2val.data as cu::CUdeviceptr,
                 n as usize,
             );
+            /*
             del_cudarc_sys::sort_by_key_u32::radix_sort_by_key_u32(stream, &idx2val, &jdx2idx)
                 .unwrap();
+             */
+            unsafe { del_cudarc_sys::sort_by_key_thrust::sort_u32_by_u32_key(stream, &idx2val, &jdx2idx) }.unwrap();
         }
         _ => {
             panic!()
