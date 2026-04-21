@@ -3,7 +3,7 @@ use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(pyo3::wrap_pyfunction!(trimesh3_raycast_update_pix2tri, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(trimesh3_raycast_pix2tri_by_raycast, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(
         trimesh3_raycast_render_depth_bvh,
         m
@@ -12,7 +12,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 }
 
 #[pyo3::pyfunction]
-pub fn trimesh3_raycast_update_pix2tri<'a>(
+pub fn trimesh3_raycast_pix2tri_by_raycast<'a>(
     _py: Python<'a>,
     mut pix2tri: PyReadwriteArray2<'a, usize>,
     tri2vtx: PyReadonlyArray2<'a, usize>,
@@ -39,7 +39,7 @@ pub fn trimesh3_raycast_update_pix2tri<'a>(
     use numpy::PyUntypedArrayMethods;
     let img_shape = (pix2tri.shape()[1], pix2tri.shape()[0]);
     let transform_ndc2world = arrayref::array_ref![transform_ndc2world.as_slice().unwrap(), 0, 16];
-    del_msh_cpu::trimesh3_raycast::update_pix2tri(
+    del_msh_cpu::pix2tri::pix2tri_by_raycast(
         pix2tri.as_slice_mut().unwrap(),
         tri2vtx.as_slice().unwrap(),
         vtx2xyz.as_slice().unwrap(),

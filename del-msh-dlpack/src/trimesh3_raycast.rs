@@ -6,13 +6,13 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(pyo3::wrap_pyfunction!(trimesh3_raycast_update_pix2tri, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(trimesh3_raycast_pix2tri_by_raycast, m)?)?;
     Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
-pub fn trimesh3_raycast_update_pix2tri(
+pub fn trimesh3_raycast_pix2tri_by_raycast(
     _py: Python<'_>,
     pix2tri: &Bound<'_, PyAny>,
     tri2vtx: &Bound<'_, PyAny>,
@@ -44,7 +44,7 @@ pub fn trimesh3_raycast_update_pix2tri(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::trimesh3_raycast::update_pix2tri(
+            del_msh_cpu::pix2tri::pix2tri_by_raycast(
                 slice_mut!(pix2tri, u32).unwrap(),
                 slice!(tri2vtx, u32).unwrap(),
                 slice!(vtx2xyz, f32).unwrap(),

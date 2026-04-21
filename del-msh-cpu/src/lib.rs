@@ -70,7 +70,6 @@ pub mod adaptive_distance_field3;
 pub mod alias_table;
 pub mod antialias;
 pub mod array1d;
-pub mod differential_rasterizer;
 pub mod grid2;
 pub mod io_cfd_mesh_txt;
 pub mod microedge;
@@ -82,3 +81,6 @@ pub mod polygon_mesh2;
 pub mod polyhedron_mesh;
 pub mod quad_oct_tree;
 pub mod trimesh3_raycast;
+pub mod pix2tri;
+
+

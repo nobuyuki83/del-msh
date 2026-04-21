@@ -4,7 +4,7 @@ mod tests {
     const IMG_RES: usize = 128;
 
     fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16], Vec<f32>) {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
+        let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
             let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
             //let transform0 = del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI*0.25);
@@ -13,7 +13,7 @@ mod tests {
             //let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.6, eps]);
             let transform =
                 del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-            crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
+            del_msh_cpu::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
         };
         let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
         let dxyz: Vec<f32> = (0..vtx2xyz.len() / 3).flat_map(|_| [1., 0., 0.]).collect();
@@ -40,7 +40,7 @@ mod tests {
         del_canvas::write_png_from_float_image(path, img_shape, 3, &pix2rgb_diff).unwrap()
     }
 
-    fn test_sample_for_model<T: crate::trimesh3_raycast::RenderTri + Sync>(
+    fn test_sample_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri + Sync>(
         mode: T,
         str_mode: &str,
     ) {
@@ -50,7 +50,7 @@ mod tests {
         let eps = 1.0e-1 / IMG_RES as f32;
         let pix2val0 = {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(-eps);
-            crate::trimesh3_raycast::multi_sample(
+            del_msh_cpu::trimesh3_raycast::multi_sample(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
@@ -62,7 +62,7 @@ mod tests {
         };
         {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(0.);
-            let pix2val1 = crate::trimesh3_raycast::multi_sample(
+            let pix2val1 = del_msh_cpu::trimesh3_raycast::multi_sample(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
@@ -84,7 +84,7 @@ mod tests {
         }
         let pix2val2 = {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(eps);
-            crate::trimesh3_raycast::multi_sample(
+            del_msh_cpu::trimesh3_raycast::multi_sample(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
@@ -111,11 +111,11 @@ mod tests {
 
     #[test]
     fn test_sample() {
-        test_sample_for_model(crate::trimesh3_raycast::Depth, "depth");
-        test_sample_for_model(crate::trimesh3_raycast::Occlusion, "occ");
+        test_sample_for_model(del_msh_cpu::trimesh3_raycast::Depth, "depth");
+        test_sample_for_model(del_msh_cpu::trimesh3_raycast::Occlusion, "occ");
     }
 
-    fn nvdiffrast<T: crate::trimesh3_raycast::RenderTri>(
+    fn nvdiffrast<T: del_msh_cpu::trimesh3_raycast::RenderTri>(
         eps: f32,
         mode: &T,
     ) -> (Vec<f32>, Vec<f32>, Vec<u32>, Vec<u32>) {
@@ -129,9 +129,9 @@ mod tests {
             &transform_world2ndc,
         );
         let num_vtx = vtx2xyz.len() / 3;
-        let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
-        let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
-        let cedge2vtx = crate::edge2vtx::contour_for_triangle_mesh::<u32>(
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
+        let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+        let cedge2vtx = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
             &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
@@ -139,12 +139,12 @@ mod tests {
             &edge2tri,
         );
         let pix2tri = {
-            let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-            let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
             );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
-            crate::trimesh3_raycast::update_pix2tri(
+            del_msh_cpu::pix2tri::pix2tri_by_raycast(
                 &mut pix2tri,
                 &tri2vtx,
                 &vtx2xyz,
@@ -155,7 +155,7 @@ mod tests {
             );
             pix2tri
         };
-        let pix2vin = crate::trimesh3_raycast::fwd_continuous(
+        let pix2vin = del_msh_cpu::trimesh3_raycast::fwd_continuous(
             &pix2tri,
             img_shape,
             &tri2vtx,
@@ -164,7 +164,7 @@ mod tests {
             mode,
         );
         let mut pix2vout = pix2vin.clone();
-        crate::antialias::antialias(
+        del_msh_cpu::antialias::antialias(
             &cedge2vtx,
             &vtx2xyz,
             &transform_world2pix,
@@ -180,13 +180,13 @@ mod tests {
     fn test_contour() {
         let img_shape = (IMG_RES, IMG_RES);
         let (_tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(0.);
-        let (_, _, _, cedge2vtx) = nvdiffrast(0., &crate::trimesh3_raycast::Occlusion);
+        let (_, _, _, cedge2vtx) = nvdiffrast(0., &del_msh_cpu::trimesh3_raycast::Occlusion);
         // draw edge image
         let mut pix2isedge = vec![1f32; img_shape.0 * img_shape.1];
         for chunk in cedge2vtx.chunks(2) {
             let (iv0, iv1) = (chunk[0] as usize, chunk[1] as usize);
-            let xyz0_world = crate::vtx2xyz::to_vec3(&vtx2xyz, iv0);
-            let xyz1_world = crate::vtx2xyz::to_vec3(&vtx2xyz, iv1);
+            let xyz0_world = del_msh_cpu::vtx2xyz::to_vec3(&vtx2xyz, iv0);
+            let xyz1_world = del_msh_cpu::vtx2xyz::to_vec3(&vtx2xyz, iv1);
             let xyz0_ndc = del_geo_core::mat4_col_major::transform_homogeneous(
                 &transform_world2ndc,
                 xyz0_world,
@@ -216,7 +216,7 @@ mod tests {
         .unwrap();
     }
 
-    fn test_nvdiffrast_for_model<T: crate::trimesh3_raycast::RenderTri>(mode: &T, suffix: &str) {
+    fn test_nvdiffrast_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri>(mode: &T, suffix: &str) {
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
         let transform_ndc2world =
@@ -247,7 +247,7 @@ mod tests {
                     dldw_pix2val
                 };
                 let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
-                crate::trimesh3_raycast::bwd_continuous(
+                del_msh_cpu::trimesh3_raycast::bwd_continuous(
                     &pix2tri,
                     &tri2vtx,
                     &vtx2xyz,
@@ -257,7 +257,7 @@ mod tests {
                     &mut dldw_vtx2xyz,
                     mode,
                 );
-                crate::antialias::bwd_antialias(
+                del_msh_cpu::antialias::bwd_antialias(
                     &cedge2vtx,
                     &vtx2xyz,
                     &mut dldw_vtx2xyz,
@@ -305,8 +305,8 @@ mod tests {
 
     #[test]
     fn test_nvdiffrast() {
-        test_nvdiffrast_for_model(&crate::trimesh3_raycast::Occlusion, "occ");
-        test_nvdiffrast_for_model(&crate::trimesh3_raycast::Depth, "depth");
+        test_nvdiffrast_for_model(&del_msh_cpu::trimesh3_raycast::Occlusion, "occ");
+        test_nvdiffrast_for_model(&del_msh_cpu::trimesh3_raycast::Depth, "depth");
     }
 
     #[test]
@@ -321,12 +321,12 @@ mod tests {
             &transform_world2ndc,
         );
         let pix2tri = {
-            let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-            let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
             );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
-            crate::trimesh3_raycast::update_pix2tri(
+            del_msh_cpu::pix2tri::pix2tri_by_raycast(
                 &mut pix2tri,
                 &tri2vtx,
                 &vtx2xyz,
@@ -346,7 +346,7 @@ mod tests {
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
             //
-            crate::microedge::bwd_microedge(
+            del_msh_cpu::microedge::bwd_microedge(
                 &tri2vtx,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,

@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
     );
     let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
-    del_msh_cpu::trimesh3_raycast::update_pix2tri(
+    del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
         &tri2vtx,
         &vtx2xyz,

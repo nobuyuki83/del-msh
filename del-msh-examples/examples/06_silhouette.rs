@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
         let transform_ndc2world =
             del_geo_core::mat4_col_major::try_inverse(&transform_world2ndc).unwrap();
         let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
-        del_msh_cpu::trimesh3_raycast::update_pix2tri(
+        del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
             &tri2vtx,
             &vtx2xyz,

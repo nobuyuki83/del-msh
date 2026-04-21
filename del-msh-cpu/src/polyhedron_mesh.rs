@@ -1,3 +1,17 @@
+/// Compute the volume of each element in a mixed polyhedron mesh.
+///
+/// Supported element types (determined by node count per element):
+/// - 4 nodes: tetrahedron
+/// - 5 nodes: pyramid (square base + apex)
+/// - 6 nodes: triangular prism
+///
+/// # Arguments
+/// * `elem2idx_offset` - CSR offset array of length `num_elem + 1`; element `i` owns
+///   vertices `idx2vtx[elem2idx_offset[i]..elem2idx_offset[i+1]]`
+/// * `idx2vtx` - flat list of vertex indices for all elements
+/// * `vtx2xyz` - vertex positions, stored as `[x, y, z, x, y, z, ...]`
+/// * `i_gauss_degree` - Gauss quadrature degree used for pyramid and prism volume integration
+/// * `elem2volume` - output slice of length `num_elem`; each entry is set to the element's volume
 pub fn elem2volume(
     elem2idx_offset: &[u32],
     idx2vtx: &[u32],

@@ -1,53 +1,6 @@
 use num_traits::AsPrimitive;
 use rand::RngExt;
 
-pub fn update_pix2tri<Index>(
-    pix2tri: &mut [Index],
-    tri2vtx: &[Index],
-    vtx2xyz: &[f32],
-    bvhnodes: &[Index],
-    bvhnode2aabb: &[f32],
-    img_shape: (usize, usize), // (width, height)
-    transform_ndc2world: &[f32; 16],
-) where
-    Index: num_traits::PrimInt + AsPrimitive<usize> + Sync + Send,
-    usize: AsPrimitive<Index>,
-{
-    assert_eq!(pix2tri.len(), img_shape.0 * img_shape.1);
-    let tri_for_pix = |i_pix: usize| -> Index {
-        let i_h = i_pix / img_shape.0;
-        let i_w = i_pix - i_h * img_shape.0;
-        //
-        let (ray_org, ray_dir) =
-            del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
-                (i_w as f32 + 0.5, i_h as f32 + 0.5),
-                &(img_shape.0 as f32, img_shape.1 as f32),
-                transform_ndc2world,
-            );
-        if let Some((_t, i_tri)) = crate::search_bvh3::first_intersection_ray(
-            &ray_org,
-            &ray_dir,
-            &crate::search_bvh3::TriMeshWithBvh {
-                tri2vtx,
-                vtx2xyz,
-                bvhnodes,
-                bvhnode2aabb,
-            },
-            0,
-            f32::INFINITY,
-        ) {
-            i_tri.as_()
-        } else {
-            Index::max_value()
-        }
-    };
-    use rayon::prelude::*;
-    pix2tri
-        .par_iter_mut()
-        .enumerate()
-        .for_each(|(i_pix, i_tri)| *i_tri = tri_for_pix(i_pix));
-}
-
 pub fn pix2depth_from_pix2tri(
     pix2depth: &mut [f32],
     pix2tri: &[u32],

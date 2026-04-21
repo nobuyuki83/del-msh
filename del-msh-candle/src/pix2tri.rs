@@ -50,7 +50,7 @@ impl candle_core::InplaceOp3 for Pix2Tri {
             f32
         );
         let transform_ndc2world = arrayref::array_ref!(transform_ndc2world, 0, 16);
-        del_msh_cpu::trimesh3_raycast::update_pix2tri(
+        del_msh_cpu::pix2tri::pix2tri_by_raycast(
             pix2tri,
             tri2vtx,
             vtx2xyz,
