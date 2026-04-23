@@ -1,5 +1,7 @@
 //! methods related to triangle mesh topology
 
+use crate::elem2elem;
+
 /// split polygons of polygonal mesh into triangles
 pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
     let mut num_tri = 0_usize;
@@ -80,10 +82,13 @@ pub fn elem2elem(
     elem2vtx: &[usize],
     num_node: usize,
     num_vtx: usize,
-    is_simplex: bool,
+    is_simplex_indexing: bool,
 ) -> Vec<usize> {
-    let (face2idx, idx2node) = if is_simplex {
-        crate::elem2elem::face2node_of_simplex_element(num_node)
+    let (face2idx, idx2node) = if is_simplex_indexing {
+        (
+            elem2elem::TRI_FACE2IDX.to_vec(),
+            elem2elem::TRI_IDX2NODE.to_vec(),
+        )
     } else {
         crate::elem2elem::face2node_of_polygon_element(num_node)
     };

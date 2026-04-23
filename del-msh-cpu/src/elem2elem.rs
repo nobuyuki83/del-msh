@@ -1,6 +1,15 @@
 //! methods that generate the elements adjacent to an element
 use num_traits::AsPrimitive;
 
+pub const TET_FACE2IDX: [usize; 5] = [0, 3, 6, 9, 12];
+pub const TET_IDX2NODE: [usize; 12] = [1, 2, 3, 2, 0, 3, 0, 1, 3, 0, 2, 1];
+
+pub const EDGE_FACE2IDX: [usize; 3] = [0, 1, 2];
+pub const EDGE_IDX2NODE: [usize; 2] = [1, 0];
+
+pub const TRI_FACE2IDX: [usize; 4] = [0, 2, 4, 6];
+pub const TRI_IDX2NODE: [usize; 6] = [1, 2, 2, 0, 0, 1];
+
 pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     let mut face2idx = vec![0; num_node + 1];
     let mut idx2node = vec![0; num_node * 2];
@@ -12,36 +21,15 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
     (face2idx, idx2node)
 }
 
-/// # Returns
-/// (face2idx, idx2node)
 pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
-    let num_node_face = num_node - 1;
-    let mut face2idx = vec![0; num_node + 1];
-    let mut idx2node = vec![0; num_node * num_node_face];
-    for i_edge in 0..num_node {
-        face2idx[i_edge + 1] = (i_edge + 1) * num_node_face;
-        let mut icnt = 0;
-        for ino in 0..num_node {
-            let ino1 = (i_edge + ino) % num_node;
-            if ino1 == i_edge {
-                continue;
-            }
-            idx2node[i_edge * num_node_face + icnt] = ino1;
-            icnt += 1;
+    match num_node {
+        2 => (EDGE_FACE2IDX.to_vec(), EDGE_IDX2NODE.to_vec()),
+        3 => (TRI_FACE2IDX.to_vec(), TRI_IDX2NODE.to_vec()),
+        4 => (TET_FACE2IDX.to_vec(), TET_IDX2NODE.to_vec()),
+        _ => {
+            panic!()
         }
     }
-    (face2idx, idx2node)
-}
-
-#[test]
-fn test_face2node_of_simplex_element() {
-    // TODO:
-    let (face2idx, idx2node) = face2node_of_simplex_element(2);
-    assert_eq!(face2idx, [0, 1, 2]);
-    assert_eq!(idx2node, [1, 0]);
-    let (face2idx, idx2node) = face2node_of_simplex_element(3);
-    assert_eq!(face2idx, [0, 2, 4, 6]);
-    assert_eq!(idx2node, [1, 2, 2, 0, 0, 1]);
 }
 
 /// element adjacency of uniform mesh
@@ -199,4 +187,45 @@ pub fn from_polygon_mesh_with_vtx2elem(
 pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) -> Vec<usize> {
     let vtx2elem = crate::vtx2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx);
     from_polygon_mesh_with_vtx2elem(elem2idx, idx2vtx, &vtx2elem.0, &vtx2elem.1)
+}
+
+/// Extract the boundary surface mesh from a uniform volumetric mesh.
+///
+/// A face is on the boundary when its `elem2elem` entry equals `Index::max_value()`.
+/// Returns a flat array of vertex indices for the boundary faces (uniform surface mesh).
+/// The number of nodes per boundary face is `face2idx[1] - face2idx[0]`.
+///
+/// # Arguments
+/// * `elem2vtx` - vertex indices of elements, length `num_elem * num_node`
+/// * `num_node` - number of nodes per element (e.g. 4 for tets)
+/// * `elem2elem` - element adjacency array, length `num_elem * num_face_per_elem`;
+///   boundary faces have value `Index::max_value()`
+/// * `face2idx` - CSR offsets into `idx2node` for each face of an element
+/// * `idx2node` - local node indices on each face
+pub fn extract_boundary_mesh_for_uniform_mesh<Index>(
+    elem2vtx: &[Index],
+    num_node: usize,
+    elem2elem: &[Index],
+    face2idx: &[usize],
+    idx2node: &[usize],
+) -> Vec<Index>
+where
+    Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: num_traits::AsPrimitive<Index>,
+{
+    let num_face_per_elem = face2idx.len() - 1;
+    let num_elem = elem2vtx.len() / num_node;
+    let mut bnd_face2vtx = Vec::<Index>::new();
+    for i_elem in 0..num_elem {
+        for i_face in 0..num_face_per_elem {
+            if elem2elem[i_elem * num_face_per_elem + i_face] != Index::max_value() {
+                continue;
+            }
+            for jdx in face2idx[i_face]..face2idx[i_face + 1] {
+                let i_node = idx2node[jdx];
+                bnd_face2vtx.push(elem2vtx[i_elem * num_node + i_node]);
+            }
+        }
+    }
+    bnd_face2vtx
 }

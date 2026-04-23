@@ -1,5 +1,7 @@
 //! group elements using the connectivity information
 
+use crate::tri2vtx::elem2elem;
+
 /// mark elements with "idx_group" that is connected to "idx_elem_kernel"
 /// * `elem_group` - array of group index for element
 /// * `elem_adjelem` - array of adjacent element for element
@@ -59,8 +61,13 @@ pub fn from_uniform_mesh_with_elem2elem(
 }
 
 pub fn from_triangle_mesh(tri2vtx: &[usize], num_vtx: usize) -> (usize, Vec<usize>) {
-    let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(3);
-    let tri2tri = crate::elem2elem::from_uniform_mesh(tri2vtx, 3, &face2idx, &idx2node, num_vtx);
+    let tri2tri = crate::elem2elem::from_uniform_mesh(
+        tri2vtx,
+        3,
+        &crate::elem2elem::TRI_FACE2IDX,
+        &crate::elem2elem::TRI_IDX2NODE,
+        num_vtx,
+    );
     from_uniform_mesh_with_elem2elem(tri2vtx, 3, &tri2tri)
 }
 

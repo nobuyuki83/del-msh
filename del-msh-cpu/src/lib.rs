@@ -81,4 +81,5 @@ pub mod polygon_mesh;
 pub mod polygon_mesh2;
 pub mod polyhedron_mesh;
 pub mod quad_oct_tree;
+pub mod tetmesh;
 pub mod trimesh3_raycast;

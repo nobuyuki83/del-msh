@@ -1,4 +1,6 @@
+use crate::elem2elem::{TRI_FACE2IDX, TRI_IDX2NODE};
 use num_traits::AsPrimitive;
+
 fn dominant_direction_pca<T>(remaining_elems: &[usize], elem2center: &[T]) -> ([T; 3], [T; 3])
 where
     T: num_traits::Float + 'static + Copy,
@@ -204,12 +206,11 @@ where
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
-    let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(3);
     let tri2tri = crate::elem2elem::from_uniform_mesh::<usize>(
         tri2vtx,
         3,
-        &face2idx,
-        &idx2node,
+        &TRI_FACE2IDX,
+        &TRI_IDX2NODE,
         vtx2xyz.len() / 3,
     );
     let tri2center = crate::elem2center::from_uniform_mesh_as_points(tri2vtx, 3, vtx2xyz, 3);

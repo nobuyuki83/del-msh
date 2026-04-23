@@ -1,3 +1,4 @@
+use crate::elem2elem::{TRI_FACE2IDX, TRI_IDX2NODE};
 use arrayref::array_ref;
 
 pub fn find_adjacent_edge_index(
@@ -497,9 +498,8 @@ pub fn delete_tri_flag(
 /// (bedge2vtx, tri2tri)
 pub fn boundaryedge2vtx(tri2vtx: &[usize], num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
     let num_tri = tri2vtx.len() / 3;
-    let (face2idx, idx2node) = crate::elem2elem::face2node_of_simplex_element(3);
     let mut tri2tri =
-        crate::elem2elem::from_uniform_mesh(tri2vtx, 3, &face2idx, &idx2node, num_vtx);
+        crate::elem2elem::from_uniform_mesh(tri2vtx, 3, &TRI_FACE2IDX, &TRI_IDX2NODE, num_vtx);
     let mut bedge2vtx: Vec<usize> = vec![];
     for (i_tri, node2tri) in tri2tri.chunks_mut(3).enumerate() {
         for i_node in 0..3 {

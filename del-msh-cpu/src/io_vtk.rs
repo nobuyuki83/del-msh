@@ -73,6 +73,7 @@ pub fn write_vtk_cells(
             writeln!(writer, "{id_elem}")?;
         }
     }
+    writer.flush()?;
     Ok(())
 }
 
@@ -123,6 +124,7 @@ where
     for _ in 0..num_prism {
         writeln!(writer, "{}", VtkElementType::WEDGE as u32).unwrap();
     }
+    writer.flush()?;
     Ok(())
 }
 

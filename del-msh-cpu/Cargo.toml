@@ -20,6 +20,8 @@ rayon.workspace = true
 rand_chacha = {workspace = true}
 criterion = "0.5.1"
 del-canvas = {workspace = true}
+ndarray = "0.16.1" # for la
+ndarray-npy = "0.9.1"
 
 [[bench]]
 name = "bvh"
