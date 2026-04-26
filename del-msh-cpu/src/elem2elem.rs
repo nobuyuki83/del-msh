@@ -10,6 +10,9 @@ pub const EDGE_IDX2NODE: [usize; 2] = [1, 0];
 pub const TRI_FACE2IDX: [usize; 4] = [0, 2, 4, 6];
 pub const TRI_IDX2NODE: [usize; 6] = [1, 2, 2, 0, 0, 1];
 
+pub const PYRAMID_FACE2IDX: [usize; 6] = [0, 4, 7, 10, 13, 16];
+pub const PYRAMID_IDX2NODE: [usize; 16] = [0, 3, 2, 1, 0, 1, 4, 1, 2, 4, 2, 3, 4, 3, 0, 4];
+
 pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     let mut face2idx = vec![0; num_node + 1];
     let mut idx2node = vec![0; num_node * 2];

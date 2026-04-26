@@ -486,5 +486,4 @@ fn test_voronoi_sites_on_edge() {
         2,
     )
     .unwrap();
-
 }

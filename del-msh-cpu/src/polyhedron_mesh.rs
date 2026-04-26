@@ -12,44 +12,34 @@
 /// * `vtx2xyz` - vertex positions, stored as `[x, y, z, x, y, z, ...]`
 /// * `i_gauss_degree` - Gauss quadrature degree used for pyramid and prism volume integration
 /// * `elem2volume` - output slice of length `num_elem`; each entry is set to the element's volume
-pub fn elem2volume(
-    elem2idx_offset: &[u32],
-    idx2vtx: &[u32],
-    vtx2xyz: &[f32],
+pub fn elem2volume<IDX, Real>(
+    elem2idx_offset: &[IDX],
+    idx2vtx: &[IDX],
+    vtx2xyz: &[Real],
     i_gauss_degree: usize,
-    elem2volume: &mut [f32],
-) {
+    elem2volume: &mut [Real],
+) where
+    IDX: num_traits::AsPrimitive<usize>,
+    Real: num_traits::Float + 'static + std::fmt::Debug,
+    del_geo_core::quadrature_line::Quad<Real>: del_geo_core::quadrature_line::QuadratureLine<Real>,
+    del_geo_core::quadrature_tri::Quad<Real>: del_geo_core::quadrature_tri::QuadratureTri<Real>,
+{
     let num_elem = elem2idx_offset.len() - 1;
     assert_eq!(elem2volume.len(), num_elem);
     for i_elem in 0..elem2idx_offset.len() - 1 {
-        let node2vtx =
-            &idx2vtx[elem2idx_offset[i_elem] as usize..elem2idx_offset[i_elem + 1] as usize];
+        let node2vtx = &idx2vtx[elem2idx_offset[i_elem].as_()..elem2idx_offset[i_elem + 1].as_()];
+        let p = |i: usize| arrayref::array_ref![vtx2xyz, node2vtx[i].as_() * 3, 3];
         match node2vtx.len() {
             4 => {
-                let p0 = arrayref::array_ref![vtx2xyz, node2vtx[0] as usize * 3, 3];
-                let p1 = arrayref::array_ref![vtx2xyz, node2vtx[1] as usize * 3, 3];
-                let p2 = arrayref::array_ref![vtx2xyz, node2vtx[2] as usize * 3, 3];
-                let p3 = arrayref::array_ref![vtx2xyz, node2vtx[3] as usize * 3, 3];
-                elem2volume[i_elem] = del_geo_core::tet::volume(p0, p1, p2, p3);
+                elem2volume[i_elem] = del_geo_core::tet::volume(p(0), p(1), p(2), p(3));
             }
             5 => {
-                let p0 = arrayref::array_ref![vtx2xyz, node2vtx[0] as usize * 3, 3];
-                let p1 = arrayref::array_ref![vtx2xyz, node2vtx[1] as usize * 3, 3];
-                let p2 = arrayref::array_ref![vtx2xyz, node2vtx[2] as usize * 3, 3];
-                let p3 = arrayref::array_ref![vtx2xyz, node2vtx[3] as usize * 3, 3];
-                let p4 = arrayref::array_ref![vtx2xyz, node2vtx[4] as usize * 3, 3];
                 elem2volume[i_elem] =
-                    del_geo_core::pyramid::volume(p0, p1, p2, p3, p4, i_gauss_degree);
+                    del_geo_core::pyramid::volume(p(0), p(1), p(2), p(3), p(4), i_gauss_degree);
             }
             6 => {
-                let p0 = arrayref::array_ref![vtx2xyz, node2vtx[0] as usize * 3, 3];
-                let p1 = arrayref::array_ref![vtx2xyz, node2vtx[1] as usize * 3, 3];
-                let p2 = arrayref::array_ref![vtx2xyz, node2vtx[2] as usize * 3, 3];
-                let p3 = arrayref::array_ref![vtx2xyz, node2vtx[3] as usize * 3, 3];
-                let p4 = arrayref::array_ref![vtx2xyz, node2vtx[4] as usize * 3, 3];
-                let p5 = arrayref::array_ref![vtx2xyz, node2vtx[5] as usize * 3, 3];
                 elem2volume[i_elem] =
-                    del_geo_core::prism::volume(p0, p1, p2, p3, p4, p5, i_gauss_degree);
+                    del_geo_core::prism::volume(p(0), p(1), p(2), p(3), p(4), p(5), i_gauss_degree);
             }
             _ => {
                 unreachable!()
@@ -239,4 +229,100 @@ pub fn nearest_elem_for_points(
         wtx2param[i_wtx * 3..i_wtx * 3 + 3].copy_from_slice(&best_weights);
     }
     (wtx2elem, wtx2param)
+}
+
+pub fn vertices_on_face(
+    i_elem: usize,
+    i_face: usize,
+    elem2idx_offset: &[usize],
+    idx2vtx: &[usize],
+) -> Vec<usize> {
+    use crate::elem2elem::{PYRAMID_FACE2IDX, PYRAMID_IDX2NODE, TET_FACE2IDX, TET_IDX2NODE};
+    let num_noel = elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem];
+    let nofa2node = match num_noel {
+        4 => &TET_IDX2NODE[TET_FACE2IDX[i_face]..TET_FACE2IDX[i_face + 1]],
+        5 => &PYRAMID_IDX2NODE[PYRAMID_FACE2IDX[i_face]..PYRAMID_FACE2IDX[i_face + 1]],
+        _ => {
+            todo!()
+        }
+    };
+    nofa2node
+        .into_iter()
+        .map(|i_node| idx2vtx[elem2idx_offset[i_elem] + i_node])
+        .collect::<Vec<_>>()
+}
+
+pub fn elem2elem_with_vtx2elem(
+    elem2idx_offset: &[usize],
+    idx2vtx: &[usize],
+    vtx2kdx_offset: &[usize],
+    kdx2elem: &[usize],
+) -> (Vec<usize>, Vec<usize>) {
+    let num_elem = elem2idx_offset.len() - 1;
+    let elem2jdx_offset = {
+        let mut elem2jdx_offset = Vec::<usize>::with_capacity(num_elem + 1);
+        elem2jdx_offset.push(0);
+        for i_elem in 0..num_elem {
+            let num_noel = elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem];
+            let num_face = match num_noel {
+                4 => 4, // tet
+                5 => 5, // pyramid
+                6 => 5, // prism
+                8 => 6, // hex
+                _ => {
+                    todo!()
+                }
+            };
+            elem2jdx_offset.push(elem2jdx_offset.last().unwrap() + num_face);
+        }
+        elem2jdx_offset
+    };
+    let &num_jdx = elem2jdx_offset.last().unwrap();
+    let mut jdx2elem = vec![usize::MAX; num_jdx];
+    for i_elem in 0..num_elem {
+        let num_face_i = elem2jdx_offset[i_elem + 1] - elem2jdx_offset[i_elem];
+        for i_face in 0..num_face_i {
+            if jdx2elem[elem2jdx_offset[i_elem] + i_face] != usize::MAX {
+                continue;
+            }
+            let mut vtxs_i = crate::polyhedron_mesh::vertices_on_face(
+                i_elem,
+                i_face,
+                &elem2idx_offset,
+                &idx2vtx,
+            );
+            let sum_i: usize = vtxs_i.iter().sum();
+            vtxs_i.sort();
+            let i0_vtx = vtxs_i[0];
+            for &j_elem in &kdx2elem[vtx2kdx_offset[i0_vtx]..vtx2kdx_offset[i0_vtx + 1]] {
+                if j_elem == i_elem { continue; }
+                let num_face_j = elem2jdx_offset[j_elem + 1] - elem2jdx_offset[j_elem];
+                for j_face in 0..num_face_j {
+                    let mut vtxs_j = crate::polyhedron_mesh::vertices_on_face(
+                        j_elem,
+                        j_face,
+                        &elem2idx_offset,
+                        &idx2vtx,
+                    );
+                    if vtxs_i.len() != vtxs_j.len() {
+                        continue;
+                    }
+                    if vtxs_j.iter().sum::<usize>() != sum_i {
+                        continue;
+                    }
+                    vtxs_j.sort();
+                    if vtxs_i != vtxs_j {
+                        continue;
+                    }
+                    jdx2elem[elem2jdx_offset[i_elem] + i_face] = j_elem;
+                    jdx2elem[elem2jdx_offset[j_elem] + j_face] = i_elem;
+                    break;
+                }
+                if jdx2elem[elem2jdx_offset[i_elem] + i_face] != usize::MAX {
+                    break;
+                }
+            }
+        }
+    }
+    (elem2jdx_offset, jdx2elem)
 }

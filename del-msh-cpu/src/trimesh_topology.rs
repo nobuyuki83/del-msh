@@ -1,6 +1,3 @@
-use crate::elem2elem::{TRI_FACE2IDX, TRI_IDX2NODE};
-use arrayref::array_ref;
-
 pub fn find_adjacent_edge_index(
     tv: &[usize; 3],
     ts: &[usize; 3],
@@ -116,6 +113,7 @@ pub fn insert_point_on_elem_edge(
     tri2vtx.resize(tri2vtx.len() + 6, 0);
     tri2tri.resize(tri2tri.len() + 6, 0);
 
+    use arrayref::array_ref;
     let old_a_v: [usize; 3] = array_ref!(tri2vtx, idx_tri_insert * 3, 3).to_owned();
     let old_a_s: [usize; 3] = array_ref!(tri2tri, idx_tri_insert * 3, 3).to_owned();
     let old_b_v: [usize; 3] = array_ref!(tri2vtx, itri_adj * 3, 3).to_owned();
@@ -230,10 +228,10 @@ pub fn flip_edge(
     assert!(ied1 < 3);
     assert_eq!(tri2tri[itri_b * 3 + ied1], itri_a);
 
-    let old_a_v: [usize; 3] = array_ref![tri2vtx, itri_a * 3, 3].to_owned();
-    let old_a_s: [usize; 3] = array_ref![tri2tri, itri_a * 3, 3].to_owned();
-    let old_b_v: [usize; 3] = array_ref![tri2vtx, itri_b * 3, 3].to_owned();
-    let old_b_s: [usize; 3] = array_ref![tri2tri, itri_b * 3, 3].to_owned();
+    let old_a_v: [usize; 3] = arrayref::array_ref![tri2vtx, itri_a * 3, 3].to_owned();
+    let old_a_s: [usize; 3] = arrayref::array_ref![tri2tri, itri_a * 3, 3].to_owned();
+    let old_b_v: [usize; 3] = arrayref::array_ref![tri2vtx, itri_b * 3, 3].to_owned();
+    let old_b_s: [usize; 3] = arrayref::array_ref![tri2tri, itri_b * 3, 3].to_owned();
 
     let no_a0 = ied0;
     let no_a1 = (ied0 + 1) % 3;
@@ -498,8 +496,13 @@ pub fn delete_tri_flag(
 /// (bedge2vtx, tri2tri)
 pub fn boundaryedge2vtx(tri2vtx: &[usize], num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
     let num_tri = tri2vtx.len() / 3;
-    let mut tri2tri =
-        crate::elem2elem::from_uniform_mesh(tri2vtx, 3, &TRI_FACE2IDX, &TRI_IDX2NODE, num_vtx);
+    let mut tri2tri = crate::elem2elem::from_uniform_mesh(
+        tri2vtx,
+        3,
+        &crate::elem2elem::TRI_FACE2IDX,
+        &crate::elem2elem::TRI_IDX2NODE,
+        num_vtx,
+    );
     let mut bedge2vtx: Vec<usize> = vec![];
     for (i_tri, node2tri) in tri2tri.chunks_mut(3).enumerate() {
         for i_node in 0..3 {
