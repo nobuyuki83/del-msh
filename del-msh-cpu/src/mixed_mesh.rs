@@ -2,6 +2,7 @@ pub fn to_polyhedron_mesh<IDX>(
     tet2vtx: &[IDX],
     pyrmd2vtx: &[IDX],
     prism2vtx: &[IDX],
+    hex2vtx: &[IDX],
     elem2idx_offset: &mut [IDX],
     idx2vtx: &mut [IDX],
 ) where
@@ -11,14 +12,16 @@ pub fn to_polyhedron_mesh<IDX>(
     let four = one + one + one + one;
     let five = four + one;
     let six = five + one;
+    let eight = four + four;
     let num_tet = tet2vtx.len() / 4;
     let num_pyrmd = pyrmd2vtx.len() / 5;
     let num_prism = prism2vtx.len() / 6;
-    let num_elem = num_tet + num_pyrmd + num_prism;
+    let num_hex = hex2vtx.len() / 8;
+    let num_elem = num_tet + num_pyrmd + num_prism + num_hex;
     assert_eq!(elem2idx_offset.len(), num_elem + 1);
     assert_eq!(
         idx2vtx.len(),
-        tet2vtx.len() + pyrmd2vtx.len() + prism2vtx.len()
+        tet2vtx.len() + pyrmd2vtx.len() + prism2vtx.len() + hex2vtx.len()
     );
     {
         let mut idx = 0;
@@ -35,6 +38,10 @@ pub fn to_polyhedron_mesh<IDX>(
             elem2idx_offset[idx + 1] = elem2idx_offset[idx] + six;
             idx += 1;
         }
+        for _i_hex in 0..num_hex {
+            elem2idx_offset[idx + 1] = elem2idx_offset[idx] + eight;
+            idx += 1;
+        }
         assert_eq!(idx, num_elem);
         elem2idx_offset
     };
@@ -42,4 +49,7 @@ pub fn to_polyhedron_mesh<IDX>(
     idx2vtx[num_tet * 4..(num_tet * 4 + num_pyrmd * 5)].copy_from_slice(pyrmd2vtx);
     idx2vtx[(num_tet * 4 + num_pyrmd * 5)..(num_tet * 4 + num_pyrmd * 5 + num_prism * 6)]
         .copy_from_slice(prism2vtx);
+    idx2vtx[(num_tet * 4 + num_pyrmd * 5 + num_prism * 6)
+        ..(num_tet * 4 + num_pyrmd * 5 + num_prism * 6 + num_hex * 8)]
+        .copy_from_slice(hex2vtx);
 }

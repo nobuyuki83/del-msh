@@ -1,7 +1,5 @@
 //! methods for 2D Voronoi diagram
 
-use crate::elem2elem::{EDGE_FACE2IDX, EDGE_IDX2NODE};
-
 #[derive(Clone)]
 pub struct Cell {
     pub vtx2xy: Vec<f32>,
@@ -463,8 +461,8 @@ fn test_voronoi_sites_on_edge() {
         let bedge2bedge = crate::elem2elem::from_uniform_mesh(
             &bedge2vtx,
             2,
-            &EDGE_FACE2IDX,
-            &EDGE_IDX2NODE,
+            &del_geo_core::edge::EDGE_FACE2IDX,
+            &del_geo_core::edge::EDGE_IDX2NODE,
             vtx2xy.len() / 2,
         );
         let num_tri = tri2vtx.len() / 3;

@@ -1,5 +1,5 @@
-
-
+/// Given face `i_face` of tet `vtxs_i`, find the local face index on `j_tet` that shares the same
+/// three vertices. Matching is done by vertex-index sum, so vertex order does not matter.
 pub fn find_adjacent_face_index(
     vtxs_i: &[usize; 4],
     i_face: usize,
@@ -28,7 +28,9 @@ pub fn find_adjacent_face_index(
     panic!();
 }
 
-fn remove(i_tet: usize, tet2tet: &mut [usize], tet2vtx: &mut [usize]) {
+/// Logically delete `i_tet` from the mesh: severs all adjacency links to its neighbours in
+/// `tet2tet` (both sides) and overwrites its vertex slots in `tet2vtx` with `usize::MAX`.
+pub fn remove(i_tet: usize, tet2tet: &mut [usize], tet2vtx: &mut [usize]) {
     for i2_node in 0..4 {
         let k_tet = tet2tet[i_tet * 4 + i2_node];
         if k_tet == usize::MAX {
@@ -39,8 +41,8 @@ fn remove(i_tet: usize, tet2tet: &mut [usize], tet2vtx: &mut [usize]) {
             i2_node,
             k_tet,
             &tet2vtx,
-            &crate::elem2elem::TET_FACE2IDX,
-            &crate::elem2elem::TET_IDX2NODE,
+            &del_geo_core::tet::FACE2IDX,
+            &del_geo_core::tet::IDX2NODE,
         );
         tet2tet[i_tet * 4 + i2_node] = usize::MAX;
         tet2tet[k_tet * 4 + k2_node] = usize::MAX;
@@ -50,6 +52,9 @@ fn remove(i_tet: usize, tet2tet: &mut [usize], tet2vtx: &mut [usize]) {
     }
 }
 
+/// Candidate for collapsing two adjacent boundary tets into a single pyramid.
+/// `i0_node` is the boundary face node of `i_tet`; `i1_node` / `j0_node` identify the shared
+/// interior apex vertex.
 #[derive(Debug, Clone)]
 struct MergeTwoTetsIntoPrm {
     i_tet: usize,
@@ -60,8 +65,10 @@ struct MergeTwoTetsIntoPrm {
 }
 
 impl MergeTwoTetsIntoPrm {
+    /// Returns the 5 vertex indices of the pyramid formed by merging the two tets.
+    /// Winding: [base quad (k0,k3,k2,k1), apex k4].
     fn prism_vtxs(&self, tet2vtx: &[usize]) -> [usize; 5] {
-        use crate::elem2elem::{TET_FACE2IDX, TET_IDX2NODE};
+        use del_geo_core::tet::{FACE2IDX, IDX2NODE};
         let (i_tet, j_tet, i0_node, i1_node, j0_node) = (
             self.i_tet,
             self.j_tet,
@@ -73,17 +80,17 @@ impl MergeTwoTetsIntoPrm {
         assert_eq!(tet2vtx[j_tet * 4 + j0_node], k4_vtx);
         let k0_vtx = tet2vtx[i_tet * 4 + i1_node];
         let i0_nofa = (0..3)
-            .find(|i| TET_IDX2NODE[TET_FACE2IDX[i0_node] + i] == i1_node)
+            .find(|i| IDX2NODE[FACE2IDX[i0_node] + i] == i1_node)
             .unwrap();
-        let i2_node = TET_IDX2NODE[TET_FACE2IDX[i0_node] + (i0_nofa + 1) % 3];
-        let i3_node = TET_IDX2NODE[TET_FACE2IDX[i0_node] + (i0_nofa + 2) % 3];
+        let i2_node = IDX2NODE[FACE2IDX[i0_node] + (i0_nofa + 1) % 3];
+        let i3_node = IDX2NODE[FACE2IDX[i0_node] + (i0_nofa + 2) % 3];
         let j1_node = find_adjacent_face_index(
             arrayref::array_ref![tet2vtx, i_tet * 4, 4],
             i1_node,
             j_tet,
             &tet2vtx,
-            &TET_FACE2IDX,
-            &TET_IDX2NODE,
+            &FACE2IDX,
+            &IDX2NODE,
         );
         let k1_vtx = tet2vtx[i_tet * 4 + i2_node];
         let k2_vtx = tet2vtx[j_tet * 4 + j1_node];
@@ -92,59 +99,15 @@ impl MergeTwoTetsIntoPrm {
     }
 }
 
-#[test]
-fn hoge() -> anyhow::Result<(), anyhow::Error> {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("parent directory not found")
-        .join("asset")
-        .join("spot")
-        .join("tet_mesh.npz");
-    let file = std::fs::File::open(&path)?;
-    let mut npz = ndarray_npy::NpzReader::new(file)?;
-    let vtx2xyz: ndarray::Array2<f64> = npz.by_name("points.npy")?;
-    let tet2vtx: ndarray::Array2<i32> = npz.by_name("tets.npy")?;
-    println!("points shape = {:?}", vtx2xyz.dim()); // (N, 3)
-    println!("tets shape   = {:?}", tet2vtx.dim()); // (M, 4)
-
-    let (vtx2xyz, vtx2xyz_offset) = vtx2xyz.to_owned().into_raw_vec_and_offset();
-    let (tet2vtx, tet2vtx_offset) = tet2vtx.to_owned().into_raw_vec_and_offset();
-    assert_eq!(vtx2xyz_offset, Some(0));
-    assert_eq!(tet2vtx_offset, Some(0));
-
-    let mut tet2vtx = tet2vtx.iter().map(|v| *v as usize).collect::<Vec<_>>();
-
-    {
-        let mut file = std::fs::File::create("../target/tetmesh.vtk").expect("file not found.");
-        crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3).unwrap();
-        crate::io_vtk::write_vtk_cells(&mut file, crate::io_vtk::VtkElementType::TETRA, &tet2vtx)
-            .unwrap();
-    }
-
-    let mut tet2tet = crate::uniform_mesh::elem2elem(
-        &tet2vtx,
-        4,
-        &crate::elem2elem::TET_FACE2IDX,
-        &crate::elem2elem::TET_IDX2NODE,
-        vtx2xyz.len(),
-    );
-
-    let tri2vtx = crate::elem2elem::extract_boundary_mesh_for_uniform_mesh(
-        &tet2vtx,
-        4,
-        &tet2tet,
-        &crate::elem2elem::TET_FACE2IDX,
-        &crate::elem2elem::TET_IDX2NODE,
-    );
-
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/tetmesh_boundary.obj",
-        &tri2vtx,
-        &vtx2xyz,
-        3,
-    )
-    .unwrap();
-
+/// Scan boundary tet pairs and greedily merge those whose resulting pyramid has a better
+/// condition number (>1.3×) than both source tets. Returns `(pyrmd2vtx, consumed_tets)` where
+/// `pyrmd2vtx` is a flat list of 5-vertex pyramids and `consumed_tets` is the set of tet indices
+/// that were absorbed. Each tet is used at most once.
+pub fn make_pyramids_on_boundary(
+    tet2vtx: &[usize],
+    tet2tet: &[usize],
+    vtx2xyz: &[f64],
+) -> (Vec<usize>, Vec<usize>) {
     let num_tet = tet2vtx.len() / 4;
     let mut cands: Vec<MergeTwoTetsIntoPrm> = vec![];
     for i_tet in 0..num_tet {
@@ -203,7 +166,7 @@ fn hoge() -> anyhow::Result<(), anyhow::Error> {
                 1.0 / del_geo_core::tet::condition_number(p0j, p1j, p2j, p3j).unwrap()
             };
             let c_new = {
-                let pnode2vtx = cand.prism_vtxs(&tet2vtx);
+                let pnode2vtx = cand.prism_vtxs(tet2vtx);
                 let p0 = arrayref::array_ref![vtx2xyz, pnode2vtx[0] * 3, 3];
                 let p1 = arrayref::array_ref![vtx2xyz, pnode2vtx[1] * 3, 3];
                 let p2 = arrayref::array_ref![vtx2xyz, pnode2vtx[2] * 3, 3];
@@ -244,65 +207,10 @@ fn hoge() -> anyhow::Result<(), anyhow::Error> {
         if tets.contains(&i_tet) || tets.contains(&j_tet) {
             continue;
         }
-        let pnode2vtx = cand.prism_vtxs(&tet2vtx);
+        let pnode2vtx = cand.prism_vtxs(tet2vtx);
         pyrmd2vtx.extend_from_slice(&pnode2vtx);
         tets.insert(i_tet);
         tets.insert(j_tet);
     }
-    for i_tet in tets {
-        remove(i_tet, &mut tet2tet, &mut tet2vtx);
-    }
-    let tet2vtx = crate::extract::from_uniform_mesh_lambda(&tet2vtx, 4, |i_tet| {
-        tet2vtx[i_tet * 4] != usize::MAX
-    });
-    dbg!(tet2vtx.len() / 4);
-    dbg!(pyrmd2vtx.len() / 5);
-    let prism2vtx = vec![0usize; 0];
-
-    { // convert tet/prism mixed mesh to polyhedral mesh
-        let num_elem = tet2vtx.len() / 4 + pyrmd2vtx.len() / 5 + prism2vtx.len() / 6;
-        let mut elem2idx_offset = vec![0usize; num_elem + 1];
-        let mut idx2vtx = vec![0usize; tet2vtx.len() + pyrmd2vtx.len() + prism2vtx.len()];
-        dbg!("num_idx", idx2vtx.len());
-        crate::mixed_mesh::to_polyhedron_mesh(
-            &tet2vtx,
-            &pyrmd2vtx,
-            &prism2vtx,
-            &mut elem2idx_offset,
-            &mut idx2vtx,
-        );
-        {
-            let mut elem2volume = vec![0f64; num_elem];
-            crate::polyhedron_mesh::elem2volume(
-                &elem2idx_offset,
-                &idx2vtx,
-                &vtx2xyz,
-                0,
-                &mut elem2volume,
-            );
-            let vmin = elem2volume
-                .into_iter()
-                .min_by(|x, y| x.total_cmp(y))
-                .unwrap();
-            assert!(vmin > 0.0);
-        }
-        let (vtx2kdx_offset, kdx2elem) =
-            crate::vtx2elem::from_polygon_mesh(&elem2idx_offset, &idx2vtx, vtx2xyz.len() / 3);
-        let (elem2jdx, jdx2elem) = crate::polyhedron_mesh::elem2elem_with_vtx2elem(
-            &elem2idx_offset,
-            &idx2vtx,
-            &vtx2kdx_offset,
-            &kdx2elem,
-        );
-        let num_outer_face = jdx2elem.iter().filter(|&i| *i == usize::MAX).count();
-        assert_eq!(num_outer_face, tri2vtx.len()/3 - pyrmd2vtx.len() / 5);
-    }
-
-    {
-        let mut file = std::fs::File::create("../target/tetmesh1.vtk").expect("file not found.");
-        crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3).unwrap();
-        crate::io_vtk::write_vtk_cells_mix(&mut file, &tet2vtx, &pyrmd2vtx, &prism2vtx).unwrap();
-    }
-
-    Ok(())
+    (pyrmd2vtx, tets.into_iter().collect())
 }

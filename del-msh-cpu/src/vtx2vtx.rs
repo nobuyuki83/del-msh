@@ -155,28 +155,35 @@ where
 
 /// make vertex surrounding vertex as edges of polygon mesh.
 /// A polygon mesh is a mixture of elements such as triangle, quadrilateal, pentagon.
-pub fn from_polygon_mesh_edges_with_vtx2elem(
-    elem2idx: &[usize],
-    idx2vtx: &[usize],
-    vtx2jdx: &[usize],
-    jdx2elem: &[usize],
+pub fn from_polygon_mesh_edges_with_vtx2elem<INDEX>(
+    elem2idx: &[INDEX],
+    idx2vtx: &[INDEX],
+    vtx2jdx: &[INDEX],
+    jdx2elem: &[INDEX],
     is_bidirectional: bool,
-) -> (Vec<usize>, Vec<usize>) {
+) -> (Vec<INDEX>, Vec<INDEX>)
+where
+    INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<INDEX>,
+{
     let nvtx = vtx2jdx.len() - 1;
 
-    let mut vtx2kdx = vec![0; nvtx + 1];
-    let mut kdx2vtx = Vec::<usize>::new();
+    let mut vtx2kdx = vec![INDEX::zero(); nvtx + 1];
+    let mut kdx2vtx = Vec::<INDEX>::new();
 
     for i_vtx in 0..nvtx {
         let mut set_vtx_idx = std::collections::BTreeSet::new();
-        for &ielem0 in &jdx2elem[vtx2jdx[i_vtx]..vtx2jdx[i_vtx + 1]] {
-            let num_node = elem2idx[ielem0 + 1] - elem2idx[ielem0];
+        let idx0: usize = vtx2jdx[i_vtx].as_();
+        let idx1: usize = vtx2jdx[i_vtx + 1].as_();
+        for &i_elem0 in &jdx2elem[idx0..idx1] {
+            let ielem0: usize = i_elem0.as_();
+            let num_node: usize = (elem2idx[ielem0 + 1] - elem2idx[ielem0]).as_();
             let num_edge = num_node;
             for i_edge in 0..num_edge {
                 let i_node0 = i_edge;
                 let i_node1 = (i_edge + 1) % num_node;
-                let j_vtx0 = idx2vtx[elem2idx[ielem0] + i_node0];
-                let j_vtx1 = idx2vtx[elem2idx[ielem0] + i_node1];
+                let j_vtx0: usize = idx2vtx[elem2idx[ielem0].as_() + i_node0].as_();
+                let j_vtx1: usize = idx2vtx[elem2idx[ielem0].as_() + i_node1].as_();
                 if j_vtx0 != i_vtx && j_vtx1 != i_vtx {
                     continue;
                 }
@@ -189,10 +196,10 @@ pub fn from_polygon_mesh_edges_with_vtx2elem(
                 }
             }
         }
-        for itr in &set_vtx_idx {
-            kdx2vtx.push(*itr);
+        for &itr in &set_vtx_idx {
+            kdx2vtx.push(itr.as_());
         }
-        vtx2kdx[i_vtx + 1] = vtx2kdx[i_vtx] + set_vtx_idx.len();
+        vtx2kdx[i_vtx + 1] = vtx2kdx[i_vtx] + set_vtx_idx.len().as_();
     }
     (vtx2kdx, kdx2vtx)
 }

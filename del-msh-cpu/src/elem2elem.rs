@@ -1,18 +1,6 @@
 //! methods that generate the elements adjacent to an element
 use num_traits::AsPrimitive;
 
-pub const TET_FACE2IDX: [usize; 5] = [0, 3, 6, 9, 12];
-pub const TET_IDX2NODE: [usize; 12] = [1, 2, 3, 2, 0, 3, 0, 1, 3, 0, 2, 1];
-
-pub const EDGE_FACE2IDX: [usize; 3] = [0, 1, 2];
-pub const EDGE_IDX2NODE: [usize; 2] = [1, 0];
-
-pub const TRI_FACE2IDX: [usize; 4] = [0, 2, 4, 6];
-pub const TRI_IDX2NODE: [usize; 6] = [1, 2, 2, 0, 0, 1];
-
-pub const PYRAMID_FACE2IDX: [usize; 6] = [0, 4, 7, 10, 13, 16];
-pub const PYRAMID_IDX2NODE: [usize; 16] = [0, 3, 2, 1, 0, 1, 4, 1, 2, 4, 2, 3, 4, 3, 0, 4];
-
 pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     let mut face2idx = vec![0; num_node + 1];
     let mut idx2node = vec![0; num_node * 2];
@@ -26,9 +14,18 @@ pub fn face2node_of_polygon_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 
 pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>) {
     match num_node {
-        2 => (EDGE_FACE2IDX.to_vec(), EDGE_IDX2NODE.to_vec()),
-        3 => (TRI_FACE2IDX.to_vec(), TRI_IDX2NODE.to_vec()),
-        4 => (TET_FACE2IDX.to_vec(), TET_IDX2NODE.to_vec()),
+        2 => {
+            use del_geo_core::edge::{EDGE_FACE2IDX, EDGE_IDX2NODE};
+            (EDGE_FACE2IDX.to_vec(), EDGE_IDX2NODE.to_vec())
+        }
+        3 => {
+            use del_geo_core::tri::{FACE2IDX, IDX2NODE};
+            (FACE2IDX.to_vec(), IDX2NODE.to_vec())
+        }
+        4 => (
+            del_geo_core::tet::FACE2IDX.to_vec(),
+            del_geo_core::tet::IDX2NODE.to_vec(),
+        ),
         _ => {
             panic!()
         }

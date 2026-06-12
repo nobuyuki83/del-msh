@@ -26,6 +26,36 @@ where
     vtx2nrm
 }
 
+pub fn vtx2normal_with_mapping<Real>(
+    tri2vtx: &[usize],
+    vtx2xyz: &[Real],
+    vtx2ovtx: &std::collections::HashMap<usize, usize>,
+    ovtx2nrm: &mut [Real],
+) where
+    Real: num_traits::Float,
+{
+    let num_ovtx = vtx2ovtx.len();
+    assert_eq!(ovtx2nrm.len() / 3, num_ovtx);
+    ovtx2nrm.fill(Real::zero());
+    for node2vtx in tri2vtx.chunks(3) {
+        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
+        let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);
+        let p1 = arrayref::array_ref!(vtx2xyz, i1 * 3, 3);
+        let p2 = arrayref::array_ref!(vtx2xyz, i2 * 3, 3);
+        let (un, _area) = del_geo_core::tri3::unit_normal_area(p0, p1, p2);
+        for i_vtx in &node2vtx[0..3] {
+            let &i_ovtx = vtx2ovtx.get(i_vtx).unwrap();
+            assert!(i_ovtx < num_ovtx);
+            ovtx2nrm[i_ovtx * 3] = ovtx2nrm[i_ovtx * 3] + un[0];
+            ovtx2nrm[i_ovtx * 3 + 1] = ovtx2nrm[i_ovtx * 3 + 1] + un[1];
+            ovtx2nrm[i_ovtx * 3 + 2] = ovtx2nrm[i_ovtx * 3 + 2] + un[2];
+        }
+    }
+    for v in ovtx2nrm.chunks_mut(3) {
+        del_geo_core::vec3::normalize_in_place(v.try_into().unwrap());
+    }
+}
+
 pub fn vtx2area<T>(tri2vtx: &[usize], vtx2xyz: &[T]) -> Vec<T>
 where
     T: num_traits::Float + std::ops::AddAssign + std::ops::MulAssign,

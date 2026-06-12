@@ -64,6 +64,7 @@ pub struct DataFromCfdMeshTxt<IDX> {
     pub tet2vtx: Vec<IDX>,
     pub pyrmd2vtx: Vec<IDX>,
     pub prism2vtx: Vec<IDX>,
+    pub hex2vtx: Vec<IDX>,
 }
 
 pub fn read<P: AsRef<std::path::Path>, IDX>(path: P) -> anyhow::Result<DataFromCfdMeshTxt<IDX>>
@@ -132,17 +133,20 @@ where
     let num_pyrmd = pyrmd2vtx.len() / 5;
     let prism2vtx = read_elem::<_, IDX>(&mut reader, "prism", 6, num_tet + num_pyrmd)?;
     let num_prism = prism2vtx.len() / 6;
+    let hex2vtx = read_elem::<_, IDX>(&mut reader, "hex", 8, num_tet + num_pyrmd + num_prism)?;
+    let num_hex = hex2vtx.len() / 8;
     anyhow::ensure!(
-        num_elem == num_tet + num_pyrmd + num_prism,
+        num_elem == num_tet + num_pyrmd + num_prism + num_hex,
         "element count mismatch: expected {}, got {}",
         num_elem,
-        num_tet + num_pyrmd + num_prism
+        num_tet + num_pyrmd + num_prism + num_hex
     );
     Ok(DataFromCfdMeshTxt {
         vtx2xyz,
         tet2vtx,
         pyrmd2vtx,
         prism2vtx,
+        hex2vtx,
     })
 }
 
@@ -152,6 +156,7 @@ fn hoge() {
     assert_eq!(data.tet2vtx.len(), 4);
     assert_eq!(data.pyrmd2vtx.len(), 5);
     assert_eq!(data.prism2vtx.len(), 6);
+    assert_eq!(data.hex2vtx.len(), 8);
     {
         let mut file = std::fs::File::create("../target/cfd_mesh.vtk").expect("file not found.");
         crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz, 3).unwrap();
@@ -160,6 +165,7 @@ fn hoge() {
             &data.tet2vtx,
             &data.pyrmd2vtx,
             &data.prism2vtx,
+            &data.hex2vtx,
         )
         .unwrap();
     }
@@ -167,19 +173,24 @@ fn hoge() {
         let num_tet = data.tet2vtx.len() / 4;
         let num_pyrmd = data.pyrmd2vtx.len() / 5;
         let num_prism = data.prism2vtx.len() / 6;
-        let mut elem2idx_offset = vec![0u32; num_tet + num_pyrmd + num_prism + 1];
-        let mut idx2vtx = vec![0u32; num_tet * 4 + num_pyrmd * 5 + num_prism * 6];
+        let num_hex = data.hex2vtx.len() / 8;
+        let mut elem2idx_offset = vec![0u32; num_tet + num_pyrmd + num_prism + num_hex + 1];
+        let mut idx2vtx = vec![0u32; num_tet * 4 + num_pyrmd * 5 + num_prism * 6 + num_hex * 8];
         crate::mixed_mesh::to_polyhedron_mesh(
             &data.tet2vtx,
             &data.pyrmd2vtx,
             &data.prism2vtx,
+            &data.hex2vtx,
             &mut elem2idx_offset,
             &mut idx2vtx,
         );
         (elem2idx_offset, idx2vtx)
     };
     {
-        let num_elem = data.tet2vtx.len() / 4 + data.pyrmd2vtx.len() / 5 + data.prism2vtx.len() / 6;
+        let num_elem = data.tet2vtx.len() / 4
+            + data.pyrmd2vtx.len() / 5
+            + data.prism2vtx.len() / 6
+            + data.hex2vtx.len() / 8;
         let mut elem2volume = vec![0f32; num_elem];
         crate::polyhedron_mesh::elem2volume(
             &elem2idx_offset,

@@ -107,19 +107,27 @@ where
 ///
 /// # Returns
 /// * `Vec<usize>` - Flattened edge connectivity
-pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) -> Vec<usize> {
+pub fn from_polygon_mesh<INDEX>(
+    elem2idx_offset: &[INDEX],
+    idx2vtx: &[INDEX],
+    num_vtx: usize,
+) -> Vec<INDEX>
+where
+    INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<INDEX>,
+{
     // Build vertex-to-element adjacency for polygon mesh
-    let vtx2elem = crate::vtx2elem::from_polygon_mesh(elem2idx, idx2vtx, num_vtx);
+    let vtx2elem = crate::vtx2elem::from_polygon_mesh(elem2idx_offset, idx2vtx, num_vtx);
     // Extract vertex-to-vertex connectivity from polygon edges
     let vtx2vtx = crate::vtx2vtx::from_polygon_mesh_edges_with_vtx2elem(
-        elem2idx,
+        elem2idx_offset,
         idx2vtx,
         &vtx2elem.0,
         &vtx2elem.1,
         false, // Don't include duplicate edges
     );
     // Convert to edge list
-    let mut edge2vtx = vec![0usize; vtx2vtx.1.len() * 2];
+    let mut edge2vtx = vec![INDEX::zero(); vtx2vtx.1.len() * 2];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
 }

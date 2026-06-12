@@ -16,12 +16,14 @@ fn mix_mesh_to_polyhedron_mesh(
     tet2vtx: &Bound<'_, PyAny>,
     pyrmd2vtx: &Bound<'_, PyAny>,
     prism2vtx: &Bound<'_, PyAny>,
+    hex2vtx: &Bound<'_, PyAny>,
     elem2idx_offset: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
 ) -> PyResult<()> {
     let tet2vtx = get_tensor(tet2vtx)?;
     let pyrmd2vtx = get_tensor(pyrmd2vtx)?;
     let prism2vtx = get_tensor(prism2vtx)?;
+    let hex2vtx = get_tensor(hex2vtx)?;
     let elem2idx_offset = get_tensor(elem2idx_offset)?;
     let idx2vtx = get_tensor(idx2vtx)?;
     let device = tet2vtx.ctx.device_type;
@@ -46,6 +48,7 @@ fn mix_mesh_to_polyhedron_mesh(
                 slice!(tet2vtx, u32).unwrap(),
                 slice!(pyrmd2vtx, u32).unwrap(),
                 slice!(prism2vtx, u32).unwrap(),
+                slice!(hex2vtx, u32).unwrap(),
                 slice_mut!(elem2idx_offset, u32).unwrap(),
                 slice_mut!(idx2vtx, u32).unwrap(),
             );

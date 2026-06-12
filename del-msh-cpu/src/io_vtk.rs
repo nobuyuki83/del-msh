@@ -82,6 +82,7 @@ pub fn write_vtk_cells_mix<IDX>(
     tet2vtx: &[IDX],
     pyramid2vtx: &[IDX],
     prism2vtx: &[IDX],
+    hex2vtx: &[IDX],
 ) -> std::io::Result<()>
 where
     IDX: num_traits::PrimInt + std::fmt::Display,
@@ -89,8 +90,9 @@ where
     let num_tet = tet2vtx.len() / 4;
     let num_pyramid = pyramid2vtx.len() / 5;
     let num_prism = prism2vtx.len() / 6;
-    let num_elem = num_tet + num_pyramid + num_prism;
-    let num_idx = 5 * num_tet + 6 * num_pyramid + 7 * num_prism;
+    let num_hex = hex2vtx.len() / 8;
+    let num_elem = num_tet + num_pyramid + num_prism + num_hex;
+    let num_idx = 5 * num_tet + 6 * num_pyramid + 7 * num_prism + 9 * num_hex;
     use std::io::Write;
     let mut writer = std::io::BufWriter::new(file);
     writeln!(writer, "CELLS {num_elem} {num_idx}")?;
@@ -114,6 +116,16 @@ where
         )
         .unwrap();
     }
+    for av in hex2vtx.chunks(8) {
+        write!(writer, "8")?;
+        //av.iter().for_each(|v| write!(writer, " {v}").unwrap());
+        writeln!(
+            writer,
+            " {} {} {} {} {} {} {} {}",
+            av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7]
+        )
+        .unwrap();
+    }
     writeln!(writer, "CELL_TYPES {num_elem}")?;
     for _ in 0..num_tet {
         writeln!(writer, "{}", VtkElementType::TETRA as u32).unwrap();
@@ -123,6 +135,74 @@ where
     }
     for _ in 0..num_prism {
         writeln!(writer, "{}", VtkElementType::WEDGE as u32).unwrap();
+    }
+    for _ in 0..num_hex {
+        writeln!(writer, "{}", VtkElementType::HEXAHEDRON as u32).unwrap();
+    }
+    writer.flush()?;
+    Ok(())
+}
+
+/// Write mixed polyhedron mesh cells from a CSR (jagged) array.
+/// Element type is inferred from node count: 4→tet, 5→pyramid, 6→prism, 8→hex.
+pub fn write_vtk_cells_polyhedron<IDX>(
+    file: &mut std::fs::File,
+    elem2idx_offset: &[IDX],
+    idx2vtx: &[IDX],
+) -> std::io::Result<()>
+where
+    IDX: num_traits::PrimInt + std::fmt::Display,
+{
+    use std::io::Write;
+    let num_elem = elem2idx_offset.len() - 1;
+    let num_idx: usize = elem2idx_offset
+        .iter()
+        .enumerate()
+        .skip(1)
+        .map(|(i, &e)| {
+            let num_node = (e - elem2idx_offset[i - 1]).to_usize().unwrap();
+            num_node + 1
+        })
+        .sum();
+    let mut writer = std::io::BufWriter::new(file);
+    writeln!(writer, "CELLS {num_elem} {num_idx}")?;
+    for i_elem in 0..num_elem {
+        let i0 = elem2idx_offset[i_elem].to_usize().unwrap();
+        let i1 = elem2idx_offset[i_elem + 1].to_usize().unwrap();
+        let av = &idx2vtx[i0..i1];
+        match av.len() {
+            4 => writeln!(writer, "4 {} {} {} {}", av[0], av[1], av[2], av[3])?,
+            5 => writeln!(
+                writer,
+                "5 {} {} {} {} {}",
+                av[0], av[1], av[2], av[3], av[4]
+            )?,
+            6 => writeln!(
+                writer,
+                "6 {} {} {} {} {} {}",
+                av[0], av[2], av[1], av[3], av[5], av[4]
+            )?,
+            8 => writeln!(
+                writer,
+                "8 {} {} {} {} {} {} {} {}",
+                av[0], av[1], av[2], av[3], av[4], av[5], av[6], av[7]
+            )?,
+            n => panic!("unsupported element with {n} nodes"),
+        }
+    }
+    writeln!(writer, "CELL_TYPES {num_elem}")?;
+    for i_elem in 0..num_elem {
+        let num_node = (elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem])
+            .to_usize()
+            .unwrap();
+        let cell_type = match num_node {
+            4 => VtkElementType::TETRA as u32,
+            5 => VtkElementType::PYRAMID as u32,
+            6 => VtkElementType::WEDGE as u32,
+            8 => VtkElementType::HEXAHEDRON as u32,
+            n => panic!("unsupported element with {n} nodes"),
+        };
+        writeln!(writer, "{cell_type}")?;
     }
     writer.flush()?;
     Ok(())

@@ -499,8 +499,8 @@ pub fn boundaryedge2vtx(tri2vtx: &[usize], num_vtx: usize) -> (Vec<usize>, Vec<u
     let mut tri2tri = crate::elem2elem::from_uniform_mesh(
         tri2vtx,
         3,
-        &crate::elem2elem::TRI_FACE2IDX,
-        &crate::elem2elem::TRI_IDX2NODE,
+        &del_geo_core::tri::FACE2IDX,
+        &del_geo_core::tri::IDX2NODE,
         num_vtx,
     );
     let mut bedge2vtx: Vec<usize> = vec![];

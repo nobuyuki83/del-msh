@@ -4,34 +4,44 @@ use num_traits::AsPrimitive;
 
 /// elements surrounding a vertex.
 /// The element can be mixture of line, polygon and polyhedron
-pub fn from_polygon_mesh(
-    elem2idx_offset: &[usize],
-    idx2vtx: &[usize],
+pub fn from_polygon_mesh<INDEX>(
+    elem2idx_offset: &[INDEX],
+    idx2vtx: &[INDEX],
     num_vtx: usize,
-) -> (Vec<usize>, Vec<usize>) {
+) -> (Vec<INDEX>, Vec<INDEX>)
+where
+    INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+    usize: AsPrimitive<INDEX>,
+{
     let num_elem = elem2idx_offset.len() - 1;
-    let mut vtx2jdx = vec![0usize; num_vtx + 1];
+    let mut vtx2jdx = vec![INDEX::zero(); num_vtx + 1];
     for i_elem in 0..num_elem {
-        for i0_vtx in &idx2vtx[elem2idx_offset[i_elem]..elem2idx_offset[i_elem + 1]] {
-            vtx2jdx[i0_vtx + 1] += 1;
+        let idx0: usize = elem2idx_offset[i_elem].as_();
+        let idx1: usize = elem2idx_offset[i_elem + 1].as_();
+        for i0_vtx in &idx2vtx[idx0..idx1] {
+            let i0_vtx: usize = i0_vtx.as_();
+            vtx2jdx[i0_vtx + 1] = vtx2jdx[i0_vtx + 1] + INDEX::one();
         }
     }
     for i_vtx in 0..num_vtx {
-        vtx2jdx[i_vtx + 1] += vtx2jdx[i_vtx];
+        vtx2jdx[i_vtx + 1] = vtx2jdx[i_vtx + 1] + vtx2jdx[i_vtx];
     }
-    let num_jdx = vtx2jdx[num_vtx];
-    let mut jdx2elem = vec![0; num_jdx];
+    let num_jdx: usize = vtx2jdx[num_vtx].as_();
+    let mut jdx2elem = vec![INDEX::zero(); num_jdx];
     for i_elem in 0..num_elem {
-        for &i_vtx0 in &idx2vtx[elem2idx_offset[i_elem]..elem2idx_offset[i_elem + 1]] {
-            let jdx0 = vtx2jdx[i_vtx0];
-            jdx2elem[jdx0] = i_elem;
-            vtx2jdx[i_vtx0] += 1;
+        let idx0: usize = elem2idx_offset[i_elem].as_();
+        let idx1: usize = elem2idx_offset[i_elem + 1].as_();
+        for &i_vtx0 in &idx2vtx[idx0..idx1] {
+            let i_vtx0: usize = i_vtx0.as_();
+            let jdx0: usize = vtx2jdx[i_vtx0].as_();
+            jdx2elem[jdx0] = i_elem.as_();
+            vtx2jdx[i_vtx0] = vtx2jdx[i_vtx0] + INDEX::one();
         }
     }
     for i_vtx in (1..num_vtx).rev() {
         vtx2jdx[i_vtx] = vtx2jdx[i_vtx - 1];
     }
-    vtx2jdx[0] = 0;
+    vtx2jdx[0] = INDEX::zero();
     (vtx2jdx, jdx2elem)
 }
 

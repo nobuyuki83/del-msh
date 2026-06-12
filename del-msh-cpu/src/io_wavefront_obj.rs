@@ -615,6 +615,41 @@ where
     Ok(())
 }
 
+pub fn save_elem2idx_idx2vtx_vtx2xyz<Path, Real>(
+    filepath: Path,
+    elem2idx: &[usize],
+    idx2vtx: &[usize],
+    vtx2xyz: &[Real],
+    num_dim: usize,
+) -> anyhow::Result<()>
+where
+    Path: AsRef<std::path::Path>,
+    Real: num_traits::Float + std::fmt::Display,
+{
+    let file = File::create(filepath).context("file  not found.")?;
+    let mut file = std::io::BufWriter::new(file);
+    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    // let num_vtx = vtx2xyz.len() / num_dim;
+    for i_elem in 0..elem2idx.len() - 1 {
+        let noel = &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]];
+        match noel.len() {
+            3 => writeln!(file, "f {} {} {}", noel[0] + 1, noel[1] + 1, noel[2] + 1)?,
+            4 => writeln!(
+                file,
+                "f {} {} {} {}",
+                noel[0] + 1,
+                noel[1] + 1,
+                noel[2] + 1,
+                noel[3] + 1
+            )?,
+            _ => {
+                unreachable!()
+            }
+        }
+    }
+    Ok(())
+}
+
 // ------------------------/
 
 pub fn save_tri2xyz<Path, Real>(filepath: Path, tri2xyz: &[Real]) -> anyhow::Result<()>
