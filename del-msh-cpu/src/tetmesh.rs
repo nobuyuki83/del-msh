@@ -8,7 +8,7 @@ pub fn find_adjacent_face_index(
     face2idx: &[usize],
     idx2node: &[usize],
 ) -> usize {
-    let iv0 = vtxs_i[idx2node[face2idx[i_face] + 0]];
+    let iv0 = vtxs_i[idx2node[face2idx[i_face]]];
     let iv1 = vtxs_i[idx2node[face2idx[i_face] + 1]];
     let iv2 = vtxs_i[idx2node[face2idx[i_face] + 2]];
     let i_sum = iv0 + iv1 + iv2;
@@ -16,7 +16,7 @@ pub fn find_adjacent_face_index(
     assert_ne!(iv0, iv2);
     let vtxs_j = arrayref::array_ref![tet2vtx, j_tet * 4, 4];
     for j_face in 0..4 {
-        let jv0 = vtxs_j[idx2node[face2idx[j_face] + 0]];
+        let jv0 = vtxs_j[idx2node[face2idx[j_face]]];
         let jv1 = vtxs_j[idx2node[face2idx[j_face] + 1]];
         let jv2 = vtxs_j[idx2node[face2idx[j_face] + 2]];
         let j_sum = jv0 + jv1 + jv2;
@@ -40,7 +40,7 @@ pub fn remove(i_tet: usize, tet2tet: &mut [usize], tet2vtx: &mut [usize]) {
             arrayref::array_ref![tet2vtx, i_tet * 4, 4],
             i2_node,
             k_tet,
-            &tet2vtx,
+            tet2vtx,
             &del_geo_core::tet::FACE2IDX,
             &del_geo_core::tet::IDX2NODE,
         );
@@ -88,7 +88,7 @@ impl MergeTwoTetsIntoPrm {
             arrayref::array_ref![tet2vtx, i_tet * 4, 4],
             i1_node,
             j_tet,
-            &tet2vtx,
+            tet2vtx,
             &FACE2IDX,
             &IDX2NODE,
         );
@@ -118,7 +118,7 @@ pub fn make_pyramids_on_boundary(
                 }
                 let i0_vtx = tet2vtx[i_tet * 4 + i0_node];
                 let res = (0..3)
-                    .map(|i| {
+                    .filter_map(|i| {
                         let i1_node = (i0_node + i) % 4;
                         let j_tet = tet2tet[i_tet * 4 + i1_node];
                         if j_tet == usize::MAX {
@@ -136,11 +136,9 @@ pub fn make_pyramids_on_boundary(
                             j0_node,
                         })
                     })
-                    .flatten()
                     .collect::<Vec<MergeTwoTetsIntoPrm>>();
                 Some(res)
             })
-            .into_iter()
             .flatten()
             .collect();
         cands.extend_from_slice(&cands_i);
@@ -151,7 +149,7 @@ pub fn make_pyramids_on_boundary(
         .filter(|cand| {
             let ci = {
                 let i_tet = cand.i_tet;
-                let p0i = arrayref::array_ref![vtx2xyz, tet2vtx[i_tet * 4 + 0] * 3, 3];
+                let p0i = arrayref::array_ref![vtx2xyz, tet2vtx[i_tet * 4] * 3, 3];
                 let p1i = arrayref::array_ref![vtx2xyz, tet2vtx[i_tet * 4 + 1] * 3, 3];
                 let p2i = arrayref::array_ref![vtx2xyz, tet2vtx[i_tet * 4 + 2] * 3, 3];
                 let p3i = arrayref::array_ref![vtx2xyz, tet2vtx[i_tet * 4 + 3] * 3, 3];
@@ -159,7 +157,7 @@ pub fn make_pyramids_on_boundary(
             };
             let cj = {
                 let j_tet = cand.j_tet;
-                let p0j = arrayref::array_ref![vtx2xyz, tet2vtx[j_tet * 4 + 0] * 3, 3];
+                let p0j = arrayref::array_ref![vtx2xyz, tet2vtx[j_tet * 4] * 3, 3];
                 let p1j = arrayref::array_ref![vtx2xyz, tet2vtx[j_tet * 4 + 1] * 3, 3];
                 let p2j = arrayref::array_ref![vtx2xyz, tet2vtx[j_tet * 4 + 2] * 3, 3];
                 let p3j = arrayref::array_ref![vtx2xyz, tet2vtx[j_tet * 4 + 3] * 3, 3];
@@ -194,7 +192,7 @@ pub fn make_pyramids_on_boundary(
             };
             //
             let c_old = ci.min(cj);
-            c_new.map_or(false, |c| c > c_old * 1.3)
+            c_new.is_some_and(|c| c > c_old * 1.3)
         })
         .collect();
     dbg!(cands.len());

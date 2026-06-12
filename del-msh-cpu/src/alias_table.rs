@@ -66,7 +66,7 @@ impl AliasTable {
         }
 
         // 残りは全て 1 に丸める
-        for i in large.into_iter().chain(small.into_iter()) {
+        for i in large.into_iter().chain(small) {
             prob[i] = 1.0;
             alias[i] = i as u32;
         }

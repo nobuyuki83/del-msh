@@ -87,16 +87,12 @@ fn parametric_coord(query: &[f32; 3], node2vtx: &[u32], vtx2xyz: &[f32]) -> Opti
     };
     match node2vtx.len() {
         4 => {
-            if let Some(bc) = del_geo_core::tet::barycentric_coord_for_origin(
+            del_geo_core::tet::barycentric_coord_for_origin(
                 &shift(node2vtx[0] as usize),
                 &shift(node2vtx[1] as usize),
                 &shift(node2vtx[2] as usize),
                 &shift(node2vtx[3] as usize),
-            ) {
-                Some([bc.0, bc.1, bc.2])
-            } else {
-                None
-            }
+            ).map(|bc| [bc.0, bc.1, bc.2])
         }
         5 => del_geo_core::pyramid::parametric_coord_for_origin(
             &shift(node2vtx[0] as usize),
@@ -153,22 +149,14 @@ pub fn subdivide(
     idx2vtx: &[u32],
     vtx2xyz: &[f32],
 ) -> (Vec<u32>, Vec<u32>, Vec<f32>) {
-    let vtx2elem = vtx2elem(&elem2idx_offset, &idx2vtx, vtx2xyz.len() / 3);
-    let edge2vtx = edge2vtx_with_vtx2elem(&elem2idx_offset, &idx2vtx, &vtx2elem.0, &vtx2elem.1);
+    let vtx2elem = vtx2elem(elem2idx_offset, idx2vtx, vtx2xyz.len() / 3);
+    let edge2vtx = edge2vtx_with_vtx2elem(elem2idx_offset, idx2vtx, &vtx2elem.0, &vtx2elem.1);
     let elem2elem =
-        elem2elem_with_vtx2elem::<u32>(&elem2idx_offset, &idx2vtx, &vtx2elem.0, &vtx2elem.1);
-    let quad2vtx = extract_quad_face(&elem2idx_offset, &idx2vtx, &elem2elem.0, &elem2elem.1);
+        elem2elem_with_vtx2elem::<u32>(elem2idx_offset, idx2vtx, &vtx2elem.0, &vtx2elem.1);
+    let quad2vtx = extract_quad_face(elem2idx_offset, idx2vtx, &elem2elem.0, &elem2elem.1);
     let num_elem = elem2idx_offset.len() - 1;
     let hex2elem: Vec<usize> = (0..num_elem)
-        .map(|i_elem| {
-            let num_node = elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem];
-            if num_node == 8 {
-                Some(i_elem)
-            } else {
-                None
-            }
-        })
-        .flatten()
+        .filter(|&i_elem| elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem] == 8)
         .collect();
     //
     let num_vtx0 = vtx2xyz.len() / 3;
@@ -177,7 +165,7 @@ pub fn subdivide(
     let num_wtx = num_vtx0 + num_edge0 + num_quad0 + hex2elem.len();
     let wtx2xyz = {
         let mut wtx2xyz = Vec::<f32>::with_capacity(num_wtx * 3);
-        wtx2xyz.extend_from_slice(&vtx2xyz);
+        wtx2xyz.extend_from_slice(vtx2xyz);
         use del_geo_core::vec3::Vec3;
         edge2vtx.chunks(2).for_each(|vtxs| {
             let p0 = arrayref::array_ref![vtx2xyz, vtxs[0] as usize * 3, 3];
@@ -274,7 +262,7 @@ pub fn subdivide(
                     num_vtx0,
                 );
                 let pyrmdquad2wtx: Vec<_> = (0..5)
-                    .map(|i_face| {
+                    .filter_map(|i_face| {
                         let idx0 = del_geo_core::pyramid::FACE2IDX[i_face];
                         let idx1 = del_geo_core::pyramid::FACE2IDX[i_face + 1];
                         if idx1 - idx0 != 4 {
@@ -291,7 +279,6 @@ pub fn subdivide(
                         let i_quad = map_vtx2quad.get(&node2vtx).unwrap();
                         Some((num_vtx0 + num_edge0 + i_quad) as u32)
                     })
-                    .flatten()
                     .collect();
                 assert_eq!(pyrmdquad2wtx.len(), 1);
                 let (pyramid2wtx, tet2wtx) = del_geo_core::pyramid::subdivide(
@@ -322,7 +309,7 @@ pub fn subdivide(
                     num_vtx0,
                 );
                 let prismquad2wtx: Vec<_> = (0..5)
-                    .map(|i_face| {
+                    .filter_map(|i_face| {
                         let idx0 = del_geo_core::prism::FACE2IDX[i_face];
                         let idx1 = del_geo_core::prism::FACE2IDX[i_face + 1];
                         if idx1 - idx0 != 4 {
@@ -339,7 +326,6 @@ pub fn subdivide(
                         let i_quad = map_vtx2quad.get(&node2vtx).unwrap();
                         Some((num_vtx0 + num_edge0 + i_quad) as u32)
                     })
-                    .flatten()
                     .collect();
                 let prism2wtx = del_geo_core::prism::subdivide(
                     arrayref::array_ref![prismcorner2wtx, 0, 6],
@@ -476,6 +462,7 @@ pub fn test_elem2volume() {
 
 /// Recursive BVH traversal that updates `best_dist_sq`, `best_elem`, and `best_weights` with the
 /// closest element found so far. Visits the nearer child first to prune the farther one early.
+#[allow(clippy::too_many_arguments)]
 fn search_elem_contains_query_using_bvh(
     query: &[f32; 3],
     bvhnodes: &[u32],
@@ -677,7 +664,7 @@ where
             if jdx2elem[elem2jdx_offset[i_elem].as_() + i_face] != INDEX::max_value() {
                 continue;
             }
-            let mut vtxs_i = vertices_on_face(i_elem, i_face, &elem2idx_offset, &idx2vtx);
+            let mut vtxs_i = vertices_on_face(i_elem, i_face, elem2idx_offset, idx2vtx);
             let sum_i: INDEX = vtxs_i.iter().sum();
             vtxs_i.sort();
             let i0_vtx: usize = vtxs_i[0].as_();
@@ -694,8 +681,8 @@ where
                     let mut vtxs_j = crate::polyhedron_mesh::vertices_on_face(
                         j_elem,
                         j_face,
-                        &elem2idx_offset,
-                        &idx2vtx,
+                        elem2idx_offset,
+                        idx2vtx,
                     );
                     if vtxs_i.len() != vtxs_j.len() {
                         continue;
@@ -769,10 +756,8 @@ where
         let num_face: usize = (elem2jdx_offset[i_elem + 1] - elem2jdx_offset[i_elem]).as_();
         for i_face in 0..num_face {
             let j_elem = jdx2elem[elem2jdx_offset[i_elem].as_() + i_face];
-            if j_elem != INDEX::max_value() {
-                if j_elem.as_() < i_elem {
-                    continue;
-                }
+            if j_elem != INDEX::max_value() && j_elem.as_() < i_elem {
+                continue;
             }
             let nofa = node_in_face(num_noel, i_face);
             if nofa.len() != 4 {

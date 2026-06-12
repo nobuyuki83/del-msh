@@ -221,6 +221,7 @@ where
             if elem2elem[i_elem * num_face_per_elem + i_face] != Index::max_value() {
                 continue;
             }
+            #[allow(clippy::needless_range_loop)]
             for jdx in face2idx[i_face]..face2idx[i_face + 1] {
                 let i_node = idx2node[jdx];
                 bnd_face2vtx.push(elem2vtx[i_elem * num_node + i_node]);
