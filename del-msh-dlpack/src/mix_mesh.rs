@@ -31,14 +31,19 @@ fn mix_mesh_to_polyhedron_mesh(
     let num_tet = shape(tet2vtx, 0).unwrap();
     let num_pyrmd = shape(pyrmd2vtx, 0).unwrap();
     let num_prism = shape(prism2vtx, 0).unwrap();
+    let num_hex = shape(hex2vtx, 0).unwrap();
     let num_elem = shape(elem2idx_offset, 0).unwrap() - 1;
     let num_idx = shape(idx2vtx, 0).unwrap();
     //
-    assert_eq!(num_elem, num_tet + num_pyrmd + num_prism);
-    assert_eq!(num_idx, num_tet * 4 + num_pyrmd * 5 + num_prism * 6);
+    assert_eq!(num_elem, num_tet + num_pyrmd + num_prism + num_hex);
+    assert_eq!(
+        num_idx,
+        num_tet * 4 + num_pyrmd * 5 + num_prism * 6 + num_hex * 8
+    );
     chk2::<u32>(tet2vtx, num_tet, 4, device).unwrap();
     chk2::<u32>(pyrmd2vtx, num_pyrmd, 5, device).unwrap();
     chk2::<u32>(prism2vtx, num_prism, 6, device).unwrap();
+    chk2::<u32>(hex2vtx, num_hex, 8, device).unwrap();
     chk1::<u32>(elem2idx_offset, num_elem + 1, device).unwrap();
     chk1::<u32>(idx2vtx, num_idx, device).unwrap();
     //
