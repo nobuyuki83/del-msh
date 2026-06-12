@@ -86,14 +86,13 @@ fn parametric_coord(query: &[f32; 3], node2vtx: &[u32], vtx2xyz: &[f32]) -> Opti
         [p[0] - query[0], p[1] - query[1], p[2] - query[2]]
     };
     match node2vtx.len() {
-        4 => {
-            del_geo_core::tet::barycentric_coord_for_origin(
-                &shift(node2vtx[0] as usize),
-                &shift(node2vtx[1] as usize),
-                &shift(node2vtx[2] as usize),
-                &shift(node2vtx[3] as usize),
-            ).map(|bc| [bc.0, bc.1, bc.2])
-        }
+        4 => del_geo_core::tet::barycentric_coord_for_origin(
+            &shift(node2vtx[0] as usize),
+            &shift(node2vtx[1] as usize),
+            &shift(node2vtx[2] as usize),
+            &shift(node2vtx[3] as usize),
+        )
+        .map(|bc| [bc.0, bc.1, bc.2]),
         5 => del_geo_core::pyramid::parametric_coord_for_origin(
             &shift(node2vtx[0] as usize),
             &shift(node2vtx[1] as usize),
