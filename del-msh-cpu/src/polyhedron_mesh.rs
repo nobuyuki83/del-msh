@@ -473,6 +473,9 @@ fn search_elem_contains_query_using_bvh(
     best_elem: &mut usize,
     best_param: &mut [f32; 3],
 ) {
+    if *best_elem != usize::MAX {
+        return; // already found a containing element
+    }
     let aabb = arrayref::array_ref!(bvhnode2aabb, i_bvhnode * 6, 6);
     if !del_geo_core::aabb3::is_contain(aabb, query) {
         return;
@@ -482,27 +485,13 @@ fn search_elem_contains_query_using_bvh(
         let i_elem = bvhnodes[i_bvhnode * 3 + 1] as usize;
         let i0 = elem2idx_offset[i_elem] as usize;
         let i1 = elem2idx_offset[i_elem + 1] as usize;
-        let res = parametric_coord(query, &idx2vtx[i0..i1], vtx2xyz);
-        if let Some(bc) = res {
+        if let Some(bc) = parametric_coord(query, &idx2vtx[i0..i1], vtx2xyz) {
             *best_elem = i_elem;
             *best_param = bc;
         }
     } else {
         let i_child0 = bvhnodes[i_bvhnode * 3 + 1] as usize;
         let i_child1 = bvhnodes[i_bvhnode * 3 + 2] as usize;
-        let d0 = del_geo_core::aabb3::min_sq_dist_to_point3(
-            arrayref::array_ref!(bvhnode2aabb, i_child0 * 6, 6),
-            query,
-        );
-        let d1 = del_geo_core::aabb3::min_sq_dist_to_point3(
-            arrayref::array_ref!(bvhnode2aabb, i_child1 * 6, 6),
-            query,
-        );
-        let (first, second) = if d0 <= d1 {
-            (i_child0, i_child1)
-        } else {
-            (i_child1, i_child0)
-        };
         search_elem_contains_query_using_bvh(
             query,
             bvhnodes,
@@ -510,7 +499,7 @@ fn search_elem_contains_query_using_bvh(
             elem2idx_offset,
             idx2vtx,
             vtx2xyz,
-            first,
+            i_child0,
             best_elem,
             best_param,
         );
@@ -521,7 +510,7 @@ fn search_elem_contains_query_using_bvh(
             elem2idx_offset,
             idx2vtx,
             vtx2xyz,
-            second,
+            i_child1,
             best_elem,
             best_param,
         );
@@ -533,7 +522,7 @@ fn search_elem_contains_query_using_bvh(
 /// - `wtx2elem`: (N,) - nearest element index per query point
 /// - `wtx2param`: (N×6, flat) - shape function weights within the nearest element;
 ///   padded with zeros for element types with fewer than 6 nodes
-pub fn nearest_elem_for_points(
+pub fn search_elem_contain_points(
     bvhnodes: &[u32],
     bvhnode2aabb: &[f32],
     elem2idx_offset: &[u32],
@@ -862,4 +851,45 @@ where
     let mut edge2vtx = vec![INDEX::zero(); vtx2vtx.1.len() * 2];
     crate::edge2vtx::from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
+}
+
+pub fn interpolate_values_at_points<INDEX>(
+    elem2idx_offset: &[INDEX],
+    idx2vtx: &[INDEX],
+    vtx2value: &[f32],  // flat (num_vtx * num_value_dim)
+    wtx2elem: &[INDEX], // element index per query, INDEX::max_value() if outside mesh
+    wtx2param: &[f32],  // parametric coords [r,s,t] per query
+    num_value_dim: usize,
+    wtx2value: &mut [f32],
+) where
+    INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
+{
+    let num_wtx = wtx2elem.len();
+    assert_eq!(wtx2param.len(), num_wtx * 3);
+    assert_eq!(wtx2value.len(), num_wtx * num_value_dim);
+    for i_wtx in 0..num_wtx {
+        let i_elem = wtx2elem[i_wtx];
+        if i_elem == INDEX::max_value() {
+            continue;
+        }
+        let i_elem: usize = i_elem.as_();
+        let i0: usize = elem2idx_offset[i_elem].as_();
+        let i1: usize = elem2idx_offset[i_elem + 1].as_();
+        let pco = arrayref::array_ref!(wtx2param, i_wtx * 3, 3);
+        let num_node = i1 - i0;
+        let sfs: Vec<f32> = match num_node {
+            4 => vec![pco[0], pco[1], pco[2], 1.0 - pco[0] - pco[1] - pco[2]],
+            5 => del_geo_core::pyramid::shapefunc(*pco).to_vec(),
+            6 => del_geo_core::prism::shapefunc(pco).to_vec(),
+            8 => del_geo_core::hex::shapefunc(pco).to_vec(),
+            _ => continue,
+        };
+        let out = &mut wtx2value[i_wtx * num_value_dim..(i_wtx + 1) * num_value_dim];
+        for (i_node, &sf) in sfs.iter().enumerate() {
+            let i_vtx: usize = idx2vtx[i0 + i_node].as_();
+            for d in 0..num_value_dim {
+                out[d] += sf * vtx2value[i_vtx * num_value_dim + d];
+            }
+        }
+    }
 }

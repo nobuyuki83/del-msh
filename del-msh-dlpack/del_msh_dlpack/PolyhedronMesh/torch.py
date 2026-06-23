@@ -1,5 +1,6 @@
 import torch
 from .. import util_torch
+from .. import _CapsuleAsDLPack
 
 def make_elem2volume(
     elem2idx_offset: torch.Tensor,
@@ -129,7 +130,7 @@ def make_bvhnodes_bvhnode2aabb(
     return bvhnodes, bvhnode2aabb
 
 
-def find_nearest_parametric_coordinates(
+def search_elem_contain_points(
         elem2idx_offset: torch.Tensor,
         idx2vtx: torch.Tensor,
         vtx2xyz: torch.Tensor,
@@ -166,7 +167,7 @@ def find_nearest_parametric_coordinates(
         stream_ptr = torch.cuda.current_stream(device).cuda_stream
     #
     from .. import PolyhedronMesh
-    PolyhedronMesh.nearest_elem_for_points(
+    PolyhedronMesh.search_elem_contain_points(
         util_torch.to_dlpack_safe(bvhnodes, stream_ptr),
         util_torch.to_dlpack_safe(bvhnode2aabb, stream_ptr),
         util_torch.to_dlpack_safe(elem2idx_offset, stream_ptr),
@@ -179,6 +180,94 @@ def find_nearest_parametric_coordinates(
     )
     return wtx2elem, wtx2param
 
+def interpolate_values_at_points(
+        elem2idx_offset: torch.Tensor,
+        idx2vtx: torch.Tensor,
+        vtx2value: torch.Tensor,
+        wtx2elem: torch.Tensor,
+        wtx2param: torch.Tensor) -> torch.Tensor:
+    """Interpolate per-vertex values at query points using pre-computed element membership.
+
+    Args:
+        elem2idx_offset: (num_elem+1,) uint32 - CSR offset array
+        idx2vtx: (num_idx,) uint32 - concatenated vertex indices
+        vtx2value: (num_vtx, num_value_dim) float32 - per-vertex values to interpolate
+        wtx2elem: (num_wtx,) uint32 - element index per query (u32::MAX if outside mesh)
+        wtx2param: (num_wtx, 3) float32 - parametric coords from search_elem_contain_points
+    Returns:
+        wtx2value: (num_wtx, num_value_dim) float32 - interpolated values (0 for outside points)
+    """
+    num_elem = elem2idx_offset.shape[0] - 1
+    num_idx = idx2vtx.shape[0]
+    num_vtx, num_value_dim = vtx2value.shape
+    num_wtx = wtx2elem.shape[0]
+    device = elem2idx_offset.device
+    #
+    util_torch.assert_shape_dtype_device(elem2idx_offset, (num_elem + 1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2value, (num_vtx, num_value_dim), torch.float32, device)
+    util_torch.assert_shape_dtype_device(wtx2elem, (num_wtx,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(wtx2param, (num_wtx, 3), torch.float32, device)
+    #
+    wtx2value_out = torch.zeros((num_wtx, num_value_dim), dtype=torch.float32, device=device)
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
+    from .. import PolyhedronMesh
+    PolyhedronMesh.interpolate_values_at_points(
+        util_torch.to_dlpack_safe(elem2idx_offset, stream_ptr),
+        util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2value, stream_ptr),
+        util_torch.to_dlpack_safe(wtx2elem, stream_ptr),
+        util_torch.to_dlpack_safe(wtx2param, stream_ptr),
+        util_torch.to_dlpack_safe(wtx2value_out, stream_ptr),
+        stream_ptr
+    )
+    return wtx2value_out
 
 
+def subdivide(
+        elem2idx_offset: torch.Tensor,
+        idx2vtx: torch.Tensor,
+        vtx2xyz: torch.Tensor):
+    """Subdivide a mixed polyhedron mesh once.
+
+    Args:
+        elem2idx_offset: (num_elem+1,) uint32 - CSR offset array
+        idx2vtx: (num_idx,) uint32 - concatenated vertex indices for all elements
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        elem2idx_offset: (num_new_elem+1,) uint32
+        idx2vtx: (num_new_idx,) uint32
+        vtx2xyz: (num_new_vtx, 3) float32
+    """
+    num_elem = elem2idx_offset.shape[0] - 1
+    num_idx = idx2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
+    device = elem2idx_offset.device
+    #
+    util_torch.assert_shape_dtype_device(elem2idx_offset, (num_elem + 1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
+    from .. import PolyhedronMesh
+    cap0, cap1, cap2 = PolyhedronMesh.subdivide(
+        util_torch.to_dlpack_safe(elem2idx_offset, stream_ptr),
+        util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        stream_ptr
+    )
+    return (
+        torch.from_dlpack(_CapsuleAsDLPack(cap0)),
+        torch.from_dlpack(_CapsuleAsDLPack(cap1)),
+        torch.from_dlpack(_CapsuleAsDLPack(cap2)),
+    )
 
