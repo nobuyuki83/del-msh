@@ -80,10 +80,10 @@ def test_01():
     inside = wtx2elem != torch.iinfo(torch.uint32).max
     err = (wtx2value[inside] - wtx2value1_expected[inside]).abs()
     assert err.max().item() < 1.0e-4
-    d_elem2idx_offset = elem2idx_offset.cuda()
-    d_idx2vtx = idx2vtx.cuda()
-    d_vtx2xyz = vtx2xyz.cuda()
     if torch.cuda.is_available():
+        d_elem2idx_offset = elem2idx_offset.cuda()
+        d_idx2vtx = idx2vtx.cuda()
+        d_vtx2xyz = vtx2xyz.cuda()
         d_bvhnodes, d_bvhnode2aabb = del_msh_dlpack.PolyhedronMesh.torch.make_bvhnodes_bvhnode2aabb(
             d_elem2idx_offset,
             d_idx2vtx,
