@@ -23,10 +23,16 @@ def hoge():
         elem2idx_offset,
         idx2vtx,
         vtx2xyz)
+
+    #elem2idx_offset1 = elem2idx_offset
+    #idx2vtx1 = idx2vtx
+    #vtx2xyz1 = vtx2xyz
+
     elem2idx_offset1, idx2vtx1, vtx2xyz1 = del_msh_dlpack.PolyhedronMesh.torch.subdivide(
         elem2idx_offset,
         idx2vtx,
         vtx2xyz)
+
     elem2idx_offset1, idx2vtx1, vtx2xyz1 = del_msh_dlpack.PolyhedronMesh.torch.subdivide(
         elem2idx_offset1,
         idx2vtx1,
@@ -39,6 +45,7 @@ def hoge():
         elem2idx_offset1,
         idx2vtx1,
         vtx2xyz1)
+    print("elem2volume", elem2volume1.shape)
     assert abs(elem2volume1.sum() - elem2volume.sum()) < 1e-6
     #
     # per-vertex values: linear transform of position, v = A @ xyz + b
@@ -46,9 +53,10 @@ def hoge():
     b = torch.tensor([1., -1., 0.5], dtype=torch.float32)
     vtx2value1 = (vtx2xyz1 @ A.T) + b  # (num_vtx, 3)
     #
-    num_query = 1000
+    num_query = 200
     lo = torch.tensor([0., 0., -2.], dtype=torch.float32)
     hi = torch.tensor([1., 1.,  1.], dtype=torch.float32)
+    torch.manual_seed(0)
     wtx2xyz = torch.rand(num_query, 3, dtype=torch.float32) * (hi - lo) + lo
     wtx2value1_expected = (wtx2xyz @ A.T) + b
     return elem2idx_offset1, idx2vtx1, vtx2xyz1, vtx2value1, wtx2xyz, wtx2value1_expected,
@@ -84,10 +92,20 @@ def test_01():
         d_elem2idx_offset = elem2idx_offset.cuda()
         d_idx2vtx = idx2vtx.cuda()
         d_vtx2xyz = vtx2xyz.cuda()
+        d_wtx2xyz = wtx2xyz.cuda()
         d_bvhnodes, d_bvhnode2aabb = del_msh_dlpack.PolyhedronMesh.torch.make_bvhnodes_bvhnode2aabb(
             d_elem2idx_offset,
             d_idx2vtx,
             d_vtx2xyz)
         assert torch.equal(d_bvhnodes.cpu(), bvhnodes)
-        print( (d_bvhnode2aabb.cpu()- bvhnode2aabb).abs() )
+        d_wtx2elem, d_wtx2param = del_msh_dlpack.PolyhedronMesh.torch.search_elem_contain_points(
+            d_elem2idx_offset,
+            d_idx2vtx,
+            d_vtx2xyz,
+            d_bvhnodes,
+            d_bvhnode2aabb,
+            d_wtx2xyz)
+        assert torch.equal(d_wtx2elem.cpu(), wtx2elem)
+        assert (d_wtx2param.cpu()-wtx2param).abs().max() < 1.0e-7
+
 
