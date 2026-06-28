@@ -86,13 +86,24 @@ fn parametric_coord(query: &[f32; 3], node2vtx: &[u32], vtx2xyz: &[f32]) -> Opti
         [p[0] - query[0], p[1] - query[1], p[2] - query[2]]
     };
     match node2vtx.len() {
-        4 => del_geo_core::tet::barycentric_coord_for_origin(
-            &shift(node2vtx[0] as usize),
-            &shift(node2vtx[1] as usize),
-            &shift(node2vtx[2] as usize),
-            &shift(node2vtx[3] as usize),
-        )
-        .map(|bc| [bc.0, bc.1, bc.2]),
+        4 => {
+            let bc = del_geo_core::tet::barycentric_coord_for_origin(
+                &shift(node2vtx[0] as usize),
+                &shift(node2vtx[1] as usize),
+                &shift(node2vtx[2] as usize),
+                &shift(node2vtx[3] as usize),
+            );
+            if let Some(bc) = bc {
+                if bc.0 > 0. && bc.1 > 0. && bc.2 > 0. && 1.0-bc.0-bc.1-bc.2 > 0. {
+                    return Some([bc.0, bc.1, bc.2]);
+                }
+                else {
+                    return None
+                }
+            }
+            bc
+        }
+            .map(|bc| [bc.0, bc.1, bc.2]),
         5 => del_geo_core::pyramid::parametric_coord_for_origin(
             &shift(node2vtx[0] as usize),
             &shift(node2vtx[1] as usize),
@@ -530,6 +541,7 @@ pub fn search_elem_contain_points(
     vtx2xyz: &[f32],
     wtx2xyz: &[f32],
 ) -> (Vec<u32>, Vec<f32>) {
+    let _num_elem = elem2idx_offset.len() - 1;
     let num_wtx = wtx2xyz.len() / 3;
     use rayon::prelude::*;
     let mut wtx2elem = vec![u32::MAX; num_wtx];
@@ -542,6 +554,7 @@ pub fn search_elem_contain_points(
             let query: &[f32; 3] = q.try_into().unwrap();
             let mut best_elem = usize::MAX;
             let mut best_weights = [0f32; 3];
+
             search_elem_contains_query_using_bvh(
                 query,
                 bvhnodes,

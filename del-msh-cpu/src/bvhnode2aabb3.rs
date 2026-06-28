@@ -213,9 +213,12 @@ pub fn update_for_polygon_polyhedron_mesh_with_bvh<Index, Real>(
         let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
         let aabb = {
             let zero = Real::zero();
-            let one = Real::one();
-            let mut aabb3 = [one, zero, zero, zero, zero, zero];
-            for &i_vtx in &idx2vtx[elem2idx[i_elem].as_()..elem2idx[i_elem + 1].as_()] {
+            let idx0: usize = elem2idx[i_elem].as_();
+            let idx1: usize = elem2idx[i_elem + 1].as_();
+            let p0 = arrayref::array_ref![vtx2xyz, idx2vtx[idx0].as_() * 3, 3];
+            let mut aabb3 = [zero; 6];
+            del_geo_core::aabb3::set_as_cube(&mut aabb3, p0, zero);
+            for &i_vtx in &idx2vtx[idx0 + 1..idx1] {
                 let i_vtx = i_vtx.as_();
                 let xyz = vtx2xyz[i_vtx * 3..i_vtx * 3 + 3].try_into().unwrap();
                 del_geo_core::aabb3::add_point(&mut aabb3, &xyz, zero);
