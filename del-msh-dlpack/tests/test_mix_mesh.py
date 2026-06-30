@@ -5,7 +5,8 @@ import del_msh_dlpack.PolyhedronMesh.torch
 
 def hoge():
     path = pathlib.Path(__file__).parent.parent.parent / "asset" / "cfd_mesh.txt"
-    vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx = del_msh_dlpack.MixMesh3.torch.load_cfd_mesh(str(path))
+    vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx, vtx2velo, vtx2press \
+        = del_msh_dlpack.MixMesh3.torch.load_cfd_mesh(str(path))
     path_vtk = pathlib.Path(__file__).parent.parent.parent / "target" / "mix_mesh.vtk"
     del_msh_dlpack.MixMesh3.torch.save_vtk(
         str(path_vtk),
@@ -93,6 +94,7 @@ def test_01():
         d_idx2vtx = idx2vtx.cuda()
         d_vtx2xyz = vtx2xyz.cuda()
         d_wtx2xyz = wtx2xyz.cuda()
+        d_vtx2value = vtx2value.cuda()
         d_bvhnodes, d_bvhnode2aabb = del_msh_dlpack.PolyhedronMesh.torch.make_bvhnodes_bvhnode2aabb(
             d_elem2idx_offset,
             d_idx2vtx,
@@ -107,5 +109,13 @@ def test_01():
             d_wtx2xyz)
         assert torch.equal(d_wtx2elem.cpu(), wtx2elem)
         assert (d_wtx2param.cpu()-wtx2param).abs().max() < 1.0e-7
+        d_wtx2value = del_msh_dlpack.PolyhedronMesh.torch.interpolate_values_at_points(
+            d_elem2idx_offset,
+            d_idx2vtx,
+            d_vtx2value,
+            d_wtx2elem,
+            d_wtx2param)
+        print( (d_wtx2value.cpu()-wtx2value).max() < 1.0e-7 )
+
 
 

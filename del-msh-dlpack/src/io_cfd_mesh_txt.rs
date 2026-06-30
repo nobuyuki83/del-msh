@@ -18,6 +18,8 @@ fn io_cfd_mesh_txt_load(
     pyo3::Py<PyAny>,
     pyo3::Py<PyAny>,
     pyo3::Py<PyAny>,
+    pyo3::Py<PyAny>,
+    pyo3::Py<PyAny>,
 )> {
     let data = del_msh_cpu::io_cfd_mesh_txt::read::<_, u32>(path)
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
@@ -46,11 +48,23 @@ fn io_cfd_mesh_txt_load(
         vec![(data.hex2vtx.len() as i64) / 8, 8],
         data.hex2vtx,
     );
+    let vtx2velo_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![(data.vtx2velo.len() as i64) / 3, 3],
+        data.vtx2velo,
+    );
+    let vtx2press_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![data.vtx2pressure.len() as i64],
+        data.vtx2pressure,
+    );
     Ok((
         vtx2xyz_cap,
         tet2vtx_cap,
         pyrmd2vtx_cap,
         prism2vtx_cap,
         hex2vtx_cap,
+        vtx2velo_cap,
+        vtx2press_cap,
     ))
 }

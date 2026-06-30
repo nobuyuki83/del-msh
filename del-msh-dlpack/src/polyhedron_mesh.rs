@@ -405,8 +405,37 @@ fn polyhedron_mesh_interpolate_values_at_points(
                 slice_mut!(wtx2value, f32).unwrap(),
             );
         }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::polyhedron_mesh",
+                del_msh_cuda_kernels::get("polyhedron_mesh").unwrap(),
+                "interpolate_values_at_points",
+            )
+            .unwrap();
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_u32(num_wtx as u32);
+            builder.arg_data(&elem2idx_offset.data);
+            builder.arg_data(&idx2vtx.data);
+            builder.arg_data(&vtx2value.data);
+            builder.arg_data(&wtx2elem.data);
+            builder.arg_data(&wtx2param.data);
+            builder.arg_u32(num_value_dim as u32);
+            builder.arg_data(&wtx2value.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                )
+                .unwrap();
+        }
         _ => {
-            todo!()
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported (compile with --features cuda)",
+            ));
         }
     }
     Ok(())

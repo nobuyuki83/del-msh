@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "del_geo/mat4_col_major.h"
 #include "del_geo/mat2x3_col_major.h"
 #include "del_geo/edge2.h"

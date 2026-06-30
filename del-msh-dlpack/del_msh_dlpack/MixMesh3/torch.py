@@ -14,13 +14,16 @@ def load_cfd_mesh(path: str):
         prism2vtx: (num_prism, 6) uint32 - prism connectivity
     """
     from .. import MixMesh3
-    cap_vtx2xyz, cap_tet2vtx, cap_pyrmd2vtx, cap_prism2vtx, cap_hex2vtx = MixMesh3.load_cfd_mesh(path)
+    cap_vtx2xyz, cap_tet2vtx, cap_pyrmd2vtx, cap_prism2vtx, cap_hex2vtx, cap_vtx2velo, cap_vtx2press \
+        = MixMesh3.load_cfd_mesh(path)
     vtx2xyz = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2xyz))
     tet2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_tet2vtx))
     pyrmd2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_pyrmd2vtx))
     prism2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_prism2vtx))
     hex2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_hex2vtx))
-    return vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx
+    vtx2velo = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2velo))
+    vtx2press = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2press))
+    return vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx, vtx2velo, vtx2press
 
 
 def save_vtk(

@@ -226,6 +226,50 @@ where
     Ok(())
 }
 
+pub fn write_vtk_points_with_velocity(
+    file: &mut std::fs::File,
+    points: &[f32],
+    velocities: &[f32],
+) -> std::io::Result<()> {
+    assert_eq!(points.len() % 3, 0);
+    assert_eq!(velocities.len() % 3, 0);
+    assert_eq!(points.len(), velocities.len());
+
+    let n = points.len() / 3;
+
+    use std::io::Write;
+    let mut w = std::io::BufWriter::new(file);
+
+    writeln!(w, "# vtk DataFile Version 3.0")?;
+    writeln!(w, "points with velocity")?;
+    writeln!(w, "ASCII")?;
+    writeln!(w, "DATASET POLYDATA")?;
+
+    writeln!(w, "POINTS {} double", n)?;
+    for i in 0..n {
+        let x = points[3 * i];
+        let y = points[3 * i + 1];
+        let z = points[3 * i + 2];
+        writeln!(w, "{} {} {}", x, y, z)?;
+    }
+
+    writeln!(w, "VERTICES {} {}", n, 2 * n)?;
+    for i in 0..n {
+        writeln!(w, "1 {}", i)?;
+    }
+
+    writeln!(w, "POINT_DATA {}", n)?;
+    writeln!(w, "VECTORS velocity double")?;
+    for i in 0..n {
+        let vx = velocities[3 * i];
+        let vy = velocities[3 * i + 1];
+        let vz = velocities[3 * i + 2];
+        writeln!(w, "{} {} {}", vx, vy, vz)?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use crate::io_vtk::VtkElementType;
