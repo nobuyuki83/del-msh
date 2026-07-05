@@ -202,33 +202,23 @@ where
     let mut pyrmd2vtx = vec!();
     let mut hex2vtx = vec!();
     let mut num_elem_cum = 0;
-    loop {
-        if let Some((num_node, elem2vtx)) = read_elem::<_, IDX>(&mut reader, num_elem_cum) {
-            num_elem_cum += elem2vtx.len() / num_node;
-            match num_node {
-                4 => { tet2vtx = elem2vtx; },
-                5 => { pyrmd2vtx = elem2vtx; },
-                6 => { prism2vtx = elem2vtx; },
-                8 => { hex2vtx = elem2vtx; },
-                _ => { unreachable!(); }
-            }
-        }
-        else {
-            break;
+    while let Some((num_node, elem2vtx)) = read_elem::<_, IDX>(&mut reader, num_elem_cum) {
+        num_elem_cum += elem2vtx.len() / num_node;
+        match num_node {
+            4 => { tet2vtx = elem2vtx; },
+            5 => { pyrmd2vtx = elem2vtx; },
+            6 => { prism2vtx = elem2vtx; },
+            8 => { hex2vtx = elem2vtx; },
+            _ => { unreachable!(); }
         }
     }
     let mut vtx2velo: Vec<f32> = vec!();
     let mut vtx2pressure: Vec<f32> = vec!();
-    loop {
-        if let Some((num_vdim, vtx2value)) = read_value::<_>(&mut reader, num_vtx) {
-            match num_vdim {
-                1 => { vtx2pressure = vtx2value; },
-                3 => { vtx2velo = vtx2value; },
-                _ => { unreachable!(); }
-            }
-        }
-        else{
-            break;
+    while let Some((num_vdim, vtx2value)) = read_value::<_>(&mut reader, num_vtx) {
+        match num_vdim {
+            1 => { vtx2pressure = vtx2value; },
+            3 => { vtx2velo = vtx2value; },
+            _ => { unreachable!(); }
         }
     }
     Ok(DataFromCfdMeshTxt {

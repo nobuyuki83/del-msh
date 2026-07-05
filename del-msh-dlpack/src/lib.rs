@@ -5,7 +5,7 @@ use pyo3::{types::PyModule, Bound, PyResult, Python};
 
 mod array1d;
 mod bvhnode2aabb;
-mod differential_rasterizer;
+mod differentiable_antialias;
 mod edge2elem;
 mod edge2vtx;
 mod io_cfd_mesh_txt;
@@ -45,7 +45,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     polyhedron_mesh::add_functions(_py, m)?;
     offset_array::add_functions(_py, m)?;
     bvhnode2aabb::add_functions(_py, m)?;
-    differential_rasterizer::add_functions(_py, m)?;
+    differentiable_antialias::add_functions(_py, m)?;
     nbody::add_functions(_py, m)?;
     io_nastran::add_functions(_py, m)?;
     io_wavefront_obj::add_functions(_py, m)?;

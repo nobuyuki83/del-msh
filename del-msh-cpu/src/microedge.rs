@@ -48,7 +48,7 @@ pub fn bwd_microedge(
         }
     };
     let transform_pix2world = transform_world2pix.transpose();
-    // horizontal edge
+    // vertical edge
     for iw in 0..img_w {
         for ih0 in 0..img_h - 1 {
             let ih1 = ih0 + 1;

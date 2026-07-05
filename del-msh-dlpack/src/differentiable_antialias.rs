@@ -6,20 +6,14 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(pyo3::wrap_pyfunction!(
-        differential_rasterizer_antialias,
-        m
-    )?)?;
-    m.add_function(pyo3::wrap_pyfunction!(
-        differential_rasterizer_bwd_antialias,
-        m
-    )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(differentiable_antialias_fwd, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(differentiable_antialias_bwd, m)?)?;
     Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
-pub fn differential_rasterizer_bwd_antialias(
+pub fn differentiable_antialias_bwd(
     _py: Python<'_>,
     cedge2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
@@ -106,7 +100,7 @@ pub fn differential_rasterizer_bwd_antialias(
 
 #[allow(clippy::too_many_arguments)]
 #[pyo3::pyfunction]
-pub fn differential_rasterizer_antialias(
+pub fn differentiable_antialias_fwd(
     _py: Python<'_>,
     cedge2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
