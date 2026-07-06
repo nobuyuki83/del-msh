@@ -19,6 +19,7 @@ mod offset_array;
 mod pix2depth;
 mod polyhedron_mesh;
 mod quad_oct_tree;
+mod rasterized_edge_gradient;
 mod trimesh3;
 mod trimesh3_primitive;
 mod trimesh3_raycast;
@@ -51,6 +52,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     io_wavefront_obj::add_functions(_py, m)?;
     io_cfd_mesh_txt::add_functions(_py, m)?;
     io_vtk::add_functions(_py, m)?;
+    rasterized_edge_gradient::add_functions(_py, m)?;
     Ok(())
 }
 

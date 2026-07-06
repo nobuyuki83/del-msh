@@ -72,7 +72,7 @@ pub mod antialias;
 pub mod array1d;
 pub mod grid2;
 pub mod io_cfd_mesh_txt;
-pub mod microedge;
+pub mod rasterized_edge_gradient;
 pub mod mixed_mesh;
 pub mod mortons;
 pub mod nbody;

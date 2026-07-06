@@ -351,7 +351,7 @@ mod tests {
             };
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
             //
-            del_msh_cpu::microedge::bwd_microedge(
+            del_msh_cpu::rasterized_edge_gradient::bwd(
                 &tri2vtx,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
