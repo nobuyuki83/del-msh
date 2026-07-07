@@ -69,8 +69,8 @@ pub fn edge_gradient_and_type(
     for iw in 0..img_w {
         for ih0 in 0..img_h - 1 {
             let ih1 = ih0 + 1;
-            let ipix0 = ih0 * img_w + iw;
-            let ipix1 = ih1 * img_w + iw;
+            let ipix0 = ih0 * img_w + iw; // north
+            let ipix1 = ih1 * img_w + iw; // south
             let i_hedge = ih0 * img_w + iw;
             {
                 let itri0 = pix2tri[ipix0];
@@ -148,18 +148,62 @@ pub fn smooth_gradient(
     assert_eq!(hedge2type.len(), hedge2dldr.len());
     for iter in 0..1000 {
         for iw in 0..img_w {
-            for ih1 in 0..img_h - 1 {
-                let i_hedge_c = ih1 * img_w + iw;
+            for ih in 0..img_h - 1 {
+                let i_hedge_c = ih * img_w + iw;
                 if hedge2type[i_hedge_c] == 2 || hedge2type[i_hedge_c] == 3 { continue; }
-                let i_hedge_s = if ih1 == 0 { iw } else { (ih1 - 1) * img_w + iw };
-                let i_hedge_n = if ih1 == img_h - 2 { (img_h - 2) * img_w + iw } else { (ih1 + 1) * img_w + iw };
-                let i_hedge_e = if iw == 0 { ih1 * img_w } else { ih1 * img_w + iw - 1 };
-                let i_hedge_w = if iw == img_w - 1 { ih1 * img_w + img_w - 1 } else { ih1 * img_w + iw + 1 };
-                let v_s = hedge2dldr[i_hedge_s];
-                let v_n = hedge2dldr[i_hedge_n];
-                let v_w = hedge2dldr[i_hedge_w];
-                let v_e = hedge2dldr[i_hedge_e];
-                hedge2dldr[i_hedge_c] = (v_s+v_n+v_w+v_e)*0.25;
+                let mut n_sum = 0;
+                let mut v_sum: f32 = 0.;
+                //
+                if ih != 0 { // north
+                    let i0_hedge = (ih - 1) * img_w + iw;
+                    if hedge2type[i0_hedge] != 2 {
+                        v_sum += hedge2dldr[i0_hedge];
+                        n_sum += 1;
+                    }
+                }
+                //
+                if ih != img_h-2 { // south
+                    let i0_hedge = (ih + 1) * img_w + iw;
+                    if hedge2type[i0_hedge] != 3 {
+                        v_sum += hedge2dldr[i0_hedge];
+                        n_sum += 1;
+                    }
+                }
+
+                if iw != 0 { // west
+                    let i0_hedge = ih * img_w + iw - 1;
+                    if hedge2type[i0_hedge] != 3 {
+                        let iwn_vedge = ih * (img_w - 1) + iw - 1;
+                        let iws_vedge = (ih + 1) * (img_w - 1) + iw - 1;
+                        let type_wn = vedge2type[iwn_vedge];
+                        let type_ws = vedge2type[iws_vedge];
+                        if type_wn != 2 && type_wn != 3 && type_ws != 2 && type_ws != 3 {
+                            v_sum += hedge2dldr[i0_hedge];
+                            n_sum += 1;
+                        }
+                    }
+                }
+                
+                if iw != img_w - 1 { // east
+                    let i0_hedge = ih * img_w + iw + 1;
+                    if hedge2type[i0_hedge] != 2 {
+                        let ien_vedge = ih * (img_w - 1) + iw + 1;
+                        let type_en = vedge2type[ien_vedge];
+                        if type_en != 2 && type_en != 3 && ih != img_h - 1 && iw != img_w - 2 {
+                            let ies_vedge = (ih + 1) * (img_w - 1) + iw + 1;
+                            let type_es = vedge2type[ies_vedge];
+                            if type_es != 2 && type_es != 3 {
+                                v_sum += hedge2dldr[i0_hedge];
+                                n_sum += 1;
+                            }
+                        }
+                    }
+                }
+
+                // ----------------------------
+                if n_sum != 0 {
+                    hedge2dldr[i_hedge_c] = v_sum / n_sum as f32;
+                }
             }
         }
     }

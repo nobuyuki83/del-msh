@@ -88,6 +88,9 @@ def test2():
     hedge2type, hedge2dldr, vedge2type, vedge2dldr = RasterizedEdgeGradient.edge_gradient_and_type(
         tri2vtx, vtx2xyz, transform_world2pix, dldw_pix2val, pix2tri)
 
+    #torch.set_printoptions(edgeitems=130)
+    #print(hedge2type)
+
     RasterizedEdgeGradient.smooth_gradient(hedge2type, hedge2dldr, vedge2type, vedge2dldr)
 
     path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge2.vtk"
