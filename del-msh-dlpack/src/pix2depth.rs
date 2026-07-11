@@ -67,7 +67,7 @@ pub fn pix2depth_update(
                 );
                 let transform_ndc2world = transform_ndc2world.copy_to_host().unwrap();
                 let ndc2world = arrayref::array_ref![&transform_ndc2world, 0, 16];
-                del_geo_core::mat4_col_major::try_inverse(ndc2world).unwrap()
+                del_geo_core::mat4_col_major::try_inverse_with_pivot(ndc2world).unwrap()
             };
             let transform_world2ndc =
                 del_cudarc_sys::CuVec::<f32>::from_slice(&transform_world2ndc).unwrap();
@@ -151,6 +151,17 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
                 "bwd_wrt_vtx2xyz",
             )
             .unwrap();
+            let transform_world2ndc = {
+                let transform_ndc2world = del_cudarc_sys::CuVec::<f32>::from_dptr(
+                    transform_ndc2world.data as del_cudarc_sys::cu::CUdeviceptr,
+                    16,
+                );
+                let transform_ndc2world = transform_ndc2world.copy_to_host().unwrap();
+                let ndc2world = arrayref::array_ref![&transform_ndc2world, 0, 16];
+                del_geo_core::mat4_col_major::try_inverse_with_pivot(ndc2world).unwrap()
+            };
+            let transform_world2ndc =
+                del_cudarc_sys::CuVec::<f32>::from_slice(&transform_world2ndc).unwrap();
             let num_pix = (img_shape[0] * img_shape[1]) as usize;
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_data(&dldw_vtx2xyz.data);
@@ -161,6 +172,7 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
             builder.arg_u32(img_shape[0] as u32);
             builder.arg_u32(img_shape[1] as u32);
             builder.arg_data(&transform_ndc2world.data);
+            builder.arg_dptr(transform_world2ndc.dptr);
             builder
                 .launch_kernel(
                     func,

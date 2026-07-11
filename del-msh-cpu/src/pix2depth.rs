@@ -1,9 +1,8 @@
-use del_geo_core::vec3::Vec3;
-
 pub struct Depth;
 
 impl<T> crate::trimesh3_raycast::ScalarRender<T> for Depth
-where T: num_traits::Float
+where
+    T: num_traits::Float,
 {
     fn fwd(
         &self,
@@ -34,8 +33,7 @@ where T: num_traits::Float
         ray_org: &[T; 3],
         ray_dir: &[T; 3],
         transform_world2ndc: &[T; 16],
-    ) -> ([T; 3], [T; 3], [T; 3])
-    {
+    ) -> ([T; 3], [T; 3], [T; 3]) {
         let zero = T::zero();
         let one = T::one();
         let half = one / (one + one);
@@ -44,32 +42,32 @@ where T: num_traits::Float
             del_geo_core::tri3::intersection_against_line(p0, p1, p2, ray_org, ray_dir).unwrap();
         let q = del_geo_core::tri3::position_from_barycentric_coords(p0, p1, p2, &bc);
         let dndcdq = del_geo_core::mat4_col_major::jacobian_transform(transform_world2ndc, &q);
-        let dndcdq = del_geo_core::mat3_col_major::transpose(&dndcdq);
-        let dldw_q = del_geo_core::mat3_col_major::mult_vec(&dndcdq, &dldw_ndc);
+        let dndcdq_t = del_geo_core::mat3_col_major::transpose(&dndcdq);
+        let dldw_q = del_geo_core::mat3_col_major::mult_vec(&dndcdq_t, &dldw_ndc);
         let dldw_t = del_geo_core::vec3::dot(&ray_dir, &dldw_q);
         let (_t, _u, _v, dldw_p0, dldw_p1, dldw_p2) =
             del_geo_core::tri3::intersection_against_line_bwd_wrt_tri(
-                p0, p1, p2, ray_org, ray_dir, dldw_t, zero, zero);
+                p0, p1, p2, ray_org, ray_dir, dldw_t, zero, zero,
+            );
         (dldw_p0, dldw_p1, dldw_p2)
     }
 }
 
 #[test]
 fn test_hoge() {
-    use del_geo_core::vec3::Vec3;;
+    use del_geo_core::vec3::Vec3;
     let p0: [[f64; 3]; 3] = [[-13., -5., 8.], [14., -5., 8.], [1., 3., -3.]];
     let ray_org = [8., 11., 10.];
     let ray_dir = [1., 0., 2.].sub(&ray_org);
     let transform_world2ndc = [
-        4., -1., 5., 1.,
-        1., 3., 9., 3.,
-        1., 4., 2., 2.,
-        -1., -2., 3., 3.];
+        4., -1., 5., 1., 1., 3., 9., 3., 1., 4., 2., 2., -1., -2., 3., 3.,
+    ];
     use crate::trimesh3_raycast::ScalarRender;
     let depth_layer = Depth;
     let (_t0, bc0) =
-        del_geo_core::tri3::intersection_against_line(&p0[0], &p0[1], &p0[2], &ray_org, &ray_dir).unwrap();
-    let depth0 = depth_layer.fwd(&bc0, 0, &[0,1,2], p0.as_flattened(), &transform_world2ndc);
+        del_geo_core::tri3::intersection_against_line(&p0[0], &p0[1], &p0[2], &ray_org, &ray_dir)
+            .unwrap();
+    let depth0 = depth_layer.fwd(&bc0, 0, &[0, 1, 2], p0.as_flattened(), &transform_world2ndc);
     let dldw_depth = 1.3;
     let l0 = depth0 * dldw_depth;
     let (dldw_p0, dldw_p1, dldw_p2) = depth_layer.bwd(
@@ -79,7 +77,8 @@ fn test_hoge() {
         &p0[2],
         &ray_org,
         &ray_dir,
-        &transform_world2ndc);
+        &transform_world2ndc,
+    );
     let eps = 1.0e-5;
     for (i_node, i_dim) in itertools::iproduct!(0..3, 0..3) {
         let p1 = {
@@ -87,19 +86,21 @@ fn test_hoge() {
             p1[i_node][i_dim] += eps;
             p1
         };
-        let (_t, bc1) =
-            del_geo_core::tri3::intersection_against_line(&p1[0], &p1[1], &p1[2], &ray_org, &ray_dir).unwrap();
-        let depth1 = depth_layer.fwd(&bc1, 0, &[0,1,2], p1.as_flattened(), &transform_world2ndc);
+        let (_t, bc1) = del_geo_core::tri3::intersection_against_line(
+            &p1[0], &p1[1], &p1[2], &ray_org, &ray_dir,
+        )
+        .unwrap();
+        let depth1 = depth_layer.fwd(&bc1, 0, &[0, 1, 2], p1.as_flattened(), &transform_world2ndc);
         let l1 = depth1 * dldw_depth;
-        let num_diff = (l1-l0)/eps;
+        let num_diff = (l1 - l0) / eps;
         let ana_diff = match i_node {
             0 => dldw_p0[i_dim],
             1 => dldw_p1[i_dim],
             2 => dldw_p2[i_dim],
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         println!("{i_node} {i_dim} {num_diff}, {ana_diff}");
-        assert!((num_diff-ana_diff).abs() < 1.0e-5);
+        assert!((num_diff - ana_diff).abs() < 1.0e-5);
     }
 }
 

@@ -49,6 +49,23 @@ def test_cpu_cuda_match_with_autograd():
     loss.backward()
     dldw_vtx2xyz = vtx2xyz.grad
 
-
+    if torch.cuda.is_available():
+        d_tri2vtx = tri2vtx.cuda()
+        d_vtx2xyz = vtx2xyz.cuda().detach()
+        d_transform_ndc2world = transform_ndc2world.cuda()
+        d_dldw_depth = dldw_depth.cuda()
+        #
+        d_vtx2xyz.requires_grad = True
+        d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+        d_pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32, device='cuda')
+        d_pix2tri.fill_(torch.iinfo(torch.uint32).max)
+        Pix2Tri.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, d_transform_ndc2world, d_pix2tri)
+        assert torch.equal( d_pix2tri.cpu(), pix2tri )
+        d_pix2depth = Pix2Depth.Pix2DepthFunction.apply(d_vtx2xyz, d_pix2tri, d_tri2vtx, d_transform_ndc2world)
+        assert (d_pix2depth.cpu()-pix2depth).norm().item() < 1.0e-5
+        d_loss = torch.sum(d_dldw_depth * d_pix2depth)
+        d_loss.backward()
+        d_dldw_vtx2xyz = d_vtx2xyz.grad
+        assert (d_dldw_vtx2xyz.cpu()-dldw_vtx2xyz).max() < 5.0e-4
 
 

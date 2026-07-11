@@ -92,7 +92,7 @@ pub fn fwd_continuous<T: ScalarRender<f32>>(
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
-        let Some((t, bc)) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
+        let Some((_t, bc)) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
             .intersection_against_ray(&ray_org, &ray_dir)
         else {
             unreachable!()
@@ -138,7 +138,7 @@ where
                     &(img_shape.0 as f32, img_shape.1 as f32),
                     &transform_ndc2world,
                 );
-            if let Some((t, i_tri, bc)) = crate::search_bvh3::first_intersection_ray(
+            if let Some((_t, i_tri, bc)) = crate::search_bvh3::first_intersection_ray(
                 &ray_org,
                 &ray_dir,
                 &crate::search_bvh3::TriMeshWithBvh {

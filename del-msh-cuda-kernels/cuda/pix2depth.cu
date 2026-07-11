@@ -2,6 +2,7 @@
 #include <thrust/pair.h>
 #include <cfloat>
 #include "del_geo/mat4_col_major.h"
+#include "del_geo/mat3_col_major.h"
 #include "del_geo/tri3.h"
 #include "ray_for_pixel.h"
 
@@ -54,7 +55,8 @@ void bwd_wrt_vtx2xyz(
     const float* dldw_pix2depth,
     const uint32_t img_w,
     const uint32_t img_h,
-    const float* transform_ndc2world)
+    const float* transform_ndc2world,
+    const float* transform_world2ndc)
 {
     const int i_pix = blockDim.x * blockIdx.x + threadIdx.x;
     if (i_pix >= img_w * img_h) { return; }
@@ -62,7 +64,9 @@ void bwd_wrt_vtx2xyz(
     const uint32_t i_tri = pix2tri[i_pix];
     if (i_tri == UINT32_MAX) { return; }
 
-    auto ray = ray_for_pixel(i_pix, img_w, img_h, transform_ndc2world);
+    const float dldw_ndc[3] = {0.f, 0.f, 0.5f * dldw_pix2depth[i_pix]};
+
+    const auto ray = ray_for_pixel(i_pix, img_w, img_h, transform_ndc2world);
 
     const uint32_t iv0 = tri2vtx[i_tri * 3 + 0];
     const uint32_t iv1 = tri2vtx[i_tri * 3 + 1];
@@ -70,12 +74,18 @@ void bwd_wrt_vtx2xyz(
     const float* p0 = vtx2xyz + iv0 * 3;
     const float* p1 = vtx2xyz + iv1 * 3;
     const float* p2 = vtx2xyz + iv2 * 3;
+    const auto opt_t = tri3::intersection_against_ray(p0, p1, p2, ray.first.data(), ray.second.data());
+    const float t = opt_t.value();
+    const auto q = vec3::axpy(t, ray.second.data(), ray.first.data());
+    const auto dndcdq = mat4_col_major::jacobian_transform(transform_world2ndc, q.data());
+    const auto dndcdq_t = mat3_col_major::transpose(dndcdq.data());
+    const auto dldw_q = mat3_col_major::mult_vec(dndcdq_t.data(), dldw_ndc);
+    const auto dldw_t = vec3::dot(dldw_q.data(), ray.second.data());
 
-    const float dldw_val = dldw_pix2depth[i_pix];
     const auto opt_res = tri3::intersection_against_line_bwd_wrt_tri(
         p0, p1, p2,
         ray.first.data(), ray.second.data(),
-        -dldw_val, 0.f, 0.f);
+        dldw_t, 0.f, 0.f);
     if (!opt_res) { return; }
 
     const auto& res = opt_res.value();
