@@ -42,8 +42,8 @@ def test1():
         c = apply_colormap_bwr(dpix, vmin, vmax)
         pix2rgb_diff.view(-1, 3)[i_pix] = torch.tensor(c, dtype=torch.uint8)
     #
-    path1 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge_diff.png"
-    Image.fromarray(pix2rgb_diff.numpy(), mode="RGB").save(path1)
+    path1 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge6.png"
+    Image.fromarray(pix2rgb_diff.numpy()).save(path1)
     #
     
 
@@ -77,12 +77,12 @@ def test2():
     img = (pix2occ_src.numpy() * 255).clip(0, 255).astype('uint8')
     path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge0.png"
     path0.parent.mkdir(exist_ok=True)
-    Image.fromarray(img, mode="L").save(path0)
+    Image.fromarray(img).save(path0)
     #
     img = (pix2occ_trg.numpy() * 255).clip(0, 255).astype('uint8')
     path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge1.png"
     path0.parent.mkdir(exist_ok=True)
-    Image.fromarray(img, mode="L").save(path0)
+    Image.fromarray(img).save(path0)
     #
     dldw_pix2val = pix2occ_src - pix2occ_trg
     hedge2type, hedge2dldr, vedge2type, vedge2dldr = RasterizedEdgeGradient.edge_gradient_and_type(
@@ -133,10 +133,12 @@ def test_autograd():
         pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
         Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
         pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
-        pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
-        #pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
+        #pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
+        pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
         loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
-        print("loss=", loss.item())
+        print("iter = :", iter,"  loss=", loss.item())
+        if loss.item() < 1.0e-5:
+            break
         loss.backward()
         dldw_vtx2xyz = vtx2xyz.grad
 

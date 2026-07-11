@@ -32,7 +32,6 @@ def example1():
     img_shape = (128, 128)
     return tri2vtx, vtx2xyz, transform_world2ndc, img_shape
 
-
 def test_save_fwd_diff_image():
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
     transform_ndc2world = transform_world2ndc.inverse()
@@ -58,9 +57,9 @@ def test_save_fwd_diff_image():
     )
     #
     img = (pix2occout.numpy() * 255).clip(0, 255).astype('uint8')
-    path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__antialias.png"
+    path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__differentiable_antialias0.png"
     path0.parent.mkdir(exist_ok=True)
-    Image.fromarray(img, mode="L").save(path0)
+    Image.fromarray(img).save(path0)
     #
     # gradient visualization: d(pixel) / d(vtx) projected onto x-direction
     num_vtx = vtx2xyz.shape[0]
@@ -86,8 +85,8 @@ def test_save_fwd_diff_image():
         c = apply_colormap_bwr(dpix, vmin, vmax)
         pix2rgb_diff.view(-1, 3)[i_pix] = torch.tensor(c, dtype=torch.uint8)
     #
-    path1 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__antialias_diff.png"
-    Image.fromarray(pix2rgb_diff.numpy(), mode="RGB").save(path1)
+    path1 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__differentiable_antialias1.png"
+    Image.fromarray(pix2rgb_diff.numpy()).save(path1)
 
 
 

@@ -112,7 +112,7 @@ pub fn pix2depth_from_pix2tri(
     transform_ndc2world: &[f32; 16],
 ) {
     let transform_world2ndc =
-        del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
+        del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_ndc2world).unwrap();
     let fn_pix2depth = |i_pix: usize| -> f32 {
         let i_tri = pix2tri[i_pix];
         if i_tri == u32::MAX {

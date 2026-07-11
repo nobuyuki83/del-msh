@@ -2,43 +2,56 @@ import math
 #
 import torch
 
+
 def from_x_rotation(angle: float, device=None, dtype=torch.float32) -> torch.Tensor:
     c = math.cos(angle)
     s = math.sin(angle)
     return torch.tensor([
-        [1,  0,  0,  0],
-        [0,  c, -s,  0],
-        [0,  s,  c,  0],
-        [0,  0,  0,  1],
+        [1, 0, 0, 0],
+        [0, c, -s, 0],
+        [0, s, c, 0],
+        [0, 0, 0, 1],
     ], device=device, dtype=dtype)
+
 
 def from_translation(tx: float, ty: float, tz: float, device=None, dtype=torch.float32) -> torch.Tensor:
     return torch.tensor([
         [1, 0, 0, tx],
         [0, 1, 0, ty],
         [0, 0, 1, tz],
-        [0, 0, 0,  1],
+        [0, 0, 0, 1],
     ], device=device, dtype=dtype)
+
 
 def from_scale(sx: float, sy: float, sz: float, device=None, dtype=torch.float32) -> torch.Tensor:
     return torch.tensor([
         [sx, 0, 0, 0],
         [0, sy, 0, 0],
         [0, 0, sz, 0],
-        [0, 0, 0,  1],
+        [0, 0, 0, 1],
     ], device=device, dtype=dtype)
 
-'''
-transformation converting normalized device coordinate (NDC) `[-1,+1]^3` to pixel coordinate
-depth (-1, +1) is transformed to (0, +1)
-for example:
-     [-1,-1,-1] becomes (0, H, 0)
-     [+1,+1,+1] becomes (W, 0, 1)
 
- * Arguments
-    * `image_shape` - (width, height)
-'''
+def from_uniform_scale(s, device):
+    return torch.tensor([
+        [s, 0., 0., 0.],
+        [0., s, 0., 0.],
+        [0., 0., s, 0.],
+        [0., 0., 0., 1.]
+    ], device=device)
+
+
 def from_transform_ndc2pix(img_shape, device=None, dtype=torch.float32):
+    """
+    transformation converting normalized device coordinate (NDC) `[-1,+1]^3` to pixel coordinate
+    depth (-1, +1) is transformed to (0, +1)
+    for example:
+         [-1,-1,-1] becomes (0, H, 0)
+         [+1,+1,+1] becomes (W, 0, 1)
+
+     * Arguments
+        * `image_shape` - (width, height)
+    """
     return torch.tensor(
         [
             [
@@ -46,7 +59,7 @@ def from_transform_ndc2pix(img_shape, device=None, dtype=torch.float32):
                 0,
                 0,
                 0.5 * float(img_shape[0]),
-             ],
+            ],
             [
                 0,
                 -0.5 * float(img_shape[1]),
@@ -68,25 +81,19 @@ def from_transform_ndc2pix(img_shape, device=None, dtype=torch.float32):
 
         ], device=device, dtype=dtype)
 
-def from_uniform_scale(s, device):
-    return torch.tensor([
-        [s, 0., 0., 0.],
-        [0., s, 0., 0.],
-        [0., 0., s, 0.],
-        [0., 0., 0., 1.]
-    ], device = device)
 
 def from_transfrom_world2unit(vtx2xyz, device):
     xyz_min = vtx2xyz.min(dim=0).values
     xyz_max = vtx2xyz.max(dim=0).values
     xyz_len = xyz_max - xyz_min
-    scale = 1.0/xyz_len.max().item()
-    xyz_center = (xyz_min + xyz_max)*0.5
+    scale = 1.0 / xyz_len.max().item()
+    xyz_center = (xyz_min + xyz_max) * 0.5
     # print(xyz_min, xyz_max, xyz_len, xyz_center, scale)
     m1 = from_translation(-xyz_center[0], -xyz_center[1], -xyz_center[2], device)
     m2 = from_uniform_scale(scale, device)
     m3 = from_translation(0.5, 0.5, 0.5, device)
     return m3 @ m2 @ m1
+
 
 def from_fit_vtx2xyz_into_unit_cube(vtx2xyz: torch.Tensor) -> torch.Tensor:
     """fit vertices into a unit cube [-0.5, 0.5]^3 with uniform scale,
@@ -109,3 +116,72 @@ def from_fit_vtx2xyz_into_unit_cube(vtx2xyz: torch.Tensor) -> torch.Tensor:
     mat[3, 3] = 1.0
     mat[:3, 3] = -center * s + 0.5
     return mat
+
+
+
+def camera_perspective_blender(
+        aspect: float,
+        lens: float,
+        near: float,
+        far: float,
+        proj_direction: bool,
+        *,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | str | None = None,
+) -> torch.Tensor:
+    """
+    Blender-like perspective projection matrix.
+    lens: focus length in (mm)
+    near: distance to the near clipping plane
+    far: distance to the far clipping plane
+    proj direction: True ->
+    """
+    aspect = torch.as_tensor(aspect, dtype=dtype, device=device)
+    lens = torch.as_tensor(lens, dtype=dtype, device=device)
+    near = torch.as_tensor(near, dtype=dtype, device=device)
+    far = torch.as_tensor(far, dtype=dtype, device=device)
+
+    zero = torch.zeros((), dtype=dtype, device=device)
+    one = torch.ones((), dtype=dtype, device=device)
+
+    if proj_direction:
+        if aspect < one:
+            a = one / aspect
+            b = one
+        else:
+            a = one
+            b = aspect
+
+        half_theta = torch.atan2(
+            torch.tensor(18.0, dtype=dtype, device=device),
+            lens,
+        )
+        focus = torch.cos(half_theta) / torch.sin(half_theta)
+
+        tmp0 = (near + far) / (near - far)
+        tmp1 = 2.0 * far * near / (near - far)
+
+        return torch.stack(
+            [
+                torch.stack([-a * focus, zero, zero, zero]),
+                torch.stack([zero, -b * focus, zero, zero]),
+                torch.stack([zero, zero, tmp0, tmp1]),
+                torch.stack([zero, zero, one, zero]),
+            ]
+        )
+
+    t0 = camera_perspective_blender(
+        aspect=aspect,
+        lens=lens,
+        near=-far,
+        far=-near,
+        proj_direction=True,
+        dtype=dtype,
+        device=device,
+    )
+
+    camera_z_flip = torch.diag(
+        torch.stack([-one, -one, -one, one])
+    )
+
+    return t0 @ camera_z_flip
