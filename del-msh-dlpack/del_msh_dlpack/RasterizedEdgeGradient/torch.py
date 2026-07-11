@@ -1,5 +1,5 @@
 import torch
-
+#
 
 def gradient(
     tri2vtx: torch.Tensor,
@@ -96,3 +96,61 @@ def smooth_gradient(
         util_torch.to_dlpack_safe(vedge2type, 0),
         util_torch.to_dlpack_safe(vedge2dldr, 0),
     )
+
+
+def interpolate(
+    hedge2vy: torch.Tensor,
+    vedge2vx: torch.Tensor,
+    vtx2xy: torch.Tensor):
+    img_shape = (hedge2vy.shape[0]+1, hedge2vy.shape[1])
+    assert vedge2vx.shape == (img_shape[0],img_shape[1]-1)
+    num_vtx = vtx2xy.shape[0]
+    vtx2velo = torch.empty(size=(num_vtx, 2), dtype=torch.float32)
+    from .. import RasterizedEdgeGradient, util_torch
+    RasterizedEdgeGradient.interpolate(
+        util_torch.to_dlpack_safe(hedge2vy, 0),
+        util_torch.to_dlpack_safe(vedge2vx, 0),
+        util_torch.to_dlpack_safe(vtx2xy, stream_ptr=0),
+        util_torch.to_dlpack_safe(vtx2velo, stream_ptr=0)
+    )
+    return vtx2velo
+
+
+class RasterizedEdgeGradientFunction(torch.autograd.Function):
+    """rasterized edge gradient as a torch.autograd.Function."""
+
+    @staticmethod
+    def forward(ctx, tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin):
+        ctx.save_for_backward(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin)
+        return pix2vin
+
+    @staticmethod
+    def backward(ctx, dldw_pix2vout):
+        tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin = ctx.saved_tensors
+        dldw_vtx2xyz = gradient(tri2vtx, vtx2xyz.detach(), transform_world2pix, dldw_pix2vout, pix2tri)
+        dldw_pix2vin = dldw_pix2vout.clone()
+        return None, dldw_vtx2xyz, None, None, dldw_pix2vin
+
+
+class RasterizedEdgeGradientWithSmoothFunction(torch.autograd.Function):
+    """rasterized edge gradient as a torch.autograd.Function."""
+
+    @staticmethod
+    def forward(ctx, tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin):
+        ctx.save_for_backward(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin)
+        return pix2vin
+
+    @staticmethod
+    def backward(ctx, dldw_pix2vout):
+        tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin = ctx.saved_tensors
+        hedge2type, hedge2dldr, vedge2type, vedge2dldr = edge_gradient_and_type(
+            tri2vtx, vtx2xyz.detach(), transform_world2pix,dldw_pix2vout,pix2tri)
+        smooth_gradient(hedge2type, hedge2dldr, vedge2type, vedge2dldr)
+        from del_msh_dlpack.Vtx2Xyz.torch import transform_affine
+        vtx2wh = transform_affine(vtx2xyz, transform_world2pix)[:,0:2].clone()
+        dldw_vtx2wh = interpolate(hedge2dldr, vedge2dldr, vtx2wh)
+        zeros = torch.zeros((dldw_vtx2wh.shape[0], 1), dtype=torch.float, device=dldw_vtx2wh.device)
+        dldw_vtx2whdw = torch.cat([dldw_vtx2wh, zeros, zeros], dim=1)  # (N,4)
+        dldw_vtx2xyz = (dldw_vtx2whdw @ transform_world2pix.clone() )[:, 0:3].clone()
+        dldw_pix2vin = dldw_pix2vout.clone()
+        return None, dldw_vtx2xyz, None, None, dldw_pix2vin

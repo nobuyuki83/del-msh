@@ -1,10 +1,7 @@
 use anyhow::Context;
 use std::io::BufRead;
 
-pub fn read_elem<T: BufRead, IDX>(
-    reader: &mut T,
-    num_elem_cum: usize,
-) -> Option<(usize, Vec<IDX>)>
+pub fn read_elem<T: BufRead, IDX>(reader: &mut T, num_elem_cum: usize) -> Option<(usize, Vec<IDX>)>
 where
     IDX: num_traits::PrimInt + 'static,
     usize: num_traits::AsPrimitive<IDX>,
@@ -14,7 +11,9 @@ where
         // Peek without consuming: fill_buf() returns a reference into the
         // internal buffer; consume() advances the reader only if we proceed.
         let available = reader.fill_buf().ok()?;
-        let line_len = available.iter().position(|&b| b == b'\n')
+        let line_len = available
+            .iter()
+            .position(|&b| b == b'\n')
             .map(|p| p + 1)
             .unwrap_or(available.len());
         let peeked = std::str::from_utf8(&available[..line_len]).ok()?;
@@ -23,8 +22,10 @@ where
             return None; // reader not advanced — caller can try another section
         }
         let name = a[3].to_owned();
-        let num_elem = a[5].parse::<usize>()
-            .context("failed to parse number of elements").ok()?;
+        let num_elem = a[5]
+            .parse::<usize>()
+            .context("failed to parse number of elements")
+            .ok()?;
         reader.consume(line_len); // actually advance past the header line
         (name, num_elem)
     };
@@ -33,7 +34,9 @@ where
         "pyramid" => 5,
         "prism" => 6,
         "hexahedra" => 8,
-        _ => {unreachable!()}
+        _ => {
+            unreachable!()
+        }
     };
     let mut elem2vtx = vec![IDX::zero(); num_elem * num_node];
     for i_elem in 0..num_elem {
@@ -43,7 +46,8 @@ where
             .expect("failed to read element line");
         let a: Vec<&str> = buff.split_whitespace().collect();
         assert_eq!(
-            a.len(), num_node + 1,
+            a.len(),
+            num_node + 1,
             "unexpected element line length: {}",
             buff.trim()
         );
@@ -51,7 +55,8 @@ where
             .parse::<usize>()
             .expect("failed to parse element index");
         assert_eq!(
-            idx, num_elem_cum + i_elem + 1,
+            idx,
+            num_elem_cum + i_elem + 1,
             "element index mismatch: {} != {}",
             idx,
             num_elem_cum + i_elem + 1
@@ -68,17 +73,15 @@ where
     Some((num_node, elem2vtx))
 }
 
-pub fn read_value<T: BufRead>(
-    reader: &mut T,
-    num_vtx: usize,
-) -> Option<(usize, Vec<f32>)>
-{
+pub fn read_value<T: BufRead>(reader: &mut T, num_vtx: usize) -> Option<(usize, Vec<f32>)> {
     let mut buff = String::new();
     let name = {
         // Peek without consuming: fill_buf() returns a reference into the
         // internal buffer; consume() advances the reader only if we proceed.
         let available = reader.fill_buf().ok()?;
-        let line_len = available.iter().position(|&b| b == b'\n')
+        let line_len = available
+            .iter()
+            .position(|&b| b == b'\n')
             .map(|p| p + 1)
             .unwrap_or(available.len());
         let peeked = std::str::from_utf8(&available[..line_len]).ok()?;
@@ -93,7 +96,9 @@ pub fn read_value<T: BufRead>(
     let num_node = match name.as_str() {
         "velocity" => 3,
         "pressure" => 1,
-        _ => {unreachable!()}
+        _ => {
+            unreachable!()
+        }
     };
     let mut vtx2value = vec![0f32; num_vtx * num_node];
     for i_vtx in 0..num_vtx {
@@ -103,7 +108,8 @@ pub fn read_value<T: BufRead>(
             .expect("failed to read element line");
         let a: Vec<&str> = buff.split_whitespace().collect();
         assert_eq!(
-            a.len(), num_node + 1,
+            a.len(),
+            num_node + 1,
             "unexpected element line length: {}",
             buff.trim()
         );
@@ -111,7 +117,8 @@ pub fn read_value<T: BufRead>(
             .parse::<usize>()
             .expect("failed to parse element index");
         assert_eq!(
-            idx, i_vtx + 1,
+            idx,
+            i_vtx + 1,
             "element index mismatch: {} != {}",
             idx,
             i_vtx + 1
@@ -197,28 +204,44 @@ where
         a[4].parse::<usize>()
             .context("failed to parse number of elements")?
     };
-    let mut tet2vtx = vec!();
-    let mut prism2vtx = vec!();
-    let mut pyrmd2vtx = vec!();
-    let mut hex2vtx = vec!();
+    let mut tet2vtx = vec![];
+    let mut prism2vtx = vec![];
+    let mut pyrmd2vtx = vec![];
+    let mut hex2vtx = vec![];
     let mut num_elem_cum = 0;
     while let Some((num_node, elem2vtx)) = read_elem::<_, IDX>(&mut reader, num_elem_cum) {
         num_elem_cum += elem2vtx.len() / num_node;
         match num_node {
-            4 => { tet2vtx = elem2vtx; },
-            5 => { pyrmd2vtx = elem2vtx; },
-            6 => { prism2vtx = elem2vtx; },
-            8 => { hex2vtx = elem2vtx; },
-            _ => { unreachable!(); }
+            4 => {
+                tet2vtx = elem2vtx;
+            }
+            5 => {
+                pyrmd2vtx = elem2vtx;
+            }
+            6 => {
+                prism2vtx = elem2vtx;
+            }
+            8 => {
+                hex2vtx = elem2vtx;
+            }
+            _ => {
+                unreachable!();
+            }
         }
     }
-    let mut vtx2velo: Vec<f32> = vec!();
-    let mut vtx2pressure: Vec<f32> = vec!();
+    let mut vtx2velo: Vec<f32> = vec![];
+    let mut vtx2pressure: Vec<f32> = vec![];
     while let Some((num_vdim, vtx2value)) = read_value::<_>(&mut reader, num_vtx) {
         match num_vdim {
-            1 => { vtx2pressure = vtx2value; },
-            3 => { vtx2velo = vtx2value; },
-            _ => { unreachable!(); }
+            1 => {
+                vtx2pressure = vtx2value;
+            }
+            3 => {
+                vtx2velo = vtx2value;
+            }
+            _ => {
+                unreachable!();
+            }
         }
     }
     Ok(DataFromCfdMeshTxt {
@@ -237,8 +260,8 @@ mod tests {
 
     fn check(data: &crate::io_cfd_mesh_txt::DataFromCfdMeshTxt<u32>, name: &str) {
         {
-            let mut file = std::fs::File::create(
-                format!("../target/{}.vtk", name)).expect("file not found.");
+            let mut file =
+                std::fs::File::create(format!("../target/{}.vtk", name)).expect("file not found.");
             crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz, 3).unwrap();
             crate::io_vtk::write_vtk_cells_mix(
                 &mut file,
@@ -247,7 +270,7 @@ mod tests {
                 &data.prism2vtx,
                 &data.hex2vtx,
             )
-                .unwrap();
+            .unwrap();
         }
         let (elem2idx_offset, idx2vtx) = {
             let num_tet = data.tet2vtx.len() / 4;
@@ -304,8 +327,8 @@ mod tests {
     fn test0() {
         {
             let name = "cfd_mesh";
-            let data = crate::io_cfd_mesh_txt::read::<_, u32>(
-                format!("../asset/{}.txt", name)).unwrap();
+            let data =
+                crate::io_cfd_mesh_txt::read::<_, u32>(format!("../asset/{}.txt", name)).unwrap();
             assert_eq!(data.tet2vtx.len(), 4);
             assert_eq!(data.pyrmd2vtx.len(), 5);
             assert_eq!(data.prism2vtx.len(), 6);
@@ -314,8 +337,8 @@ mod tests {
         }
         {
             let name = "cfd_mesh1";
-            let data = crate::io_cfd_mesh_txt::read::<_, u32>(
-                format!("../asset/{}.txt", name)).unwrap();
+            let data =
+                crate::io_cfd_mesh_txt::read::<_, u32>(format!("../asset/{}.txt", name)).unwrap();
             assert_eq!(data.tet2vtx.len(), 4);
             assert_eq!(data.pyrmd2vtx.len(), 5);
             assert_eq!(data.prism2vtx.len(), 6);

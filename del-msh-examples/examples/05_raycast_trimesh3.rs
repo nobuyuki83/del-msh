@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
 
     {
         // render normalmap
-        let pix2rgb = del_msh_cpu::trimesh3_raycast::render_normalmap_from_pix2tri(
+        let pix2rgb = del_msh_cpu::pix2nrm::render_normalmap_from_pix2tri(
             img_shape,
             &cam_modelview,
             &tri2vtx,
@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
     // render depth
     {
         let mut img_data = vec![0f32; img_shape.0 * img_shape.1];
-        del_msh_cpu::trimesh3_raycast::render_depth_bvh(
+        del_msh_cpu::pix2depth::render_depth_bvh(
             img_shape,
             &mut img_data,
             &transform_ndc2world,
@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
         let (tex_data, tex_shape, bitdepth) =
             del_canvas::load_image_as_float_array("asset/spot/spot_texture.png")?;
         assert_eq!(bitdepth, 3);
-        let img_data = del_msh_cpu::trimesh3_raycast::render_texture_from_pix2tri(
+        let img_data = del_msh_cpu::pix2tex::render_texture_from_pix2tri(
             img_shape,
             &transform_ndc2world,
             &tri2vtx,
@@ -102,7 +102,7 @@ fn main() -> anyhow::Result<()> {
             &img_data,
         )?;
         //
-        let img_data = del_msh_cpu::trimesh3_raycast::render_texture_from_pix2tri(
+        let img_data = del_msh_cpu::pix2tex::render_texture_from_pix2tri(
             img_shape,
             &transform_ndc2world,
             &tri2vtx,

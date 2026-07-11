@@ -144,7 +144,7 @@ pub fn array1d_argsort(
                 .unwrap();
              */
             del_cudarc_sys::sort_by_key_thrust::sort_u32_by_u32_key(stream, &idx2val, &jdx2idx)
-            .unwrap();
+                .unwrap();
         }
         _ => {
             panic!()

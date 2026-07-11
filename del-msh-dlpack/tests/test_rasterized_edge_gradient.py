@@ -96,3 +96,61 @@ def test2():
     path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge2.vtk"
     IoVtk.write_velocity_on_staggered_grid(path0, hedge2dldr, vedge2dldr)
 
+    img_h, img_w = img_shape[1], img_shape[0]
+    ys = torch.arange(img_h, dtype=torch.float32) + 0.5  # (img_h,)
+    xs = torch.arange(img_w, dtype=torch.float32) + 0.5  # (img_w,)
+    pix2xy = torch.stack(
+        torch.meshgrid(xs, ys, indexing="xy"), dim=-1
+    )  # (img_h, img_w, 2): [..., 0]=x, [..., 1]=y
+    pix2vxvy = RasterizedEdgeGradient.interpolate(
+        hedge2dldr, vedge2dldr, pix2xy.reshape(-1, 2))
+
+    pix2xyz = torch.cat([
+        pix2xy.reshape(-1,2),
+        torch.zeros(img_h * img_w, 1, dtype=torch.float32),
+    ], dim=1)
+    pix2vxvyvz = torch.cat([
+        pix2vxvy.reshape(-1,2),
+        torch.zeros(img_h * img_w, 1, dtype=torch.float32),
+    ], dim=1)
+
+    path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge3.vtk"
+    IoVtk.write_points_with_velocity(str(path0), pix2xyz, pix2vxvyvz)
+
+
+def test_autograd():
+    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2()
+    transform_ndc2world = transform_world2ndc.inverse().contiguous()
+    transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
+    transform_world2pix = transform_ndc2pix @ transform_world2ndc
+    #
+    vtx2xyz.requires_grad_(True)
+
+    lr = 10.0
+    for iter in range(0,100):
+        vtx2xyz.grad = None
+        bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
+        pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
+        Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+        pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
+        pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
+        #pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
+        loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
+        print("loss=", loss.item())
+        loss.backward()
+        dldw_vtx2xyz = vtx2xyz.grad
+
+        if iter == 0:
+            path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge4.vtk"
+            IoVtk.write_points_with_velocity(str(path0), vtx2xyz.detach(), dldw_vtx2xyz)
+
+        with torch.no_grad():
+            vtx2xyz -= lr * dldw_vtx2xyz
+
+        path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge5.obj"
+        TriMesh3.save_wavefront_obj(tri2vtx, vtx2xyz, str(path0))
+
+
+
+
+

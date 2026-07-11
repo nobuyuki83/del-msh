@@ -23,7 +23,7 @@ pub fn pix2tri_by_raycast<Index>(
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
-        if let Some((_t, i_tri)) = crate::search_bvh3::first_intersection_ray(
+        if let Some((_t, i_tri, _bc)) = crate::search_bvh3::first_intersection_ray(
             &ray_org,
             &ray_dir,
             &crate::search_bvh3::TriMeshWithBvh {

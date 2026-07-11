@@ -28,7 +28,7 @@ pub fn intersections_ray<Index>(
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        let Some(t) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
+        let Some((t, _bc)) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
         else {
             return;
@@ -71,7 +71,7 @@ pub fn intersections_line<Index>(
     if trimesh3.bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
         // leaf node
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
-        let Some(t) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
+        let Some((t, _bc)) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_line(line_org, line_dir)
         else {
             return;
@@ -95,14 +95,18 @@ pub fn intersections_line<Index>(
     );
 }
 
-/// return the distance to triangle and triangle index
+///
+/// # return
+///  - the coefficient of the ray to triangle
+///  - triangle index
+///  - barycentric coordinate
 pub fn first_intersection_ray<Index>(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
     trimesh3: &TriMeshWithBvh<Index>,
     i_bvhnode: usize,
     dis: f32,
-) -> Option<(f32, usize)>
+) -> Option<(f32, usize, [f32; 3])>
 where
     Index: PrimInt + AsPrimitive<usize>,
 {
@@ -119,8 +123,8 @@ where
         let i_tri: usize = trimesh3.bvhnodes[i_bvhnode * 3 + 1].as_();
         return crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
-            .filter(|&t| t < dis)
-            .map(|t| (t, i_tri));
+            .filter(|(t, _bc)| *t < dis)
+            .map(|(t, bc)| (t, i_tri, bc));
     }
 
     // near branch is checked first. Check which branch (left or right) is near
@@ -161,7 +165,7 @@ where
         )
     };
 
-    if let Some((t_near, _i_tri_near)) = res_near {
+    if let Some((t_near, _i_tri_near, _bc_near)) = res_near {
         // if there is a hit branch in the left
         let idx_bvhnode_far = if near_is_left {
             i_bvhnode * 3 + 2
@@ -199,18 +203,18 @@ where
         )
     };
 
-    if let Some((t_near, i_tri_near)) = res_near {
-        if let Some((t_far, i_tri_far)) = res_far {
+    if let Some((t_near, i_tri_near, bc_near)) = res_near {
+        if let Some((t_far, i_tri_far, bc_far)) = res_far {
             if t_near < t_far {
-                Some((t_near, i_tri_near))
+                Some((t_near, i_tri_near, bc_near))
             } else {
-                Some((t_far, i_tri_far))
+                Some((t_far, i_tri_far, bc_far))
             }
         } else {
-            Some((t_near, i_tri_near))
+            Some((t_near, i_tri_near, bc_near))
         }
-    } else if let Some((t_far, i_tri_far)) = res_far {
-        Some((t_far, i_tri_far))
+    } else if let Some((t_far, i_tri_far, bc_far)) = res_far {
+        Some((t_far, i_tri_far, bc_far))
     } else {
         None
     }
@@ -266,7 +270,7 @@ fn test_first_intersection_ray() {
             0,
             f32::INFINITY,
         );
-        if let Some((t, _i_tri)) = res_first {
+        if let Some((t, _i_tri, _bc)) = res_first {
             let p = [
                 ray_org[0] + t * ray_dir[0],
                 ray_org[1] + t * ray_dir[1],
@@ -289,7 +293,7 @@ fn test_first_intersection_ray() {
                 },
                 0,
             );
-            if let Some((t_first, _i_tri_first)) = res_first {
+            if let Some((t_first, _i_tri_first, _bc_first)) = res_first {
                 assert_eq!(hits.len(), 2);
                 assert!(hits[0].0 == t_first || hits[1].0 == t_first);
             } else {

@@ -94,16 +94,15 @@ fn parametric_coord(query: &[f32; 3], node2vtx: &[u32], vtx2xyz: &[f32]) -> Opti
                 &shift(node2vtx[3] as usize),
             );
             if let Some(bc) = bc {
-                if bc.0 > 0. && bc.1 > 0. && bc.2 > 0. && 1.0-bc.0-bc.1-bc.2 > 0. {
+                if bc.0 > 0. && bc.1 > 0. && bc.2 > 0. && 1.0 - bc.0 - bc.1 - bc.2 > 0. {
                     return Some([bc.0, bc.1, bc.2]);
-                }
-                else {
-                    return None
+                } else {
+                    return None;
                 }
             }
             bc
         }
-            .map(|bc| [bc.0, bc.1, bc.2]),
+        .map(|bc| [bc.0, bc.1, bc.2]),
         5 => del_geo_core::pyramid::parametric_coord_for_origin(
             &shift(node2vtx[0] as usize),
             &shift(node2vtx[1] as usize),

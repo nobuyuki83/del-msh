@@ -4,8 +4,7 @@ fn fn_barycentric(
     pixcntr0: &[f32; 2],
     itri1: u32,
     transform_world2pix: &[f32; 16],
-) -> Option<[f32; 3]>
-{
+) -> Option<[f32; 3]> {
     if itri1 == u32::MAX {
         None
     } else {
@@ -31,15 +30,16 @@ fn fn_barycentric(
             .unwrap()
             .xy();
         let Some(b) = del_geo_core::tri2::barycentric_coords(&p0, &p1, &p2, pixcntr0) else {
-            return None
+            return None;
         };
         Some([b.0, b.1, b.2])
     }
 }
 
-fn fn_inside(b: Option<[f32;3]>) -> bool {
+fn fn_inside(b: Option<[f32; 3]>) -> bool {
     if let Some(b0) = b {
-        if (b0[0] >= 0. && b0[1] >= 0. && b0[2] >= 0.) || (b0[0] <= 0. && b0[1] <= 0. && b0[2] <= 0.)
+        if (b0[0] >= 0. && b0[1] >= 0. && b0[2] >= 0.)
+            || (b0[0] <= 0. && b0[1] <= 0. && b0[2] <= 0.)
         {
             return true;
         }
@@ -60,11 +60,10 @@ pub fn edge_gradient_and_type(
     hedge2dldr: &mut [f32],
     vedge2type: &mut [u8],
     vedge2dldr: &mut [f32],
-)
-{
+) {
     // -----------------------
     // horizontal edge
-    assert_eq!(hedge2type.len(), (img_h-1)*img_w );
+    assert_eq!(hedge2type.len(), (img_h - 1) * img_w);
     assert_eq!(hedge2type.len(), hedge2dldr.len());
     for iw in 0..img_w {
         for ih0 in 0..img_h - 1 {
@@ -75,33 +74,48 @@ pub fn edge_gradient_and_type(
             {
                 let itri0 = pix2tri[ipix0];
                 let itri1 = pix2tri[ipix1];
-                hedge2type[i_hedge] = if itri0 == itri1 { // same tri/background
+                hedge2type[i_hedge] = if itri0 == itri1 {
+                    // same tri/background
                     0
-                } // no edge
+                }
+                // no edge
                 else {
                     let pixcntr0 = [iw as f32 + 0.5, ih0 as f32 + 0.5];
                     let pixcntr1 = [iw as f32 + 0.5, ih1 as f32 + 0.5];
-                    let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri1, transform_world2pix));
-                    let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri0, transform_world2pix));
+                    let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(
+                        tri2vtx,
+                        vtx2xyz,
+                        &pixcntr0,
+                        itri1,
+                        transform_world2pix,
+                    ));
+                    let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(
+                        tri2vtx,
+                        vtx2xyz,
+                        &pixcntr1,
+                        itri0,
+                        transform_world2pix,
+                    ));
                     match (is_pixcentr0_inside_tri1, is_pixcentr1_inside_tri0) {
-                        (false, false) => {1}, // shared edge
-                        (true, false) => {2}, // tri0 is in front of tri1 (only tri0 receive gradient)
-                        (false, true) => {3}, // tri1 is in front of tri0 (only tri1 receive gradient)
-                        (true, true) => {4} // intersection
+                        (false, false) => 1, // shared edge
+                        (true, false) => 2, // tri0 is in front of tri1 (only tri0 receive gradient)
+                        (false, true) => 3, // tri1 is in front of tri0 (only tri1 receive gradient)
+                        (true, true) => 4,  // intersection
                     }
                 };
             }
             {
                 let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
                 let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-                hedge2dldr[i_hedge] = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+                hedge2dldr[i_hedge] =
+                    (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
             }
         }
     }
 
     // --------------------------
     // vertical edge
-    assert_eq!(vedge2type.len(), img_h*(img_w-1) );
+    assert_eq!(vedge2type.len(), img_h * (img_w - 1));
     assert_eq!(vedge2type.len(), vedge2dldr.len());
     for iw0 in 0..img_w - 1 {
         for ih in 0..img_h {
@@ -112,27 +126,88 @@ pub fn edge_gradient_and_type(
             {
                 let itri0 = pix2tri[ipix0];
                 let itri1 = pix2tri[ipix1];
-                vedge2type[i_vedge] = if itri0 == itri1 { // same tri/background
+                vedge2type[i_vedge] = if itri0 == itri1 {
+                    // same tri/background
                     0
-                }
-                else {
+                } else {
                     let pixcntr0 = [iw0 as f32 + 0.5, ih as f32 + 0.5];
                     let pixcntr1 = [iw1 as f32 + 0.5, ih as f32 + 0.5];
-                    let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri1, transform_world2pix));
-                    let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri0, transform_world2pix));
+                    let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(
+                        tri2vtx,
+                        vtx2xyz,
+                        &pixcntr0,
+                        itri1,
+                        transform_world2pix,
+                    ));
+                    let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(
+                        tri2vtx,
+                        vtx2xyz,
+                        &pixcntr1,
+                        itri0,
+                        transform_world2pix,
+                    ));
                     match (is_pixcentr0_inside_tri1, is_pixcentr1_inside_tri0) {
-                        (false, false) => {1} // shared edge
-                        (true, false) => {2}, // tri0 is in front of tri1 (only tri0 receive gradient)
-                        (false, true) => {3}, // tri1 is in front of tri0 (only tri1 receive gradient)
-                        (true, true) => {4}, // intersection
+                        (false, false) => 1, // shared edge
+                        (true, false) => 2, // tri0 is in front of tri1 (only tri0 receive gradient)
+                        (false, true) => 3, // tri1 is in front of tri0 (only tri1 receive gradient)
+                        (true, true) => 4,  // intersection
                     }
                 };
             }
             {
                 let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
                 let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-                vedge2dldr[i_vedge] = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+                vedge2dldr[i_vedge] =
+                    (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
             }
+        }
+    }
+}
+
+pub fn interpolate_staggered_grid(
+    (img_w, img_h): (usize, usize),
+    hedge2vy: &[f32],
+    vedge2vx: &[f32],
+    vtx2xy: &[f32],
+    vtx2velo: &mut [f32],
+) {
+    assert_eq!(hedge2vy.len(), (img_h - 1) * img_w);
+    assert_eq!(vedge2vx.len(), img_h * (img_w - 1));
+    let num_vtx = vtx2xy.len() / 2;
+    assert_eq!(vtx2velo.len(), num_vtx * 2);
+    for i_vtx in 0..num_vtx {
+        let px = vtx2xy[i_vtx * 2];
+        let py = vtx2xy[i_vtx * 2 + 1];
+        // x-velocity: bilinear from vertical edges at (iw0+1.0, ih+0.5)
+        {
+            let gx = px - 1.0_f32;
+            let gy = py - 0.5_f32;
+            let ix0 = (gx.floor() as i32).clamp(0, img_w as i32 - 2) as usize;
+            let iy0 = (gy.floor() as i32).clamp(0, img_h as i32 - 2) as usize;
+            let ix1 = (ix0 + 1).min(img_w - 2);
+            let iy1 = (iy0 + 1).min(img_h - 1);
+            let tx = (gx - ix0 as f32).clamp(0., 1.);
+            let ty = (gy - iy0 as f32).clamp(0., 1.);
+            let w = img_w - 1;
+            vtx2velo[i_vtx * 2] = (1. - tx) * (1. - ty) * vedge2vx[iy0 * w + ix0]
+                + tx * (1. - ty) * vedge2vx[iy0 * w + ix1]
+                + (1. - tx) * ty * vedge2vx[iy1 * w + ix0]
+                + tx * ty * vedge2vx[iy1 * w + ix1];
+        }
+        // y-velocity: bilinear from horizontal edges at (iw+0.5, ih0+1.0)
+        {
+            let gx = px - 0.5_f32;
+            let gy = py - 1.0_f32;
+            let ix0 = (gx.floor() as i32).clamp(0, img_w as i32 - 2) as usize;
+            let iy0 = (gy.floor() as i32).clamp(0, img_h as i32 - 2) as usize;
+            let ix1 = (ix0 + 1).min(img_w - 1);
+            let iy1 = (iy0 + 1).min(img_h - 2);
+            let tx = (gx - ix0 as f32).clamp(0., 1.);
+            let ty = (gy - iy0 as f32).clamp(0., 1.);
+            vtx2velo[i_vtx * 2 + 1] = (1. - tx) * (1. - ty) * hedge2vy[iy0 * img_w + ix0]
+                + tx * (1. - ty) * hedge2vy[iy0 * img_w + ix1]
+                + (1. - tx) * ty * hedge2vy[iy1 * img_w + ix0]
+                + tx * ty * hedge2vy[iy1 * img_w + ix1];
         }
     }
 }
@@ -142,74 +217,172 @@ pub fn smooth_gradient(
     hedge2type: &mut [u8],
     hedge2dldr: &mut [f32],
     vedge2type: &mut [u8],
-    vedge2dldr: &mut [f32])
-{
-    assert_eq!(hedge2type.len(), (img_h-1)*img_w );
+    vedge2dldr: &mut [f32],
+) {
+    assert_eq!(hedge2type.len(), (img_h - 1) * img_w);
     assert_eq!(hedge2type.len(), hedge2dldr.len());
-    for iter in 0..1000 {
-        for iw in 0..img_w {
-            for ih in 0..img_h - 1 {
-                let i_hedge_c = ih * img_w + iw;
-                if hedge2type[i_hedge_c] == 2 || hedge2type[i_hedge_c] == 3 { continue; }
-                let mut n_sum = 0;
-                let mut v_sum: f32 = 0.;
-                //
-                if ih != 0 { // north
-                    let i0_hedge = (ih - 1) * img_w + iw;
-                    if hedge2type[i0_hedge] != 2 {
-                        v_sum += hedge2dldr[i0_hedge];
-                        n_sum += 1;
+    for _iter in 0..1000 {
+        for i_hedge_c in 0..(img_h - 1) * img_w {
+            let iw = i_hedge_c % img_w;
+            let ih = i_hedge_c / img_w;
+            if hedge2type[i_hedge_c] == 2 || hedge2type[i_hedge_c] == 3 {
+                continue;
+            }
+            let mut n_sum = 0;
+            let mut v_sum: f32 = 0.;
+            //
+            if ih != 0 {
+                // north
+                let i0_hedge = (ih - 1) * img_w + iw;
+                if hedge2type[i0_hedge] != 2 {
+                    v_sum += hedge2dldr[i0_hedge];
+                    n_sum += 1;
+                }
+            }
+            //
+            if ih != img_h - 2 {
+                // south
+                let i0_hedge = (ih + 1) * img_w + iw;
+                if hedge2type[i0_hedge] != 3 {
+                    v_sum += hedge2dldr[i0_hedge];
+                    n_sum += 1;
+                }
+            }
+            'west: {
+                // west
+                if iw == 0 {
+                    break 'west;
+                }
+                let i0_hedge = ih * img_w + iw - 1;
+                //if hedge2type[i0_hedge] == 3 { break 'west; }
+                {
+                    let iwn_vedge = ih * (img_w - 1) + iw - 1;
+                    let type_wn = vedge2type[iwn_vedge];
+                    if type_wn == 2 || type_wn == 3 {
+                        break 'west;
                     }
                 }
-                //
-                if ih != img_h-2 { // south
-                    let i0_hedge = (ih + 1) * img_w + iw;
-                    if hedge2type[i0_hedge] != 3 {
-                        v_sum += hedge2dldr[i0_hedge];
-                        n_sum += 1;
+                {
+                    let iws_vedge = (ih + 1) * (img_w - 1) + iw - 1;
+                    let type_ws = vedge2type[iws_vedge];
+                    if type_ws == 2 || type_ws == 3 {
+                        break 'west;
                     }
                 }
-
-                if iw != 0 { // west
-                    let i0_hedge = ih * img_w + iw - 1;
-                    if hedge2type[i0_hedge] != 3 {
-                        let iwn_vedge = ih * (img_w - 1) + iw - 1;
-                        let iws_vedge = (ih + 1) * (img_w - 1) + iw - 1;
-                        let type_wn = vedge2type[iwn_vedge];
-                        let type_ws = vedge2type[iws_vedge];
-                        if type_wn != 2 && type_wn != 3 && type_ws != 2 && type_ws != 3 {
-                            v_sum += hedge2dldr[i0_hedge];
-                            n_sum += 1;
-                        }
+                v_sum += hedge2dldr[i0_hedge];
+                n_sum += 1;
+            }
+            'east: {
+                if iw == img_w - 1 {
+                    break 'east;
+                }
+                let i0_hedge = ih * img_w + iw + 1;
+                //if hedge2type[i0_hedge] == 2 { break 'east; }
+                {
+                    let ien_vedge = ih * (img_w - 1) + iw;
+                    let type_en = vedge2type[ien_vedge];
+                    if type_en == 2 || type_en == 3 {
+                        break 'east;
                     }
                 }
-                
-                if iw != img_w - 1 { // east
-                    let i0_hedge = ih * img_w + iw + 1;
-                    if hedge2type[i0_hedge] != 2 {
-                        let ien_vedge = ih * (img_w - 1) + iw + 1;
-                        let type_en = vedge2type[ien_vedge];
-                        if type_en != 2 && type_en != 3 && ih != img_h - 1 && iw != img_w - 2 {
-                            let ies_vedge = (ih + 1) * (img_w - 1) + iw + 1;
-                            let type_es = vedge2type[ies_vedge];
-                            if type_es != 2 && type_es != 3 {
-                                v_sum += hedge2dldr[i0_hedge];
-                                n_sum += 1;
-                            }
-                        }
+                {
+                    let ies_vedge = (ih + 1) * (img_w - 1) + iw;
+                    let type_es = vedge2type[ies_vedge];
+                    if type_es == 2 || type_es == 3 {
+                        break 'east;
                     }
                 }
-
-                // ----------------------------
-                if n_sum != 0 {
-                    hedge2dldr[i_hedge_c] = v_sum / n_sum as f32;
+                v_sum += hedge2dldr[i0_hedge];
+                n_sum += 1;
+            }
+            // ----------------------------
+            if n_sum != 0 {
+                hedge2dldr[i_hedge_c] = v_sum / n_sum as f32;
+            }
+        }
+        // ------------
+        assert_eq!(vedge2type.len(), img_h * (img_w - 1));
+        assert_eq!(vedge2type.len(), vedge2dldr.len());
+        for i_vedge_c in 0..img_h * (img_w - 1) {
+            let iw = i_vedge_c % (img_w - 1);
+            let ih = i_vedge_c / (img_w - 1);
+            if vedge2type[i_vedge_c] == 2 || vedge2type[i_vedge_c] == 3 {
+                continue;
+            }
+            let mut n_sum = 0;
+            let mut v_sum: f32 = 0.;
+            //
+            if iw != 0 {
+                // west
+                let i0_vedge = ih * (img_w - 1) + iw - 1;
+                if vedge2type[i0_vedge] != 2 {
+                    v_sum += vedge2dldr[i0_vedge];
+                    n_sum += 1;
                 }
+            }
+            //
+            if iw != img_w - 2 {
+                // east
+                let i0_vedge = ih * (img_w - 1) + iw + 1;
+                if vedge2type[i0_vedge] != 3 {
+                    v_sum += vedge2dldr[i0_vedge];
+                    n_sum += 1;
+                }
+            }
+            'north: {
+                // north
+                if ih == 0 {
+                    break 'north;
+                }
+                let i_vedge_n = (ih - 1) * (img_w - 1) + iw;
+                //if vedge2type[i_vedge_n] == 3 { break 'north; }
+                {
+                    let inw_hedge = (ih - 1) * img_w + iw;
+                    let type_nw = hedge2type[inw_hedge];
+                    if type_nw == 2 || type_nw == 3 {
+                        break 'north;
+                    }
+                }
+                {
+                    let ine_hedge = (ih - 1) * img_w + iw + 1;
+                    let type_ne = hedge2type[ine_hedge];
+                    if type_ne == 2 || type_ne == 3 {
+                        break 'north;
+                    }
+                }
+                v_sum += vedge2dldr[i_vedge_n];
+                n_sum += 1;
+            }
+            'south: {
+                // north
+                if ih == img_h - 1 {
+                    break 'south;
+                }
+                let i_vedge_s = (ih + 1) * (img_w - 1) + iw;
+                //if vedge2type[i_vedge_s] == 2 { break 'south; }
+                {
+                    let isw_hedge = ih * img_w + iw;
+                    let type_nw = hedge2type[isw_hedge];
+                    if type_nw == 2 || type_nw == 3 {
+                        break 'south;
+                    }
+                }
+                {
+                    let ise_hedge = ih * img_w + iw + 1;
+                    let type_ne = hedge2type[ise_hedge];
+                    if type_ne == 2 || type_ne == 3 {
+                        break 'south;
+                    }
+                }
+                v_sum += vedge2dldr[i_vedge_s];
+                n_sum += 1;
+            }
+            if n_sum != 0 {
+                vedge2dldr[i_vedge_c] = v_sum / n_sum as f32;
             }
         }
     }
     //
-    assert_eq!(vedge2type.len(), img_h*(img_w-1) );
-    assert_eq!(vedge2type.len(), vedge2dldr.len());
 }
 
 pub fn bwd(
@@ -236,8 +409,20 @@ pub fn bwd(
             } // no edge
             let pixcntr0 = [iw as f32 + 0.5, ih0 as f32 + 0.5];
             let pixcntr1 = [iw as f32 + 0.5, ih1 as f32 + 0.5];
-            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri1, transform_world2pix));
-            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri0, transform_world2pix));
+            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(
+                tri2vtx,
+                vtx2xyz,
+                &pixcntr0,
+                itri1,
+                transform_world2pix,
+            ));
+            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(
+                tri2vtx,
+                vtx2xyz,
+                &pixcntr1,
+                itri0,
+                transform_world2pix,
+            ));
             if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
                 continue;
             }
@@ -249,7 +434,8 @@ pub fn bwd(
                 continue;
             } else if is_pixcentr1_inside_tri0 {
                 // only tri1 receive gradient
-                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix).unwrap();
+                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
+                    .unwrap();
                 let itri1 = itri1 as usize;
                 use del_geo_core::mat4_col_major::Mat4ColMajor;
                 let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
@@ -261,7 +447,8 @@ pub fn bwd(
                 }
             } else {
                 // only tri0 recieve gradient
-                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix).unwrap();
+                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
+                    .unwrap();
                 let itri0 = itri0 as usize;
                 use del_geo_core::mat4_col_major::Mat4ColMajor;
                 let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
@@ -288,8 +475,20 @@ pub fn bwd(
             } // no edge
             let pixcntr0 = [iw0 as f32 + 0.5, ih as f32 + 0.5];
             let pixcntr1 = [iw1 as f32 + 0.5, ih as f32 + 0.5];
-            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri1, transform_world2pix));
-            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri0, transform_world2pix));
+            let is_pixcentr0_inside_tri1 = fn_inside(fn_barycentric(
+                tri2vtx,
+                vtx2xyz,
+                &pixcntr0,
+                itri1,
+                transform_world2pix,
+            ));
+            let is_pixcentr1_inside_tri0 = fn_inside(fn_barycentric(
+                tri2vtx,
+                vtx2xyz,
+                &pixcntr1,
+                itri0,
+                transform_world2pix,
+            ));
             if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
                 continue;
             }
@@ -301,7 +500,8 @@ pub fn bwd(
                 continue;
             } else if is_pixcentr1_inside_tri0 {
                 // only tri1 recieve gradient
-                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix).unwrap();
+                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
+                    .unwrap();
                 let itri1 = itri1 as usize;
                 use del_geo_core::mat4_col_major::Mat4ColMajor;
                 let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
@@ -313,7 +513,8 @@ pub fn bwd(
                 }
             } else {
                 // only tri0 recieve gradient
-                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix).unwrap();
+                let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
+                    .unwrap();
                 let itri0 = itri0 as usize;
                 use del_geo_core::mat4_col_major::Mat4ColMajor;
                 let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);

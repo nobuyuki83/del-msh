@@ -38,3 +38,13 @@ def smooth_gradient(hedge2type, hedge2dldr, vedge2type, vedge2dldr):
         vedge2type,
         vedge2dldr,
     )
+
+
+def interpolate(hedge2vy, vedge2vx, vtx2xy, vtx2velo):
+    from ..del_msh_dlpack import rasterized_edge_gradient_interpolate
+    rasterized_edge_gradient_interpolate(
+        hedge2vy,
+        vedge2vx,
+        vtx2xy,
+        vtx2velo,
+    )

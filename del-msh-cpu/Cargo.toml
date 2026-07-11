@@ -15,6 +15,7 @@ arrayref.workspace = true
 slice-of-array.workspace = true
 del-geo-core.workspace = true
 rayon.workspace = true
+itertools.workspace = true
 
 [dev-dependencies]
 rand_chacha = {workspace = true}

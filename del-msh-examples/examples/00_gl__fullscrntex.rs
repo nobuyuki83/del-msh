@@ -60,7 +60,7 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
             img_shape,
             &transform_ndc2world,
         );
-        let img_data = del_msh_cpu::trimesh3_raycast::render_texture_from_pix2tri(
+        let img_data = del_msh_cpu::pix2tex::render_texture_from_pix2tri(
             img_shape,
             &transform_ndc2world,
             &self.tri2vtx,

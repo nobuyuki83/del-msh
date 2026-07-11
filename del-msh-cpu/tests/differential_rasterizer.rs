@@ -41,7 +41,7 @@ mod tests {
         del_canvas::write_png_from_float_image(path, img_shape, 3, &pix2rgb_diff).unwrap()
     }
 
-    fn test_sample_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri + Sync>(
+    fn test_sample_for_model<T: del_msh_cpu::trimesh3_raycast::ScalarRender<f32> + Sync>(
         mode: T,
         str_mode: &str,
     ) {
@@ -112,11 +112,11 @@ mod tests {
 
     #[test]
     fn test_sample() {
-        test_sample_for_model(del_msh_cpu::trimesh3_raycast::Depth, "depth");
-        test_sample_for_model(del_msh_cpu::trimesh3_raycast::Occlusion, "occ");
+        test_sample_for_model(del_msh_cpu::pix2depth::Depth, "depth");
+        test_sample_for_model(del_msh_cpu::pix2occlusion::Occlusion, "occ");
     }
 
-    fn nvdiffrast<T: del_msh_cpu::trimesh3_raycast::RenderTri>(
+    fn nvdiffrast<T: del_msh_cpu::trimesh3_raycast::ScalarRender<f32>>(
         eps: f32,
         mode: &T,
     ) -> (Vec<f32>, Vec<f32>, Vec<u32>, Vec<u32>) {
@@ -182,7 +182,7 @@ mod tests {
     fn test_contour() {
         let img_shape = (IMG_RES, IMG_RES);
         let (_tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(0.);
-        let (_, _, _, cedge2vtx) = nvdiffrast(0., &del_msh_cpu::trimesh3_raycast::Occlusion);
+        let (_, _, _, cedge2vtx) = nvdiffrast(0., &del_msh_cpu::pix2occlusion::Occlusion);
         // draw edge image
         let mut pix2isedge = vec![1f32; img_shape.0 * img_shape.1];
         for chunk in cedge2vtx.chunks(2) {
@@ -218,7 +218,7 @@ mod tests {
         .unwrap();
     }
 
-    fn test_nvdiffrast_for_model<T: del_msh_cpu::trimesh3_raycast::RenderTri>(
+    fn test_nvdiffrast_for_model<T: del_msh_cpu::trimesh3_raycast::ScalarRender<f32>>(
         mode: &T,
         suffix: &str,
     ) {
@@ -310,8 +310,8 @@ mod tests {
 
     #[test]
     fn test_nvdiffrast() {
-        test_nvdiffrast_for_model(&del_msh_cpu::trimesh3_raycast::Occlusion, "occ");
-        test_nvdiffrast_for_model(&del_msh_cpu::trimesh3_raycast::Depth, "depth");
+        test_nvdiffrast_for_model(&del_msh_cpu::pix2occlusion::Occlusion, "occ");
+        test_nvdiffrast_for_model(&del_msh_cpu::pix2depth::Depth, "depth");
     }
 
     #[test]

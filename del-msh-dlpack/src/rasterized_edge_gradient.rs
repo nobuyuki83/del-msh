@@ -15,6 +15,10 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         rasterized_edge_gradient_smooth_gradient,
         m
     )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(
+        rasterized_edge_gradient_interpolate,
+        m
+    )?)?;
     Ok(())
 }
 
@@ -150,13 +154,13 @@ pub fn rasterized_edge_gradient_smooth_gradient(
     //
     let device = hedge2type.ctx.device_type;
     let img_h_m1 = shape(hedge2type, 0).unwrap(); // H-1
-    let img_w    = shape(hedge2type, 1).unwrap(); // W
-    let img_h    = img_h_m1 + 1;
+    let img_w = shape(hedge2type, 1).unwrap(); // W
+    let img_h = img_h_m1 + 1;
     //
-    chk2::<u8> (hedge2type, img_h_m1, img_w,     device).unwrap();
-    chk2::<f32>(hedge2dldr, img_h_m1, img_w,     device).unwrap();
-    chk2::<u8> (vedge2type, img_h,    img_w - 1, device).unwrap();
-    chk2::<f32>(vedge2dldr, img_h,    img_w - 1, device).unwrap();
+    chk2::<u8>(hedge2type, img_h_m1, img_w, device).unwrap();
+    chk2::<f32>(hedge2dldr, img_h_m1, img_w, device).unwrap();
+    chk2::<u8>(vedge2type, img_h, img_w - 1, device).unwrap();
+    chk2::<f32>(vedge2dldr, img_h, img_w - 1, device).unwrap();
     //
     match device {
         dlpack::device_type_codes::CPU => {
@@ -166,6 +170,49 @@ pub fn rasterized_edge_gradient_smooth_gradient(
                 slice_mut!(hedge2dldr, f32).unwrap(),
                 slice_mut!(vedge2type, u8).unwrap(),
                 slice_mut!(vedge2dldr, f32).unwrap(),
+            );
+        }
+        _ => {
+            return Err(pyo3::exceptions::PyNotImplementedError::new_err(
+                "GPU not supported",
+            ));
+        }
+    }
+    Ok(())
+}
+
+#[pyo3::pyfunction]
+#[allow(clippy::too_many_arguments)]
+pub fn rasterized_edge_gradient_interpolate(
+    _py: Python<'_>,
+    hedge2vy: &Bound<'_, PyAny>,
+    vedge2vx: &Bound<'_, PyAny>,
+    vtx2xy: &Bound<'_, PyAny>,
+    vtx2velo: &Bound<'_, PyAny>,
+) -> PyResult<()> {
+    let hedge2vy = get_tensor(hedge2vy)?;
+    let vedge2vx = get_tensor(vedge2vx)?;
+    let vtx2xy = get_tensor(vtx2xy)?;
+    let vtx2velo = get_tensor(vtx2velo)?;
+    //
+    let device = hedge2vy.ctx.device_type;
+    let img_h_m1 = shape(hedge2vy, 0).unwrap(); // H-1
+    let img_w = shape(hedge2vy, 1).unwrap(); // W
+    let img_h = img_h_m1 + 1;
+    //
+    chk2::<f32>(hedge2vy, img_h_m1, img_w, device).unwrap();
+    chk2::<f32>(vedge2vx, img_h, img_w - 1, device).unwrap();
+    chk2::<f32>(vtx2xy, shape(vtx2xy, 0).unwrap(), 2, device).unwrap();
+    chk2::<f32>(vtx2velo, shape(vtx2velo, 0).unwrap(), 2, device).unwrap();
+    //
+    match device {
+        dlpack::device_type_codes::CPU => {
+            del_msh_cpu::rasterized_edge_gradient::interpolate_staggered_grid(
+                (img_w as usize, img_h as usize),
+                slice_mut!(hedge2vy, f32).unwrap(),
+                slice_mut!(vedge2vx, f32).unwrap(),
+                slice!(vtx2xy, f32).unwrap(),
+                slice_mut!(vtx2velo, f32).unwrap(),
             );
         }
         _ => {

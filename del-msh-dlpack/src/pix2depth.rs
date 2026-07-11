@@ -40,7 +40,7 @@ pub fn pix2depth_update(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::trimesh3_raycast::pix2depth_from_pix2tri(
+            del_msh_cpu::pix2depth::pix2depth_from_pix2tri(
                 slice_mut!(pix2depth, f32).unwrap(),
                 slice!(pix2tri, u32).unwrap(),
                 slice!(tri2vtx, u32).unwrap(),
@@ -137,7 +137,7 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
                 arrayref::array_ref![slice!(transform_ndc2world, f32).unwrap(), 0, 16],
                 (img_shape[0] as usize, img_shape[1] as usize),
                 slice_mut!(dldw_vtx2xyz, f32).unwrap(),
-                &del_msh_cpu::trimesh3_raycast::Depth,
+                &del_msh_cpu::pix2depth::Depth,
             );
         }
         #[cfg(feature = "cuda")]

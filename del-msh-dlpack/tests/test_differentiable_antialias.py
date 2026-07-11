@@ -200,7 +200,6 @@ def test_autograd():
     loss = torch.dot(trgt.flatten(), deptha.flatten())
     loss.backward()
     grad = vtx2xyz.grad
-    vtx2xyz1 = vtx2xyz + vtx2xyz.grad * 0.1
     if torch.cuda.is_available():
         (d_tri2vtx, d_vtx2xyz) = (tri2vtx.cuda(), vtx2xyz.detach().clone().cuda().requires_grad_(True))
         d_edge2vtx = TriMesh3.make_edge2vtx(d_tri2vtx, d_vtx2xyz.shape[0])

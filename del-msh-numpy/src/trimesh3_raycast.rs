@@ -67,7 +67,7 @@ pub fn trimesh3_raycast_render_depth_bvh<'a>(
     let img_shape = (pix2depth.shape()[1], pix2depth.shape()[0]);
     let transform_ndc2world = transform_ndc2world.as_slice().unwrap();
     let transform_ndc2world = arrayref::array_ref![transform_ndc2world, 0, 16];
-    del_msh_cpu::trimesh3_raycast::render_depth_bvh(
+    del_msh_cpu::pix2depth::render_depth_bvh(
         img_shape,
         pix2depth.as_slice_mut().unwrap(),
         transform_ndc2world,
