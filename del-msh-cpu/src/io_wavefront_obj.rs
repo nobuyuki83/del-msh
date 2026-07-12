@@ -396,7 +396,7 @@ where
     Real: num_traits::Float + std::fmt::Display,
     Index: num_traits::PrimInt + std::fmt::Display,
 {
-    let file = File::create(filepath).context("file not found.")?;
+    let file = File::create(&filepath).context(format!("file not found. {}", filepath.as_ref().display()))?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     for i_tri in 0..tri2vtx.len() / 3 {

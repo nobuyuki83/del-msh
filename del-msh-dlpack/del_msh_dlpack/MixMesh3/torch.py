@@ -26,44 +26,6 @@ def load_cfd_mesh(path: str):
     return vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx, vtx2velo, vtx2press
 
 
-def save_vtk(
-    path_file: str,
-    vtx2xyz: torch.Tensor,
-    tet2vtx: torch.Tensor,
-    pyrmd2vtx: torch.Tensor,
-    prism2vtx: torch.Tensor,
-    hex2vtx: torch.Tensor):
-    """Save a mixed-element mesh to a VTK file.
-
-    Args:
-        path_file: output file path
-        vtx2xyz: (num_vtx, 3) float32 - vertex positions
-        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
-        pyrmd2vtx: (num_pyrmd, 5) uint32 - pyramid connectivity
-        prism2vtx: (num_prism, 6) uint32 - prism connectivity
-    """
-    #
-    num_vtx = vtx2xyz.shape[0]
-    num_tet = tet2vtx.shape[0]
-    num_pyrmd = pyrmd2vtx.shape[0]
-    num_prism = prism2vtx.shape[0]
-    num_hex = hex2vtx.shape[0]
-    #
-    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, torch.device("cpu"))
-    util_torch.assert_shape_dtype_device(tet2vtx, (num_tet, 4), torch.uint32, torch.device("cpu"))
-    util_torch.assert_shape_dtype_device(pyrmd2vtx, (num_pyrmd, 5), torch.uint32, torch.device("cpu"))
-    util_torch.assert_shape_dtype_device(prism2vtx, (num_prism, 6), torch.uint32, torch.device("cpu"))
-    util_torch.assert_shape_dtype_device(hex2vtx, (num_hex, 8), torch.uint32, torch.device("cpu"))
-    #
-    from .. import MixMesh3
-    MixMesh3.save_vtk(
-        path_file,
-        vtx2xyz.__dlpack__(),
-        tet2vtx.__dlpack__(),
-        pyrmd2vtx.__dlpack__(),
-        prism2vtx.__dlpack__(),
-        hex2vtx.__dlpack__())
-
 
 def to_polyhedral_mesh(
     tet2vtx: torch.Tensor,

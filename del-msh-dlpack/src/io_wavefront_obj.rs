@@ -27,6 +27,7 @@ pub fn io_wavefront_obj_save_tri_mesh(
     //
     let tri2vtx = unsafe { del_dlpack::slice_from_tensor::<u32>(tri2vtx) }.unwrap();
     let vtx2xyz = unsafe { del_dlpack::slice_from_tensor::<f32>(vtx2xyz) }.unwrap();
-    del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, tri2vtx, vtx2xyz, 3).unwrap();
+    del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, tri2vtx, vtx2xyz, 3)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
     Ok(())
 }

@@ -20,7 +20,7 @@ def write_velocity_on_staggered_grid(
     # --- horizontal edges: center at (i+0.5, j+1.0, 0), velocity (0, vy, 0) ---
     jj_h, ii_h = torch.meshgrid(
         torch.arange(img_h - 1, dtype=torch.float32),
-        torch.arange(img_w,     dtype=torch.float32),
+        torch.arange(img_w, dtype=torch.float32),
         indexing='ij')  # shapes (H-1, W)
     h_xyz = torch.stack([
         (ii_h + 0.5).flatten(),
@@ -35,7 +35,7 @@ def write_velocity_on_staggered_grid(
 
     # --- vertical edges: center at (i+1.0, j+0.5, 0), velocity (vx, 0, 0) ---
     jj_v, ii_v = torch.meshgrid(
-        torch.arange(img_h,     dtype=torch.float32),
+        torch.arange(img_h, dtype=torch.float32),
         torch.arange(img_w - 1, dtype=torch.float32),
         indexing='ij')  # shapes (H, W-1)
     v_xyz = torch.stack([
@@ -49,10 +49,11 @@ def write_velocity_on_staggered_grid(
         torch.zeros(img_h * (img_w - 1), dtype=torch.float32),
     ], dim=1)
 
-    vtx2xyz      = torch.cat([h_xyz, v_xyz], dim=0).contiguous()
+    vtx2xyz = torch.cat([h_xyz, v_xyz], dim=0).contiguous()
     vtx2velocity = torch.cat([h_vel, v_vel], dim=0).contiguous()
 
     write_points_with_velocity(str(path), vtx2xyz, vtx2velocity)
+
 
 def write_points_with_velocity(path: str, vtx2xyz: torch.Tensor, vtx2velocity: torch.Tensor):
     from .. import util_torch
@@ -67,4 +68,45 @@ def write_points_with_velocity(path: str, vtx2xyz: torch.Tensor, vtx2velocity: t
         path,
         util_torch.to_dlpack_safe(vtx2xyz, 0),
         util_torch.to_dlpack_safe(vtx2velocity, 0),
+    )
+
+
+def write_mix_mesh(
+        path_file: str,
+        vtx2xyz: torch.Tensor,
+        tet2vtx: torch.Tensor,
+        pyrmd2vtx: torch.Tensor,
+        prism2vtx: torch.Tensor,
+        hex2vtx: torch.Tensor):
+    """Save a mixed-element mesh to a VTK file.
+
+    Args:
+        path_file: output file path
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
+        pyrmd2vtx: (num_pyrmd, 5) uint32 - pyramid connectivity
+        prism2vtx: (num_prism, 6) uint32 - prism connectivity
+    """
+    #
+    from .. import util_torch
+    num_vtx = vtx2xyz.shape[0]
+    num_tet = tet2vtx.shape[0]
+    num_pyrmd = pyrmd2vtx.shape[0]
+    num_prism = prism2vtx.shape[0]
+    num_hex = hex2vtx.shape[0]
+    #
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, torch.device("cpu"))
+    util_torch.assert_shape_dtype_device(tet2vtx, (num_tet, 4), torch.uint32, torch.device("cpu"))
+    util_torch.assert_shape_dtype_device(pyrmd2vtx, (num_pyrmd, 5), torch.uint32, torch.device("cpu"))
+    util_torch.assert_shape_dtype_device(prism2vtx, (num_prism, 6), torch.uint32, torch.device("cpu"))
+    util_torch.assert_shape_dtype_device(hex2vtx, (num_hex, 8), torch.uint32, torch.device("cpu"))
+    #
+    from .. import IoVtk
+    IoVtk.write_mix_mesh(
+        path_file,
+        util_torch.to_dlpack_safe(vtx2xyz, 0),
+        util_torch.to_dlpack_safe(tet2vtx, 0),
+        util_torch.to_dlpack_safe(pyrmd2vtx, 0),
+        util_torch.to_dlpack_safe(prism2vtx, 0),
+        util_torch.to_dlpack_safe(hex2vtx, 0)
     )

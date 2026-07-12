@@ -49,8 +49,9 @@ fn io_vtk_write_mix_mesh(
     let prism2vtx = slice!(prism2vtx, u32).unwrap();
     let hex2vtx = slice!(hex2vtx, u32).unwrap();
     //
-    let mut file = std::fs::File::create(path).expect("file not found.");
-    del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz, 3).unwrap();
+    let mut file = std::fs::File::create(&path)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("{path}: {e}")))?;
+    del_msh_cpu::io_vtk::write_vtk_points(&mut file, "vtx2xyz", vtx2xyz, 3).unwrap();
     del_msh_cpu::io_vtk::write_vtk_cells_mix::<u32>(
         &mut file, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx,
     )
@@ -72,7 +73,8 @@ fn io_vtk_write_points_with_velocity(
     chk2::<f32>(vtx2xyz, num_vtx, 3, dlpack::device_type_codes::CPU).unwrap();
     chk2::<f32>(vtx2velocity, num_vtx, 3, dlpack::device_type_codes::CPU).unwrap();
     //
-    let mut file = std::fs::File::create(path).expect("file not found.");
+    let mut file = std::fs::File::create(&path)
+        .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("{path}: {e}")))?;
     del_msh_cpu::io_vtk::write_vtk_points_with_velocity(
         &mut file,
         slice!(vtx2xyz, f32).unwrap(),

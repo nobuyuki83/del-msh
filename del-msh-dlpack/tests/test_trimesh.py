@@ -1,4 +1,5 @@
 import numpy
+import pytest
 import torch
 #
 import del_msh_dlpack.TriMesh3.numpy
@@ -168,3 +169,7 @@ def test_05():
     del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(tri2vtx, vtx2xyz, str(path / "target" / "torus.obj"))
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 8, 32)
     del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(tri2vtx, vtx2xyz, str(path / "target" / "sphere.obj"))
+    #
+    with pytest.raises(OSError) as exc_info:
+        del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(tri2vtx, vtx2xyz, str(path / "target" / "no-exist" / "sphere.obj"))
+    print("expected error:", exc_info.value)
