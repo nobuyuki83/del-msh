@@ -12,7 +12,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.45"  # change the del-msh-dlpack and del-msh-numpy's version too
+version = "0.1.46"  # change the del-msh-dlpack and del-msh-numpy's version too
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
