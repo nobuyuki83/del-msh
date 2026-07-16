@@ -44,7 +44,7 @@ where
         let dndcdq = del_geo_core::mat4_col_major::jacobian_transform(transform_world2ndc, &q);
         let dndcdq_t = del_geo_core::mat3_col_major::transpose(&dndcdq);
         let dldw_q = del_geo_core::mat3_col_major::mult_vec(&dndcdq_t, &dldw_ndc);
-        let dldw_t = del_geo_core::vec3::dot(&ray_dir, &dldw_q);
+        let dldw_t = del_geo_core::vec3::dot(ray_dir, &dldw_q);
         let (_t, _u, _v, dldw_p0, dldw_p1, dldw_p2) =
             del_geo_core::tri3::intersection_against_line_bwd_wrt_tri(
                 p0, p1, p2, ray_org, ray_dir, dldw_t, zero, zero,

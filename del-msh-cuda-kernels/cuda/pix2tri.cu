@@ -25,7 +25,9 @@ void pix_to_tri(
     if( i_pix >= img_w * img_h ){ return; }
     //
     auto ray = ray_for_pixel(i_pix, img_w, img_h, transform_ndc2world);
+    //
     /*
+    pix2tri[i_pix] = UINT32_MAX;
     for(int i_tri=0;i_tri<num_tri;++i_tri){
         const float* p0 = vtx2xyz + tri2vtx[i_tri*3+0]*3;
         const float* p1 = vtx2xyz + tri2vtx[i_tri*3+1]*3;
@@ -36,7 +38,8 @@ void pix_to_tri(
         return;
     }
     return;
-    */
+*/
+
     constexpr int STACK_SIZE = 128;
     uint32_t stack[STACK_SIZE];
     float hit_depth = FLT_MAX;

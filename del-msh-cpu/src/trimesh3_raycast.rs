@@ -8,6 +8,7 @@ pub trait ScalarRender<T> {
         transform_world2ndc: &[T; 16],
     ) -> T;
 
+    #[allow(clippy::too_many_arguments)]
     fn bwd(
         &self,
         dldw_val: T,
