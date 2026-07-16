@@ -9,9 +9,11 @@ import del_msh_dlpack.Pix2Tri.torch as Pix2Tri
 import del_msh_dlpack.Mat44.torch as Mat44
 import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
 import del_msh_dlpack.IoVtk.torch as IoVtk
+
+
 #
 
-def test1():
+def test_gradient_visualization_silhouette():
     from test_differentiable_antialias import example1, apply_colormap_bwr
 
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
@@ -45,12 +47,12 @@ def test1():
     path1 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge6.png"
     Image.fromarray(pix2rgb_diff.numpy()).save(path1)
     #
-    
+
 
 def example2():
     tri2vtx, vtx2xyz = TriMesh3.sphere(1.0, 64, 32)
     transform1 = Mat44.from_translation(0., 0.0, 0.)
-    vtx2xyz = Vtx2Xyz.transform_affine(vtx2xyz, transform1) # move up
+    vtx2xyz = Vtx2Xyz.transform_affine(vtx2xyz, transform1)  # move up
     transform_world2ndc = Mat44.from_scale(0.5, 0.5, 0.5)
     img_shape = (128, 128)
     radius = 50.0  # adjustable
@@ -61,8 +63,12 @@ def example2():
     pix2occ_target = torch.where(dist2 <= radius ** 2, 1.0, 0.0).to(torch.float32)
     return tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_target
 
+def test_numerical_difference_example2():
+    tri2vtx, vtx2xyz, transform_world2ndc, image_shape, _ = example2()
 
-def test2():
+    pass
+
+def test_smooth_gradient_staggered_grid():
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2()
     transform_ndc2world = transform_world2ndc.inverse()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
@@ -106,11 +112,11 @@ def test2():
         hedge2dldr, vedge2dldr, pix2xy.reshape(-1, 2))
 
     pix2xyz = torch.cat([
-        pix2xy.reshape(-1,2),
+        pix2xy.reshape(-1, 2),
         torch.zeros(img_h * img_w, 1, dtype=torch.float32),
     ], dim=1)
     pix2vxvyvz = torch.cat([
-        pix2vxvy.reshape(-1,2),
+        pix2vxvy.reshape(-1, 2),
         torch.zeros(img_h * img_w, 1, dtype=torch.float32),
     ], dim=1)
 
@@ -118,7 +124,7 @@ def test2():
     IoVtk.write_points_with_velocity(str(path0), pix2xyz, pix2vxvyvz)
 
 
-def test_autograd():
+def test_silhouette_optimization():
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2()
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
@@ -127,16 +133,18 @@ def test_autograd():
     vtx2xyz.requires_grad_(True)
 
     lr = 10.0
-    for iter in range(0,100):
+    for iter in range(0, 100):
         vtx2xyz.grad = None
         bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
         pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
         Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
         pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
         #pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
-        pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
+        pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz,
+                                                                                        transform_world2pix, pix2tri,
+                                                                                        pix2occ)
         loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
-        print("iter = :", iter,"  loss=", loss.item())
+        print("iter = :", iter, "  loss=", loss.item())
         if loss.item() < 1.0e-5:
             break
         loss.backward()
@@ -151,8 +159,3 @@ def test_autograd():
 
         path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge5.obj"
         TriMesh3.save_wavefront_obj(tri2vtx, vtx2xyz, str(path0))
-
-
-
-
-
