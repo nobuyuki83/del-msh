@@ -10,6 +10,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         trimesh3_raycast_pix2tri_by_raycast,
         m
     )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(pix2tri_interpolate, m)?)?;
     Ok(())
 }
 
@@ -91,5 +92,49 @@ pub fn trimesh3_raycast_pix2tri_by_raycast(
             todo!()
         }
     }
+    Ok(())
+}
+
+#[pyo3::pyfunction]
+pub fn pix2tri_interpolate(
+    _py: Python<'_>,
+    pix2tri: &Bound<'_, PyAny>,
+    tri2vtx: &Bound<'_, PyAny>,
+    vtx2xyz: &Bound<'_, PyAny>,
+    vtx2val: &Bound<'_, PyAny>,
+    transform_ndc2world: &Bound<'_, PyAny>,
+    pix2val: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
+) -> PyResult<()> {
+    let pix2tri = get_tensor(pix2tri)?;
+    let tri2vtx = get_tensor(tri2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let vtx2val = get_tensor(vtx2val)?;
+    let transform_ndc2world = get_tensor(transform_ndc2world)?;
+    let pix2val = get_tensor(pix2val)?;
+    //
+    let img_h = shape(pix2tri, 0).unwrap();
+    let img_w = shape(pix2tri, 1).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let num_vdim = shape(vtx2val, 1).unwrap();
+    //
+    chk2::<u32>(pix2tri, img_h, img_w, dlpack::device_type_codes::CPU).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, dlpack::device_type_codes::CPU).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, dlpack::device_type_codes::CPU).unwrap();
+    chk2::<f32>(vtx2val, num_vtx, num_vdim, dlpack::device_type_codes::CPU).unwrap();
+    chk2::<f32>(transform_ndc2world, 4, 4, dlpack::device_type_codes::CPU).unwrap();
+    chk2::<f32>(pix2val, img_h * img_w, num_vdim, dlpack::device_type_codes::CPU).unwrap();
+    //
+    del_msh_cpu::pix2tri::interpolate(
+        (img_w as usize, img_h as usize),
+        slice!(pix2tri, u32).unwrap(),
+        slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
+        slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+        num_vdim as usize,
+        slice!(vtx2val, f32).unwrap(),
+        arrayref::array_ref![slice!(transform_ndc2world, f32).unwrap(), 0, 16],
+        slice_mut!(pix2val, f32).unwrap(),
+    );
     Ok(())
 }

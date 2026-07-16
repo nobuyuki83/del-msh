@@ -22,6 +22,8 @@ def example1():
     img_shape = (128, 128)
     return tri2vtx, vtx2xyz, transform_world2ndc, img_shape
 
+def test_finite_difference():
+    pass
 
 def test_cpu_cuda_match_with_autograd():
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
