@@ -16,6 +16,7 @@ rand_chacha.workspace = true
 anyhow.workspace = true
 del-msh-cpu.workspace = true
 del-geo-core.workspace = true
+del-canvas.workspace = true
 rayon.workspace = true
 eframe = {version = "0.31.1", default-features = false, features = ["glow", "default_fonts"]}
 env_logger = "0.11.8"
@@ -35,7 +36,6 @@ del-cudarc-safe = { git="https://github.com/nobuyuki83/del-cudarc.git", optional
 # for github push
 del-gl-core = {git = "https://github.com/nobuyuki83/del-gl.git"}
 del-gl-winit-glutin = {git = "https://github.com/nobuyuki83/del-gl.git"}
-del-canvas = {git = "https://github.com/nobuyuki83/del-canvas.git"}
 del-glow = {git = "https://github.com/nobuyuki83/del-glow.git"}
 
 # for deploy

@@ -16,6 +16,7 @@ def update_pix2tri(
     img_h = pix2tri.shape[0]
     device = tri2vtx.device
     vtx2xyz = vtx2xyz.detach()
+    transform_ndc2world = transform_ndc2world.contiguous()
     #
     assert num_bvhnode == num_tri * 2 - 1
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
@@ -23,6 +24,7 @@ def update_pix2tri(
     util_torch.assert_shape_dtype_device(bvhnodes, (num_bvhnode, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(bvhnode2aabb, (num_bvhnode, 6), torch.float32, device)
     util_torch.assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(transform_ndc2world, (4,4), torch.float32, device)
     #
     stream_ptr = 0
     if device.type == "cuda":

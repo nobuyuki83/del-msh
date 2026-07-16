@@ -29,9 +29,7 @@ fn fn_barycentric(
             .transform_homogeneous(xyz2)
             .unwrap()
             .xy();
-        let Some(b) = del_geo_core::tri2::barycentric_coords(&p0, &p1, &p2, pixcntr0) else {
-            return None;
-        };
+        let b = del_geo_core::tri2::barycentric_coords(&p0, &p1, &p2, pixcntr0)?;
         Some([b.0, b.1, b.2])
     }
 }
@@ -49,6 +47,7 @@ fn fn_inside(b: Option<[f32; 3]>) -> bool {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn edge_gradient_and_type(
     tri2vtx: &[u32],
     vtx2xyz: &[f32],
