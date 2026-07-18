@@ -93,7 +93,6 @@ pub fn pix2tri_by_raycast(
     Ok(())
 }
 
-
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
 pub fn pix2tri_interpolate(

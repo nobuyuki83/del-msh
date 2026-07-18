@@ -172,7 +172,6 @@ fn test_pix2tri() {
         });
 }
 
-
 #[allow(clippy::too_many_arguments)]
 pub fn interpolate<Index, Real>(
     (img_w, img_h): (usize, usize),
