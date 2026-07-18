@@ -92,7 +92,7 @@ def bwd_wrt_vtx2xyz(
     )
 
 
-class Pix2DepthFunction(torch.autograd.Function):
+class AutogradFunction(torch.autograd.Function):
     """Differentiable depth rendering as a torch.autograd.Function."""
 
     @staticmethod
@@ -115,3 +115,20 @@ class Pix2DepthFunction(torch.autograd.Function):
             transform_ndc2world,
         )
         return dldw_vtx2xyz, None, None, None
+
+
+def pix2depth_using_interpolation(vtx2xyz, pix2tri, tri2vtx, transform_ndc2world):
+    from ..Pix2Tri.torch import AutogradInterpolate
+    pix2xyz = AutogradInterpolate.apply(pix2tri, tri2vtx, vtx2xyz, vtx2xyz,
+                                        transform_ndc2world)
+    transform_world2ndc = transform_ndc2world.inverse()
+    pix2xyzw = torch.cat(
+        [pix2xyz, torch.ones_like(pix2xyz[:, :, :1])],
+        dim=-1
+    )
+    background = pix2tri == torch.iinfo(torch.uint32).max
+    pix2ndcw = pix2xyzw @ transform_world2ndc.T
+    pix2depth = (pix2ndcw[:, :, 2] / pix2ndcw[:, :, 3] + 1.0) * 0.5
+    pix2depth[background] = 0.0
+    return pix2depth
+

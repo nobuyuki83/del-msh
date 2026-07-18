@@ -39,9 +39,7 @@ def test_save_fwd_diff_image():
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
     ##
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-    pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32)
-    pix2tri.fill_(torch.iinfo(torch.uint32).max)
-    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    pix2tri = Pix2Tri.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, img_shape)
     #
     edge2vtx = TriMesh3.make_edge2vtx(tri2vtx, vtx2xyz.shape[0])
     edge2tri = TriMesh3.make_edge2tri(tri2vtx, vtx2xyz.shape[0], edge2vtx)
@@ -109,10 +107,10 @@ def test_match_cpu_cuda():
     #
     pix2tri = torch.full((img_shape[1], img_shape[0]),
                          torch.iinfo(torch.uint32).max, device=torch.device("cpu"), dtype=torch.uint32)
-    del_msh_dlpack.Pix2Tri.torch.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    del_msh_dlpack.Pix2Tri.torch.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
     d_pix2tri = torch.full((img_shape[1], img_shape[0]),
                          torch.iinfo(torch.uint32).max, device=torch.device("cuda"), dtype=torch.uint32)
-    del_msh_dlpack.Pix2Tri.torch.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
+    del_msh_dlpack.Pix2Tri.torch.by_raycasting(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
     assert torch.equal(pix2tri, d_pix2tri.cpu())
     #
     vtx2idx_offset, idx2vtx = del_msh_dlpack.Vtx2Vtx.torch.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
@@ -190,9 +188,8 @@ def test_autograd():
     edge2tri = TriMesh3.make_edge2tri(tri2vtx, vtx2xyz.shape[0], edge2vtx)
     #
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-    pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
-    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
-    depth = Pix2Depth.Pix2DepthFunction.apply(vtx2xyz, pix2tri, tri2vtx, transform_ndc2world)
+    pix2tri = Pix2Tri.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, img_shape)
+    depth = Pix2Depth.AutogradFunction.apply(vtx2xyz, pix2tri, tri2vtx, transform_ndc2world)
     cedge2vtx = Edge2Vtx.contour_for_triangle_mesh(tri2vtx,vtx2xyz,transform_world2ndc,edge2vtx,edge2tri)
     deptha = DifferentiableAntialias.DifferentiableAntialiasFunction.apply(cedge2vtx, vtx2xyz, transform_world2pix, pix2tri, depth)
     trgt = torch.rand((img_shape[1], img_shape[0]), dtype=torch.float32)
@@ -205,8 +202,8 @@ def test_autograd():
         d_edge2tri = TriMesh3.make_edge2tri(d_tri2vtx, d_vtx2xyz.shape[0], d_edge2vtx)
         d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
         d_pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32, device=torch.device("cuda"))
-        Pix2Tri.update_pix2tri(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
-        d_depth = Pix2Depth.Pix2DepthFunction.apply(d_vtx2xyz, d_pix2tri, d_tri2vtx, transform_ndc2world.cuda())
+        Pix2Tri.by_raycasting(d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, transform_ndc2world.cuda(), d_pix2tri)
+        d_depth = Pix2Depth.AutogradFunction.apply(d_vtx2xyz, d_pix2tri, d_tri2vtx, transform_ndc2world.cuda())
         d_cedge2vtx = Edge2Vtx.contour_for_triangle_mesh(d_tri2vtx,d_vtx2xyz,transform_world2ndc.cuda(),d_edge2vtx,d_edge2tri)
         d_deptha = DifferentiableAntialias.DifferentiableAntialiasFunction.apply(d_cedge2vtx, d_vtx2xyz, transform_world2pix.cuda(), d_pix2tri, d_depth)
         d_loss = torch.dot(trgt.cuda().flatten(), d_deptha.flatten())

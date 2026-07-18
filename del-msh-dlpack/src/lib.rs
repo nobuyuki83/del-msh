@@ -17,12 +17,12 @@ mod mortons;
 mod nbody;
 mod offset_array;
 mod pix2depth;
+mod pix2tri;
 mod polyhedron_mesh;
 mod quad_oct_tree;
 mod rasterized_edge_gradient;
 mod trimesh3;
 mod trimesh3_primitive;
-mod pix2tri;
 mod vtx2elem;
 mod vtx2vtx;
 

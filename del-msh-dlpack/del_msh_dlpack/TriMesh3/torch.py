@@ -58,7 +58,7 @@ def make_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
 
 
 def bwd_tri2normal(
-    tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
+        tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
 ):
     """Backward pass of make_tri2normal: propagate loss gradient to vertex positions.
 
@@ -107,6 +107,48 @@ class Tri2Normal(torch.autograd.Function):
         tri2vtx, vtx2xyz = ctx.saved_tensors
         dw_vtx2xyz = bwd_tri2normal(tri2vtx.detach(), vtx2xyz.detach(), dw_tri2nrm)
         return None, dw_vtx2xyz
+
+
+def make_vtx2normal(
+        tri2vtx: torch.Tensor,  # [Nt, 3]
+        vtx2xyz: torch.Tensor,  # [Nv, 3]
+        eps: float = 1.0e-12,
+) -> torch.Tensor:
+    p0 = vtx2xyz[tri2vtx[:, 0]]
+    p1 = vtx2xyz[tri2vtx[:, 1]]
+    p2 = vtx2xyz[tri2vtx[:, 2]]
+
+    # Twice the area times the unit normal.
+    # Keeping this unnormalized gives area-weighted vertex normals.
+    face_normals = torch.cross(
+        p1 - p0,
+        p2 - p0,
+        dim=-1,
+    )  # [Nt, 3]
+
+    vertex_normals = torch.zeros_like(vtx2xyz)
+
+    vertex_normals.index_add_(
+        0,
+        tri2vtx[:, 0],
+        face_normals,
+    )
+    vertex_normals.index_add_(
+        0,
+        tri2vtx[:, 1],
+        face_normals,
+    )
+    vertex_normals.index_add_(
+        0,
+        tri2vtx[:, 2],
+        face_normals,
+    )
+
+    return torch.nn.functional.normalize(
+        vertex_normals,
+        dim=-1,
+        eps=eps,
+    )
 
 
 def load_nastran(
@@ -203,8 +245,8 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     device = tri2vtx.device
     vtx2xyz = vtx2xyz.detach()
     #
-    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri,3), torch.uint32, device)
-    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx,3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -224,7 +266,7 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     num_bvhnodes = bvhnodes.shape[0]
     #
     bvhnode2aabb = torch.empty((num_bvhnodes, 6), dtype=torch.float32, device=device)
-    vtx2xyz1 = torch.zeros((0,3), dtype=torch.float32, device=device)
+    vtx2xyz1 = torch.zeros((0, 3), dtype=torch.float32, device=device)
     from .. import TriMesh3
     TriMesh3.make_bvhnode2aabb_from_bvhnodes(
         tri2vtx.detach().__dlpack__(),

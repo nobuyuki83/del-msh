@@ -22,9 +22,7 @@ def test_gradient_visualization_silhouette():
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
     #
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-    pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32)
-    pix2tri.fill_(torch.iinfo(torch.uint32).max)
-    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    pix2tri = Pix2Tri.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, img_shape)
 
     # gradient visualization: d(pixel) / d(vtx) projected onto x-direction
     dxyz = torch.zeros_like(vtx2xyz)
@@ -75,9 +73,7 @@ def test_smooth_gradient_staggered_grid():
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
     #
     bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-    pix2tri = torch.empty((img_shape[1], img_shape[0]), dtype=torch.uint32)
-    pix2tri.fill_(torch.iinfo(torch.uint32).max)
-    Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+    pix2tri = Pix2Tri.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, img_shape)
     #
     pix2occ_src = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
     img = (pix2occ_src.numpy() * 255).clip(0, 255).astype('uint8')
@@ -136,8 +132,7 @@ def test_silhouette_optimization():
     for iter in range(0, 100):
         vtx2xyz.grad = None
         bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
-        pix2tri = torch.zeros((img_shape[1], img_shape[0]), dtype=torch.uint32)
-        Pix2Tri.update_pix2tri(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri)
+        pix2tri = Pix2Tri.by_raycasting(tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, img_shape)
         pix2occ = torch.where(pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0).to(torch.float32)
         #pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
         pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientWithSmoothFunction.apply(tri2vtx, vtx2xyz,
@@ -159,3 +154,5 @@ def test_silhouette_optimization():
 
         path0 = pathlib.Path(__file__).parent.parent.parent / "target" / "del_msh_dlpack__microedge5.obj"
         TriMesh3.save_wavefront_obj(tri2vtx, vtx2xyz, str(path0))
+
+
