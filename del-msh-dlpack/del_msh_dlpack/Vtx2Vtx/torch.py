@@ -16,8 +16,7 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     from .. import Vtx2Vtx
 
     cap_vtx2idx, cap_idx2vtx = Vtx2Vtx.from_uniform_mesh(
-        util_torch.to_dlpack_safe(elem2vtx, stream_ptr),
-        num_vtx, is_self, stream_ptr
+        util_torch.to_dlpack_safe(elem2vtx, stream_ptr), num_vtx, is_self, stream_ptr
     )
     vtx2idx = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2idx))
     idx2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_idx2vtx))
@@ -86,9 +85,17 @@ def multiply_graph_laplacian(
     device = vtx2idx.device
     num_vdim = vtx2rhs.shape[1]
     #
-    assert vtx2idx.shape == (num_vtx+1,) and vtx2idx.dtype == torch.uint32
-    assert idx2vtx.shape == (num_idx,) and idx2vtx.dtype == torch.uint32 and idx2vtx.device == device
-    assert vtx2rhs.shape == (num_vtx, num_vdim) and vtx2rhs.dtype == torch.float32 and vtx2rhs.device == device
+    assert vtx2idx.shape == (num_vtx + 1,) and vtx2idx.dtype == torch.uint32
+    assert (
+        idx2vtx.shape == (num_idx,)
+        and idx2vtx.dtype == torch.uint32
+        and idx2vtx.device == device
+    )
+    assert (
+        vtx2rhs.shape == (num_vtx, num_vdim)
+        and vtx2rhs.dtype == torch.float32
+        and vtx2rhs.device == device
+    )
     #
     vtx2lhs = torch.zeros_like(vtx2rhs)
     #
@@ -104,7 +111,7 @@ def multiply_graph_laplacian(
         util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
         util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
         util_torch.to_dlpack_safe(vtx2lhs, stream_ptr),
-        stream_ptr
+        stream_ptr,
     )
     return vtx2lhs
 
@@ -118,5 +125,7 @@ class GraphLaplacian(torch.autograd.Function):
     @staticmethod
     def backward(ctx, dw_lx):
         vtx2idx, idx2vtx = ctx.saved_tensors
-        dw_vtx2xyz = multiply_graph_laplacian(vtx2idx.detach(), idx2vtx.detach(), dw_lx.detach())
+        dw_vtx2xyz = multiply_graph_laplacian(
+            vtx2idx.detach(), idx2vtx.detach(), dw_lx.detach()
+        )
         return None, None, dw_vtx2xyz

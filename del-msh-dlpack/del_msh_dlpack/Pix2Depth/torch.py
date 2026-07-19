@@ -3,11 +3,12 @@ from .. import util_torch
 
 
 def update(
-        pix2depth: torch.Tensor,
-        pix2tri: torch.Tensor,
-        tri2vtx: torch.Tensor,
-        vtx2xyz: torch.Tensor,
-        transform_ndc2world: torch.Tensor):
+    pix2depth: torch.Tensor,
+    pix2tri: torch.Tensor,
+    tri2vtx: torch.Tensor,
+    vtx2xyz: torch.Tensor,
+    transform_ndc2world: torch.Tensor,
+):
     """Compute depth image from a pre-computed pix2tri map.
 
     Args:
@@ -22,11 +23,15 @@ def update(
     img_h, img_w = pix2depth.shape[0], pix2depth.shape[1]
     device = pix2depth.device
     #
-    util_torch.assert_shape_dtype_device(pix2depth, (img_h, img_w), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        pix2depth, (img_h, img_w), torch.float32, device
+    )
     util_torch.assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
-    util_torch.assert_shape_dtype_device(transform_ndc2world, (4, 4), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        transform_ndc2world, (4, 4), torch.float32, device
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -46,12 +51,13 @@ def update(
 
 
 def bwd_wrt_vtx2xyz(
-        dldw_vtx2xyz: torch.Tensor,
-        pix2tri: torch.Tensor,
-        tri2vtx: torch.Tensor,
-        vtx2xyz: torch.Tensor,
-        dldw_pix2depth: torch.Tensor,
-        transform_ndc2world: torch.Tensor):
+    dldw_vtx2xyz: torch.Tensor,
+    pix2tri: torch.Tensor,
+    tri2vtx: torch.Tensor,
+    vtx2xyz: torch.Tensor,
+    dldw_pix2depth: torch.Tensor,
+    transform_ndc2world: torch.Tensor,
+):
     """Backward pass: accumulate gradients of depth w.r.t. vertex positions.
 
     Args:
@@ -67,12 +73,18 @@ def bwd_wrt_vtx2xyz(
     img_h, img_w = pix2tri.shape[0], pix2tri.shape[1]
     device = dldw_vtx2xyz.device
     #
-    util_torch.assert_shape_dtype_device(dldw_vtx2xyz, (num_vtx, 3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        dldw_vtx2xyz, (num_vtx, 3), torch.float32, device
+    )
     util_torch.assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
-    util_torch.assert_shape_dtype_device(dldw_pix2depth, (img_h, img_w), torch.float32, device)
-    util_torch.assert_shape_dtype_device(transform_ndc2world, (4, 4), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        dldw_pix2depth, (img_h, img_w), torch.float32, device
+    )
+    util_torch.assert_shape_dtype_device(
+        transform_ndc2world, (4, 4), torch.float32, device
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -98,7 +110,9 @@ class AutogradFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, vtx2xyz, pix2tri, tri2vtx, transform_ndc2world):
         ctx.save_for_backward(pix2tri, tri2vtx, vtx2xyz, transform_ndc2world)
-        pix2depth = torch.zeros(pix2tri.shape, dtype=torch.float32, device=vtx2xyz.device)
+        pix2depth = torch.zeros(
+            pix2tri.shape, dtype=torch.float32, device=vtx2xyz.device
+        )
         update(pix2depth, pix2tri, tri2vtx, vtx2xyz.detach(), transform_ndc2world)
         return pix2depth
 
@@ -119,16 +133,14 @@ class AutogradFunction(torch.autograd.Function):
 
 def pix2depth_using_interpolation(vtx2xyz, pix2tri, tri2vtx, transform_ndc2world):
     from ..Pix2Tri.torch import AutogradInterpolate
-    pix2xyz = AutogradInterpolate.apply(pix2tri, tri2vtx, vtx2xyz, vtx2xyz,
-                                        transform_ndc2world)
-    transform_world2ndc = transform_ndc2world.inverse()
-    pix2xyzw = torch.cat(
-        [pix2xyz, torch.ones_like(pix2xyz[:, :, :1])],
-        dim=-1
+
+    pix2xyz = AutogradInterpolate.apply(
+        pix2tri, tri2vtx, vtx2xyz, vtx2xyz, transform_ndc2world
     )
+    transform_world2ndc = transform_ndc2world.inverse()
+    pix2xyzw = torch.cat([pix2xyz, torch.ones_like(pix2xyz[:, :, :1])], dim=-1)
     background = pix2tri == torch.iinfo(torch.uint32).max
     pix2ndcw = pix2xyzw @ transform_world2ndc.T
     pix2depth = (pix2ndcw[:, :, 2] / pix2ndcw[:, :, 3] + 1.0) * 0.5
     pix2depth[background] = 0.0
     return pix2depth
-

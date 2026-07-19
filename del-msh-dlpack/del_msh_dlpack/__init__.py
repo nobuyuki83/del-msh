@@ -24,6 +24,3 @@ def get_ptx_compiler_version():
     from .del_msh_dlpack import get_ptx_compiler_version
 
     return get_ptx_compiler_version()
-
-
-

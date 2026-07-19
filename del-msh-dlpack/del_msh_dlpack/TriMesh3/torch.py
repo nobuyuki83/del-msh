@@ -1,4 +1,5 @@
 import torch
+
 #
 from .. import util_torch
 from .. import _CapsuleAsDLPack
@@ -58,7 +59,7 @@ def make_tri2normal(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
 
 
 def bwd_tri2normal(
-        tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
+    tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, dw_tri2nrm: torch.Tensor
 ):
     """Backward pass of make_tri2normal: propagate loss gradient to vertex positions.
 
@@ -75,7 +76,9 @@ def bwd_tri2normal(
     #
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
-    util_torch.assert_shape_dtype_device(dw_tri2nrm, (num_tri, 3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        dw_tri2nrm, (num_tri, 3), torch.float32, device
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -110,9 +113,9 @@ class Tri2Normal(torch.autograd.Function):
 
 
 def make_vtx2normal(
-        tri2vtx: torch.Tensor,  # [Nt, 3]
-        vtx2xyz: torch.Tensor,  # [Nv, 3]
-        eps: float = 1.0e-12,
+    tri2vtx: torch.Tensor,  # [Nt, 3]
+    vtx2xyz: torch.Tensor,  # [Nv, 3]
+    eps: float = 1.0e-12,
 ) -> torch.Tensor:
     p0 = vtx2xyz[tri2vtx[:, 0]]
     p1 = vtx2xyz[tri2vtx[:, 1]]
@@ -151,8 +154,7 @@ def make_vtx2normal(
     )
 
 
-def load_nastran(
-        path_file: str):
+def load_nastran(path_file: str):
     """Load a triangle mesh from a Nastran file.
 
     Args:
@@ -183,9 +185,7 @@ def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: 
     from .. import TriMesh3
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx.__dlpack__(),
-        vtx2xyz.detach().__dlpack__(),
-        path_file
+        tri2vtx.__dlpack__(), vtx2xyz.detach().__dlpack__(), path_file
     )
 
 
@@ -203,7 +203,9 @@ def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor:
     """
     from .. import TriMesh3
 
-    cap_tri2vtx, cap_vtx2xyz = TriMesh3.torus(major_raidus, minor_radius, ndiv_major, ndiv_minor)
+    cap_tri2vtx, cap_vtx2xyz = TriMesh3.torus(
+        major_raidus, minor_radius, ndiv_major, ndiv_minor
+    )
     tri2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_tri2vtx)).clone()
     vtx2xyz = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2xyz)).clone()
     return tri2vtx, vtx2xyz
@@ -255,19 +257,24 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     #
     tri2centroid = make_tri2centroid(tri2vtx, vtx2xyz)
     from ..Mat44.torch import from_fit_vtx2xyz_into_unit_cube
+
     transform_co2unit = from_fit_vtx2xyz_into_unit_cube(tri2centroid)
     #
     from ..Mortons.torch import make_vtx2morton_from_vtx2co
+
     tri2morton = make_vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
     from ..Array1D.torch import argsort
+
     idx2tri, idx2morton = argsort(tri2morton)
     from ..Mortons.torch import make_bvhnodes_from_sorted_mortons
+
     bvhnodes = make_bvhnodes_from_sorted_mortons(idx2tri, idx2morton)
     num_bvhnodes = bvhnodes.shape[0]
     #
     bvhnode2aabb = torch.empty((num_bvhnodes, 6), dtype=torch.float32, device=device)
     vtx2xyz1 = torch.zeros((0, 3), dtype=torch.float32, device=device)
     from .. import TriMesh3
+
     TriMesh3.make_bvhnode2aabb_from_bvhnodes(
         tri2vtx.detach().__dlpack__(),
         vtx2xyz.detach().__dlpack__(),
@@ -285,9 +292,13 @@ def make_edge2vtx(tri2vtx: torch.Tensor, num_vtx: int):
     assert tri2vtx.dtype == torch.uint32
     #
     from del_msh_dlpack.Vtx2Vtx.torch import from_uniform_mesh
+
     vtx2idx_offset, idx2vtx = from_uniform_mesh(tri2vtx, num_vtx, False)
-    edge2vtx = torch.empty((idx2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device)
+    edge2vtx = torch.empty(
+        (idx2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device
+    )
     from del_msh_dlpack.Edge2Vtx.torch import from_vtx2vtx
+
     from_vtx2vtx(vtx2idx_offset, idx2vtx, edge2vtx)
     return edge2vtx
 
@@ -302,8 +313,14 @@ def make_edge2tri(tri2vtx: torch.Tensor, num_vtx: int, edge2vtx: torch.Tensor):
     assert tri2vtx.device == edge2vtx.device
     #
     from del_msh_dlpack.Vtx2Elem.torch import from_uniform_mesh
+
     vtx2jdx_offset, jdx2tri = from_uniform_mesh(tri2vtx, num_vtx)
-    edge2tri = torch.empty((edge2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device)
+    edge2tri = torch.empty(
+        (edge2vtx.shape[0], 2), dtype=torch.uint32, device=tri2vtx.device
+    )
     from del_msh_dlpack.Edge2Elem.torch import from_edge2vtx_of_tri2vtx_with_vtx2vtx
-    from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri)
+
+    from_edge2vtx_of_tri2vtx_with_vtx2vtx(
+        edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri
+    )
     return edge2tri

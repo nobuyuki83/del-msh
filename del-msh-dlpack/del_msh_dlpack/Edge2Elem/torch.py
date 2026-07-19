@@ -1,12 +1,14 @@
 import torch
 from .. import util_torch
 
+
 def from_edge2vtx_of_tri2vtx_with_vtx2vtx(
-        edge2vtx: torch.Tensor,
-        tri2vtx: torch.Tensor,
-        vtx2idx_offset: torch.Tensor,
-        idx2vtx: torch.Tensor,
-        edge2tri: torch.Tensor):
+    edge2vtx: torch.Tensor,
+    tri2vtx: torch.Tensor,
+    vtx2idx_offset: torch.Tensor,
+    idx2vtx: torch.Tensor,
+    edge2tri: torch.Tensor,
+):
     """Compute the two triangles adjacent to each edge (edge-to-triangle adjacency).
 
     For each edge, finds the (at most two) triangles that share it, using the
@@ -27,7 +29,9 @@ def from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     #
     util_torch.assert_shape_dtype_device(edge2vtx, (num_edge, 2), torch.uint32, device)
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
-    util_torch.assert_shape_dtype_device(vtx2idx_offset, (num_vtx + 1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(
+        vtx2idx_offset, (num_vtx + 1,), torch.uint32, device
+    )
     util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
     util_torch.assert_shape_dtype_device(edge2tri, (num_edge, 2), torch.uint32, device)
     #
@@ -44,5 +48,5 @@ def from_edge2vtx_of_tri2vtx_with_vtx2vtx(
         vtx2idx_offset.__dlpack__(),
         idx2vtx.__dlpack__(),
         edge2tri.__dlpack__(),
-        stream_ptr = stream_ptr
+        stream_ptr=stream_ptr,
     )

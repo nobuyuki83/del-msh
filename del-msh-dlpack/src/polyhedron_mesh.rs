@@ -284,6 +284,7 @@ fn polyhedron_mesh_search_elem_contain_points(
                 "search_elem_contain_points",
             )
             .unwrap();
+            let confg = del_cudarc_sys::LaunchConfig::for_num_elems_with_num_threads(num_wtx as u32, 128);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_elem as u32);
             builder.arg_data(&elem2idx_offset.data);
@@ -298,7 +299,7 @@ fn polyhedron_mesh_search_elem_contain_points(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                    confg,
                 )
                 .unwrap();
         }

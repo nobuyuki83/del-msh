@@ -10,8 +10,7 @@ def bwd_tri2normal(tri2vtx, vtx2xyz, dw_tri2normal, dw_vtx2xyz, stream_ptr=0):
     trimesh3_bwd_tri2normal(tri2vtx, vtx2xyz, dw_tri2normal, dw_vtx2xyz, stream_ptr)
 
 
-def load_nastran(
-        path_file: str):
+def load_nastran(path_file: str):
     from ..del_msh_dlpack import io_nastran_load_tri_mesh
 
     return io_nastran_load_tri_mesh(path_file)
@@ -26,7 +25,9 @@ def save_wavefront_obj(tri2vtx, vtx2xyz, path_file):
 def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor: int):
     from ..del_msh_dlpack import trimesh3_primitive_torus_zup
 
-    return trimesh3_primitive_torus_zup(major_raidus, minor_radius, ndiv_major, ndiv_minor)
+    return trimesh3_primitive_torus_zup(
+        major_raidus, minor_radius, ndiv_major, ndiv_minor
+    )
 
 
 def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
@@ -35,8 +36,11 @@ def sphere(raidus: float, ndiv_longtitude: int, ndiv_latitude: int):
     return trimesh3_primitive_sphere_yup(raidus, ndiv_longtitude, ndiv_latitude)
 
 
-def make_bvhnode2aabb_from_bvhnodes(tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, bvhnode2aabb, stream_ptr=0):
+def make_bvhnode2aabb_from_bvhnodes(
+    tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, bvhnode2aabb, stream_ptr=0
+):
     from ..del_msh_dlpack import bvhnode2aabb_update_aabb
 
     bvhnode2aabb_update_aabb(
-        bvhnode2aabb, 0, bvhnodes, tri2vtx, vtx2xyz0, vtx2xyz1, stream_ptr)
+        bvhnode2aabb, 0, bvhnodes, tri2vtx, vtx2xyz0, vtx2xyz1, stream_ptr
+    )

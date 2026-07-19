@@ -58,9 +58,7 @@ def laplacian_smoothing(
 
 
 def multiply_graph_laplacian(
-    vtx2idx: npt.NDArray,
-    idx2vtx: npt.NDArray,
-    vtx2rhs: npt.NDArray
+    vtx2idx: npt.NDArray, idx2vtx: npt.NDArray, vtx2rhs: npt.NDArray
 ) -> np.ndarray:
     num_vtx = vtx2idx.shape[0] - 1
     assert len(vtx2idx.shape) == 1

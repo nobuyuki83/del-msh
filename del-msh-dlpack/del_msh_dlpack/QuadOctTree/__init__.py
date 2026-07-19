@@ -6,14 +6,22 @@ def bnodes_and_bnode2depth_and_bnode2onode(
     bnode2depth,
     bnode2onode,
     idx2bnode,
-    stream_ptr=0):
-    from ..del_msh_dlpack import quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode
+    stream_ptr=0,
+):
+    from ..del_msh_dlpack import (
+        quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode,
+    )
 
     quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
-        idx2morton, num_dim, max_depth, 
-        bnodes, bnode2depth, bnode2onode, idx2bnode,
-        stream_ptr)
-
+        idx2morton,
+        num_dim,
+        max_depth,
+        bnodes,
+        bnode2depth,
+        bnode2onode,
+        idx2bnode,
+        stream_ptr,
+    )
 
 
 def make_tree_from_binary_radix_tree(
@@ -29,26 +37,28 @@ def make_tree_from_binary_radix_tree(
     onode2center,
     idx2onode,
     idx2center,
-    stream_ptr=0):
+    stream_ptr=0,
+):
     from ..del_msh_dlpack import quad_oct_tree_make_tree_from_binary_radix_tree
 
     quad_oct_tree_make_tree_from_binary_radix_tree(
-        bnodes, bnode2onode, bnode2depth,
-        idx2bnode, idx2morton,
-        num_dim, max_depth,
-        onodes, onode2depth, onode2center, idx2onode, idx2center,
-        stream_ptr)
+        bnodes,
+        bnode2onode,
+        bnode2depth,
+        idx2bnode,
+        idx2morton,
+        num_dim,
+        max_depth,
+        onodes,
+        onode2depth,
+        onode2center,
+        idx2onode,
+        idx2center,
+        stream_ptr,
+    )
 
 
-def aggregate(
-            idx2val,
-            idx2onode,
-            onodes,
-            onode2aggval,
-            stream_ptr = 0):
+def aggregate(idx2val, idx2onode, onodes, onode2aggval, stream_ptr=0):
     from ..del_msh_dlpack import quad_oct_tree_aggregate
 
-    quad_oct_tree_aggregate(
-        idx2val, idx2onode,
-        onodes, onode2aggval,
-        stream_ptr)
+    quad_oct_tree_aggregate(idx2val, idx2onode, onodes, onode2aggval, stream_ptr)

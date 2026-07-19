@@ -1,10 +1,10 @@
 import torch
 from .. import util_torch
 
+
 def aggregate(
-    idx2jdx_offset: torch.Tensor,
-    jdx2kdx: torch.Tensor,
-    kdx2val: torch.Tensor):
+    idx2jdx_offset: torch.Tensor, jdx2kdx: torch.Tensor, kdx2val: torch.Tensor
+):
     """Aggregate values from a source array into a target array using an offset-array index.
 
     For each entry `i`, sums the values at `kdx2val[jdx2kdx[j]]` for all `j` in
@@ -24,11 +24,17 @@ def aggregate(
     device = idx2jdx_offset.device
     num_dim = kdx2val.shape[1]
     #
-    util_torch.assert_shape_dtype_device(idx2jdx_offset, (num_idx+1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(
+        idx2jdx_offset, (num_idx + 1,), torch.uint32, device
+    )
     util_torch.assert_shape_dtype_device(jdx2kdx, (num_jdx,), torch.uint32, device)
-    util_torch.assert_shape_dtype_device(kdx2val, (num_jdx, num_dim), torch.float32, device)    #assert kdx2val.shape == (num_jdx,num_dim) and kdx2val.device == device and kdx2val.dtype == torch.float32
+    util_torch.assert_shape_dtype_device(
+        kdx2val, (num_jdx, num_dim), torch.float32, device
+    )  # assert kdx2val.shape == (num_jdx,num_dim) and kdx2val.device == device and kdx2val.dtype == torch.float32
     #
-    idx2aggval = torch.zeros(size=(num_idx,num_dim), device=device, dtype=torch.float32)
+    idx2aggval = torch.zeros(
+        size=(num_idx, num_dim), device=device, dtype=torch.float32
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -41,6 +47,7 @@ def aggregate(
         util_torch.to_dlpack_safe(jdx2kdx, stream_ptr),
         util_torch.to_dlpack_safe(kdx2val, stream_ptr),
         util_torch.to_dlpack_safe(idx2aggval, stream_ptr),
-        stream_ptr)
+        stream_ptr,
+    )
 
     return idx2aggval

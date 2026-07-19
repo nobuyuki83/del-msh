@@ -1,6 +1,7 @@
 import torch
 from .. import util_torch
 
+
 def permute(old2val: torch.Tensor, new2old: torch.Tensor):
     """Permute a 1D array according to an index mapping.
 
@@ -13,8 +14,12 @@ def permute(old2val: torch.Tensor, new2old: torch.Tensor):
     n = old2val.shape[0]
     device = old2val.device
     #
-    util_torch.assert_shape_dtype_device(old2val, shape=(n, ), dtype=torch.uint32, device=device)
-    util_torch.assert_shape_dtype_device(new2old, shape=(n, ), dtype=torch.uint32, device=device)
+    util_torch.assert_shape_dtype_device(
+        old2val, shape=(n,), dtype=torch.uint32, device=device
+    )
+    util_torch.assert_shape_dtype_device(
+        new2old, shape=(n,), dtype=torch.uint32, device=device
+    )
     #
     new2val = torch.empty(size=(n,), device=device, dtype=torch.uint32)
     #
@@ -64,8 +69,10 @@ def argsort(idx2val: torch.Tensor):
     )
     return jdx2idx, jdx2val
 
+
 #################################
 # below sorted
+
 
 def has_duplicate_in_sorted_array(idx2val: torch.Tensor):
     """Check whether a sorted array contains any duplicate values.
@@ -88,8 +95,7 @@ def has_duplicate_in_sorted_array(idx2val: torch.Tensor):
     from .. import Array1D
 
     res = Array1D.has_duplicate_sorted_array(
-        util_torch.to_dlpack_safe(idx2val, stream_ptr),
-        stream_ptr
+        util_torch.to_dlpack_safe(idx2val, stream_ptr), stream_ptr
     )
 
     return res
@@ -106,6 +112,7 @@ def unique_for_sorted_array(idx2val: torch.Tensor):
         jdx2idx_offset: (num_jdx+1,) uint32 - offset array into idx2val per unique group
     """
     from .. import Array1D
+
     #
     num_idx = idx2val.shape[0]
     device = idx2val.device
@@ -123,12 +130,12 @@ def unique_for_sorted_array(idx2val: torch.Tensor):
     Array1D.unique_for_sorted_array(
         util_torch.to_dlpack_safe(idx2val, stream_ptr),
         util_torch.to_dlpack_safe(idx2jdx, stream_ptr),
-        stream_ptr
+        stream_ptr,
     )
     #
     num_jdx = idx2jdx[-1].item() + 1
     jdx2val = torch.empty((num_jdx,), dtype=torch.uint32, device=device)
-    jdx2idx_offset = torch.empty((num_jdx+1,), dtype=torch.uint32, device=device)
+    jdx2idx_offset = torch.empty((num_jdx + 1,), dtype=torch.uint32, device=device)
     #
     Array1D.unique_jdx2val_jdx2idx(
         util_torch.to_dlpack_safe(idx2val, stream_ptr),

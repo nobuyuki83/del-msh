@@ -1,6 +1,7 @@
 import numpy as np
 from .. import util_numpy
 
+
 def make_tri2centroid(tri2vtx: np.ndarray, vtx2xyz: np.ndarray) -> np.ndarray:
     """compute centroids of triangles
 
@@ -60,25 +61,29 @@ def bwd_tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray, dw_tri2nrm: np.ndar
 def make_bvhnodes_bvhnode2aabb(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
-    util_numpy.assert_shape_dtype(tri2vtx, (num_tri,3), np.uint32)
-    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx,3), np.float32)
+    util_numpy.assert_shape_dtype(tri2vtx, (num_tri, 3), np.uint32)
+    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx, 3), np.float32)
     #
     tri2cog = make_tri2centroid(tri2vtx, vtx2xyz)
     from ..Vtx2Xyz.numpy import normalize_to_unit_cube
+
     transform_co2unit = normalize_to_unit_cube(vtx2xyz)
     #
     from ..Mortons.numpy import vtx2morton_from_vtx2co
+
     tri2morton = vtx2morton_from_vtx2co(tri2cog, transform_co2unit)
     idx2tri = np.argsort(tri2morton)
     idx2morton = tri2morton[idx2tri]
     idx2tri = idx2tri.astype(np.uint32)
     from ..Mortons.numpy import make_bvhnodes_from_sorted_mortons
+
     bvhnodes = make_bvhnodes_from_sorted_mortons(idx2tri, idx2morton)
     num_bvhnodes = bvhnodes.shape[0]
     #
     bvhnode2aabb = np.ndarray(shape=(num_bvhnodes, 6), dtype=np.float32)
-    vtx2xyz1 = np.zeros(shape=(0,3), dtype=np.float32)
+    vtx2xyz1 = np.zeros(shape=(0, 3), dtype=np.float32)
     from .. import TriMesh3
+
     TriMesh3.make_bvhnode2aabb_from_bvhnodes(
         tri2vtx.__dlpack__(),
         vtx2xyz.__dlpack__(),

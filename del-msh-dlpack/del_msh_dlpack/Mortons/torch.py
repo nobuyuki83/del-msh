@@ -1,6 +1,7 @@
 import torch
 from .. import util_torch
 
+
 def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.Tensor):
     """Compute Morton codes for a set of 2D or 3D coordinates.
 
@@ -19,8 +20,15 @@ def make_vtx2morton_from_vtx2co(vtx2co: torch.Tensor, transform_co2unit: torch.T
     device = vtx2co.device
     #
     assert num_dim == 2 or num_dim == 3
-    util_torch.assert_shape_dtype_device(vtx2co, shape=(num_vtx, num_dim), dtype=torch.float32, device=device)
-    util_torch.assert_shape_dtype_device(transform_co2unit, shape=(num_dim+1, num_dim+1), dtype=torch.float32, device=device)
+    util_torch.assert_shape_dtype_device(
+        vtx2co, shape=(num_vtx, num_dim), dtype=torch.float32, device=device
+    )
+    util_torch.assert_shape_dtype_device(
+        transform_co2unit,
+        shape=(num_dim + 1, num_dim + 1),
+        dtype=torch.float32,
+        device=device,
+    )
     #
     vtx2morton = torch.empty((num_vtx,), device=device, dtype=torch.uint32)
     stream_ptr = 0
@@ -69,6 +77,6 @@ def make_bvhnodes_from_sorted_mortons(idx2obj: torch.Tensor, idx2morton: torch.T
     Mortons.make_bvhnodes_from_sorted_mortons(
         util_torch.to_dlpack_safe(idx2obj, stream_ptr),
         util_torch.to_dlpack_safe(idx2morton, stream_ptr),
-        util_torch.to_dlpack_safe(bvhnodes, stream_ptr)
+        util_torch.to_dlpack_safe(bvhnodes, stream_ptr),
     )
     return bvhnodes

@@ -75,7 +75,9 @@ def test_02():
         del_msh_dlpack.Vtx2Vtx.torch.laplacian_smoothing(
             *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, None
         )
-        l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
+        l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(
+            *vtx2vtx, vtx2lhs
+        )
         res = vtx2lhs + lambda0 * l_vtx2lhs - vtx2rhs
         assert torch.norm(res) < 3.0e-5
 

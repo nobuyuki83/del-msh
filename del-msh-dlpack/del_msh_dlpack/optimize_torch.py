@@ -1,5 +1,6 @@
 import torch
 
+
 class UniformAdam(torch.optim.Optimizer):
     """
     UniformAdam is a variant of the Adam optimizer with uniform step scaling.
@@ -10,6 +11,7 @@ class UniformAdam(torch.optim.Optimizer):
         betas (Tuple[float, float]): Coefficients for computing running averages of
                                      gradient and its square (default: (0.9, 0.999)).
     """
+
     def __init__(self, params, lr=1e-3, betas=(0.9, 0.999)):
         defaults = dict(lr=lr, betas=betas)
         super(UniformAdam, self).__init__(params, defaults)
@@ -20,10 +22,10 @@ class UniformAdam(torch.optim.Optimizer):
     @torch.no_grad()
     def step(self):
         for group in self.param_groups:
-            lr = group['lr']
-            b1, b2 = group['betas']
+            lr = group["lr"]
+            b1, b2 = group["betas"]
 
-            for p in group['params']:
+            for p in group["params"]:
                 if p.grad is None:
                     continue
 
@@ -32,22 +34,22 @@ class UniformAdam(torch.optim.Optimizer):
 
                 # Lazy state initialization
                 if len(state) == 0:
-                    state['step'] = 0
-                    state['g1'] = torch.zeros_like(p.data)
-                    state['g2'] = torch.zeros_like(p.data[..., :1])
+                    state["step"] = 0
+                    state["g1"] = torch.zeros_like(p.data)
+                    state["g2"] = torch.zeros_like(p.data[..., :1])
 
-                state['step'] += 1
-                g1 = state['g1']
-                g2 = state['g2']
+                state["step"] += 1
+                g1 = state["g1"]
+                g2 = state["g2"]
 
                 # Update exponential moving averages
                 g1.mul_(b1).add_(grad, alpha=1 - b1)
                 g2.mul_(b2).add_(grad.square().sum(dim=-1, keepdim=True), alpha=1 - b2)
 
                 # Bias correction
-                step = state['step']
-                m1 = g1 / (1 - b1 ** step)
-                m2 = g2 / (1 - b2 ** step)
+                step = state["step"]
+                m1 = g1 / (1 - b1**step)
+                m2 = g2 / (1 - b2**step)
 
                 # Uniform normalization (shared scalar denominator)
                 denom = m2.sqrt().max() + 1e-8
