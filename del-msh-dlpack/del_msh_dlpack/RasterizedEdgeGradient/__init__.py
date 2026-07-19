@@ -13,16 +13,17 @@ def bwd(tri2vtx, vtx2xyz, dldw_vtx2xyz, transform_world2pix, dldw_pixval, pix2tr
 
 
 def edge_gradient_and_type(
-    tri2vtx, vtx2xyz, transform_world2pix, dldw_pixval, pix2tri,
-    hedge2type, hedge2dldr, vedge2type, vedge2dldr,
+    tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, dldw_pix2val,
+        hedge2type, hedge2dldr, vedge2type, vedge2dldr,
 ):
     from ..del_msh_dlpack import rasterized_edge_gradient_edge_gradient_and_type
     rasterized_edge_gradient_edge_gradient_and_type(
         tri2vtx,
         vtx2xyz,
         transform_world2pix,
-        dldw_pixval,
         pix2tri,
+        pix2val,
+        dldw_pix2val,
         hedge2type,
         hedge2dldr,
         vedge2type,

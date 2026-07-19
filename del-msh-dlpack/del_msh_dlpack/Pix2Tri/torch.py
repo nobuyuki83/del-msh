@@ -53,6 +53,9 @@ def interpolate_fwd(
         vtx2xyz: torch.Tensor,
         vtx2val: torch.Tensor,
         transform_ndc2world: torch.Tensor):
+    vtx2xyz = vtx2xyz.detach()
+    vtx2val = vtx2val.detach()
+    transform_ndc2world = transform_ndc2world.contiguous()
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     num_vdim = vtx2val.shape[1]
@@ -62,8 +65,8 @@ def interpolate_fwd(
     #
     util_torch.assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
-    util_torch.assert_shape_dtype_device(vtx2xyz.detach(), (num_vtx, 3), torch.float32, device)
-    util_torch.assert_shape_dtype_device(vtx2val.detach(), (num_vtx, num_vdim), torch.float32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(vtx2val, (num_vtx, num_vdim), torch.float32, device)
     util_torch.assert_shape_dtype_device(transform_ndc2world, (4, 4), torch.float32, device)
     #
     pix2val = torch.zeros((img_h, img_w, num_vdim), dtype=torch.float32, device=device)
@@ -75,12 +78,12 @@ def interpolate_fwd(
     #
     from ..Pix2Tri import interpolate
     interpolate(
-        pix2tri.__dlpack__(),
-        tri2vtx.__dlpack__(),
-        vtx2xyz.detach().__dlpack__(),
-        vtx2val.detach().__dlpack__(),
-        transform_ndc2world.T.contiguous().__dlpack__(),
-        pix2val.__dlpack__(),
+        util_torch.to_dlpack_safe(pix2tri, stream_ptr),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2val, stream_ptr),
+        util_torch.to_dlpack_safe(transform_ndc2world.T.contiguous(), stream_ptr),
+        util_torch.to_dlpack_safe(pix2val, stream_ptr),
         stream_ptr=stream_ptr
     )
 

@@ -53,13 +53,19 @@ pub fn edge_gradient_and_type(
     vtx2xyz: &[f32],
     transform_world2pix: &[f32; 16],
     (img_w, img_h): (usize, usize),
-    dldw_pixval: &[f32],
     pix2tri: &[u32],
+    num_vdim: usize,
+    pix2val: &[f32],
+    dldw_pix2val: &[f32],
     hedge2type: &mut [u8],
     hedge2dldr: &mut [f32],
     vedge2type: &mut [u8],
     vedge2dldr: &mut [f32],
 ) {
+    let num_pix = img_h * img_w;
+    assert_eq!(pix2tri.len(), num_pix);
+    assert_eq!(pix2val.len(), num_pix * num_vdim);
+    assert_eq!(dldw_pix2val.len(), pix2val.len());
     // -----------------------
     // horizontal edge
     assert_eq!(hedge2type.len(), (img_h - 1) * img_w);
@@ -103,11 +109,13 @@ pub fn edge_gradient_and_type(
                     }
                 };
             }
-            {
-                let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
-                let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-                hedge2dldr[i_hedge] =
-                    (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            hedge2dldr[i_hedge] = 0.0;
+            for i_vdim in 0..num_vdim {
+                let val0 = pix2val[ipix0*num_vdim+i_vdim];
+                let val1 = pix2val[ipix1*num_vdim+i_vdim];
+                let dval0 = dldw_pix2val[ipix0*num_vdim+i_vdim];
+                let dval1 = dldw_pix2val[ipix1*num_vdim+i_vdim];
+                hedge2dldr[i_hedge] += (dval0 + dval1) * 0.5 * (val0 - val1);
             }
         }
     }
@@ -153,11 +161,13 @@ pub fn edge_gradient_and_type(
                     }
                 };
             }
-            {
-                let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
-                let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-                vedge2dldr[i_vedge] =
-                    (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            vedge2dldr[i_vedge] = 0.0;
+            for i_vdim in 0..num_vdim {
+                let val0 = pix2val[ipix0*num_vdim+i_vdim];
+                let val1 = pix2val[ipix1*num_vdim+i_vdim];
+                let dval0 = dldw_pix2val[ipix0*num_vdim+i_vdim];
+                let dval1 = dldw_pix2val[ipix1*num_vdim+i_vdim];
+                vedge2dldr[i_vedge] += (dval0 + dval1) * 0.5 * (val0 - val1);
             }
         }
     }

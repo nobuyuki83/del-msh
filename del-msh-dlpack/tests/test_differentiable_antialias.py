@@ -177,7 +177,7 @@ def test_match_cpu_cuda():
     assert (dldw_vtx2xyz-d_dldw_vtx2xyz.cpu()).abs().max().item() < 1.0e-4
 
 
-def test_autograd():
+def test_autograd_match_cpu_gpu():
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)

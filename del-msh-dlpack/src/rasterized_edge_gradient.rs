@@ -1,5 +1,8 @@
 use del_dlpack::{
-    check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
+    check_1d_tensor as chk1,
+    check_2d_tensor as chk2,
+    check_3d_tensor as chk3,
+    dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
@@ -81,8 +84,9 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
     tri2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
     transform_world2pix: &Bound<'_, PyAny>,
-    dldw_pixval: &Bound<'_, PyAny>,
     pix2tri: &Bound<'_, PyAny>,
+    pix2val: &Bound<'_, PyAny>,
+    dldw_pixval: &Bound<'_, PyAny>,
     hedge2type: &Bound<'_, PyAny>,
     hedge2dldr: &Bound<'_, PyAny>,
     vedge2type: &Bound<'_, PyAny>,
@@ -91,8 +95,9 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
     let tri2vtx = get_tensor(tri2vtx)?;
     let vtx2xyz = get_tensor(vtx2xyz)?;
     let transform_world2pix = get_tensor(transform_world2pix)?;
-    let dldw_pixval = get_tensor(dldw_pixval)?;
     let pix2tri = get_tensor(pix2tri)?;
+    let pix2val = get_tensor(pix2val)?;
+    let dldw_pixval = get_tensor(dldw_pixval)?;
     let hedge2type = get_tensor(hedge2type)?;
     let hedge2dldr = get_tensor(hedge2dldr)?;
     let vedge2type = get_tensor(vedge2type)?;
@@ -101,14 +106,16 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
     let device = tri2vtx.ctx.device_type;
     let num_tri = shape(tri2vtx, 0).unwrap();
     let num_vtx = shape(vtx2xyz, 0).unwrap();
+    let num_vdim = shape(dldw_pixval, 2).unwrap();
     let img_h = shape(pix2tri, 0).unwrap();
     let img_w = shape(pix2tri, 1).unwrap();
     //
     chk2::<u32>(tri2vtx, num_tri, 3, device).unwrap();
     chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
     chk1::<f32>(transform_world2pix, 16, device).unwrap();
-    chk2::<f32>(dldw_pixval, img_h, img_w, device).unwrap();
     chk2::<u32>(pix2tri, img_h, img_w, device).unwrap();
+    chk3::<f32>(pix2val, img_h, img_w, num_vdim, device).unwrap();
+    chk3::<f32>(dldw_pixval, img_h, img_w, num_vdim, device).unwrap();
     chk2::<u8>(hedge2type, img_h - 1, img_w, device).unwrap();
     chk2::<f32>(hedge2dldr, img_h - 1, img_w, device).unwrap();
     chk2::<u8>(vedge2type, img_h, img_w - 1, device).unwrap();
@@ -121,8 +128,10 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
                 slice!(vtx2xyz, f32).unwrap(),
                 arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),
-                slice!(dldw_pixval, f32).unwrap(),
                 slice!(pix2tri, u32).unwrap(),
+                num_vdim as usize,
+                slice!(pix2val, f32).unwrap(),
+                slice!(dldw_pixval, f32).unwrap(),
                 slice_mut!(hedge2type, u8).unwrap(),
                 slice_mut!(hedge2dldr, f32).unwrap(),
                 slice_mut!(vedge2type, u8).unwrap(),
