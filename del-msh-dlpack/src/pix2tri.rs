@@ -139,8 +139,37 @@ pub fn pix2tri_interpolate(
                 slice_mut!(pix2val, f32).unwrap(),
             );
         }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::pix2tri",
+                del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                "interpolate",
+            )
+            .unwrap();
+            let num_pix = (img_h * img_w) as usize;
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_data(&tri2vtx.data);
+            builder.arg_data(&vtx2xyz.data);
+            builder.arg_data(&vtx2val.data);
+            builder.arg_u32(num_vdim as u32);
+            builder.arg_data(&transform_ndc2world.data);
+            builder.arg_u32(img_w as u32);
+            builder.arg_u32(img_h as u32);
+            builder.arg_data(&pix2val.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                )
+                .unwrap();
+        }
         _ => {
-            todo!("unsupported device")
+            todo!("unsupported device {}", device)
         }
     }
     Ok(())
@@ -202,6 +231,37 @@ pub fn pix2tri_interpolate_bwd(
                     .0,
                 slice_mut!(dldw_vtx2val, f32).unwrap(),
             );
+        }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::pix2tri",
+                del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                "interpolate_bwd",
+            )
+            .unwrap();
+            let num_pix = (img_h * img_w) as usize;
+            let mut builder = del_cudarc_sys::Builder::new(stream);
+            builder.arg_data(&pix2tri.data);
+            builder.arg_data(&tri2vtx.data);
+            builder.arg_data(&vtx2xyz.data);
+            builder.arg_data(&vtx2val.data);
+            builder.arg_u32(num_vdim as u32);
+            builder.arg_data(&transform_ndc2world.data);
+            builder.arg_data(&dldw_pix2val.data);
+            builder.arg_u32(img_w as u32);
+            builder.arg_u32(img_h as u32);
+            builder.arg_data(&dldw_vtx2xyz.data);
+            builder.arg_data(&dldw_vtx2val.data);
+            builder
+                .launch_kernel(
+                    func,
+                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                )
+                .unwrap();
         }
         _ => {
             todo!("unsupported device")

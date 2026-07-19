@@ -13,12 +13,13 @@ def by_raycasting(
     transform_ndc2world: torch.Tensor,
     img_shape: Tuple[int, int],
 ) -> torch.Tensor:
+    vtx2xyz = vtx2xyz.detach()
+    transform_ndc2world = transform_ndc2world.contiguous()
+    #
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     num_bvhnode = bvhnodes.shape[0]
     device = tri2vtx.device
-    vtx2xyz = vtx2xyz.detach()
-    transform_ndc2world = transform_ndc2world.contiguous()
     #
     assert num_bvhnode == num_tri * 2 - 1
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
@@ -164,14 +165,14 @@ def interpolate_bwd(
     from ..Pix2Tri import interpolate_bwd
 
     interpolate_bwd(
-        pix2tri.__dlpack__(),
-        tri2vtx.__dlpack__(),
-        vtx2xyz.detach().__dlpack__(),
-        vtx2val.detach().__dlpack__(),
-        transform_ndc2world.T.contiguous().__dlpack__(),
-        dldw_pix2val.contiguous().__dlpack__(),
-        dldw_vtx2xyz.__dlpack__(),
-        dldw_vtx2val.__dlpack__(),
+        util_torch.to_dlpack_safe(pix2tri, stream_ptr),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz.detach(), stream_ptr),
+        util_torch.to_dlpack_safe(vtx2val.detach(), stream_ptr),
+        util_torch.to_dlpack_safe(transform_ndc2world.T.contiguous(), stream_ptr),
+        util_torch.to_dlpack_safe(dldw_pix2val.contiguous(), stream_ptr),
+        util_torch.to_dlpack_safe(dldw_vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(dldw_vtx2val, stream_ptr),
         stream_ptr=stream_ptr,
     )
 

@@ -242,10 +242,11 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
         bvhnodes: (2*num_tri-1, 3) uint32 - BVH node data (left, right, parent)
         bvhnode2aabb: (2*num_tri-1, 6) float32 - axis-aligned bounding box per node
     """
+    vtx2xyz = vtx2xyz.detach()
+    #
     num_vtx = vtx2xyz.shape[0]
     num_tri = tri2vtx.shape[0]
     device = tri2vtx.device
-    vtx2xyz = vtx2xyz.detach()
     #
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)

@@ -35,12 +35,12 @@ void fwd(
     const float* p1 = vtx2xyz + tri2vtx[i_tri * 3 + 1] * 3;
     const float* p2 = vtx2xyz + tri2vtx[i_tri * 3 + 2] * 3;
 
-    const auto opt_depth = tri3::intersection_against_ray(
+    const auto opt_raycoeff_bc = tri3::intersection_against_ray(
         p0, p1, p2, ray.first.data(), ray.second.data());
-    if (!opt_depth) { return; }
+    if (!opt_raycoeff_bc) { return; }
 
-    const float depth = opt_depth.value();
-    const auto pos_world = vec3::axpy(depth, ray.second.data(), ray.first.data());
+    const float t = opt_raycoeff_bc.value().ray_coeff;
+    const auto pos_world = vec3::axpy(t, ray.second.data(), ray.first.data());
     const auto pos_ndc = mat4_col_major::transform_homogeneous(
         transform_world2ndc, pos_world.data());
     pix2depth[i_pix] = (pos_ndc[2] + 1.f) * 0.5f;
@@ -74,8 +74,8 @@ void bwd_wrt_vtx2xyz(
     const float* p0 = vtx2xyz + iv0 * 3;
     const float* p1 = vtx2xyz + iv1 * 3;
     const float* p2 = vtx2xyz + iv2 * 3;
-    const auto opt_t = tri3::intersection_against_ray(p0, p1, p2, ray.first.data(), ray.second.data());
-    const float t = opt_t.value();
+    const auto opt_raycoeff_bc = tri3::intersection_against_ray(p0, p1, p2, ray.first.data(), ray.second.data());
+    const float t = opt_raycoeff_bc.value().ray_coeff;
     const auto q = vec3::axpy(t, ray.second.data(), ray.first.data());
     const auto dndcdq = mat4_col_major::jacobian_transform(transform_world2ndc, q.data());
     const auto dndcdq_t = mat3_col_major::transpose(dndcdq.data());

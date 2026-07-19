@@ -1,10 +1,10 @@
 import pathlib
 
-#
+
 from PIL import Image
 import torch
 
-#
+
 import del_msh_dlpack.RasterizedEdgeGradient.torch as RasterizedEdgeGradient
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
 import del_msh_dlpack.Pix2Tri.torch as Pix2Tri
@@ -14,7 +14,7 @@ import del_msh_dlpack.IoVtk.torch as IoVtk
 import test_pix2tri
 
 
-#
+
 
 
 def test_gradient_visualization_silhouette():

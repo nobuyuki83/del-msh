@@ -259,6 +259,7 @@ def test_autograd_match_cpu_gpu():
     deptha = DifferentiableAntialias.DifferentiableAntialiasFunction.apply(
         cedge2vtx, vtx2xyz, transform_world2pix, pix2tri, depth
     )
+    torch.random.manual_seed(0)
     trgt = torch.rand((img_shape[1], img_shape[0]), dtype=torch.float32)
     loss = torch.dot(trgt.flatten(), deptha.flatten())
     loss.backward()

@@ -284,7 +284,8 @@ fn polyhedron_mesh_search_elem_contain_points(
                 "search_elem_contain_points",
             )
             .unwrap();
-            let confg = del_cudarc_sys::LaunchConfig::for_num_elems_with_num_threads(num_wtx as u32, 128);
+            let confg =
+                del_cudarc_sys::LaunchConfig::for_num_elems_with_num_threads(num_wtx as u32, 128);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_elem as u32);
             builder.arg_data(&elem2idx_offset.data);
@@ -296,12 +297,7 @@ fn polyhedron_mesh_search_elem_contain_points(
             builder.arg_data(&wtx2xyz.data);
             builder.arg_data(&wtx2elem.data);
             builder.arg_data(&wtx2param.data);
-            builder
-                .launch_kernel(
-                    func,
-                    confg,
-                )
-                .unwrap();
+            builder.launch_kernel(func, confg).unwrap();
         }
         _ => {
             return Err(pyo3::exceptions::PyNotImplementedError::new_err(
