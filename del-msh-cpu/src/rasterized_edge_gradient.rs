@@ -111,10 +111,10 @@ pub fn edge_gradient_and_type(
             }
             hedge2dldr[i_hedge] = 0.0;
             for i_vdim in 0..num_vdim {
-                let val0 = pix2val[ipix0*num_vdim+i_vdim];
-                let val1 = pix2val[ipix1*num_vdim+i_vdim];
-                let dval0 = dldw_pix2val[ipix0*num_vdim+i_vdim];
-                let dval1 = dldw_pix2val[ipix1*num_vdim+i_vdim];
+                let val0 = pix2val[ipix0 * num_vdim + i_vdim];
+                let val1 = pix2val[ipix1 * num_vdim + i_vdim];
+                let dval0 = dldw_pix2val[ipix0 * num_vdim + i_vdim];
+                let dval1 = dldw_pix2val[ipix1 * num_vdim + i_vdim];
                 hedge2dldr[i_hedge] += (dval0 + dval1) * 0.5 * (val0 - val1);
             }
         }
@@ -163,10 +163,10 @@ pub fn edge_gradient_and_type(
             }
             vedge2dldr[i_vedge] = 0.0;
             for i_vdim in 0..num_vdim {
-                let val0 = pix2val[ipix0*num_vdim+i_vdim];
-                let val1 = pix2val[ipix1*num_vdim+i_vdim];
-                let dval0 = dldw_pix2val[ipix0*num_vdim+i_vdim];
-                let dval1 = dldw_pix2val[ipix1*num_vdim+i_vdim];
+                let val0 = pix2val[ipix0 * num_vdim + i_vdim];
+                let val1 = pix2val[ipix1 * num_vdim + i_vdim];
+                let dval0 = dldw_pix2val[ipix0 * num_vdim + i_vdim];
+                let dval1 = dldw_pix2val[ipix1 * num_vdim + i_vdim];
                 vedge2dldr[i_vedge] += (dval0 + dval1) * 0.5 * (val0 - val1);
             }
         }

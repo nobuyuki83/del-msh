@@ -1,8 +1,5 @@
 use del_dlpack::{
-    check_1d_tensor as chk1,
-    check_2d_tensor as chk2,
-    check_3d_tensor as chk3,
-    dlpack,
+    check_1d_tensor as chk1, check_2d_tensor as chk2, check_3d_tensor as chk3, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
 use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
