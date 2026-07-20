@@ -5,16 +5,16 @@ OpenGL drawer of uniform simplex mesh (triangles and line segments) with vertex 
 from pyrr import Matrix44
 import moderngl
 
-class Drawer:
 
-    def __init__(self, V:bytes, C:bytes, F:bytes):
+class Drawer:
+    def __init__(self, V: bytes, C: bytes, F: bytes):
         self.V = V
         self.C = C
         self.F = F
 
     def init_gl(self, ctx):
         self.prog = ctx.program(
-            vertex_shader='''
+            vertex_shader="""
                 #version 330
                 uniform mat4 Mvp;
                 in vec3 in_position;
@@ -26,8 +26,8 @@ class Drawer:
                     v_color = in_color;
                     gl_Position = Mvp * vec4(in_position, 1.0);
                 }
-            ''',
-            fragment_shader='''
+            """,
+            fragment_shader="""
                 #version 330
                 in vec3 v_vert;
                 in vec3 v_color;
@@ -35,18 +35,17 @@ class Drawer:
                 void main() {
                     f_color = vec4(v_color, 1.0);
                 }
-            '''
+            """,
         )
-        self.mvp = self.prog['Mvp']
+        self.mvp = self.prog["Mvp"]
 
         vao_content = [
-            (ctx.buffer(self.V), '3f', 'in_position'),
-            (ctx.buffer(self.C), '3f', 'in_color')
+            (ctx.buffer(self.V), "3f", "in_position"),
+            (ctx.buffer(self.C), "3f", "in_color"),
         ]
         index_buffer = ctx.buffer(self.F)
 
-        self.vao = ctx.vertex_array(
-            self.prog, vao_content, index_buffer, 4)
+        self.vao = ctx.vertex_array(self.prog, vao_content, index_buffer, 4)
 
     def paint_gl(self, mvp: Matrix44):
         self.mvp.value = tuple(mvp.flatten())

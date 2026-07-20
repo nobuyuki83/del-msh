@@ -12,7 +12,7 @@ import del_msh_dlpack.TriMesh3.torch as TriMesh3
 
 # Function to generate axis-aligned lighting directions and color permutations
 def generate_lighting(
-    low: float, mid: float, high: float, device
+    low: float, mid: float, high: float
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Generate axis-aligned lighting directions and corresponding RGB colors using permutations of intensity levels.
 
@@ -35,7 +35,6 @@ def generate_lighting(
             [0.0, -1.0, 0.0],  # Negative Y
             [0.0, 0.0, -1.0],  # Negative Z
         ],
-        device=device,
     )
 
     L_colors = torch.tensor(
@@ -47,7 +46,6 @@ def generate_lighting(
             [high, low, mid],
             [mid, high, low],
         ],
-        device=device,
     )
 
     return L_dirs, L_colors
@@ -56,10 +54,12 @@ def generate_lighting(
 def render_lambertian_shading_gouraud(
     tri2vtx, vtx2xyz, vtx2nrm, transform_ndc2world, L_dirs, L_colors, pix2tri
 ):
+    device = tri2vtx.device
+    #
     assert len(L_dirs) == len(L_colors)
     background_pix = pix2tri == torch.iinfo(torch.uint32).max
     pix2rgb_bg = torch.zeros(
-        (pix2tri.shape[0], pix2tri.shape[1], 3), dtype=torch.float32
+        (pix2tri.shape[0], pix2tri.shape[1], 3), dtype=torch.float32, device=device
     )
 
     vtx2diffuse = torch.zeros_like(vtx2xyz)
@@ -168,9 +168,16 @@ def test_lambertian_shading_phong():
         d_vtx2xyz.requires_grad_(True)
         d_transform_ndc2world = transform_ndc2world.cuda()
         d_pix2trg = pix2trg.cuda()
-        d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+        d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(
+            d_tri2vtx, d_vtx2xyz
+        )
         d_pix2tri = Pix2Tri.by_raycasting(
-            d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, d_transform_ndc2world, img_shape
+            d_tri2vtx,
+            d_vtx2xyz,
+            d_bvhnodes,
+            d_bvhnode2aabb,
+            d_transform_ndc2world,
+            img_shape,
         )
         d_vtx2nrm = TriMesh3.make_vtx2normal(d_tri2vtx.int(), d_vtx2xyz)
         d_pix2rgb = render_lambertian_shading_phong(
@@ -182,11 +189,9 @@ def test_lambertian_shading_phong():
             [0.8, 1.0, 0.9],
             d_pix2tri,
         )
-        assert (d_pix2rgb.cpu()-pix2rgb).abs().max() < 5.0e-6
+        assert (d_pix2rgb.cpu() - pix2rgb).abs().max() < 5.0e-6
         d_loss = torch.nn.functional.mse_loss(d_pix2rgb, d_pix2trg)
         d_loss.backward()
         d_dldw_vtx2xyz = d_vtx2xyz.grad.clone()
 
-        print( (d_dldw_vtx2xyz.cpu()-dldw_vtx2xyz).abs().max() )
-
-
+        print((d_dldw_vtx2xyz.cpu() - dldw_vtx2xyz).abs().max())

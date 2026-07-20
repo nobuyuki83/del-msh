@@ -37,7 +37,9 @@ def bwd(
     assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
     assert_shape_dtype_device(pix2tri, (img_h, img_w), torch.uint32, device)
     assert_shape_dtype_device(pix2val, (img_h, img_w, num_vdim), torch.float32, device)
-    assert_shape_dtype_device(dldw_pix2val, (img_h, img_w, num_vdim), torch.float32, device)
+    assert_shape_dtype_device(
+        dldw_pix2val, (img_h, img_w, num_vdim), torch.float32, device
+    )
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -51,11 +53,13 @@ def bwd(
         util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
         util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
         util_torch.to_dlpack_safe(dldw_vtx2xyz, stream_ptr),
-        util_torch.to_dlpack_safe(transform_world2pix.T.contiguous().flatten(), stream_ptr),
+        util_torch.to_dlpack_safe(
+            transform_world2pix.T.contiguous().flatten(), stream_ptr
+        ),
         util_torch.to_dlpack_safe(pix2tri, stream_ptr),
         util_torch.to_dlpack_safe(pix2val, stream_ptr),
         util_torch.to_dlpack_safe(dldw_pix2val, stream_ptr),
-        stream_ptr
+        stream_ptr,
     )
     return dldw_vtx2xyz
 
@@ -128,7 +132,7 @@ def edge_gradient_and_type(
         to_dlpack_safe(hedge2dldr, stream_ptr),
         to_dlpack_safe(vedge2type, stream_ptr),
         to_dlpack_safe(vedge2dldr, stream_ptr),
-        stream_ptr
+        stream_ptr,
     )
     return hedge2type, hedge2dldr, vedge2type, vedge2dldr
 
@@ -138,7 +142,7 @@ def smooth_gradient(
     vedge2type: torch.Tensor,
     num_iter: int,
     hedge2dldr: torch.Tensor,
-    vedge2dldr: torch.Tensor
+    vedge2dldr: torch.Tensor,
 ):
     """Smooth staggered-grid edge gradients in-place (100 iterations).
 
@@ -153,10 +157,10 @@ def smooth_gradient(
     img_h = hedge2type.shape[0] + 1
     img_w = hedge2type.shape[1]
     #
-    assert_shape_dtype_device(hedge2type, (img_h-1,img_w), torch.uint8, device )
-    assert_shape_dtype_device(hedge2dldr, (img_h-1,img_w), torch.float32, device )
-    assert_shape_dtype_device(vedge2type, (img_h,img_w-1), torch.uint8, device )
-    assert_shape_dtype_device(vedge2dldr, (img_h,img_w-1), torch.float32, device )
+    assert_shape_dtype_device(hedge2type, (img_h - 1, img_w), torch.uint8, device)
+    assert_shape_dtype_device(hedge2dldr, (img_h - 1, img_w), torch.float32, device)
+    assert_shape_dtype_device(vedge2type, (img_h, img_w - 1), torch.uint8, device)
+    assert_shape_dtype_device(vedge2dldr, (img_h, img_w - 1), torch.float32, device)
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -171,7 +175,7 @@ def smooth_gradient(
         util_torch.to_dlpack_safe(vedge2type, stream_ptr),
         util_torch.to_dlpack_safe(vedge2dldr, stream_ptr),
         num_iter,
-        stream_ptr
+        stream_ptr,
     )
 
 
@@ -180,8 +184,12 @@ def interpolate(hedge2vy: torch.Tensor, vedge2vx: torch.Tensor, vtx2xy: torch.Te
     num_vtx = vtx2xy.shape[0]
     device = hedge2vy.device
     #
-    assert_shape_dtype_device(hedge2vy, (img_shape[1]-1, img_shape[0]), dtype=torch.float32, device=device)
-    assert_shape_dtype_device(vedge2vx, (img_shape[1], img_shape[0]-1), dtype=torch.float32, device=device)
+    assert_shape_dtype_device(
+        hedge2vy, (img_shape[1] - 1, img_shape[0]), dtype=torch.float32, device=device
+    )
+    assert_shape_dtype_device(
+        vedge2vx, (img_shape[1], img_shape[0] - 1), dtype=torch.float32, device=device
+    )
     assert_shape_dtype_device(vtx2xy, (num_vtx, 2), dtype=torch.float32, device=device)
     #
     vtx2velo = torch.empty(size=(num_vtx, 2), dtype=torch.float32, device=device)
@@ -198,7 +206,7 @@ def interpolate(hedge2vy: torch.Tensor, vedge2vx: torch.Tensor, vtx2xy: torch.Te
         util_torch.to_dlpack_safe(vedge2vx, stream_ptr),
         util_torch.to_dlpack_safe(vtx2xy, stream_ptr),
         util_torch.to_dlpack_safe(vtx2velo, stream_ptr),
-        stream_ptr
+        stream_ptr,
     )
     return vtx2velo
 
@@ -235,7 +243,7 @@ class AutogradWithSmooth(torch.autograd.Function):
         hedge2type, hedge2dldr, vedge2type, vedge2dldr = edge_gradient_and_type(
             tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, dldw_pix2val
         )
-        smooth_gradient(hedge2type,  vedge2type, 100, hedge2dldr,vedge2dldr)
+        smooth_gradient(hedge2type, vedge2type, 100, hedge2dldr, vedge2dldr)
         #
         """
         import pathlib

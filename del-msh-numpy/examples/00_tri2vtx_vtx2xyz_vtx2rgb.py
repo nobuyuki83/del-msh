@@ -4,6 +4,7 @@ import moderngl_window as mglw
 import DrawerMeshVtxColor
 import pyrr
 
+
 class App(mglw.WindowConfig):
     title = "ModernGL: rotating triangle"
     window_size = (800, 600)
@@ -13,17 +14,14 @@ class App(mglw.WindowConfig):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        V = np.array([
-            [-0.5, -0.5, 0],
-            [+0.5, -0.5, 0],
-            [+0, +0.5, 0]], dtype=np.float32)
-        C = np.array([
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1]], dtype=np.float32)
-        F = np.array([
-            [0, 1, 2]], dtype=np.uint32)
-        self.drawer = DrawerMeshVtxColor.Drawer(V=V.tobytes(), C=C.tobytes(), F=F.tobytes())
+        V = np.array(
+            [[-0.5, -0.5, 0], [+0.5, -0.5, 0], [+0, +0.5, 0]], dtype=np.float32
+        )
+        C = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
+        F = np.array([[0, 1, 2]], dtype=np.uint32)
+        self.drawer = DrawerMeshVtxColor.Drawer(
+            V=V.tobytes(), C=C.tobytes(), F=F.tobytes()
+        )
         self.drawer.init_gl(self.ctx)
 
     # ★ moderngl_window が呼ぶ描画フック
@@ -39,6 +37,7 @@ class App(mglw.WindowConfig):
         self.ctx.enable(moderngl.DEPTH_TEST)
         mvp = pyrr.Matrix44.identity()
         self.drawer.paint_gl(mvp)
+
 
 if __name__ == "__main__":
     mglw.run_window_config(App)

@@ -8,17 +8,17 @@ from pyrr import Quaternion, Vector3, Matrix44
 class ViewNavigation3:
     def __init__(self, view_height=1.0):
         self.view_height = view_height
-        self.scale = 1.
-        self.depth_ratio = 10.
+        self.scale = 1.0
+        self.depth_ratio = 10.0
         #
-        self.translation = Vector3((0., 0., 0.), dtype=numpy.float64)
-        self.quat = Quaternion((0., 0., 0., 1.), dtype=numpy.float64)
+        self.translation = Vector3((0.0, 0.0, 0.0), dtype=numpy.float64)
+        self.quat = Quaternion((0.0, 0.0, 0.0, 1.0), dtype=numpy.float64)
         #
         self.btn_left = False
-        self.cursor_x = 0.
-        self.cursor_y = 0.
-        self.cursor_dx = 0.
-        self.cursor_dy = 0.
+        self.cursor_x = 0.0
+        self.cursor_y = 0.0
+        self.cursor_dx = 0.0
+        self.cursor_dy = 0.0
         self.win_height = 480
         self.win_width = 640
 
@@ -35,10 +35,25 @@ class ViewNavigation3:
     def projection_matrix(self) -> pyrr.Matrix44:
         asp = float(self.win_width) / float(self.win_height)
         mp = Matrix44(
-            (1. / (self.view_height * asp), 0., 0., 0.,
-             0., 1. / self.view_height, 0., 0.,
-             0., 0., 1. / (self.view_height * self.depth_ratio), 0.,
-             0., 0., 0., 1.))
+            (
+                1.0 / (self.view_height * asp),
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0 / self.view_height,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0 / (self.view_height * self.depth_ratio),
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            )
+        )
         ms = Matrix44.from_scale((self.scale, self.scale, self.scale))
         return ms * mp
 
@@ -53,7 +68,7 @@ class ViewNavigation3:
         a = math.sqrt(dx * dx + dy * dy)
         if a == 0.0:
             return
-        dq = Quaternion.from_axis((dy, -dx, 0.))
+        dq = Quaternion.from_axis((dy, -dx, 0.0))
         dq.normalize()
         self.quat = self.quat * dq
 
@@ -68,6 +83,6 @@ class ViewNavigation3:
         mmv = self.modelview_matrix()
         mp = self.projection_matrix()
         mmvpi = (mp * mmv).inverse
-        q0 = mmvpi * pyrr.Vector4([self.cursor_x, self.cursor_y, +1., 1.])
-        q1 = mmvpi * pyrr.Vector4([self.cursor_x, self.cursor_y, -1., 1.])
+        q0 = mmvpi * pyrr.Vector4([self.cursor_x, self.cursor_y, +1.0, 1.0])
+        q1 = mmvpi * pyrr.Vector4([self.cursor_x, self.cursor_y, -1.0, 1.0])
         return q0, q1 - q0

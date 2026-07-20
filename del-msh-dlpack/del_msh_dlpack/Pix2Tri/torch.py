@@ -34,23 +34,12 @@ def by_raycasting(
         transform_ndc2world, (4, 4), torch.float32, device
     )
     #
-    """
-    # torch.uint32 allocation is unsupported in some PyTorch versions;
-    # create int32 filled with -1 (all bits set = UINT32_MAX) and reinterpret.
-    print(torch.__version__)
-    print(torch.__file__)
-    print(device, type(device))
-    print(img_shape, type(img_shape), len(img_shape))
-    print(type(img_shape[0]), type(img_shape[1]))
-    print(torch.full)
-    print(torch.empty)
-    print(torch.int32)
-    print(type(torch.int32))
-    """
     pix2tri = torch.full(
-        (img_shape[1], img_shape[0]), -1, dtype=torch.int32, device=device
+        (img_shape[1], img_shape[0]),
+        torch.iinfo(torch.uint32).max,
+        dtype=torch.uint32,
+        device=device,
     )
-    pix2tri = pix2tri.view(torch.uint32)
     #
     stream_ptr = 0
     if device.type == "cuda":
@@ -60,12 +49,12 @@ def by_raycasting(
     from ..Pix2Tri import update_pix2tri
 
     update_pix2tri(
-        tri2vtx.__dlpack__(),
-        vtx2xyz.detach().__dlpack__(),
-        bvhnodes.__dlpack__(),
-        bvhnode2aabb.__dlpack__(),
-        transform_ndc2world.T.contiguous().__dlpack__(),
-        pix2tri.__dlpack__(),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(bvhnodes, stream_ptr),
+        util_torch.to_dlpack_safe(bvhnode2aabb, stream_ptr),
+        util_torch.to_dlpack_safe(transform_ndc2world.T.contiguous(), stream_ptr),
+        util_torch.to_dlpack_safe(pix2tri, stream_ptr),
         stream_ptr=stream_ptr,
     )
 

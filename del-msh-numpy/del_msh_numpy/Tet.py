@@ -1,11 +1,7 @@
 import numpy
 
 
-def tet_volume(
-        p0,
-        p1,
-        p2,
-        p3) -> float:
+def tet_volume(p0, p1, p2, p3) -> float:
     """
     volume of tetrahedron in the right hand coordinate
     :param p0:

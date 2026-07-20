@@ -242,6 +242,12 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
         bvhnodes: (2*num_tri-1, 3) uint32 - BVH node data (left, right, parent)
         bvhnode2aabb: (2*num_tri-1, 6) float32 - axis-aligned bounding box per node
     """
+    from ..Mat44.torch import from_fit_vtx2xyz_into_unit_cube
+    from ..Mortons.torch import make_vtx2morton_from_vtx2co
+    from ..Array1D.torch import argsort
+    from ..Mortons.torch import make_bvhnodes_from_sorted_mortons
+
+    #
     vtx2xyz = vtx2xyz.detach()
     #
     num_vtx = vtx2xyz.shape[0]
@@ -251,37 +257,29 @@ def make_bvhnodes_bvhnode2aabb(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor):
     util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
     util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
     #
-    stream_ptr = 0
-    if device.type == "cuda":
-        torch.cuda.set_device(device)
-        stream_ptr = torch.cuda.current_stream(device).cuda_stream
-    #
     tri2centroid = make_tri2centroid(tri2vtx, vtx2xyz)
-    from ..Mat44.torch import from_fit_vtx2xyz_into_unit_cube
-
     transform_co2unit = from_fit_vtx2xyz_into_unit_cube(tri2centroid)
-    #
-    from ..Mortons.torch import make_vtx2morton_from_vtx2co
-
     tri2morton = make_vtx2morton_from_vtx2co(tri2centroid, transform_co2unit)
-    from ..Array1D.torch import argsort
-
     idx2tri, idx2morton = argsort(tri2morton)
-    from ..Mortons.torch import make_bvhnodes_from_sorted_mortons
-
     bvhnodes = make_bvhnodes_from_sorted_mortons(idx2tri, idx2morton)
     num_bvhnodes = bvhnodes.shape[0]
     #
     bvhnode2aabb = torch.empty((num_bvhnodes, 6), dtype=torch.float32, device=device)
     vtx2xyz1 = torch.zeros((0, 3), dtype=torch.float32, device=device)
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
     from .. import TriMesh3
 
     TriMesh3.make_bvhnode2aabb_from_bvhnodes(
-        tri2vtx.detach().__dlpack__(),
-        vtx2xyz.detach().__dlpack__(),
-        vtx2xyz1.detach().__dlpack__(),
-        bvhnodes.detach().__dlpack__(),
-        bvhnode2aabb.detach().__dlpack__(),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz1, stream_ptr),
+        util_torch.to_dlpack_safe(bvhnodes, stream_ptr),
+        util_torch.to_dlpack_safe(bvhnode2aabb, stream_ptr),
         stream_ptr=stream_ptr,
     )
     return bvhnodes, bvhnode2aabb

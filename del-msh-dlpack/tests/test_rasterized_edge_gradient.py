@@ -12,7 +12,6 @@ import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
 import del_msh_dlpack.IoVtk.torch as IoVtk
 
 
-
 def test_gradient_visualization_silhouette():
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
@@ -52,7 +51,8 @@ def test_gradient_visualization_silhouette():
         pix2rgb_diff.view(-1, 3)[i_pix] = torch.tensor(c, dtype=torch.uint8)
     #
     Image.fromarray(pix2rgb_diff.numpy()).save(
-        path_dir / "diff_rasterized_edge_gradient.png")
+        path_dir / "diff_rasterized_edge_gradient.png"
+    )
 
 
 def test_match_cpu_gpu_microedge_bwd():
@@ -88,11 +88,9 @@ def test_match_cpu_gpu_microedge_bwd():
             transform_world2pix.cuda(),
             pix2tri.cuda(),
             pix2occ.cuda(),
-            dldw_pix2occ.cuda()
+            dldw_pix2occ.cuda(),
         )
-        assert (d_dldw_vtx2xyz.cpu()-dldw_vtx2xyz).abs().max() < 5.0e-6
-
-
+        assert (d_dldw_vtx2xyz.cpu() - dldw_vtx2xyz).abs().max() < 5.0e-6
 
 
 def example2():
@@ -159,23 +157,27 @@ def test_smooth_gradient_staggered_grid():
                 d_transform_world2pix,
                 d_pix2tri,
                 d_pix2occ_src,
-                d_dldw_pix2val
+                d_dldw_pix2val,
             )
         )
         torch.equal(d_hedge2type.cpu(), hedge2type)
-        assert (d_hedge2dldr.cpu()-hedge2dldr).abs().max() < 1.0e-8
+        assert (d_hedge2dldr.cpu() - hedge2dldr).abs().max() < 1.0e-8
         torch.equal(d_vedge2type.cpu(), vedge2type)
-        assert (d_vedge2dldr.cpu()-vedge2dldr).abs().max() < 1.0e-8
+        assert (d_vedge2dldr.cpu() - vedge2dldr).abs().max() < 1.0e-8
 
     num_itr = 1000
 
     RasterizedEdgeGradient.smooth_gradient(
-        hedge2type, vedge2type,  num_itr, hedge2dldr, vedge2dldr,
+        hedge2type,
+        vedge2type,
+        num_itr,
+        hedge2dldr,
+        vedge2dldr,
     )
 
     IoVtk.write_velocity_on_staggered_grid(
-        str(path_dir / "velocity_on_staggered_grid.vtk"),
-        hedge2dldr, vedge2dldr)
+        str(path_dir / "velocity_on_staggered_grid.vtk"), hedge2dldr, vedge2dldr
+    )
 
     img_h, img_w = img_shape[1], img_shape[0]
     ys = torch.arange(img_h, dtype=torch.float32) + 0.5  # (img_h,)
@@ -201,21 +203,22 @@ def test_smooth_gradient_staggered_grid():
         dim=1,
     )
     IoVtk.write_points_with_velocity(
-        str(path_dir / "velocity_interpolated_at_center.vtk"),
-        pix2xyz, pix2vxvyvz)
+        str(path_dir / "velocity_interpolated_at_center.vtk"), pix2xyz, pix2vxvyvz
+    )
 
     if torch.cuda.is_available():
         RasterizedEdgeGradient.smooth_gradient(
             d_hedge2type, d_vedge2type, num_itr, d_hedge2dldr, d_vedge2dldr
         )
-        print( (d_hedge2dldr.cpu()-hedge2dldr).abs().max() )
-        print( (d_vedge2dldr.cpu()-vedge2dldr).abs().max() )
+        print((d_hedge2dldr.cpu() - hedge2dldr).abs().max())
+        print((d_vedge2dldr.cpu() - vedge2dldr).abs().max())
 
         d_pix2xy = pix2xy.cuda()
         d_pix2vxvy = RasterizedEdgeGradient.interpolate(
             d_hedge2dldr, d_vedge2dldr, d_pix2xy.reshape(-1, 2)
         )
-        print( (d_pix2vxvy.cpu()-pix2vxvy).abs().max() )
+        print((d_pix2vxvy.cpu() - pix2vxvy).abs().max())
+
 
 def test_silhouette_optimization():
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
@@ -253,14 +256,17 @@ def test_silhouette_optimization():
 
         if iter == 0:
             IoVtk.write_points_with_velocity(
-                str(path_dir / "silhouette_opt_ini_cpu.vtk"), vtx2xyz.detach(), dldw_vtx2xyz)
+                str(path_dir / "silhouette_opt_ini_cpu.vtk"),
+                vtx2xyz.detach(),
+                dldw_vtx2xyz,
+            )
 
         with torch.no_grad():
             vtx2xyz -= lr * dldw_vtx2xyz
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz,
-        str(path_dir / "silhouette_opt_fin_cpu.obj"))
+        tri2vtx, vtx2xyz, str(path_dir / "silhouette_opt_fin_cpu.obj")
+    )
 
     if torch.cuda.is_available():
         tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2()
@@ -277,9 +283,16 @@ def test_silhouette_optimization():
         lr = 10.0
         for iter in range(0, 100):
             d_vtx2xyz.grad = None
-            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(
+                d_tri2vtx, d_vtx2xyz
+            )
             d_pix2tri = Pix2Tri.by_raycasting(
-                d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, d_transform_ndc2world, img_shape
+                d_tri2vtx,
+                d_vtx2xyz,
+                d_bvhnodes,
+                d_bvhnode2aabb,
+                d_transform_ndc2world,
+                img_shape,
             )
             d_pix2occ = (
                 torch.where(d_pix2tri == torch.iinfo(torch.uint32).max, 0.0, 1.0)
@@ -302,8 +315,11 @@ def test_silhouette_optimization():
                 d_vtx2xyz -= lr * d_dldw_vtx2xyz
 
         TriMesh3.save_wavefront_obj(
-            d_tri2vtx.cpu(), d_vtx2xyz.cpu(),
-            str(path_dir / "silhouette_opt_fin_gpu.obj"))
+            d_tri2vtx.cpu(),
+            d_vtx2xyz.cpu(),
+            str(path_dir / "silhouette_opt_fin_gpu.obj"),
+        )
+
 
 def example1(L_dir, L_color):
     tri2vtx0, vtx2xyz0 = TriMesh3.sphere(1.0, 64, 32)
@@ -369,7 +385,13 @@ def test_shading_optimization():
         from test_pix2tri import render_lambertian_shading_gouraud
 
         pix2rgb = render_lambertian_shading_gouraud(
-            tri2vtx, vtx2xyz, vtx2nrm, transform_ndc2world, light_dirs, light_colors, pix2tri
+            tri2vtx,
+            vtx2xyz,
+            vtx2nrm,
+            transform_ndc2world,
+            light_dirs,
+            light_colors,
+            pix2tri,
         )
         pix2rgb = RasterizedEdgeGradient.AutogradWithSmooth.apply(
             tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2rgb
@@ -385,7 +407,9 @@ def test_shading_optimization():
             img = (pix2rgb.detach().numpy() * 255).clip(0, 255).astype("uint8")
             Image.fromarray(img).save(path_dir / f"shading_opt_cpu_{iter}.png")
 
-    TriMesh3.save_wavefront_obj(tri2vtx, vtx2xyz, str(path_dir / f"shading_opt_fin.obj"))
+    TriMesh3.save_wavefront_obj(
+        tri2vtx, vtx2xyz, str(path_dir / f"shading_opt_fin.obj")
+    )
 
     if torch.cuda.is_available():
         d_light_dirs, d_light_colors = generate_lighting(low=0.1, mid=0.5, high=0.9)
@@ -397,7 +421,7 @@ def test_shading_optimization():
         )
         d_tri2vtx = tri2vtx.cuda()
         d_vtx2xyz = vtx2xyz.detach().cuda().requires_grad_(True)
-        d_transform_world2ndc =  transform_world2ndc.cuda()
+        d_transform_world2ndc = transform_world2ndc.cuda()
         d_pix2rgb_trg = pix2rgb_trg.cuda()
         #
         d_transform_ndc2world = transform_world2ndc.inverse().contiguous().cuda()
@@ -408,16 +432,28 @@ def test_shading_optimization():
 
         for iter in range(0, 31):
             opt.zero_grad()
-            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(
+                d_tri2vtx, d_vtx2xyz
+            )
             d_pix2tri = Pix2Tri.by_raycasting(
-                d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, d_transform_ndc2world, img_shape
+                d_tri2vtx,
+                d_vtx2xyz,
+                d_bvhnodes,
+                d_bvhnode2aabb,
+                d_transform_ndc2world,
+                img_shape,
             )
             d_vtx2nrm = TriMesh3.make_vtx2normal(d_tri2vtx.int(), d_vtx2xyz)
             from test_pix2tri import render_lambertian_shading_gouraud
 
             d_pix2rgb = render_lambertian_shading_gouraud(
-                d_tri2vtx, d_vtx2xyz, d_vtx2nrm, d_transform_ndc2world,
-                d_light_dirs, d_light_colors, d_pix2tri
+                d_tri2vtx,
+                d_vtx2xyz,
+                d_vtx2nrm,
+                d_transform_ndc2world,
+                d_light_dirs,
+                d_light_colors,
+                d_pix2tri,
             )
             d_pix2rgb = RasterizedEdgeGradient.AutogradWithSmooth.apply(
                 d_tri2vtx, d_vtx2xyz, d_transform_world2pix, d_pix2tri, d_pix2rgb
@@ -430,5 +466,9 @@ def test_shading_optimization():
             opt.step()
 
             if iter % 10 == 0:
-                img = (d_pix2rgb.detach().cpu().numpy() * 255).clip(0, 255).astype("uint8")
+                img = (
+                    (d_pix2rgb.detach().cpu().numpy() * 255)
+                    .clip(0, 255)
+                    .astype("uint8")
+                )
                 Image.fromarray(img).save(path_dir / f"shading_opt_gpu_{iter}.png")

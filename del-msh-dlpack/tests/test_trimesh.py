@@ -1,8 +1,9 @@
+from pathlib import Path
+from PIL import Image
 import numpy
 import pytest
 import torch
 
-#
 import del_msh_dlpack.TriMesh3.numpy
 import del_msh_dlpack.TriMesh3.torch
 
@@ -52,13 +53,17 @@ def test_01():
 
 def test_02():
     """
-    test raycast
+    test raycast for numpy
     """
+    from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
+
+    #
+    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "dlpack"
+    path_dir.mkdir(parents=True, exist_ok=True)
+
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 64, 32)
     tri2vtx = tri2vtx.numpy()
     vtx2xyz = vtx2xyz.numpy()
-    # print("hoge", tri2vtx.shape, tri2vtx.dtype)
-    # bvhnodes = del_msh_numpy.TriMesh.bvhnodes_tri(tri2vtx, vtx2xyz)
     bvhnodes, bvhnode2aabb = del_msh_dlpack.TriMesh3.numpy.make_bvhnodes_bvhnode2aabb(
         tri2vtx, vtx2xyz
     )
@@ -66,32 +71,18 @@ def test_02():
     assert bvhnode2aabb.shape[1] == 6
     #
     transform_ndc2world = numpy.eye(4, dtype=numpy.float32)
-    #
     pix2tri = numpy.ndarray(shape=(300, 300), dtype=numpy.uint32)
     pix2tri.fill(numpy.iinfo(numpy.uint32).max)
-    #
-    from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
-
     update_pix2tri(
         tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri
     )
-
     mask = pix2tri != numpy.iinfo(numpy.uint32).max
     num_true = numpy.count_nonzero(mask)
     ratio0 = float(num_true) / float(mask.shape[0] * mask.shape[1])
     ratio1 = 0.8 * 0.8 * numpy.pi * 0.25
     assert abs(ratio0 - ratio1) < 0.00013
-
-    from pathlib import Path
-
-    path = Path(__file__).resolve().parent.parent.parent
-    # print(path.resolve() )
-
-    from PIL import Image
-
     img = Image.fromarray((mask.astype(numpy.uint8) * 255))
-    file_path = path / "target/del_msh_delpack__pix2tri.png"
-    img.save(file_path)
+    img.save(path_dir / "pix2tri_numpy_test_silhouette.png")
     #
 
     """
@@ -173,20 +164,20 @@ def test_04():
 
 
 def test_05():
-    from pathlib import Path
+    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "dlpack"
+    path_dir.mkdir(parents=True, exist_ok=True)
 
-    path = Path(__file__).resolve().parent.parent.parent
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.torus(1.0, 0.3, 16, 16)
     del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path / "target" / "torus.obj")
+        tri2vtx, vtx2xyz, str(path_dir / "torus.obj")
     )
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 8, 32)
     del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path / "target" / "sphere.obj")
+        tri2vtx, vtx2xyz, str(path_dir / "sphere.obj")
     )
     #
     with pytest.raises(OSError) as exc_info:
         del_msh_dlpack.TriMesh3.torch.save_wavefront_obj(
-            tri2vtx, vtx2xyz, str(path / "target" / "no-exist" / "sphere.obj")
+            tri2vtx, vtx2xyz, str(path_dir / "no-exist" / "sphere.obj")
         )
     print("expected error:", exc_info.value)

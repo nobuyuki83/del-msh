@@ -2,6 +2,7 @@ import math
 import numpy
 from del_msh_numpy import TriMesh, BVH, Raycast
 
+
 def test_01():
     tri2vtx, vtx2xyz = TriMesh.capsule()
     #
@@ -19,8 +20,9 @@ def test_01():
     tri2dist = TriMesh.tri2distance(0, tri2tri)
     assert tri2dist[0] == 0
     areas = TriMesh.tri2area(tri2vtx, vtx2xyz)
-    assert math.fabs(areas.sum() - 4. * math.pi) < 0.1
-    cumsum_areas = numpy.cumsum(numpy.append(numpy.zeros(1, dtype=numpy.float32), areas))
+    assert math.fabs(areas.sum() - 4.0 * math.pi) < 0.1
+    cumsum_areas = numpy.cumsum(
+        numpy.append(numpy.zeros(1, dtype=numpy.float32), areas)
+    )
     sample = TriMesh.sample(cumsum_areas, 0.5, 0.1)
     samples2xyz = TriMesh.sample_many(tri2vtx, vtx2xyz, num_sample=1000)
-

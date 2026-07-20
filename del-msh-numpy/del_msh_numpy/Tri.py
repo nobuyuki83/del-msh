@@ -1,11 +1,7 @@
 import numpy
 
 
-def barycentric_coord(
-        p0,
-        p1,
-        p2,
-        q0):
+def barycentric_coord(p0, p1, p2, q0):
     """
     barycentric coordinate of a 3D point on a 3D triangle
     :param p0: 0th vtx
@@ -15,6 +11,7 @@ def barycentric_coord(
     :return: barycentric coordinate as numpy.ndarray
     """
     from .Tet import tet_volume
+
     n = numpy.cross(p1 - p0, p2 - p0)
     q1 = n + q0
     v0 = tet_volume(q0, p1, p2, q1)

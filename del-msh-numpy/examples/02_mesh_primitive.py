@@ -6,6 +6,7 @@ import DrawerMesh
 import view_navigation3
 from del_msh_numpy import TriMesh
 
+
 class App(mglw.WindowConfig):
     title = "ModernGL: rotating triangle"
     window_size = (800, 600)
@@ -21,7 +22,9 @@ class App(mglw.WindowConfig):
     def view_transformation_matrix_for_gl(self):
         proj = self.nav.projection_matrix()
         modelview = self.nav.modelview_matrix()
-        zinv = pyrr.Matrix44(value=(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1), dtype=np.float32)
+        zinv = pyrr.Matrix44(
+            value=(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1), dtype=np.float32
+        )
         return zinv * proj * modelview
 
     def on_render(self, time: float, frame_time: float):
@@ -63,8 +66,13 @@ def draw_mesh(tri2vtx, vtx2xyz):
     drawer = DrawerMesh.Drawer(
         vtx2xyz=vtx2xyz,
         list_elem2vtx=[
-            DrawerMesh.ElementInfo(index=tri2vtx, color=(1, 0, 0), mode=moderngl.TRIANGLES),
-            DrawerMesh.ElementInfo(index=edge2vtx, color=(0, 0, 0), mode=moderngl.LINES)]
+            DrawerMesh.ElementInfo(
+                index=tri2vtx, color=(1, 0, 0), mode=moderngl.TRIANGLES
+            ),
+            DrawerMesh.ElementInfo(
+                index=edge2vtx, color=(0, 0, 0), mode=moderngl.LINES
+            ),
+        ],
     )
     app = App
     app.drawer = drawer
@@ -73,11 +81,11 @@ def draw_mesh(tri2vtx, vtx2xyz):
 
 
 if __name__ == "__main__":
-    '''
+    """
     from util_moderngl_qt import primitive_shapes
     draw_mesh(*primitive_shapes.sphere(radius=1.0, n_longtitude=8, n_latitude=16))
     draw_mesh(*primitive_shapes.cylinder(radius=1.0))
-    '''
+    """
     #
     draw_mesh(*TriMesh.hemisphere(radius=1.0, ndiv_longtitude=8))
     draw_mesh(*TriMesh.torus(major_radius=0.4, minor_radius=0.2))

@@ -1,7 +1,7 @@
 import numpy
 
 
-''' 
+""" 
 // exact computation looks like:
 
 hoge = numpy.zeros_like(self.vtx2xyz_new)
@@ -16,13 +16,15 @@ for i_vtx in range(self.vtx2xyz.shape[0]):
     M = numpy.linalg.inv(M).dot(dq0.transpose()).dot(diag_w).dot(dq1)
     p1 = (self.vtx2xyz[i_vtx]-q0).dot(M)+q1
     hoge[i_vtx] = p1
-'''
+"""
+
 
 def kernel(
-        samples: numpy.typing.NDArray,
-        vtx2xyz: numpy.typing.NDArray,
-        p: int=2,
-        eps: float=1.0e-3) -> numpy.ndarray:
+    samples: numpy.typing.NDArray,
+    vtx2xyz: numpy.typing.NDArray,
+    p: int = 2,
+    eps: float = 1.0e-3,
+) -> numpy.ndarray:
     """
     compute the kernel value for each vertex against each sample point
     :param samples:
@@ -41,9 +43,10 @@ def kernel(
 
 
 def precomp(
-        samples: numpy.typing.NDArray,
-        vtx2xyz: numpy.typing.NDArray,
-        weights: numpy.typing.NDArray):
+    samples: numpy.typing.NDArray,
+    vtx2xyz: numpy.typing.NDArray,
+    weights: numpy.typing.NDArray,
+):
     precomp = numpy.ndarray((vtx2xyz.shape[0], samples.shape[0]))
     if samples.shape[0] < 4:
         return
@@ -54,5 +57,7 @@ def precomp(
         dq0 = samples - q0
         diag_w = numpy.diag(w)
         M = dq0.transpose().dot(diag_w.dot(dq0))
-        precomp[i_vtx] = (p0 - q0).dot(numpy.linalg.inv(M)).dot(dq0.transpose()).dot(diag_w) + w
+        precomp[i_vtx] = (p0 - q0).dot(numpy.linalg.inv(M)).dot(dq0.transpose()).dot(
+            diag_w
+        ) + w
     return precomp

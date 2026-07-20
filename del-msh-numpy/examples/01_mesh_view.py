@@ -4,6 +4,7 @@ import pyrr
 import numpy
 import DrawerMesh
 
+
 class App(mglw.WindowConfig):
     title = "ModernGL: rotating triangle"
     window_size = (800, 600)
@@ -13,24 +14,21 @@ class App(mglw.WindowConfig):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        V = numpy.array([
-            [-0.5, -0.5, 0],
-            [+0.5, -0.5, 0],
-            [+0, +0.5, 0]], dtype=numpy.float32)
-        F = numpy.array([
-            [0, 1, 2]], dtype=numpy.uint32)
-        E = numpy.array([
-            [0, 1],
-            [1, 2],
-            [2, 0]], dtype=numpy.uint32)
+        V = numpy.array(
+            [[-0.5, -0.5, 0], [+0.5, -0.5, 0], [+0, +0.5, 0]], dtype=numpy.float32
+        )
+        F = numpy.array([[0, 1, 2]], dtype=numpy.uint32)
+        E = numpy.array([[0, 1], [1, 2], [2, 0]], dtype=numpy.uint32)
         self.drawer = DrawerMesh.Drawer(
             vtx2xyz=V,
             list_elem2vtx=[
-                DrawerMesh.ElementInfo(index=F, color=(1, 0, 0), mode=moderngl.TRIANGLES),
-                DrawerMesh.ElementInfo(index=E, color=(0, 0, 0), mode=moderngl.LINES)]
+                DrawerMesh.ElementInfo(
+                    index=F, color=(1, 0, 0), mode=moderngl.TRIANGLES
+                ),
+                DrawerMesh.ElementInfo(index=E, color=(0, 0, 0), mode=moderngl.LINES),
+            ],
         )
         self.drawer.init_gl(self.ctx)
-
 
     # ★ moderngl_window が呼ぶ描画フック
     def render(self, time: float, frame_time: float):
@@ -52,5 +50,5 @@ class App(mglw.WindowConfig):
         self.ctx.viewport = (0, 0, width, height)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mglw.run_window_config(App)
