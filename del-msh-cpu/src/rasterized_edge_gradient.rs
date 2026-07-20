@@ -221,16 +221,16 @@ pub fn interpolate_staggered_grid(
     }
 }
 
-pub fn smooth_gradient(
+pub fn smooth_gradient_hedge(
     (img_w, img_h): (usize, usize),
-    hedge2type: &mut [u8],
+    hedge2type: &[u8],
+    vedge2type: &[u8],
+    num_iter: usize,
     hedge2dldr: &mut [f32],
-    vedge2type: &mut [u8],
-    vedge2dldr: &mut [f32],
 ) {
     assert_eq!(hedge2type.len(), (img_h - 1) * img_w);
     assert_eq!(hedge2type.len(), hedge2dldr.len());
-    for _iter in 0..1000 {
+    for _iter in 0..num_iter {
         for i_hedge_c in 0..(img_h - 1) * img_w {
             let iw = i_hedge_c % img_w;
             let ih = i_hedge_c / img_w;
@@ -309,7 +309,17 @@ pub fn smooth_gradient(
                 hedge2dldr[i_hedge_c] = v_sum / n_sum as f32;
             }
         }
-        // ------------
+    }
+}
+
+pub fn smooth_gradient_vedge(
+    (img_w, img_h): (usize, usize),
+    hedge2type: &[u8],
+    vedge2type: &[u8],
+    num_iter: usize,
+    vedge2dldr: &mut [f32],
+) {
+    for _iter in 0..num_iter {
         assert_eq!(vedge2type.len(), img_h * (img_w - 1));
         assert_eq!(vedge2type.len(), vedge2dldr.len());
         for i_vedge_c in 0..img_h * (img_w - 1) {
@@ -394,15 +404,21 @@ pub fn smooth_gradient(
     //
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn bwd(
     tri2vtx: &[u32],
     vtx2xyz: &[f32],
     dldw_vtx2xyz: &mut [f32],
     transform_world2pix: &[f32; 16],
     (img_w, img_h): (usize, usize),
-    dldw_pixval: &[f32],
     pix2tri: &[u32],
+    num_vdim: usize,
+    pix2val: &[f32],
+    dldw_pix2val: &[f32],
 ) {
+    assert_eq!(pix2val.len(), img_h * img_w * num_vdim);
+    assert_eq!(dldw_pix2val.len(), img_h * img_w * num_vdim);
+    assert_eq!(vtx2xyz.len(), dldw_vtx2xyz.len());
     use del_geo_core::mat4_col_major::Mat4ColMajor;
     let transform_pix2world = transform_world2pix.transpose();
     // vertical edge
@@ -435,9 +451,17 @@ pub fn bwd(
             if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
                 continue;
             }
-            let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
-            let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-            let dldpa = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            let dldpa = {
+                let mut dldpa = 0.0;
+                for i_vdim in 0..num_vdim {
+                    let val0 = pix2val[ipix0 * num_vdim + i_vdim];
+                    let val1 = pix2val[ipix1 * num_vdim + i_vdim];
+                    let dval0 = dldw_pix2val[ipix0 * num_vdim + i_vdim];
+                    let dval1 = dldw_pix2val[ipix1 * num_vdim + i_vdim];
+                    dldpa += (dval0 + dval1) * 0.5 * (val0 - val1);
+                }
+                dldpa
+            };
             if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
                 dbg!("todo");
                 continue;
@@ -501,9 +525,17 @@ pub fn bwd(
             if !is_pixcentr0_inside_tri1 && !is_pixcentr1_inside_tri0 {
                 continue;
             }
-            let val0 = if pix2tri[ipix0] == u32::MAX { 0. } else { 1. };
-            let val1 = if pix2tri[ipix1] == u32::MAX { 0. } else { 1. };
-            let dldpa = (dldw_pixval[ipix0] + dldw_pixval[ipix1]) * 0.5 * (val0 - val1);
+            let dldpa = {
+                let mut dldpa = 0.0;
+                for i_vdim in 0..num_vdim {
+                    let val0 = pix2val[ipix0 * num_vdim + i_vdim];
+                    let val1 = pix2val[ipix1 * num_vdim + i_vdim];
+                    let dval0 = dldw_pix2val[ipix0 * num_vdim + i_vdim];
+                    let dval1 = dldw_pix2val[ipix1 * num_vdim + i_vdim];
+                    dldpa += (dval0 + dval1) * 0.5 * (val0 - val1);
+                }
+                dldpa
+            };
             if is_pixcentr0_inside_tri1 && is_pixcentr1_inside_tri0 {
                 dbg!("todo");
                 continue;
