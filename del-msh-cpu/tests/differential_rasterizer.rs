@@ -342,9 +342,13 @@ mod tests {
             );
             pix2tri
         };
+        let pix2val: Vec<_> = pix2tri
+            .iter()
+            .map(|i| if *i == u32::MAX { 0f32 } else { 1f32 })
+            .collect();
         let mut pix2rgb_diff: Vec<_> = vec![0f32; img_shape.0 * img_shape.1 * 3];
         for i_pix in 0..IMG_RES * IMG_RES {
-            let dldw_pixval = {
+            let dldw_pix2val = {
                 let mut dldw_pix2val = vec![0f32; IMG_RES * IMG_RES];
                 dldw_pix2val[i_pix] = 1.0;
                 dldw_pix2val
@@ -357,8 +361,10 @@ mod tests {
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
                 img_shape,
-                &dldw_pixval,
                 &pix2tri,
+                1,
+                &pix2val,
+                &dldw_pix2val,
             );
             //
             let dpix: f32 = dxyz
