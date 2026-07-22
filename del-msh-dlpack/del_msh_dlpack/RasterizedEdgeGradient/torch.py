@@ -223,7 +223,12 @@ class RasterizedEdgeGradientFunction(torch.autograd.Function):
     def backward(ctx, dldw_pix2vout):
         tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin = ctx.saved_tensors
         dldw_vtx2xyz = bwd(
-            tri2vtx, vtx2xyz.detach(), transform_world2pix, dldw_pix2vout, pix2tri
+            tri2vtx,
+            vtx2xyz.detach(),
+            transform_world2pix,
+            pix2tri,
+            pix2vin.detach(),
+            dldw_pix2vout,
         )
         dldw_pix2vin = dldw_pix2vout.clone()
         return None, dldw_vtx2xyz, None, None, dldw_pix2vin
