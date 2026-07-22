@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <cfloat>
 #include "del_geo/mat4_col_major.h"
 #include "del_geo/tri2.h"
 
@@ -356,8 +357,32 @@ __device__ bool barycentric_of_pixel_in_tri(
     return true;
 }
 
+// Jacobian row of one perspective-divided pixel coordinate with respect to a
+// world-space vertex. axis=0 selects pixel x and axis=1 selects pixel y.
+__device__ bool projection_gradient(
+    const float *transform_world2pix,
+    const float *xyz,
+    const int axis,
+    float *dxyz)
+{
+    const float q = transform_world2pix[axis] * xyz[0]
+        + transform_world2pix[axis + 4] * xyz[1]
+        + transform_world2pix[axis + 8] * xyz[2]
+        + transform_world2pix[axis + 12];
+    const float w = transform_world2pix[3] * xyz[0]
+        + transform_world2pix[7] * xyz[1]
+        + transform_world2pix[11] * xyz[2]
+        + transform_world2pix[15];
+    if (fabsf(w) <= FLT_EPSILON) { return false; }
+    const float inv_w2 = 1.f / (w * w);
+    dxyz[0] = (transform_world2pix[axis] * w - q * transform_world2pix[3]) * inv_w2;
+    dxyz[1] = (transform_world2pix[axis + 4] * w - q * transform_world2pix[7]) * inv_w2;
+    dxyz[2] = (transform_world2pix[axis + 8] * w - q * transform_world2pix[11]) * inv_w2;
+    return true;
+}
+
 // Backward pass for horizontal edges (each edge connects pixel (iw,ih0) and
-// (iw,ih0+1)).  Uses direction [0,1,0] through transpose(transform_world2pix).
+// (iw,ih0+1)). Uses the perspective-correct pixel-y projection Jacobian.
 // Thread (x=iw, y=ih0), grid covers img_w × (img_h-1).
 __global__
 void bwd_hedge(
@@ -399,14 +424,6 @@ void bwd_hedge(
         dldpa += (dval0 + dval1) * 0.5f * (val0 - val1);
     }
 
-    // transform_pix2world.transform_direction([0,1,0])
-    // = transpose(w2p) * [0,1,0,0] = [w2p[1], w2p[5], w2p[9]]
-    const float dxyz[3] = {
-        transform_world2pix[1],
-        transform_world2pix[5],
-        transform_world2pix[9],
-    };
-
     uint32_t target_tri;
     float pxq, pyq;
     if (in1_tri0) {
@@ -425,6 +442,8 @@ void bwd_hedge(
     }
     for (int inode = 0; inode < 3; ++inode) {
         const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
+        float dxyz[3];
+        if (!projection_gradient(transform_world2pix, vtx2xyz + ivtx * 3, 1, dxyz)) { continue; }
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dxyz[0] * dldpa);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dxyz[1] * dldpa);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dxyz[2] * dldpa);
@@ -432,7 +451,7 @@ void bwd_hedge(
 }
 
 // Backward pass for vertical edges (each edge connects pixel (iw0,ih) and
-// (iw0+1,ih)).  Uses direction [1,0,0] through transpose(transform_world2pix).
+// (iw0+1,ih)). Uses the perspective-correct pixel-x projection Jacobian.
 // Thread (x=iw0, y=ih), grid covers (img_w-1) × img_h.
 __global__
 void bwd_vedge(
@@ -474,14 +493,6 @@ void bwd_vedge(
         dldpa += (dval0 + dval1) * 0.5f * (val0 - val1);
     }
 
-    // transform_pix2world.transform_direction([1,0,0])
-    // = transpose(w2p) * [1,0,0,0] = [w2p[0], w2p[4], w2p[8]]
-    const float dxyz[3] = {
-        transform_world2pix[0],
-        transform_world2pix[4],
-        transform_world2pix[8],
-    };
-
     uint32_t target_tri;
     float pxq, pyq;
     if (in1_tri0) {
@@ -500,6 +511,8 @@ void bwd_vedge(
     }
     for (int inode = 0; inode < 3; ++inode) {
         const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
+        float dxyz[3];
+        if (!projection_gradient(transform_world2pix, vtx2xyz + ivtx * 3, 0, dxyz)) { continue; }
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dxyz[0] * dldpa);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dxyz[1] * dldpa);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dxyz[2] * dldpa);

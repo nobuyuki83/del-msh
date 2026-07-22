@@ -257,13 +257,18 @@ class AutogradWithSmooth(torch.autograd.Function):
         write_velocity_on_staggered_grid(path0, hedge2dldr, vedge2dldr)
         """
         #
-        from del_msh_dlpack.Vtx2Xyz.torch import transform_affine
-
-        vtx2wh = transform_affine(vtx2xyz, transform_world2pix)[:, 0:2].clone()
+        # Project vertices with homogeneous division.  ``transform_affine`` is
+        # insufficient here because world-to-pixel may be a perspective matrix.
+        ones = torch.ones_like(vtx2xyz[:, :1])
+        vtx2xyzw = torch.cat([vtx2xyz, ones], dim=1) @ transform_world2pix.T
+        vtx2wh = vtx2xyzw[:, 0:2] / vtx2xyzw[:, 3:4]
         dldw_vtx2wh = interpolate(hedge2dldr, vedge2dldr, vtx2wh)
-        zeros = torch.zeros(
-            (dldw_vtx2wh.shape[0], 1), dtype=torch.float, device=dldw_vtx2wh.device
-        )
-        dldw_vtx2whdw = torch.cat([dldw_vtx2wh, zeros, zeros], dim=1)  # (N,4)
-        dldw_vtx2xyz = (dldw_vtx2whdw @ transform_world2pix.clone())[:, 0:3].clone()
+        # Chain through q.xy / q.w, then through q = M @ [xyz, 1].
+        qx, qy, qw = vtx2xyzw[:, 0], vtx2xyzw[:, 1], vtx2xyzw[:, 3]
+        gx, gy = dldw_vtx2wh[:, 0], dldw_vtx2wh[:, 1]
+        dldw_q = torch.zeros_like(vtx2xyzw)
+        dldw_q[:, 0] = gx / qw
+        dldw_q[:, 1] = gy / qw
+        dldw_q[:, 3] = -(gx * qx + gy * qy) / (qw * qw)
+        dldw_vtx2xyz = (dldw_q @ transform_world2pix)[:, 0:3].clone()
         return None, dldw_vtx2xyz, None, None, dldw_pix2val

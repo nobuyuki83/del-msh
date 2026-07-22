@@ -47,6 +47,32 @@ fn fn_inside(b: Option<[f32; 3]>) -> bool {
     }
 }
 
+/// Gradient of one perspective-divided pixel coordinate with respect to a
+/// world-space vertex. `axis` is 0 for pixel x and 1 for pixel y.
+fn fn_projection_gradient(
+    transform_world2pix: &[f32; 16],
+    xyz: &[f32; 3],
+    axis: usize,
+) -> Option<[f32; 3]> {
+    let q = transform_world2pix[axis] * xyz[0]
+        + transform_world2pix[axis + 4] * xyz[1]
+        + transform_world2pix[axis + 8] * xyz[2]
+        + transform_world2pix[axis + 12];
+    let w = transform_world2pix[3] * xyz[0]
+        + transform_world2pix[7] * xyz[1]
+        + transform_world2pix[11] * xyz[2]
+        + transform_world2pix[15];
+    if w.abs() <= f32::EPSILON {
+        return None;
+    }
+    let inv_w2 = 1.0 / (w * w);
+    Some([
+        (transform_world2pix[axis] * w - q * transform_world2pix[3]) * inv_w2,
+        (transform_world2pix[axis + 4] * w - q * transform_world2pix[7]) * inv_w2,
+        (transform_world2pix[axis + 8] * w - q * transform_world2pix[11]) * inv_w2,
+    ])
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn edge_gradient_and_type(
     tri2vtx: &[u32],
@@ -419,8 +445,6 @@ pub fn bwd(
     assert_eq!(pix2val.len(), img_h * img_w * num_vdim);
     assert_eq!(dldw_pix2val.len(), img_h * img_w * num_vdim);
     assert_eq!(vtx2xyz.len(), dldw_vtx2xyz.len());
-    use del_geo_core::mat4_col_major::Mat4ColMajor;
-    let transform_pix2world = transform_world2pix.transpose();
     // vertical edge
     for iw in 0..img_w {
         for ih0 in 0..img_h - 1 {
@@ -470,10 +494,12 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                use del_geo_core::mat4_col_major::Mat4ColMajor;
-                let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
+                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 1) else {
+                        continue;
+                    };
                     dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
@@ -483,10 +509,12 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                use del_geo_core::mat4_col_major::Mat4ColMajor;
-                let dxyz = transform_pix2world.transform_direction(&[0., 1., 0.]);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
+                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 1) else {
+                        continue;
+                    };
                     dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
@@ -544,10 +572,12 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                use del_geo_core::mat4_col_major::Mat4ColMajor;
-                let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
+                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
+                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 0) else {
+                        continue;
+                    };
                     dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
@@ -557,10 +587,12 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                use del_geo_core::mat4_col_major::Mat4ColMajor;
-                let dxyz = transform_pix2world.transform_direction(&[1., 0., 0.]);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
+                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
+                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 0) else {
+                        continue;
+                    };
                     dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
                     dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
