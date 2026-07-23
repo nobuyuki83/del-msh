@@ -68,8 +68,8 @@ pub fn rasterized_edge_gradient_bwd(
                 (img_w as usize, img_h as usize),
                 slice!(pix2tri, u32).unwrap(),
                 num_vdim as usize,
-                slice!(dldw_pix2val, f32).unwrap(),
                 slice!(pix2val, f32).unwrap(),
+                slice!(dldw_pix2val, f32).unwrap(),
             );
         }
         #[cfg(feature = "cuda")]
@@ -104,8 +104,8 @@ pub fn rasterized_edge_gradient_bwd(
                 builder.arg_u32(img_h as u32);
                 builder.arg_data(&pix2tri.data);
                 builder.arg_u32(num_vdim as u32);
-                builder.arg_data(&dldw_pix2val.data); // swapped: mirrors CPU call order
                 builder.arg_data(&pix2val.data);
+                builder.arg_data(&dldw_pix2val.data);
                 builder.launch_kernel(func, cfg).unwrap();
             }
             // vedge: grid covers (img_w - 1) × img_h
@@ -134,8 +134,8 @@ pub fn rasterized_edge_gradient_bwd(
                 builder.arg_u32(img_h as u32);
                 builder.arg_data(&pix2tri.data);
                 builder.arg_u32(num_vdim as u32);
-                builder.arg_data(&dldw_pix2val.data); // swapped: mirrors CPU call order
                 builder.arg_data(&pix2val.data);
+                builder.arg_data(&dldw_pix2val.data);
                 builder.launch_kernel(func, cfg).unwrap();
             }
         }
