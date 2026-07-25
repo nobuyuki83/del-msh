@@ -1,3 +1,5 @@
+use del_cudarc_sys::cu::CUdeviceptr;
+use del_cudarc_sys::CuVec;
 use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
@@ -8,6 +10,7 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_laplacian_smoothing, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_graph_screened_poisson, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_multiply_graph_laplacian, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(vtx2vtx_from_uniform_mesh, m)?)?;
     Ok(())
@@ -20,7 +23,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
 #[allow(unused_variables)]
-fn vtx2vtx_laplacian_smoothing(
+fn vtx2vtx_graph_screened_poisson(
     _py: Python,
     vtx2idx: &Bound<'_, PyAny>,
     idx2vtx: &Bound<'_, PyAny>,
@@ -49,7 +52,7 @@ fn vtx2vtx_laplacian_smoothing(
     //
     match device_type {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::vtx2vtx::laplacian_smoothing::<u32>(
+            del_msh_cpu::vtx2vtx::graph_screend_poisson::<u32>(
                 slice!(vtx2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
                 lambda,
@@ -62,19 +65,11 @@ fn vtx2vtx_laplacian_smoothing(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            // println!("GPU_{}", vtx2idx.ctx.device_id);
-            /*
-            let (function, _module) = del_cudarc_sys::load_function_in_module(
-                del_msh_cuda_kernel::VTX2VTX,
-                "laplacian_smoothing",
-            )
-            .unwrap();
-             */
             //let function = crate::load_get_function("vtx2vtx", "laplacian_smoothing").unwrap();
             let function = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh__vtx2vtx",
                 del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
-                "laplacian_smoothing",
+                "graph_screened_poisson",
             )
             .unwrap();
             use del_cudarc_sys::{cu, cuda_check};
@@ -112,6 +107,87 @@ fn vtx2vtx_laplacian_smoothing(
                             del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
                         )
                         .unwrap();
+                }
+            }
+        }
+        _ => println!("Unknown device type {}", vtx2idx_offset.ctx.device_type),
+    }
+    Ok(())
+}
+
+#[pyo3::pyfunction]
+#[allow(clippy::too_many_arguments)]
+#[allow(unused_variables)]
+fn vtx2vtx_laplacian_smoothing(
+    _py: Python,
+    vtx2idx: &Bound<'_, PyAny>,
+    idx2vtx: &Bound<'_, PyAny>,
+    lambda: f32,
+    vtx2val: &Bound<'_, PyAny>,
+    vtx2ave: &Bound<'_, PyAny>,
+    num_iter: usize,
+    #[allow(unused_variables)] stream_ptr: u64,
+) -> PyResult<()> {
+    let vtx2idx_offset = get_tensor(vtx2idx)?;
+    let idx2vtx = get_tensor(idx2vtx)?;
+    let vtx2val = get_tensor(vtx2val)?;
+    let vtx2ave = get_tensor(vtx2ave)?;
+    //
+    let num_vtx = shape(vtx2idx_offset, 0).unwrap() - 1;
+    let num_vdim = shape(vtx2val, 1).unwrap();
+    let device_type = vtx2idx_offset.ctx.device_type;
+    //
+    chk1::<u32>(vtx2idx_offset, num_vtx + 1, device_type).unwrap();
+    chk1::<u32>(idx2vtx, -1, device_type).unwrap();
+    chk2::<f32>(vtx2val, num_vtx, num_vdim, device_type).unwrap();
+    chk2::<f32>(vtx2ave, num_vtx, num_vdim, device_type).unwrap();
+    //
+    match device_type {
+        dlpack::device_type_codes::CPU => {
+            del_msh_cpu::vtx2vtx::laplacian_smoothing::<u32>(
+                slice!(vtx2idx_offset, u32).unwrap(),
+                slice!(idx2vtx, u32).unwrap(),
+                lambda,
+                num_vdim as usize,
+                slice_mut!(vtx2val, f32).unwrap(),
+                slice_mut!(vtx2ave, f32).unwrap(),
+                num_iter,
+            );
+        }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            //let function = crate::load_get_function("vtx2vtx", "laplacian_smoothing").unwrap();
+            let function = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh__vtx2vtx",
+                del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
+                "laplacian_smoothing",
+            )
+                .unwrap();
+            use del_cudarc_sys::{cu, cuda_check};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            for _itr in 0..num_iter {
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_u32(num_vtx as u32);
+                builder.arg_data(&vtx2idx_offset.data);
+                builder.arg_data(&idx2vtx.data);
+                builder.arg_f32(lambda);
+                builder.arg_u32(num_vdim as u32);
+                builder.arg_data(&vtx2val.data);
+                builder.arg_data(&vtx2ave.data);
+                builder
+                    .launch_kernel(
+                        function,
+                        del_cudarc_sys::LaunchConfig::for_num_elems(num_vtx as u32),
+                    )
+                    .unwrap();
+                {
+                    del_cudarc_sys::memcpy_d2d_32(
+                        vtx2val.data as CUdeviceptr,
+                        vtx2ave.data as CUdeviceptr,
+                        (num_vtx * num_vdim) as usize,
+                        stream
+                    ).unwrap();
                 }
             }
         }

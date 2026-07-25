@@ -5,7 +5,7 @@
 extern "C" {
 
 __global__
-void laplacian_smoothing(
+void graph_screened_poisson(
     const uint32_t num_vtx,
     const int32_t *vtx2idx,
     const int32_t *idx2vtx,
@@ -31,6 +31,36 @@ void laplacian_smoothing(
     vtx2vars_next[i_vtx*3+0] = rhs[0] * dtmp;
     vtx2vars_next[i_vtx*3+1] = rhs[1] * dtmp;
     vtx2vars_next[i_vtx*3+2] = rhs[2] * dtmp;
+}
+
+
+__global__
+void laplacian_smoothing(
+    const uint32_t num_vtx,
+    const int32_t *vtx2idx,
+    const int32_t *idx2vtx,
+    float lambda,
+    const uint32_t num_vdim,
+    const float *vtx2val,
+    float *vtx2ave)
+{
+    int i_vtx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i_vtx >= num_vtx) { return; }
+    //
+    float *v = vtx2ave + i_vtx * num_vdim;
+    for(int32_t i=0;i<num_vdim;++i){
+        v[i] *= lambda;
+    }
+    for(int32_t idx = vtx2idx[i_vtx]; idx < vtx2idx[i_vtx+1]; ++idx ) {
+        int32_t j_vtx = idx2vtx[idx];
+        for(int32_t i=0;i<num_vdim;++i){
+            v[i] += vtx2val[j_vtx*num_vdim+i];
+        }
+    }
+    const float dtmp = 1.f / (lambda + float(vtx2idx[i_vtx+1] - vtx2idx[i_vtx]));
+    for(int32_t i=0;i<num_vdim;++i){
+        v[i] *= dtmp;
+    }
 }
 
 __global__

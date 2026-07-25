@@ -23,7 +23,7 @@ def from_uniform_mesh(elem2vtx: torch.Tensor, num_vtx: int, is_self: bool):
     return vtx2idx, idx2vtx
 
 
-def laplacian_smoothing(
+def graph_screened_poisson(
     vtx2idx: torch.Tensor,
     idx2vtx: torch.Tensor,
     lambda0: float,
@@ -65,7 +65,7 @@ def laplacian_smoothing(
     #
     from .. import Vtx2Vtx
 
-    Vtx2Vtx.laplacian_smoothing(
+    Vtx2Vtx.graph_screened_poisson(
         util_torch.to_dlpack_safe(vtx2idx, stream_ptr),
         util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
         lambda0,
@@ -73,6 +73,54 @@ def laplacian_smoothing(
         util_torch.to_dlpack_safe(vtx2rhs, stream_ptr),
         num_iter,
         util_torch.to_dlpack_safe(vtx2lhstmp, stream_ptr),
+        stream_ptr,
+    )
+
+
+def laplacian_smoothing(
+    vtx2idx: torch.Tensor,
+    idx2vtx: torch.Tensor,
+    lambda0: float,
+    vtx2val: torch.Tensor,
+    vtx2ave: torch.Tensor,
+    num_iter: int,
+):
+    """Solve the linear system from screened Poisson equation using Jacobi method:
+    [I + lambda * L] {vtx2lhs} = {vtx2rhs}
+    where L = [ .., -1, .., valence, ..,-1, .. ]
+    """
+    device = vtx2idx.device
+    num_vtx = vtx2idx.shape[0] - 1
+    num_idx = idx2vtx.shape[0]
+    num_vdim = vtx2val.shape[1]
+    #
+    util_torch.assert_shape_dtype_device(
+        vtx2idx, (num_vtx+1,), torch.uint32, device
+    )
+    util_torch.assert_shape_dtype_device(
+        idx2vtx, (num_idx,), torch.uint32, device
+    )
+    util_torch.assert_shape_dtype_device(
+        vtx2val, (num_vtx, num_vdim), torch.float32, device
+    )
+    util_torch.assert_shape_dtype_device(
+        vtx2ave, (num_vtx, num_vdim), torch.float32, device
+    )
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+    #
+    from .. import Vtx2Vtx
+
+    Vtx2Vtx.laplacian_smoothing(
+        util_torch.to_dlpack_safe(vtx2idx, stream_ptr),
+        util_torch.to_dlpack_safe(idx2vtx, stream_ptr),
+        lambda0,
+        util_torch.to_dlpack_safe(vtx2val, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2ave, stream_ptr),
+        num_iter,
         stream_ptr,
     )
 

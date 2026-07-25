@@ -207,7 +207,7 @@ where
 /// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
 /// L = \[..-1,..,valence, ..,-1 \]
 #[allow(clippy::too_many_arguments)]
-pub fn laplacian_smoothing<IDX>(
+pub fn graph_screend_poisson<IDX>(
     vtx2idx_offset: &[IDX],
     idx2vtx: &[IDX],
     lambda: f32,
@@ -248,6 +248,49 @@ pub fn laplacian_smoothing<IDX>(
             .par_chunks_mut(num_dim)
             .enumerate()
             .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, vtx2lhstmp));
+    }
+}
+
+/// \[I + lambda * L\] {vtx2lhs} = {vtx2rhs}
+/// L = \[..-1,..,valence, ..,-1 \]
+#[allow(clippy::too_many_arguments)]
+pub fn laplacian_smoothing<IDX>(
+    vtx2idx_offset: &[IDX],
+    idx2vtx: &[IDX],
+    lambda: f32,
+    num_vdim: usize,
+    vtx2val: &mut [f32],
+    vtx2ave: &mut [f32],
+    num_iter: usize,
+) where
+    IDX: num_traits::PrimInt + AsPrimitive<usize> + AsPrimitive<f32> + std::marker::Sync,
+{
+    let num_vtx = vtx2idx_offset.len() - 1;
+    assert_eq!(vtx2ave.len(), num_vtx * num_vdim);
+    assert_eq!(vtx2val.len(), num_vtx * num_vdim);
+    let func_upd = |i_vtx: usize, ave: &mut [f32], vtx2val: &[f32]| {
+        for i in 0..num_vdim {
+            ave[i] *= lambda;
+        }
+        for &j_vtx in &idx2vtx[vtx2idx_offset[i_vtx].as_()..vtx2idx_offset[i_vtx + 1].as_()] {
+            let j_vtx: usize = j_vtx.as_();
+            for i in 0..num_vdim {
+                ave[i] += vtx2val[j_vtx * num_vdim + i];
+            }
+        }
+        let valence: f32 = (vtx2idx_offset[i_vtx + 1] - vtx2idx_offset[i_vtx]).as_();
+        let inv_dia = 1f32 / (lambda + valence);
+        for i in 0..num_vdim {
+            ave[i] *= inv_dia;
+        }
+    };
+    use rayon::prelude::*;
+    for _iter in 0..num_iter {
+        vtx2ave
+            .par_chunks_mut(num_vdim)
+            .enumerate()
+            .for_each(|(i_vtx, ave)| func_upd(i_vtx, ave, vtx2val));
+        vtx2val.copy_from_slice(&vtx2ave);
     }
 }
 
@@ -312,7 +355,7 @@ fn test_laplacian_smoothing() {
     assert!(res0 > 1000.);
     {
         let mut vtx2lhs_tmp = vtx2lhs.clone();
-        laplacian_smoothing::<usize>(
+        graph_screend_poisson::<usize>(
             &vtx2idx,
             &idx2vtx,
             lambda,

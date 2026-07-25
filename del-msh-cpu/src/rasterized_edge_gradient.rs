@@ -47,32 +47,6 @@ fn fn_inside(b: Option<[f32; 3]>) -> bool {
     }
 }
 
-/// Gradient of one perspective-divided pixel coordinate with respect to a
-/// world-space vertex. `axis` is 0 for pixel x and 1 for pixel y.
-fn fn_projection_gradient(
-    transform_world2pix: &[f32; 16],
-    xyz: &[f32; 3],
-    axis: usize,
-) -> Option<[f32; 3]> {
-    let q = transform_world2pix[axis] * xyz[0]
-        + transform_world2pix[axis + 4] * xyz[1]
-        + transform_world2pix[axis + 8] * xyz[2]
-        + transform_world2pix[axis + 12];
-    let w = transform_world2pix[3] * xyz[0]
-        + transform_world2pix[7] * xyz[1]
-        + transform_world2pix[11] * xyz[2]
-        + transform_world2pix[15];
-    if w.abs() <= f32::EPSILON {
-        return None;
-    }
-    let inv_w2 = 1.0 / (w * w);
-    Some([
-        (transform_world2pix[axis] * w - q * transform_world2pix[3]) * inv_w2,
-        (transform_world2pix[axis + 4] * w - q * transform_world2pix[7]) * inv_w2,
-        (transform_world2pix[axis + 8] * w - q * transform_world2pix[11]) * inv_w2,
-    ])
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn edge_gradient_and_type(
     tri2vtx: &[u32],
@@ -269,19 +243,19 @@ pub fn smooth_gradient_hedge(
             if ih != 0 {
                 // north
                 let i0_hedge = (ih - 1) * img_w + iw;
-                if hedge2type[i0_hedge] != 2 {
+                //if hedge2type[i0_hedge] != 2 {
                     v_sum += hedge2dldr[i0_hedge];
                     n_sum += 1;
-                }
+                //}
             }
             //
             if ih != img_h - 2 {
                 // south
                 let i0_hedge = (ih + 1) * img_w + iw;
-                if hedge2type[i0_hedge] != 3 {
+                //if hedge2type[i0_hedge] != 3 {
                     v_sum += hedge2dldr[i0_hedge];
                     n_sum += 1;
-                }
+                //}
             }
             'west: {
                 // west
@@ -289,6 +263,7 @@ pub fn smooth_gradient_hedge(
                     break 'west;
                 }
                 let i0_hedge = ih * img_w + iw - 1;
+                /*
                 //if hedge2type[i0_hedge] == 3 { break 'west; }
                 {
                     let iwn_vedge = ih * (img_w - 1) + iw - 1;
@@ -304,6 +279,7 @@ pub fn smooth_gradient_hedge(
                         break 'west;
                     }
                 }
+                 */
                 v_sum += hedge2dldr[i0_hedge];
                 n_sum += 1;
             }
@@ -312,6 +288,7 @@ pub fn smooth_gradient_hedge(
                     break 'east;
                 }
                 let i0_hedge = ih * img_w + iw + 1;
+                /*
                 //if hedge2type[i0_hedge] == 2 { break 'east; }
                 {
                     let ien_vedge = ih * (img_w - 1) + iw;
@@ -327,6 +304,7 @@ pub fn smooth_gradient_hedge(
                         break 'east;
                     }
                 }
+                 */
                 v_sum += hedge2dldr[i0_hedge];
                 n_sum += 1;
             }
@@ -360,19 +338,19 @@ pub fn smooth_gradient_vedge(
             if iw != 0 {
                 // west
                 let i0_vedge = ih * (img_w - 1) + iw - 1;
-                if vedge2type[i0_vedge] != 2 {
+                //if vedge2type[i0_vedge] != 2 {
                     v_sum += vedge2dldr[i0_vedge];
                     n_sum += 1;
-                }
+                //}
             }
             //
             if iw != img_w - 2 {
                 // east
                 let i0_vedge = ih * (img_w - 1) + iw + 1;
-                if vedge2type[i0_vedge] != 3 {
+                //if vedge2type[i0_vedge] != 3 {
                     v_sum += vedge2dldr[i0_vedge];
                     n_sum += 1;
-                }
+                //}
             }
             'north: {
                 // north
@@ -380,6 +358,7 @@ pub fn smooth_gradient_vedge(
                     break 'north;
                 }
                 let i_vedge_n = (ih - 1) * (img_w - 1) + iw;
+                /*
                 //if vedge2type[i_vedge_n] == 3 { break 'north; }
                 {
                     let inw_hedge = (ih - 1) * img_w + iw;
@@ -395,6 +374,7 @@ pub fn smooth_gradient_vedge(
                         break 'north;
                     }
                 }
+                 */
                 v_sum += vedge2dldr[i_vedge_n];
                 n_sum += 1;
             }
@@ -404,6 +384,7 @@ pub fn smooth_gradient_vedge(
                     break 'south;
                 }
                 let i_vedge_s = (ih + 1) * (img_w - 1) + iw;
+                /*
                 //if vedge2type[i_vedge_s] == 2 { break 'south; }
                 {
                     let isw_hedge = ih * img_w + iw;
@@ -419,6 +400,7 @@ pub fn smooth_gradient_vedge(
                         break 'south;
                     }
                 }
+                 */
                 v_sum += vedge2dldr[i_vedge_s];
                 n_sum += 1;
             }
@@ -429,6 +411,34 @@ pub fn smooth_gradient_vedge(
     }
     //
 }
+
+/*
+/// Gradient of one perspective-divided pixel coordinate with respect to a
+/// world-space vertex. `axis` is 0 for pixel x and 1 for pixel y.
+fn fn_projection_gradient(
+    transform_world2pix: &[f32; 16],
+    xyz: &[f32; 3],
+    axis: usize,
+) -> Option<[f32; 3]> {
+    let q = transform_world2pix[axis] * xyz[0]
+        + transform_world2pix[axis + 4] * xyz[1]
+        + transform_world2pix[axis + 8] * xyz[2]
+        + transform_world2pix[axis + 12];
+    let w = transform_world2pix[3] * xyz[0]
+        + transform_world2pix[7] * xyz[1]
+        + transform_world2pix[11] * xyz[2]
+        + transform_world2pix[15];
+    if w.abs() <= f32::EPSILON {
+        return None;
+    }
+    let inv_w2 = 1.0 / (w * w);
+    Some([
+        (transform_world2pix[axis] * w - q * transform_world2pix[3]) * inv_w2,
+        (transform_world2pix[axis + 4] * w - q * transform_world2pix[7]) * inv_w2,
+        (transform_world2pix[axis + 8] * w - q * transform_world2pix[11]) * inv_w2,
+    ])
+}
+ */
 
 #[allow(clippy::too_many_arguments)]
 pub fn bwd(
@@ -445,7 +455,7 @@ pub fn bwd(
     assert_eq!(pix2val.len(), img_h * img_w * num_vdim);
     assert_eq!(dldw_pix2val.len(), img_h * img_w * num_vdim);
     assert_eq!(vtx2xyz.len(), dldw_vtx2xyz.len());
-    // vertical edge
+    // horizontal edge (vertical movement)
     for iw in 0..img_w {
         for ih0 in 0..img_h - 1 {
             let ih1 = ih0 + 1;
@@ -494,36 +504,36 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1).position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let dldw_pix = [0., dldpa, 0.];
+                let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
-                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
-                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 1) else {
-                        continue;
-                    };
-                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dldw_xyz[0];
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dldw_xyz[1];
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dldw_xyz[2];
                 }
             } else {
                 // only tri0 recieve gradient
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0).position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let dldw_pix = [0., dldpa, 0.];
+                let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
-                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
-                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 1) else {
-                        continue;
-                    };
-                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dldw_xyz[0];
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dldw_xyz[1];
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dldw_xyz[2];
                 }
             }
         }
     }
 
-    // horizontal edge
+    // vertical edge (horizontal movement)
     for iw0 in 0..img_w - 1 {
         for ih in 0..img_h {
             let iw1 = iw0 + 1;
@@ -572,30 +582,30 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1).position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let dldw_pix = [dldpa, 0., 0.];
+                let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri1 * 3 + inode] as usize;
-                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
-                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 0) else {
-                        continue;
-                    };
-                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dldw_xyz[0];
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dldw_xyz[1];
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dldw_xyz[2];
                 }
             } else {
                 // only tri0 recieve gradient
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0).position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let dldw_pix = [dldpa, 0., 0.];
+                let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
                     let ivtx = tri2vtx[itri0 * 3 + inode] as usize;
-                    let xyz = arrayref::array_ref![vtx2xyz, ivtx * 3, 3];
-                    let Some(dxyz) = fn_projection_gradient(transform_world2pix, xyz, 0) else {
-                        continue;
-                    };
-                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dxyz[0] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dxyz[1] * dldpa;
-                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dxyz[2] * dldpa;
+                    dldw_vtx2xyz[ivtx * 3] += b[inode] * dldw_xyz[0];
+                    dldw_vtx2xyz[ivtx * 3 + 1] += b[inode] * dldw_xyz[1];
+                    dldw_vtx2xyz[ivtx * 3 + 2] += b[inode] * dldw_xyz[2];
                 }
             }
         }

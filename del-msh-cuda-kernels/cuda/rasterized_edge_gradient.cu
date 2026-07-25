@@ -1,7 +1,9 @@
 #include <cuda_runtime.h>
 #include <cfloat>
 #include "del_geo/mat4_col_major.h"
+#include "del_geo/mat3_col_major.h"
 #include "del_geo/tri2.h"
+#include "del_geo/tri3.h"
 
 extern "C" {
 
@@ -161,19 +163,19 @@ void smooth_hedge_red_black(
     // North
     if (ih > 0) {
         const unsigned int i_north = (ih - 1) * img_w + iw;
-        if (hedge2type[i_north] != 2) {
+        //if (hedge2type[i_north] != 2) {
             value_sum += hedge2dldr[i_north];
             count += 1;
-        }
+        //}
     }
 
     // South
     if (ih + 1 < img_h - 1) {
         const unsigned int i_south = (ih + 1) * img_w + iw;
-        if (hedge2type[i_south] != 3) {
+        //if (hedge2type[i_south] != 3) {
             value_sum += hedge2dldr[i_south];
             count += 1;
-        }
+        //}
     }
 
     // West
@@ -182,10 +184,10 @@ void smooth_hedge_red_black(
         const unsigned int i_vedge_sw = (ih + 1) * (img_w - 1) + iw - 1;
         const unsigned char type_nw = vedge2type[i_vedge_nw];
         const unsigned char type_sw = vedge2type[i_vedge_sw];
-        if (type_nw != 2 && type_nw != 3 && type_sw != 2 && type_sw != 3) {
+        //if (type_nw != 2 && type_nw != 3 && type_sw != 2 && type_sw != 3) {
             value_sum += hedge2dldr[ih * img_w + iw - 1];
             count += 1;
-        }
+        //}
     }
 
     // East
@@ -194,10 +196,10 @@ void smooth_hedge_red_black(
         const unsigned int i_vedge_se = (ih + 1) * (img_w - 1) + iw;
         const unsigned char type_ne = vedge2type[i_vedge_ne];
         const unsigned char type_se = vedge2type[i_vedge_se];
-        if (type_ne != 2 && type_ne != 3 && type_se != 2 && type_se != 3) {
+        //if (type_ne != 2 && type_ne != 3 && type_se != 2 && type_se != 3) {
             value_sum += hedge2dldr[ih * img_w + iw + 1];
             count += 1;
-        }
+        //}
     }
 
     if (count > 0) {
@@ -230,18 +232,18 @@ void smooth_vedge_red_black(
 
     // West
     if (iw > 0) {
-        if (vedge2type[i_vedge - 1] != 2) {
+        //if (vedge2type[i_vedge - 1] != 2) {
             value_sum += vedge2dldr[i_vedge - 1];
             count += 1;
-        }
+        //}
     }
 
     // East
     if (iw + 1 < vedge_w) {
-        if (vedge2type[i_vedge + 1] != 3) {
+        //if (vedge2type[i_vedge + 1] != 3) {
             value_sum += vedge2dldr[i_vedge + 1];
             count += 1;
-        }
+        //}
     }
 
     // North
@@ -249,10 +251,10 @@ void smooth_vedge_red_black(
         const unsigned int i_hedge_nw = (ih - 1) * img_w + iw;
         const unsigned char type_nw = hedge2type[i_hedge_nw];
         const unsigned char type_ne = hedge2type[i_hedge_nw + 1];
-        if (type_nw != 2 && type_nw != 3 && type_ne != 2 && type_ne != 3) {
+        //if (type_nw != 2 && type_nw != 3 && type_ne != 2 && type_ne != 3) {
             value_sum += vedge2dldr[i_vedge - vedge_w];
             count += 1;
-        }
+        //}
     }
 
     // South
@@ -260,10 +262,10 @@ void smooth_vedge_red_black(
         const unsigned int i_hedge_sw = ih * img_w + iw;
         const unsigned char type_sw = hedge2type[i_hedge_sw];
         const unsigned char type_se = hedge2type[i_hedge_sw + 1];
-        if (type_sw != 2 && type_sw != 3 && type_se != 2 && type_se != 3) {
+        //if (type_sw != 2 && type_sw != 3 && type_se != 2 && type_se != 3) {
             value_sum += vedge2dldr[i_vedge + vedge_w];
             count += 1;
-        }
+        //}
     }
 
     if (count > 0) {
@@ -440,13 +442,20 @@ void bwd_hedge(
     if (!barycentric_of_pixel_in_tri(tri2vtx, vtx2xyz, transform_world2pix, pxq, pyq, target_tri, bary)) {
         return;
     }
+    const auto xyz = tri3::position_from_barycentric_coord(
+        vtx2xyz + tri2vtx[target_tri*3+0] * 3,
+        vtx2xyz + tri2vtx[target_tri*3+1] * 3,
+        vtx2xyz + tri2vtx[target_tri*3+2] * 3,
+        bary);
+    const auto dpixdxyz = mat4_col_major::jacobian_transform(transform_world2pix, xyz.data());
+    const float dldw_pix[3] =  {0.f, dldpa, 0.f}; // loss change due to pixel movement
+    const auto dldw_xyz = vec3::mult_mat3_col_major(dldw_pix, dpixdxyz.data());
+    //
     for (int inode = 0; inode < 3; ++inode) {
         const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
-        float dxyz[3];
-        if (!projection_gradient(transform_world2pix, vtx2xyz + ivtx * 3, 1, dxyz)) { continue; }
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dxyz[0] * dldpa);
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dxyz[1] * dldpa);
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dxyz[2] * dldpa);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dldw_xyz[0]);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dldw_xyz[1]);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dldw_xyz[2]);
     }
 }
 
@@ -509,13 +518,19 @@ void bwd_vedge(
     if (!barycentric_of_pixel_in_tri(tri2vtx, vtx2xyz, transform_world2pix, pxq, pyq, target_tri, bary)) {
         return;
     }
+    const auto xyz = tri3::position_from_barycentric_coord(
+        vtx2xyz + tri2vtx[target_tri*3+0] * 3,
+        vtx2xyz + tri2vtx[target_tri*3+1] * 3,
+        vtx2xyz + tri2vtx[target_tri*3+2] * 3,
+        bary);
+    const auto dpixdxyz = mat4_col_major::jacobian_transform(transform_world2pix, xyz.data());
+    const float dldw_pix[3] =  {dldpa, 0.f, 0.f}; // loss change due to pixel movement
+    const auto dldw_xyz = vec3::mult_mat3_col_major(dldw_pix, dpixdxyz.data());
     for (int inode = 0; inode < 3; ++inode) {
         const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
-        float dxyz[3];
-        if (!projection_gradient(transform_world2pix, vtx2xyz + ivtx * 3, 0, dxyz)) { continue; }
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dxyz[0] * dldpa);
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dxyz[1] * dldpa);
-        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dxyz[2] * dldpa);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dldw_xyz[0]);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dldw_xyz[1]);
+        atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dldw_xyz[2]);
     }
 }
 

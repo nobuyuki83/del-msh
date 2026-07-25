@@ -2,6 +2,26 @@ def laplacian_smoothing(
     vtx2idx,
     idx2vtx,
     lambda0: float,
+    vtx2val,
+    vtx2ave,
+    num_iter: int,
+    stream_ptr=0,
+):
+    """Solve the linear system from screened Poisson equation using Jacobi method:
+    [I + lambda * L] {vtx2lhs} = {vtx2rhs}
+    where L = [ .., -1, .., valence, ..,-1, .. ]
+    """
+    from ..del_msh_dlpack import vtx2vtx_laplacian_smoothing
+
+    vtx2vtx_laplacian_smoothing(
+        vtx2idx, idx2vtx, lambda0, vtx2val, vtx2ave, num_iter, stream_ptr
+    )
+
+
+def graph_screened_poisson(
+    vtx2idx,
+    idx2vtx,
+    lambda0: float,
     vtx2lhs,
     vtx2rhs,
     num_iter: int,
@@ -12,9 +32,9 @@ def laplacian_smoothing(
     [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     where L = [ .., -1, .., valence, ..,-1, .. ]
     """
-    from ..del_msh_dlpack import vtx2vtx_laplacian_smoothing
+    from ..del_msh_dlpack import vtx2vtx_graph_screened_poisson
 
-    vtx2vtx_laplacian_smoothing(
+    vtx2vtx_graph_screened_poisson(
         vtx2idx, idx2vtx, lambda0, vtx2lhs, vtx2rhs, num_iter, vtx2lhs_tmp, stream_ptr
     )
 
