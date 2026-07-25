@@ -1,5 +1,4 @@
 use del_cudarc_sys::cu::CUdeviceptr;
-use del_cudarc_sys::CuVec;
 use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,

@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 from .. import _CapsuleAsDLPack
+from ..util_numpy import assert_shape_dtype
 
 
 def from_uniform_mesh(elem2vtx: npt.NDArray, num_vtx: int, is_self: bool):
@@ -17,7 +18,7 @@ def from_uniform_mesh(elem2vtx: npt.NDArray, num_vtx: int, is_self: bool):
     return vtx2idx, idx2vtx
 
 
-def laplacian_smoothing(
+def graph_screened_poisson(
     vtx2idx: npt.NDArray,
     idx2vtx: npt.NDArray,
     lambda0: float,
@@ -31,22 +32,22 @@ def laplacian_smoothing(
     where L = [ .., -1, .., valence, ..,-1, .. ]
     """
     num_vtx = vtx2idx.shape[0] - 1
+    num_idx = idx2vtx.shape[0]
+    num_vdim = vtx2lhs.shape[1]
     #
-    assert len(vtx2idx.shape) == 1
-    assert len(idx2vtx.shape) == 1
-    assert vtx2lhs.shape == vtx2rhs.shape
-    assert len(vtx2lhs.shape) == 2
-    assert vtx2lhs.shape[0] == num_vtx
-    assert vtx2lhs.shape == vtx2rhs.shape
-    assert vtx2idx.dtype == np.uint32
-    assert idx2vtx.dtype == np.uint32
-    assert vtx2lhs.dtype == vtx2rhs.dtype == np.float32
-    assert num_iter >= 0
+    assert_shape_dtype(vtx2idx, (num_vtx + 1,), np.uint32)
+    assert_shape_dtype(idx2vtx, (num_idx,), np.uint32)
+    assert_shape_dtype(vtx2lhs, (num_vtx, num_vdim), np.float32)
+    assert_shape_dtype(vtx2rhs, (num_vtx, num_vdim), np.float32)
+
     if vtx2lhstmp is None:
         vtx2lhstmp = np.zeros_like(vtx2lhs)
+    else:
+        assert_shape_dtype(vtx2lhstmp, (num_vtx, num_vdim), np.float32)
+    #
     from .. import Vtx2Vtx
 
-    Vtx2Vtx.laplacian_smoothing(
+    Vtx2Vtx.graph_screened_poisson(
         vtx2idx.__dlpack__(),
         idx2vtx.__dlpack__(),
         lambda0,

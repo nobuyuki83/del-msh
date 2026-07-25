@@ -31,7 +31,7 @@ def example1():
     transform0 = Mat44.from_x_rotation(1.15)
     transform1 = Mat44.from_translation(0.0, 0.6, 0.0)
     transform = transform1 @ transform0
-    vtx2xyz = Vtx2Xyz.transform_affine(vtx2xyz, transform)
+    vtx2xyz = Vtx2Xyz.transform_homography(vtx2xyz, transform)
     transform_world2ndc = Mat44.from_scale(0.5, 0.5, 0.5)
     img_shape = (128, 128)
     return tri2vtx, vtx2xyz, transform_world2ndc, img_shape

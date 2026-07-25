@@ -23,7 +23,7 @@ def test_01():
     vtx2lhs_tmp = vtx2lhs.copy()
     #
     lambda0 = 1.0
-    del_msh_dlpack.Vtx2Vtx.numpy.laplacian_smoothing(
+    del_msh_dlpack.Vtx2Vtx.numpy.graph_screened_poisson(
         *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, vtx2lhs_tmp
     )
     #
@@ -58,7 +58,7 @@ def test_02():
     lambda0 = 1.0
     # [I + lambda * L] {vtx2lhs} = {vtx2rhs}
     # where L = [ .., -1, .., valence, ..,-1, .. ]
-    del_msh_dlpack.Vtx2Vtx.torch.laplacian_smoothing(
+    del_msh_dlpack.Vtx2Vtx.torch.graph_screened_poisson(
         *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, vtx2lhstmp
     )
     l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(*vtx2vtx, vtx2lhs)
@@ -66,13 +66,13 @@ def test_02():
     assert torch.norm(res) < 3.0e-5
     #
     if torch.cuda.is_available():
-        print("test laplacian smoothing on gpu")
+        print("test screened_poisson on gpu")
         vtx2vtx = (vtx2vtx[0].cuda(), vtx2vtx[1].cuda())
         vtx2rhs = vtx2rhs.cuda()
         vtx2lhs = torch.zeros_like(vtx2rhs).cuda()
         # [I + lambda * L] {vtx2lhs} = {vtx2rhs}
         # where L = [ .., -1, .., valence, ..,-1, .. ]
-        del_msh_dlpack.Vtx2Vtx.torch.laplacian_smoothing(
+        del_msh_dlpack.Vtx2Vtx.torch.graph_screened_poisson(
             *vtx2vtx, lambda0, vtx2lhs, vtx2rhs, 100, None
         )
         l_vtx2lhs = del_msh_dlpack.Vtx2Vtx.torch.multiply_graph_laplacian(

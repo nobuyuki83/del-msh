@@ -19,7 +19,7 @@ def example1():
     transform1 = Mat44.from_translation(0.0, 0.3, -4)
     # transform1 = Mat44.from_translation(0., 0.3, 0)
     transform = transform1 @ transform0
-    vtx2xyz = Vtx2Xyz.transform_affine(vtx2xyz, transform)
+    vtx2xyz = Vtx2Xyz.transform_homography(vtx2xyz, transform)
     transform_world2ndc = Mat44.camera_perspective_blender(1.0, 30.0, 2.0, 6.0, True)
     # transform_world2ndc = Mat44.from_scale(0.5, 0.5, 0.5)
     img_shape = (128, 128)

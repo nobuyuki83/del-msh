@@ -339,6 +339,7 @@ class AutogradWithSmoothV2(torch.autograd.Function):
         vtx2pxpypzpw = torch.cat([vtx2xyz, ones], dim=1) @ transform_world2pix.T
         vtx2pxpy = vtx2pxpypzpw[:, 0:2] / vtx2pxpypzpw[:, 3:4]
         dldw_vtx2pxpy = interpolate(hedge2dldr, vedge2dldr, vtx2pxpy)
+        #
         # Chain through q.xy / q.w, then through q = M @ [xyz, 1].
         qx, qy, qw = vtx2pxpypzpw[:, 0], vtx2pxpypzpw[:, 1], vtx2pxpypzpw[:, 3]
         gx, gy = dldw_vtx2pxpy[:, 0], dldw_vtx2pxpy[:, 1]
@@ -349,11 +350,4 @@ class AutogradWithSmoothV2(torch.autograd.Function):
         dldw_vtx2xyz = (dldw_q @ transform_world2pix)[:, 0:3].clone().contiguous()
         #
         dldw_vtx2xyz0 = dldw_vtx2xyz.detach().clone()
-        torch.save(dldw_vtx2xyz0, "hoge0.pt")
-        laplacian_smoothing(vtx2idx, idx2vtx, 0.0, dldw_vtx2xyz0, dldw_vtx2xyz, ctx.num_mesh_smoothing)
-        torch.save(dldw_vtx2xyz, "hoge1.pt")
-        print("layer smooth")
-
-        #dldw_vtx2xyz = (dldw_vtx2whdw @ transform_world2pix.clone())[:, 0:3].clone()
-        #
         return None, None, dldw_vtx2xyz0, None, None, dldw_pix2val, None, None

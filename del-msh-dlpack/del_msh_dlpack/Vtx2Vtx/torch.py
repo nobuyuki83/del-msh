@@ -94,12 +94,8 @@ def laplacian_smoothing(
     num_idx = idx2vtx.shape[0]
     num_vdim = vtx2val.shape[1]
     #
-    util_torch.assert_shape_dtype_device(
-        vtx2idx, (num_vtx+1,), torch.uint32, device
-    )
-    util_torch.assert_shape_dtype_device(
-        idx2vtx, (num_idx,), torch.uint32, device
-    )
+    util_torch.assert_shape_dtype_device(vtx2idx, (num_vtx + 1,), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(idx2vtx, (num_idx,), torch.uint32, device)
     util_torch.assert_shape_dtype_device(
         vtx2val, (num_vtx, num_vdim), torch.float32, device
     )
