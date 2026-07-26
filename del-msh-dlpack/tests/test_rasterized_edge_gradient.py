@@ -336,15 +336,13 @@ def test_silhouette_optimization():
             )
             d_vtx2vtx = (vtx2vtx[0].cuda(), vtx2vtx[1].cuda())
             # pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
-            d_pix2occ = RasterizedEdgeGradient.AutogradWithSmoothV2.apply(
+            d_pix2occ = RasterizedEdgeGradient.AutogradWithSmooth.apply(
                 d_tri2vtx,
-                d_vtx2vtx,
                 d_vtx2xyz,
                 d_transform_world2pix,
                 d_pix2tri,
                 d_pix2occ,
                 num_screen_smooth,
-                num_mesh_smooth,
             )
             d_loss = torch.nn.functional.mse_loss(d_pix2occ, d_pix2occ_trg)
             print("iter = :", iter, "  loss=", d_loss.item())
@@ -499,15 +497,13 @@ def render_directional_silhouette(
             else RasterizedEdgeGradient.RasterizedEdgeGradientFunction
         )
         """
-        color = RasterizedEdgeGradient.AutogradWithSmoothV2.apply(
+        color = RasterizedEdgeGradient.AutogradWithSmooth.apply(
             tri2vtx,
-            vtx2vtx,
             vtx2xyz,
             transform_world2pix,
             pix2tri,
             pix2occ.contiguous(),
             num_screen_smoothing,
-            num_mesh_smoothing,
         )
 
         images.append(color)
@@ -714,15 +710,13 @@ def render_directional(
             else RasterizedEdgeGradient.RasterizedEdgeGradientFunction
         )
         """
-        color = RasterizedEdgeGradient.AutogradWithSmoothV2.apply(
+        color = RasterizedEdgeGradient.AutogradWithSmooth.apply(
             tri2vtx,
-            vtx2vtx,
             vtx2xyz,
             transform_world2pix,
             pix2tri,
             color.contiguous(),
             num_screen_smoothing,
-            num_mesh_smoothing,
         )
 
         images.append(color)
@@ -779,14 +773,15 @@ def test_shading_optimization():
     #
     from test_pix2tri import generate_lighting
 
-    light_dirs, light_colors = generate_lighting(low=0.1, mid=0.5, high=0.9)
+    light2dir, light2color = generate_lighting(low=0.1, mid=0.5, high=0.9)
     # Remove lighting from negative Z direction
-    light_dirs = light_dirs[:-1]
-    light_colors = light_colors[:-1]
+    light2dir = light2dir[:-1]
+    light2color = light2color[:-1]
     #
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2rgb_trg = example1(
-        light_dirs, light_colors
+        light2dir, light2color
     )
+    vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
 
     img = (pix2rgb_trg.detach().numpy() * 255).clip(0, 255).astype("uint8")
     Image.fromarray(img).save(path_dir / "shading_opt_trg_cpu.png")
@@ -816,8 +811,8 @@ def test_shading_optimization():
             vtx2xyz,
             vtx2nrm,
             transform_ndc2world,
-            light_dirs,
-            light_colors,
+            light2dir,
+            light2color,
             pix2tri,
         )
         pix2rgb = RasterizedEdgeGradient.AutogradWithSmooth.apply(
@@ -828,6 +823,18 @@ def test_shading_optimization():
         if loss.item() < 1.0e-5:
             break
         loss.backward()
+        with torch.no_grad():
+            dldw_vtx2xyz = vtx2xyz.grad.detach().clone()
+            dldw_vtx2xyz0 = dldw_vtx2xyz.detach().clone()
+            Vtx2Vtx.laplacian_smoothing(
+                vtx2vtx[0],
+                vtx2vtx[1],
+                0.0,
+                dldw_vtx2xyz0,
+                dldw_vtx2xyz,
+                10,
+            )
+            vtx2xyz.grad[:, :] = dldw_vtx2xyz[:, :]
         opt.step()
 
         if iter % 10 == 0:
@@ -844,7 +851,7 @@ def test_shading_optimization():
         d_light_colors = d_light_colors[:-1].cuda()
         #
         tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2rgb_trg = example1(
-            light_dirs, light_colors
+            light2dir, light2color
         )
         d_tri2vtx = tri2vtx.cuda()
         d_vtx2xyz = vtx2xyz.detach().cuda().requires_grad_(True)
@@ -993,7 +1000,7 @@ def test_shading_opt_multiview():
             dldw_vtx2xyz = vtx2xyz.grad.detach().clone()
             dldw_vtx2xyz0 = dldw_vtx2xyz.detach().clone()
             Vtx2Vtx.laplacian_smoothing(
-                vtx2vtx[0], vtx2vtx[1], 0.0, dldw_vtx2xyz0, dldw_vtx2xyz, 1
+                vtx2vtx[0], vtx2vtx[1], 0.0, dldw_vtx2xyz0, dldw_vtx2xyz, 3
             )
             vtx2xyz.grad = dldw_vtx2xyz
 
