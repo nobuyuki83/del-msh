@@ -3,6 +3,7 @@ import torch
 from ..util_torch import assert_shape_dtype_device, to_dlpack_safe
 
 from ..Vtx2Vtx.torch import laplacian_smoothing
+import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
 
 
 def bwd(
@@ -261,93 +262,14 @@ class AutogradWithSmooth(torch.autograd.Function):
         smooth_gradient(
             hedge2type, vedge2type, ctx.num_smoothing_iterations, hedge2dldr, vedge2dldr
         )
-        #
-        """
-        import pathlib
-        from ..IoVtk.torch import write_velocity_on_staggered_grid
-        path0 = pathlib.Path(__file__).parent.parent.parent.parent / "target" / "del_msh_dlpack__microedge2.vtk"
-        write_velocity_on_staggered_grid(path0, hedge2dldr, vedge2dldr)
-        """
-        #
-        # Project vertices with homogeneous division.  ``transform_affine`` is
-        # insufficient here because world-to-pixel may be a perspective matrix.
-        ones = torch.ones_like(vtx2xyz[:, :1])
-        vtx2pxpypzpw = torch.cat([vtx2xyz, ones], dim=1) @ transform_world2pix.T
-        vtx2pxpy = vtx2pxpypzpw[:, 0:2] / vtx2pxpypzpw[:, 3:4]
-        dldw_vtx2pxpy = interpolate(hedge2dldr, vedge2dldr, vtx2pxpy)
-        # Chain through q.xy / q.w, then through q = M @ [xyz, 1].
-        qx, qy, qw = vtx2pxpypzpw[:, 0], vtx2pxpypzpw[:, 1], vtx2pxpypzpw[:, 3]
-        gx, gy = dldw_vtx2pxpy[:, 0], dldw_vtx2pxpy[:, 1]
-        dldw_q = torch.zeros_like(vtx2pxpypzpw)
-        dldw_q[:, 0] = gx / qw
-        dldw_q[:, 1] = gy / qw
-        dldw_q[:, 3] = -(gx * qx + gy * qy) / (qw * qw)
-        dldw_vtx2xyz = (dldw_q @ transform_world2pix)[:, 0:3].clone()
+        vtx2pixxyz = Vtx2Xyz.transform_homography(vtx2xyz, transform_world2pix)
+        dldw_vtx2pixxy = interpolate(
+            hedge2dldr, vedge2dldr, vtx2pixxyz[:, 0:2].clone()
+        )  # (N,2)
+        vtx2dpix2dxyz = Vtx2Xyz.transform_homography_jacobian(
+            vtx2xyz, transform_world2pix
+        )  # (N,3,3)
+        dldw_vtx2xyz = (dldw_vtx2pixxy.unsqueeze(1) @ vtx2dpix2dxyz[:, 0:2, :]).squeeze(
+            1
+        )
         return None, dldw_vtx2xyz, None, None, dldw_pix2val, None
-
-
-class AutogradWithSmoothV2(torch.autograd.Function):
-    """rasterized edge gradient as a torch.autograd.Function."""
-
-    @staticmethod
-    def forward(
-        ctx,
-        tri2vtx,
-        vtx2vtx,
-        vtx2xyz,
-        transform_world2pix,
-        pix2tri,
-        pix2val,
-        num_screen_smoothing,
-        num_mesh_smoothing,
-    ):
-        ctx.save_for_backward(
-            tri2vtx,
-            vtx2vtx[0],
-            vtx2vtx[1],
-            vtx2xyz,
-            transform_world2pix,
-            pix2tri,
-            pix2val,
-        )
-        ctx.num_screen_smoothing = num_screen_smoothing
-        ctx.num_mesh_smoothing = num_mesh_smoothing
-        return pix2val
-
-    @staticmethod
-    def backward(ctx, dldw_pix2val):
-        tri2vtx, vtx2idx, idx2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val = (
-            ctx.saved_tensors
-        )
-        hedge2type, hedge2dldr, vedge2type, vedge2dldr = edge_gradient_and_type(
-            tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, dldw_pix2val
-        )
-        smooth_gradient(
-            hedge2type, vedge2type, ctx.num_screen_smoothing, hedge2dldr, vedge2dldr
-        )
-        #
-        """
-        import pathlib
-        from ..IoVtk.torch import write_velocity_on_staggered_grid
-        path0 = pathlib.Path(__file__).parent.parent.parent.parent / "target" / "del_msh_dlpack__microedge2.vtk"
-        write_velocity_on_staggered_grid(path0, hedge2dldr, vedge2dldr)
-        """
-        #
-        # Project vertices with homogeneous division.  ``transform_affine`` is
-        # insufficient here because world-to-pixel may be a perspective matrix.
-        ones = torch.ones_like(vtx2xyz[:, :1])
-        vtx2pxpypzpw = torch.cat([vtx2xyz, ones], dim=1) @ transform_world2pix.T
-        vtx2pxpy = vtx2pxpypzpw[:, 0:2] / vtx2pxpypzpw[:, 3:4]
-        dldw_vtx2pxpy = interpolate(hedge2dldr, vedge2dldr, vtx2pxpy)
-        #
-        # Chain through q.xy / q.w, then through q = M @ [xyz, 1].
-        qx, qy, qw = vtx2pxpypzpw[:, 0], vtx2pxpypzpw[:, 1], vtx2pxpypzpw[:, 3]
-        gx, gy = dldw_vtx2pxpy[:, 0], dldw_vtx2pxpy[:, 1]
-        dldw_q = torch.zeros_like(vtx2pxpypzpw)
-        dldw_q[:, 0] = gx / qw
-        dldw_q[:, 1] = gy / qw
-        dldw_q[:, 3] = -(gx * qx + gy * qy) / (qw * qw)
-        dldw_vtx2xyz = (dldw_q @ transform_world2pix)[:, 0:3].clone().contiguous()
-        #
-        dldw_vtx2xyz0 = dldw_vtx2xyz.detach().clone()
-        return None, None, dldw_vtx2xyz0, None, None, dldw_pix2val, None, None

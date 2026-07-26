@@ -1,4 +1,3 @@
-use del_cudarc_sys::cu::CUdeviceptr;
 use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
@@ -161,7 +160,7 @@ fn vtx2vtx_laplacian_smoothing(
                 del_msh_cuda_kernels::get("vtx2vtx").unwrap(),
                 "laplacian_smoothing",
             )
-                .unwrap();
+            .unwrap();
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
@@ -185,8 +184,9 @@ fn vtx2vtx_laplacian_smoothing(
                         vtx2val.data as CUdeviceptr,
                         vtx2ave.data as CUdeviceptr,
                         (num_vtx * num_vdim) as usize,
-                        stream
-                    ).unwrap();
+                        stream,
+                    )
+                    .unwrap();
                 }
             }
         }

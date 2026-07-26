@@ -107,12 +107,12 @@ def test_match_cpu_gpu_microedge_bwd():
 
 
 def example2(resolution: int):
-    tri2vtx, vtx2xyz = TriMesh3.sphere(1.0, 64, 32)
+    tri2vtx, vtx2xyz = TriMesh3.sphere(0.5, 64, 32)
     transform1 = Mat44.from_translation(0.0, 0.0, 0.0)
     vtx2xyz = Vtx2Xyz.transform_homography(vtx2xyz, transform1)  # move up
     transform_world2ndc = Mat44.from_scale(0.5, 0.5, 0.5)
     img_shape = (resolution, resolution)
-    radius = 0.1 * resolution  # adjustable
+    radius = 0.5 * resolution  # adjustable
     cy, cx = img_shape[1] / 2.0, img_shape[0] / 2.0
     ys = torch.arange(img_shape[1], dtype=torch.float32) + 0.5
     xs = torch.arange(img_shape[0], dtype=torch.float32) + 0.5
@@ -246,9 +246,8 @@ def test_silhouette_optimization():
     #
     vtx2xyz.requires_grad_(True)
 
-    lr = 10.0
     num_screen_smooth = 300
-    num_mesh_smooth = 1
+    num_mesh_smooth = 3
 
     from del_msh_dlpack.optimize_torch import UniformAdam
 
@@ -266,25 +265,27 @@ def test_silhouette_optimization():
             .to(torch.float32)
             .unsqueeze(-1)
         )
-        # pix2occ = RasterizedEdgeGradient.RasterizedEdgeGradientFunction.apply(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
-        # pix2occ = RasterizedEdgeGradient.AutogradWithSmooth.apply(
-        #    tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ)
-        pix2occ = RasterizedEdgeGradient.AutogradWithSmoothV2.apply(
-            tri2vtx,
-            vtx2vtx,
-            vtx2xyz,
-            transform_world2pix,
-            pix2tri,
-            pix2occ,
-            num_screen_smooth,
-            num_mesh_smooth,
+        pix2occ = RasterizedEdgeGradient.AutogradWithSmooth.apply(
+            tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ, num_screen_smooth
         )
         loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
         print("iter = :", iter, "  loss=", loss.item())
         if loss.item() < 1.0e-5:
             break
         loss.backward()
-        dldw_vtx2xyz = vtx2xyz.grad
+
+        with torch.no_grad():
+            dldw_vtx2xyz = vtx2xyz.grad.detach().clone()
+            dldw_vtx2xyz0 = dldw_vtx2xyz.detach().clone()
+            Vtx2Vtx.laplacian_smoothing(
+                vtx2vtx[0],
+                vtx2vtx[1],
+                0.0,
+                dldw_vtx2xyz0,
+                dldw_vtx2xyz,
+                num_mesh_smooth,
+            )
+            vtx2xyz.grad[:, :] = dldw_vtx2xyz[:, :]
 
         if iter == 0:
             IoVtk.write_points_with_velocity(
@@ -292,11 +293,6 @@ def test_silhouette_optimization():
                 vtx2xyz.detach(),
                 dldw_vtx2xyz,
             )
-
-        """
-        with torch.no_grad():
-            vtx2xyz -= lr * dldw_vtx2xyz
-        """
         opt.step()
 
     TriMesh3.save_wavefront_obj(
@@ -520,6 +516,8 @@ def render_directional_silhouette(
 
 
 def test_silhouette_opt_multiview():
+    if not torch.cuda.is_available():
+        return
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
@@ -904,6 +902,8 @@ def test_shading_optimization():
 
 
 def test_shading_opt_multiview():
+    if not torch.cuda.is_available():
+        return
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 

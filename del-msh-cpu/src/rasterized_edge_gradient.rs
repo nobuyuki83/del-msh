@@ -244,8 +244,8 @@ pub fn smooth_gradient_hedge(
                 // north
                 let i0_hedge = (ih - 1) * img_w + iw;
                 //if hedge2type[i0_hedge] != 2 {
-                    v_sum += hedge2dldr[i0_hedge];
-                    n_sum += 1;
+                v_sum += hedge2dldr[i0_hedge];
+                n_sum += 1;
                 //}
             }
             //
@@ -253,8 +253,8 @@ pub fn smooth_gradient_hedge(
                 // south
                 let i0_hedge = (ih + 1) * img_w + iw;
                 //if hedge2type[i0_hedge] != 3 {
-                    v_sum += hedge2dldr[i0_hedge];
-                    n_sum += 1;
+                v_sum += hedge2dldr[i0_hedge];
+                n_sum += 1;
                 //}
             }
             'west: {
@@ -339,8 +339,8 @@ pub fn smooth_gradient_vedge(
                 // west
                 let i0_vedge = ih * (img_w - 1) + iw - 1;
                 //if vedge2type[i0_vedge] != 2 {
-                    v_sum += vedge2dldr[i0_vedge];
-                    n_sum += 1;
+                v_sum += vedge2dldr[i0_vedge];
+                n_sum += 1;
                 //}
             }
             //
@@ -348,8 +348,8 @@ pub fn smooth_gradient_vedge(
                 // east
                 let i0_vedge = ih * (img_w - 1) + iw + 1;
                 //if vedge2type[i0_vedge] != 3 {
-                    v_sum += vedge2dldr[i0_vedge];
-                    n_sum += 1;
+                v_sum += vedge2dldr[i0_vedge];
+                n_sum += 1;
                 //}
             }
             'north: {
@@ -504,8 +504,10 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1).position_from_barycentric_coordinates(b[0], b[1]);
-                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1)
+                    .position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz =
+                    del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
                 let dldw_pix = [0., dldpa, 0.];
                 let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
@@ -519,8 +521,10 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0).position_from_barycentric_coordinates(b[0], b[1]);
-                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0)
+                    .position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz =
+                    del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
                 let dldw_pix = [0., dldpa, 0.];
                 let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
@@ -582,8 +586,10 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1).position_from_barycentric_coordinates(b[0], b[1]);
-                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri1)
+                    .position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz =
+                    del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
                 let dldw_pix = [dldpa, 0., 0.];
                 let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
@@ -597,8 +603,10 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0).position_from_barycentric_coordinates(b[0], b[1]);
-                let dpixdxyz = del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
+                let xyz = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, itri0)
+                    .position_from_barycentric_coordinates(b[0], b[1]);
+                let dpixdxyz =
+                    del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
                 let dldw_pix = [dldpa, 0., 0.];
                 let dldw_xyz = del_geo_core::vec3::mult_mat3_col_major(&dldw_pix, &dpixdxyz);
                 for inode in 0..3 {
