@@ -269,9 +269,7 @@ pub fn laplacian_smoothing<IDX>(
     assert_eq!(vtx2ave.len(), num_vtx * num_vdim);
     assert_eq!(vtx2val.len(), num_vtx * num_vdim);
     let func_upd = |i_vtx: usize, ave: &mut [f32], vtx2val: &[f32]| {
-        for i in 0..num_vdim {
-            ave[i] *= lambda;
-        }
+        ave.iter_mut().for_each(|x| *x *= lambda);
         for &j_vtx in &idx2vtx[vtx2idx_offset[i_vtx].as_()..vtx2idx_offset[i_vtx + 1].as_()] {
             let j_vtx: usize = j_vtx.as_();
             for i in 0..num_vdim {
@@ -280,9 +278,7 @@ pub fn laplacian_smoothing<IDX>(
         }
         let valence: f32 = (vtx2idx_offset[i_vtx + 1] - vtx2idx_offset[i_vtx]).as_();
         let inv_dia = 1f32 / (lambda + valence);
-        for i in 0..num_vdim {
-            ave[i] *= inv_dia;
-        }
+        ave.iter_mut().for_each(|x| *x *= inv_dia);
     };
     use rayon::prelude::*;
     for _iter in 0..num_iter {
@@ -290,7 +286,7 @@ pub fn laplacian_smoothing<IDX>(
             .par_chunks_mut(num_vdim)
             .enumerate()
             .for_each(|(i_vtx, ave)| func_upd(i_vtx, ave, vtx2val));
-        vtx2val.copy_from_slice(&vtx2ave);
+        vtx2val.copy_from_slice(vtx2ave);
     }
 }
 

@@ -60,7 +60,7 @@ pub fn rasterized_edge_gradient_bwd(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::rasterized_edge_gradient::bwd(
+            del_msh_cpu::edgegrad::bwd(
                 slice!(tri2vtx, u32).unwrap(),
                 slice!(vtx2xyz, f32).unwrap(),
                 slice_mut!(dldw_vtx2xyz, f32).unwrap(),
@@ -196,7 +196,7 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::rasterized_edge_gradient::edge_gradient_and_type(
+            del_msh_cpu::edgegrad::edge_gradient_and_type(
                 slice!(tri2vtx, u32).unwrap(),
                 slice!(vtx2xyz, f32).unwrap(),
                 arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
@@ -317,14 +317,14 @@ pub fn rasterized_edge_gradient_smooth_gradient(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::rasterized_edge_gradient::smooth_gradient_hedge(
+            del_msh_cpu::edgegrad::smooth_gradient_hedge(
                 (img_w as usize, img_h as usize),
                 slice!(hedge2type, u8).unwrap(),
                 slice!(vedge2type, u8).unwrap(),
                 num_iter,
                 slice_mut!(hedge2dldr, f32).unwrap(),
             );
-            del_msh_cpu::rasterized_edge_gradient::smooth_gradient_vedge(
+            del_msh_cpu::edgegrad::smooth_gradient_vedge(
                 (img_w as usize, img_h as usize),
                 slice!(hedge2type, u8).unwrap(),
                 slice!(vedge2type, u8).unwrap(),
@@ -416,7 +416,7 @@ pub fn rasterized_edge_gradient_interpolate(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::rasterized_edge_gradient::interpolate_staggered_grid(
+            del_msh_cpu::edgegrad::interpolate_staggered_grid(
                 (img_w as usize, img_h as usize),
                 slice_mut!(hedge2vy, f32).unwrap(),
                 slice_mut!(vedge2vx, f32).unwrap(),
