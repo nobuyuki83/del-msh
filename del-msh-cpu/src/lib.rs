@@ -9,21 +9,21 @@ pub mod vtx2vtx;
 
 // functions specific to type of mesh
 pub mod map_idx;
+pub mod mixed_mesh;
+pub mod polygon_mesh;
+pub mod polygon_mesh2;
+pub mod polyhedron_mesh;
 pub mod polyline;
 pub mod polyline3;
 pub mod polyloop;
 pub mod polyloop2;
 pub mod polyloop3;
 pub mod quadmesh;
+pub mod tetmesh;
 pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_primitive;
 pub mod trimesh3_search_bruteforce;
-pub mod polygon_mesh;
-pub mod polygon_mesh2;
-pub mod polyhedron_mesh;
-pub mod tetmesh;
-pub mod mixed_mesh;
 
 // regular grid
 pub mod grid2;
@@ -43,12 +43,12 @@ pub mod extract;
 pub mod unindex;
 
 // io
+pub mod io_cfd_mesh_txt;
 pub mod io_nastran;
 pub mod io_off;
 pub mod io_svg;
 pub mod io_vtk;
 pub mod io_wavefront_obj;
-pub mod io_cfd_mesh_txt;
 
 // search
 pub mod bvhnode2aabb2;
@@ -79,12 +79,12 @@ pub mod voronoi2;
 pub mod vtx2group;
 
 // image related functions
+pub mod edgegrad;
 pub mod pix2depth;
 pub mod pix2nrm;
 pub mod pix2occlusion;
 pub mod pix2tex;
 pub mod pix2tri;
-pub mod edgegrad;
 pub mod trimesh3_raycast;
 
 pub mod alias_table;

@@ -1,5 +1,3 @@
-
-
 pub fn smooth_gauss_seidel(
     (w, h): (usize, usize),
     cell2isfix: &[u8],
@@ -8,7 +6,7 @@ pub fn smooth_gauss_seidel(
 ) {
     assert_eq!(cell2isfix.len(), h * w);
     assert_eq!(cell2isfix.len() * num_vdim, cell2val.len());
-    let mut v_sum = vec!(0f32; num_vdim);
+    let mut v_sum = vec![0f32; num_vdim];
     for i_cell in 0..h * w {
         let iw = i_cell % w;
         let ih = i_cell / w;
@@ -18,27 +16,31 @@ pub fn smooth_gauss_seidel(
         v_sum.fill(0.);
         let mut n_sum = 0;
         //
-        if ih != 0 { // north
+        if ih != 0 {
+            // north
             for i_vdim in 0..num_vdim {
                 v_sum[i_vdim] += cell2val[((ih - 1) * w + iw) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if ih != h - 1 { // south
+        if ih != h - 1 {
+            // south
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[((ih + 1) * w + iw)* num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[((ih + 1) * w + iw) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if iw != 0 { // west
+        if iw != 0 {
+            // west
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[(ih * w + iw - 1)*num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[(ih * w + iw - 1) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if iw != w - 1 { // east
+        if iw != w - 1 {
+            // east
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[(ih * w + iw + 1)*num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[(ih * w + iw + 1) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
@@ -63,7 +65,7 @@ pub fn smooth_gauss_seidel_with_radius(
     assert_eq!(cell2isfixed.len(), h * w);
     assert_eq!(cell2dist.len(), h * w);
     assert_eq!(cell2isfixed.len() * num_vdim, cell2val.len());
-    let mut v_sum = vec!(0f32; num_vdim);
+    let mut v_sum = vec![0f32; num_vdim];
     for i_cell in 0..h * w {
         let iw1 = (i_cell % w) as i64;
         let ih1 = (i_cell / w) as i64;
@@ -77,31 +79,35 @@ pub fn smooth_gauss_seidel_with_radius(
         v_sum.fill(0.);
         let mut n_sum = 0;
         //
-        if ih0 >= 0 { // north
+        if ih0 >= 0 {
+            // north
             let (ih0, iw1) = (ih0 as usize, iw1 as usize);
             for i_vdim in 0..num_vdim {
                 v_sum[i_vdim] += cell2val[(ih0 * w + iw1) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if ih2 < h as i64 { // south
+        if ih2 < h as i64 {
+            // south
             let (ih2, iw1) = (ih2 as usize, iw1 as usize);
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[(ih2 * w + iw1)* num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[(ih2 * w + iw1) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if iw0 >= 0 { // west
+        if iw0 >= 0 {
+            // west
             let (ih1, iw0) = (ih1 as usize, iw0 as usize);
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[(ih1 * w + iw0)*num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[(ih1 * w + iw0) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
-        if iw2 < w as i64 { // east
+        if iw2 < w as i64 {
+            // east
             let (ih1, iw2) = (ih1 as usize, iw2 as usize);
             for i_vdim in 0..num_vdim {
-                v_sum[i_vdim] += cell2val[(ih1 * w + iw2)*num_vdim + i_vdim];
+                v_sum[i_vdim] += cell2val[(ih1 * w + iw2) * num_vdim + i_vdim];
             }
             n_sum += 1;
         }
@@ -114,7 +120,6 @@ pub fn smooth_gauss_seidel_with_radius(
         }
     }
 }
-
 
 // 2-pass chamfer transform for 8 adjacent cells
 pub fn nearest_to_fixed_cell(
@@ -200,46 +205,22 @@ pub fn nearest_to_fixed_cell(
 
             // West
             if ix > 0 {
-                try_update(
-                    i_cell,
-                    i_cell - 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell - 1, w, cell2nearest, cell2distance);
             }
 
             // North-west
             if ix > 0 && iy > 0 {
-                try_update(
-                    i_cell,
-                    i_cell - w - 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell - w - 1, w, cell2nearest, cell2distance);
             }
 
             // North
             if iy > 0 {
-                try_update(
-                    i_cell,
-                    i_cell - w,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell - w, w, cell2nearest, cell2distance);
             }
 
             // North-east
             if ix + 1 < w && iy > 0 {
-                try_update(
-                    i_cell,
-                    i_cell - w + 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell - w + 1, w, cell2nearest, cell2distance);
             }
         }
     }
@@ -258,46 +239,22 @@ pub fn nearest_to_fixed_cell(
 
             // East
             if ix + 1 < w {
-                try_update(
-                    i_cell,
-                    i_cell + 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell + 1, w, cell2nearest, cell2distance);
             }
 
             // South-east
             if ix + 1 < w && iy + 1 < h {
-                try_update(
-                    i_cell,
-                    i_cell + w + 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell + w + 1, w, cell2nearest, cell2distance);
             }
 
             // South
             if iy + 1 < h {
-                try_update(
-                    i_cell,
-                    i_cell + w,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell + w, w, cell2nearest, cell2distance);
             }
 
             // South-west
             if ix > 0 && iy + 1 < h {
-                try_update(
-                    i_cell,
-                    i_cell + w - 1,
-                    w,
-                    cell2nearest,
-                    cell2distance,
-                );
+                try_update(i_cell, i_cell + w - 1, w, cell2nearest, cell2distance);
             }
         }
     }
@@ -309,20 +266,20 @@ pub fn nearest_to_fixed_cell(
 }
 
 #[test]
-fn test_nearest_to_fixed_cell(){
-    let img_shape = (512,511);
+fn test_nearest_to_fixed_cell() {
+    let img_shape = (512, 511);
     let num_pix = img_shape.0 * img_shape.1;
-    let mut pix2rgb = vec!(0f32; num_pix * 3);
-    let mut pix2isfix = vec!(0u8; num_pix);
+    let mut pix2rgb = vec![0f32; num_pix * 3];
+    let mut pix2isfix = vec![0u8; num_pix];
     let n_fix = 100;
     use rand::RngExt;
     use rand::SeedableRng;
     let rng = &mut rand::rngs::StdRng::seed_from_u64(0);
     for _i_fix in 0..n_fix {
-        let i_pix = rng.random_range(0..(img_shape.0*img_shape.1) as usize);
-        pix2rgb[i_pix*3] = rng.random();
-        pix2rgb[i_pix*3+1] = rng.random();
-        pix2rgb[i_pix*3+2] = rng.random();
+        let i_pix = rng.random_range(0..(img_shape.0 * img_shape.1) as usize);
+        pix2rgb[i_pix * 3] = rng.random();
+        pix2rgb[i_pix * 3 + 1] = rng.random();
+        pix2rgb[i_pix * 3 + 2] = rng.random();
         pix2isfix[i_pix] = 1;
     }
     {
@@ -332,32 +289,29 @@ fn test_nearest_to_fixed_cell(){
                 format!("../target/grid2_partially_fixed_gs{i_gs}.png"),
                 img_shape,
                 3,
-                &pix2rgb1
-            ).unwrap();
+                &pix2rgb1,
+            )
+            .unwrap();
             for _iter in 0..100 {
-                smooth_gauss_seidel(
-                    img_shape,
-                    &pix2isfix,
-                    3,
-                    &mut pix2rgb1);
+                smooth_gauss_seidel(img_shape, &pix2isfix, 3, &mut pix2rgb1);
             }
         }
     }
     {
-        let mut pix2nearest = vec!(0u32; num_pix);
-        let mut pix2distance = vec!(0f32; num_pix);
+        let mut pix2nearest = vec![0u32; num_pix];
+        let mut pix2distance = vec![0f32; num_pix];
         nearest_to_fixed_cell(
             img_shape,
             &pix2isfix,
             &mut pix2nearest,
             &mut pix2distance,
-            true
+            true,
         );
-        let mut pix2rgb1 = vec!(0f32; num_pix * 3);
+        let mut pix2rgb1 = vec![0f32; num_pix * 3];
         for i_pix in 0..num_pix {
             let i_pix_near = pix2nearest[i_pix] as usize;
             for i_vdim in 0..3 {
-                pix2rgb1[i_pix*3+i_vdim] = pix2rgb[i_pix_near*3+i_vdim];
+                pix2rgb1[i_pix * 3 + i_vdim] = pix2rgb[i_pix_near * 3 + i_vdim];
             }
         }
         let n_iter = 8;
@@ -366,8 +320,9 @@ fn test_nearest_to_fixed_cell(){
                 format!("../target/grid2_partially_fixed_jump{iter}.png"),
                 img_shape,
                 3,
-                &pix2rgb1
-            ).unwrap();
+                &pix2rgb1,
+            )
+            .unwrap();
             let ratio = 1.0 - (iter + 1) as f32 / n_iter as f32;
             smooth_gauss_seidel_with_radius(
                 img_shape,
@@ -375,10 +330,8 @@ fn test_nearest_to_fixed_cell(){
                 &pix2distance,
                 ratio,
                 3,
-                &mut pix2rgb1
+                &mut pix2rgb1,
             );
         }
-
     }
 }
-

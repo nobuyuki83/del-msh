@@ -221,7 +221,6 @@ pub fn interpolate_from_edges(
     }
 }
 
-
 #[allow(clippy::too_many_arguments)]
 pub fn bwd(
     tri2vtx: &[u32],
