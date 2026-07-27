@@ -19,6 +19,17 @@ pub mod trimesh2;
 pub mod trimesh3;
 pub mod trimesh3_primitive;
 pub mod trimesh3_search_bruteforce;
+pub mod polygon_mesh;
+pub mod polygon_mesh2;
+pub mod polyhedron_mesh;
+pub mod tetmesh;
+pub mod mixed_mesh;
+
+// regular grid
+pub mod grid2;
+pub mod grid2_partially_fixed;
+
+// function for points
 pub mod vtx2point;
 pub mod vtx2xn;
 pub mod vtx2xy;
@@ -37,6 +48,7 @@ pub mod io_off;
 pub mod io_svg;
 pub mod io_vtk;
 pub mod io_wavefront_obj;
+pub mod io_cfd_mesh_txt;
 
 // search
 pub mod bvhnode2aabb2;
@@ -66,24 +78,21 @@ pub mod uniform_mesh;
 pub mod voronoi2;
 pub mod vtx2group;
 
-pub mod adaptive_distance_field3;
-pub mod alias_table;
-pub mod antialias;
-pub mod array1d;
-pub mod grid2;
-pub mod io_cfd_mesh_txt;
-pub mod mixed_mesh;
-pub mod mortons;
-pub mod nbody;
+// image related functions
 pub mod pix2depth;
 pub mod pix2nrm;
 pub mod pix2occlusion;
 pub mod pix2tex;
 pub mod pix2tri;
-pub mod polygon_mesh;
-pub mod polygon_mesh2;
-pub mod polyhedron_mesh;
-pub mod quad_oct_tree;
-pub mod rasterized_edge_gradient;
-pub mod tetmesh;
+pub mod edgegrad;
 pub mod trimesh3_raycast;
+
+pub mod alias_table;
+pub mod antialias;
+pub mod array1d;
+pub mod mortons;
+
+// spatial volumetric
+pub mod adaptive_distance_field3;
+pub mod nbody;
+pub mod quad_oct_tree;

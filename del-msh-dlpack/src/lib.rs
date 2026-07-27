@@ -8,6 +8,7 @@ mod bvhnode2aabb;
 mod differentiable_antialias;
 mod edge2elem;
 mod edge2vtx;
+mod edgegrad;
 mod io_cfd_mesh_txt;
 mod io_nastran;
 mod io_vtk;
@@ -20,7 +21,6 @@ mod pix2depth;
 mod pix2tri;
 mod polyhedron_mesh;
 mod quad_oct_tree;
-mod rasterized_edge_gradient;
 mod trimesh3;
 mod trimesh3_primitive;
 mod vtx2elem;
@@ -52,7 +52,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     io_wavefront_obj::add_functions(_py, m)?;
     io_cfd_mesh_txt::add_functions(_py, m)?;
     io_vtk::add_functions(_py, m)?;
-    rasterized_edge_gradient::add_functions(_py, m)?;
+    edgegrad::add_functions(_py, m)?;
     Ok(())
 }
 

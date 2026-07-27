@@ -183,3 +183,37 @@ class PerspectiveCamera:
         y = my.to(device) * pos[..., 1]
         w = pos[..., 3]
         return torch.sqrt(x.square() + y.square() + w.square())
+
+
+import math
+
+
+def fibonacci_camera_origin(
+    target: torch.Tensor, n_views: int, distance: float
+) -> torch.Tensor:
+    """Compute camera origins distributed around a target position using the Fibonacci lattice method (upper hemisphere only).
+
+    Args:
+        target: Target position tensor, shape (1, 3).
+        n_views: Number of camera origins to generate.
+        distance: Distance from each camera origin to the target position.
+
+    Returns:
+        Camera origins tensor, shape (n_views, 3).
+    """
+    golden_ratio = (1 + 5**0.5) / 2
+    origin = []
+
+    for i in range(n_views):
+        theta = 2 * math.pi * i / golden_ratio
+        # Adjust phi to sample only the upper hemisphere [0, π/2]
+        phi = math.acos(1 - (i + 0.5) / n_views)
+
+        x = distance * math.cos(theta) * math.sin(phi)
+        y = distance * math.sin(theta) * math.sin(phi)
+        z = distance * math.cos(phi)
+
+        origin.append([x, y, z])
+
+    origin = torch.tensor(origin, device=target.device, dtype=target.dtype)
+    return origin + target

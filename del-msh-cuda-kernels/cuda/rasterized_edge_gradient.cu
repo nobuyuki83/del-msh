@@ -73,10 +73,10 @@ void hedge_gradient_and_type(
         const float px1 = iw + 0.5f, py1 = (float)ih1 + 0.5f;
         const bool in0_tri1 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px0, py0, itri1);
         const bool in1_tri0 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px1, py1, itri0);
-        if      (!in0_tri1 && !in1_tri0) hedge2type[i_hedge] = 1;
-        else if ( in0_tri1 && !in1_tri0) hedge2type[i_hedge] = 2;
-        else if (!in0_tri1 &&  in1_tri0) hedge2type[i_hedge] = 3;
-        else                             hedge2type[i_hedge] = 4;
+        if      (!in0_tri1 && !in1_tri0) hedge2type[i_hedge] = 0;
+        else if ( in0_tri1 && !in1_tri0) hedge2type[i_hedge] = 1;
+        else if (!in0_tri1 &&  in1_tri0) hedge2type[i_hedge] = 1;
+        else                             hedge2type[i_hedge] = 1;
     }
     float dldr = 0.f;
     for (uint32_t i = 0; i < num_vdim; ++i) {
@@ -122,10 +122,10 @@ void vedge_gradient_and_type(
         const float px1 = (float)iw1 + 0.5f, py1 = ih + 0.5f;
         const bool in0_tri1 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px0, py0, itri1);
         const bool in1_tri0 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px1, py1, itri0);
-        if      (!in0_tri1 && !in1_tri0) vedge2type[i_vedge] = 1;
-        else if ( in0_tri1 && !in1_tri0) vedge2type[i_vedge] = 2;
-        else if (!in0_tri1 &&  in1_tri0) vedge2type[i_vedge] = 3;
-        else                             vedge2type[i_vedge] = 4;
+        if      (!in0_tri1 && !in1_tri0) vedge2type[i_vedge] = 0;
+        else if ( in0_tri1 && !in1_tri0) vedge2type[i_vedge] = 1;
+        else if (!in0_tri1 &&  in1_tri0) vedge2type[i_vedge] = 1;
+        else                             vedge2type[i_vedge] = 1;
     }
     float dldr = 0.f;
     for (uint32_t i = 0; i < num_vdim; ++i) {
@@ -155,7 +155,7 @@ void smooth_hedge_red_black(
     if (((iw + ih) & 1u) != color) { return; }  // red-black coloring
 
     const unsigned char type_c = hedge2type[i_hedge];
-    if (type_c == 2 || type_c == 3) { return; }  // fixed-value edges
+    if (type_c == 1) { return; }  // fixed-value edges
 
     float value_sum = 0.0f;
     unsigned int count = 0;
@@ -163,19 +163,15 @@ void smooth_hedge_red_black(
     // North
     if (ih > 0) {
         const unsigned int i_north = (ih - 1) * img_w + iw;
-        //if (hedge2type[i_north] != 2) {
-            value_sum += hedge2dldr[i_north];
-            count += 1;
-        //}
+        value_sum += hedge2dldr[i_north];
+        count += 1;
     }
 
     // South
     if (ih + 1 < img_h - 1) {
         const unsigned int i_south = (ih + 1) * img_w + iw;
-        //if (hedge2type[i_south] != 3) {
-            value_sum += hedge2dldr[i_south];
-            count += 1;
-        //}
+        value_sum += hedge2dldr[i_south];
+        count += 1;
     }
 
     // West
@@ -184,10 +180,8 @@ void smooth_hedge_red_black(
         const unsigned int i_vedge_sw = (ih + 1) * (img_w - 1) + iw - 1;
         const unsigned char type_nw = vedge2type[i_vedge_nw];
         const unsigned char type_sw = vedge2type[i_vedge_sw];
-        //if (type_nw != 2 && type_nw != 3 && type_sw != 2 && type_sw != 3) {
-            value_sum += hedge2dldr[ih * img_w + iw - 1];
-            count += 1;
-        //}
+        value_sum += hedge2dldr[ih * img_w + iw - 1];
+        count += 1;
     }
 
     // East
@@ -196,10 +190,8 @@ void smooth_hedge_red_black(
         const unsigned int i_vedge_se = (ih + 1) * (img_w - 1) + iw;
         const unsigned char type_ne = vedge2type[i_vedge_ne];
         const unsigned char type_se = vedge2type[i_vedge_se];
-        //if (type_ne != 2 && type_ne != 3 && type_se != 2 && type_se != 3) {
-            value_sum += hedge2dldr[ih * img_w + iw + 1];
-            count += 1;
-        //}
+        value_sum += hedge2dldr[ih * img_w + iw + 1];
+        count += 1;
     }
 
     if (count > 0) {
@@ -225,25 +217,21 @@ void smooth_vedge_red_black(
     if (((iw + ih) & 1u) != color) { return; }  // red-black coloring
 
     const unsigned char type_c = vedge2type[i_vedge];
-    if (type_c == 2 || type_c == 3) { return; }  // fixed-value edges
+    if (type_c == 1) { return; }  // fixed-value edges
 
     float value_sum = 0.0f;
     unsigned int count = 0;
 
     // West
     if (iw > 0) {
-        //if (vedge2type[i_vedge - 1] != 2) {
-            value_sum += vedge2dldr[i_vedge - 1];
-            count += 1;
-        //}
+        value_sum += vedge2dldr[i_vedge - 1];
+        count += 1;
     }
 
     // East
     if (iw + 1 < vedge_w) {
-        //if (vedge2type[i_vedge + 1] != 3) {
-            value_sum += vedge2dldr[i_vedge + 1];
-            count += 1;
-        //}
+        value_sum += vedge2dldr[i_vedge + 1];
+        count += 1;
     }
 
     // North
@@ -251,10 +239,8 @@ void smooth_vedge_red_black(
         const unsigned int i_hedge_nw = (ih - 1) * img_w + iw;
         const unsigned char type_nw = hedge2type[i_hedge_nw];
         const unsigned char type_ne = hedge2type[i_hedge_nw + 1];
-        //if (type_nw != 2 && type_nw != 3 && type_ne != 2 && type_ne != 3) {
-            value_sum += vedge2dldr[i_vedge - vedge_w];
-            count += 1;
-        //}
+        value_sum += vedge2dldr[i_vedge - vedge_w];
+        count += 1;
     }
 
     // South
@@ -262,10 +248,8 @@ void smooth_vedge_red_black(
         const unsigned int i_hedge_sw = ih * img_w + iw;
         const unsigned char type_sw = hedge2type[i_hedge_sw];
         const unsigned char type_se = hedge2type[i_hedge_sw + 1];
-        //if (type_sw != 2 && type_sw != 3 && type_se != 2 && type_se != 3) {
-            value_sum += vedge2dldr[i_vedge + vedge_w];
-            count += 1;
-        //}
+        value_sum += vedge2dldr[i_vedge + vedge_w];
+        count += 1;
     }
 
     if (count > 0) {

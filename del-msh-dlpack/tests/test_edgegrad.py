@@ -3,15 +3,12 @@ import pathlib
 
 from PIL import Image
 import torch
-import numpy as np
 
 import del_msh_dlpack.EdgeGrad.torch as RasterizedEdgeGradient
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
 import del_msh_dlpack.Pix2Tri.torch as Pix2Tri
 import del_msh_dlpack.Mat44.torch as Mat44
 import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
-import del_msh_dlpack.IoVtk.torch as IoVtk
-import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
 
 
 def test_gradient_visualization_silhouette():
@@ -104,6 +101,3 @@ def test_match_cpu_gpu_microedge_bwd():
             dldw_pix2occ.cuda(),
         )
         assert (d_dldw_vtx2xyz.cpu() - dldw_vtx2xyz).abs().max() < 2.0e-5
-
-
-

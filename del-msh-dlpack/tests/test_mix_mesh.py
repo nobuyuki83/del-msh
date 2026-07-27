@@ -7,13 +7,15 @@ import del_msh_dlpack.IoVtk.torch as IoVtk
 
 
 def hoge():
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir.mkdir(parents=True, exist_ok=True)
+
     path = pathlib.Path(__file__).parent.parent.parent / "asset" / "cfd_mesh.txt"
     vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx, vtx2velo, vtx2press = (
         MixMesh3.load_cfd_mesh(str(path))
     )
-    path_vtk = pathlib.Path(__file__).parent.parent.parent / "target" / "mix_mesh.vtk"
     IoVtk.write_mix_mesh(
-        str(path_vtk),
+        str(path_dir / "mix_mesh.vtk"),
         vtx2xyz,
         tet2vtx.to(torch.uint32),
         pyrmd2vtx.to(torch.uint32),
@@ -43,7 +45,7 @@ def hoge():
         elem2idx_offset1, idx2vtx1, vtx2xyz1
     )
     elem2volume1 = PolyhedronMesh.make_elem2volume(elem2idx_offset1, idx2vtx1, vtx2xyz1)
-    print("elem2volume", elem2volume1.shape)
+    # print("elem2volume", elem2volume1.shape)
     assert abs(elem2volume1.sum() - elem2volume.sum()) < 1e-6
     #
     # per-vertex values: linear transform of position, v = A @ xyz + b
@@ -74,13 +76,13 @@ def test_01():
     bvhnodes, bvhnode2aabb = PolyhedronMesh.make_bvhnodes_bvhnode2aabb(
         elem2idx_offset, idx2vtx, vtx2xyz
     )
-    print("bvhnodes:", bvhnodes.shape)
-    print("bvhnode2aabb:", bvhnode2aabb.shape)
+    # print("bvhnodes:", bvhnodes.shape)
+    # print("bvhnode2aabb:", bvhnode2aabb.shape)
     wtx2elem, wtx2param = PolyhedronMesh.search_elem_contain_points(
         elem2idx_offset, idx2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, wtx2xyz
     )
-    print("wtx2elem:", wtx2elem.shape)
-    print("wtx2param:", wtx2param.shape)
+    # print("wtx2elem:", wtx2elem.shape)
+    # print("wtx2param:", wtx2param.shape)
     wtx2value = PolyhedronMesh.interpolate_values_at_points(
         elem2idx_offset, idx2vtx, vtx2value, wtx2elem, wtx2param
     )
@@ -115,16 +117,14 @@ def test_01():
 
 
 def test_file_no_exist():
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir.mkdir(parents=True, exist_ok=True)
+    #
     path = pathlib.Path(__file__).parent.parent.parent / "asset" / "cfd_mesh.txt"
     vtx2xyz, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx, vtx2velo, vtx2press = (
         MixMesh3.load_cfd_mesh(str(path))
     )
-    path_vtk = (
-        pathlib.Path(__file__).parent.parent.parent
-        / "target"
-        / "no-exist"
-        / "mix_mesh.vtk"
-    )
+    path_vtk = path_dir / "no-exist" / "mix_mesh.vtk"
     with pytest.raises(OSError) as exc_info:
         IoVtk.write_mix_mesh(
             str(path_vtk),

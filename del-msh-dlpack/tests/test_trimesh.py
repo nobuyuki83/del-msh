@@ -33,7 +33,7 @@ def test_01():
     )
     assert numpy.linalg.norm(np_dw_vtx2xyz - ptcpu_dw_vtx2xyz.numpy()) < 1.0e-20
     if torch.cuda.is_available():
-        print('test "tri2nrm" and "dw_tri2nrm" on gpu')
+        # print('test "tri2nrm" and "dw_tri2nrm" on gpu')
         ptcuda_tri2nrm = del_msh_dlpack.TriMesh3.torch.make_tri2normal(
             ptcpu_tri2vtx.cuda(), ptcpu_vtx2xyz.cuda()
         )
@@ -55,11 +55,10 @@ def test_02():
     """
     test raycast for numpy
     """
-    from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
-
-    #
     path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
+
+    from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
 
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.sphere(0.8, 64, 32)
     tri2vtx = tri2vtx.numpy()

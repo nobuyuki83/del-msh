@@ -102,10 +102,10 @@ pub fn edge_gradient_and_type(
                         transform_world2pix,
                     ));
                     match (is_pixcentr0_inside_tri1, is_pixcentr1_inside_tri0) {
-                        (false, false) => 1, // shared edge
-                        (true, false) => 2, // tri0 is in front of tri1 (only tri0 receive gradient)
-                        (false, true) => 3, // tri1 is in front of tri0 (only tri1 receive gradient)
-                        (true, true) => 4,  // intersection
+                        (false, false) => 0, // shared edge
+                        (true, false) => 1, // tri0 is in front of tri1 (only tri0 receive gradient)
+                        (false, true) => 1, // tri1 is in front of tri0 (only tri1 receive gradient)
+                        (true, true) => 1,  // intersection
                     }
                 };
             }
@@ -154,10 +154,10 @@ pub fn edge_gradient_and_type(
                         transform_world2pix,
                     ));
                     match (is_pixcentr0_inside_tri1, is_pixcentr1_inside_tri0) {
-                        (false, false) => 1, // shared edge
-                        (true, false) => 2, // tri0 is in front of tri1 (only tri0 receive gradient)
-                        (false, true) => 3, // tri1 is in front of tri0 (only tri1 receive gradient)
-                        (true, true) => 4,  // intersection
+                        (false, false) => 0, // shared edge
+                        (true, false) => 1, // tri0 is in front of tri1 (only tri0 receive gradient)
+                        (false, true) => 1, // tri1 is in front of tri0 (only tri1 receive gradient)
+                        (true, true) => 1,  // intersection
                     }
                 };
             }
@@ -173,7 +173,7 @@ pub fn edge_gradient_and_type(
     }
 }
 
-pub fn interpolate_staggered_grid(
+pub fn interpolate_from_edges(
     (img_w, img_h): (usize, usize),
     hedge2vy: &[f32],
     vedge2vx: &[f32],
@@ -221,224 +221,6 @@ pub fn interpolate_staggered_grid(
     }
 }
 
-pub fn smooth_gradient_hedge(
-    (img_w, img_h): (usize, usize),
-    hedge2type: &[u8],
-    vedge2type: &[u8],
-    num_iter: usize,
-    hedge2dldr: &mut [f32],
-) {
-    assert_eq!(hedge2type.len(), (img_h - 1) * img_w);
-    assert_eq!(hedge2type.len(), hedge2dldr.len());
-    for _iter in 0..num_iter {
-        for i_hedge_c in 0..(img_h - 1) * img_w {
-            let iw = i_hedge_c % img_w;
-            let ih = i_hedge_c / img_w;
-            if hedge2type[i_hedge_c] == 2 || hedge2type[i_hedge_c] == 3 {
-                continue;
-            }
-            let mut n_sum = 0;
-            let mut v_sum: f32 = 0.;
-            //
-            if ih != 0 {
-                // north
-                let i0_hedge = (ih - 1) * img_w + iw;
-                //if hedge2type[i0_hedge] != 2 {
-                v_sum += hedge2dldr[i0_hedge];
-                n_sum += 1;
-                //}
-            }
-            //
-            if ih != img_h - 2 {
-                // south
-                let i0_hedge = (ih + 1) * img_w + iw;
-                //if hedge2type[i0_hedge] != 3 {
-                v_sum += hedge2dldr[i0_hedge];
-                n_sum += 1;
-                //}
-            }
-            'west: {
-                // west
-                if iw == 0 {
-                    break 'west;
-                }
-                let i0_hedge = ih * img_w + iw - 1;
-                /*
-                //if hedge2type[i0_hedge] == 3 { break 'west; }
-                {
-                    let iwn_vedge = ih * (img_w - 1) + iw - 1;
-                    let type_wn = vedge2type[iwn_vedge];
-                    if type_wn == 2 || type_wn == 3 {
-                        break 'west;
-                    }
-                }
-                {
-                    let iws_vedge = (ih + 1) * (img_w - 1) + iw - 1;
-                    let type_ws = vedge2type[iws_vedge];
-                    if type_ws == 2 || type_ws == 3 {
-                        break 'west;
-                    }
-                }
-                 */
-                v_sum += hedge2dldr[i0_hedge];
-                n_sum += 1;
-            }
-            'east: {
-                if iw == img_w - 1 {
-                    break 'east;
-                }
-                let i0_hedge = ih * img_w + iw + 1;
-                /*
-                //if hedge2type[i0_hedge] == 2 { break 'east; }
-                {
-                    let ien_vedge = ih * (img_w - 1) + iw;
-                    let type_en = vedge2type[ien_vedge];
-                    if type_en == 2 || type_en == 3 {
-                        break 'east;
-                    }
-                }
-                {
-                    let ies_vedge = (ih + 1) * (img_w - 1) + iw;
-                    let type_es = vedge2type[ies_vedge];
-                    if type_es == 2 || type_es == 3 {
-                        break 'east;
-                    }
-                }
-                 */
-                v_sum += hedge2dldr[i0_hedge];
-                n_sum += 1;
-            }
-            // ----------------------------
-            if n_sum != 0 {
-                hedge2dldr[i_hedge_c] = v_sum / n_sum as f32;
-            }
-        }
-    }
-}
-
-pub fn smooth_gradient_vedge(
-    (img_w, img_h): (usize, usize),
-    hedge2type: &[u8],
-    vedge2type: &[u8],
-    num_iter: usize,
-    vedge2dldr: &mut [f32],
-) {
-    for _iter in 0..num_iter {
-        assert_eq!(vedge2type.len(), img_h * (img_w - 1));
-        assert_eq!(vedge2type.len(), vedge2dldr.len());
-        for i_vedge_c in 0..img_h * (img_w - 1) {
-            let iw = i_vedge_c % (img_w - 1);
-            let ih = i_vedge_c / (img_w - 1);
-            if vedge2type[i_vedge_c] == 2 || vedge2type[i_vedge_c] == 3 {
-                continue;
-            }
-            let mut n_sum = 0;
-            let mut v_sum: f32 = 0.;
-            //
-            if iw != 0 {
-                // west
-                let i0_vedge = ih * (img_w - 1) + iw - 1;
-                //if vedge2type[i0_vedge] != 2 {
-                v_sum += vedge2dldr[i0_vedge];
-                n_sum += 1;
-                //}
-            }
-            //
-            if iw != img_w - 2 {
-                // east
-                let i0_vedge = ih * (img_w - 1) + iw + 1;
-                //if vedge2type[i0_vedge] != 3 {
-                v_sum += vedge2dldr[i0_vedge];
-                n_sum += 1;
-                //}
-            }
-            'north: {
-                // north
-                if ih == 0 {
-                    break 'north;
-                }
-                let i_vedge_n = (ih - 1) * (img_w - 1) + iw;
-                /*
-                //if vedge2type[i_vedge_n] == 3 { break 'north; }
-                {
-                    let inw_hedge = (ih - 1) * img_w + iw;
-                    let type_nw = hedge2type[inw_hedge];
-                    if type_nw == 2 || type_nw == 3 {
-                        break 'north;
-                    }
-                }
-                {
-                    let ine_hedge = (ih - 1) * img_w + iw + 1;
-                    let type_ne = hedge2type[ine_hedge];
-                    if type_ne == 2 || type_ne == 3 {
-                        break 'north;
-                    }
-                }
-                 */
-                v_sum += vedge2dldr[i_vedge_n];
-                n_sum += 1;
-            }
-            'south: {
-                // north
-                if ih == img_h - 1 {
-                    break 'south;
-                }
-                let i_vedge_s = (ih + 1) * (img_w - 1) + iw;
-                /*
-                //if vedge2type[i_vedge_s] == 2 { break 'south; }
-                {
-                    let isw_hedge = ih * img_w + iw;
-                    let type_nw = hedge2type[isw_hedge];
-                    if type_nw == 2 || type_nw == 3 {
-                        break 'south;
-                    }
-                }
-                {
-                    let ise_hedge = ih * img_w + iw + 1;
-                    let type_ne = hedge2type[ise_hedge];
-                    if type_ne == 2 || type_ne == 3 {
-                        break 'south;
-                    }
-                }
-                 */
-                v_sum += vedge2dldr[i_vedge_s];
-                n_sum += 1;
-            }
-            if n_sum != 0 {
-                vedge2dldr[i_vedge_c] = v_sum / n_sum as f32;
-            }
-        }
-    }
-    //
-}
-
-/*
-/// Gradient of one perspective-divided pixel coordinate with respect to a
-/// world-space vertex. `axis` is 0 for pixel x and 1 for pixel y.
-fn fn_projection_gradient(
-    transform_world2pix: &[f32; 16],
-    xyz: &[f32; 3],
-    axis: usize,
-) -> Option<[f32; 3]> {
-    let q = transform_world2pix[axis] * xyz[0]
-        + transform_world2pix[axis + 4] * xyz[1]
-        + transform_world2pix[axis + 8] * xyz[2]
-        + transform_world2pix[axis + 12];
-    let w = transform_world2pix[3] * xyz[0]
-        + transform_world2pix[7] * xyz[1]
-        + transform_world2pix[11] * xyz[2]
-        + transform_world2pix[15];
-    if w.abs() <= f32::EPSILON {
-        return None;
-    }
-    let inv_w2 = 1.0 / (w * w);
-    Some([
-        (transform_world2pix[axis] * w - q * transform_world2pix[3]) * inv_w2,
-        (transform_world2pix[axis + 4] * w - q * transform_world2pix[7]) * inv_w2,
-        (transform_world2pix[axis + 8] * w - q * transform_world2pix[11]) * inv_w2,
-    ])
-}
- */
 
 #[allow(clippy::too_many_arguments)]
 pub fn bwd(

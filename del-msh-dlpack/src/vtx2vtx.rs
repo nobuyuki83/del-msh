@@ -181,8 +181,8 @@ fn vtx2vtx_laplacian_smoothing(
                     .unwrap();
                 {
                     del_cudarc_sys::memcpy_d2d_32(
-                        vtx2val.data as  del_cudarc_sys::cu::CUdeviceptr,
-                        vtx2ave.data as  del_cudarc_sys::cu::CUdeviceptr,
+                        vtx2val.data as del_cudarc_sys::cu::CUdeviceptr,
+                        vtx2ave.data as del_cudarc_sys::cu::CUdeviceptr,
                         (num_vtx * num_vdim) as usize,
                         stream,
                     )

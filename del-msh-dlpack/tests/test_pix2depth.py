@@ -27,6 +27,9 @@ def example1():
 
 
 def test_cpu_cuda_match_with_autograd():
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir.mkdir(parents=True, exist_ok=True)
+    #
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()
 
     vtx2xyz.requires_grad = True
@@ -42,13 +45,7 @@ def test_cpu_cuda_match_with_autograd():
         vtx2xyz, pix2tri, tri2vtx, transform_ndc2world
     )
     img = (pix2depth.detach().numpy() * 255).clip(0, 255).astype("uint8")
-    path0 = (
-        pathlib.Path(__file__).parent.parent.parent
-        / "target"
-        / "del_msh_dlpack__pix2depth1.png"
-    )
-    path0.parent.mkdir(exist_ok=True)
-    Image.fromarray(img).save(path0)
+    Image.fromarray(img).save(path_dir / "pix2depth1.png")
 
     dldw_depth = torch.rand(size=img_shape)
     loss = torch.sum(dldw_depth * pix2depth)

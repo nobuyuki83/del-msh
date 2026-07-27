@@ -6,25 +6,16 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
-    m.add_function(pyo3::wrap_pyfunction!(rasterized_edge_gradient_bwd, m)?)?;
-    m.add_function(pyo3::wrap_pyfunction!(
-        rasterized_edge_gradient_edge_gradient_and_type,
-        m
-    )?)?;
-    m.add_function(pyo3::wrap_pyfunction!(
-        rasterized_edge_gradient_smooth_gradient,
-        m
-    )?)?;
-    m.add_function(pyo3::wrap_pyfunction!(
-        rasterized_edge_gradient_interpolate,
-        m
-    )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(edgegrad_bwd, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(edgegrad_edge_gradient_and_type, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(edgegrad_smooth_gradient, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(edgegrad_interpolate, m)?)?;
     Ok(())
 }
 
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
-pub fn rasterized_edge_gradient_bwd(
+pub fn edgegrad_bwd(
     _py: Python<'_>,
     tri2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
@@ -151,7 +142,7 @@ pub fn rasterized_edge_gradient_bwd(
 
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
-pub fn rasterized_edge_gradient_edge_gradient_and_type(
+pub fn edgegrad_edge_gradient_and_type(
     _py: Python<'_>,
     tri2vtx: &Bound<'_, PyAny>,
     vtx2xyz: &Bound<'_, PyAny>,
@@ -291,7 +282,7 @@ pub fn rasterized_edge_gradient_edge_gradient_and_type(
 
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
-pub fn rasterized_edge_gradient_smooth_gradient(
+pub fn edgegrad_smooth_gradient(
     _py: Python<'_>,
     hedge2type: &Bound<'_, PyAny>,
     hedge2dldr: &Bound<'_, PyAny>,
@@ -317,20 +308,22 @@ pub fn rasterized_edge_gradient_smooth_gradient(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::edgegrad::smooth_gradient_hedge(
-                (img_w as usize, img_h as usize),
-                slice!(hedge2type, u8).unwrap(),
-                slice!(vedge2type, u8).unwrap(),
-                num_iter,
-                slice_mut!(hedge2dldr, f32).unwrap(),
-            );
-            del_msh_cpu::edgegrad::smooth_gradient_vedge(
-                (img_w as usize, img_h as usize),
-                slice!(hedge2type, u8).unwrap(),
-                slice!(vedge2type, u8).unwrap(),
-                num_iter,
-                slice_mut!(vedge2dldr, f32).unwrap(),
-            );
+            for _itr in 0..num_iter {
+                del_msh_cpu::grid2_partially_fixed::smooth_gauss_seidel(
+                    (img_w as usize, img_h as usize - 1),
+                    slice!(hedge2type, u8).unwrap(),
+                    1,
+                    slice_mut!(hedge2dldr, f32).unwrap(),
+                );
+            }
+            for _itr in 0..num_iter {
+                del_msh_cpu::grid2_partially_fixed::smooth_gauss_seidel(
+                    (img_w as usize - 1, img_h as usize),
+                    slice!(vedge2type, u8).unwrap(),
+                    1,
+                    slice_mut!(vedge2dldr, f32).unwrap(),
+                );
+            }
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -391,7 +384,7 @@ pub fn rasterized_edge_gradient_smooth_gradient(
 
 #[pyo3::pyfunction]
 #[allow(clippy::too_many_arguments)]
-pub fn rasterized_edge_gradient_interpolate(
+pub fn edgegrad_interpolate(
     _py: Python<'_>,
     hedge2vy: &Bound<'_, PyAny>,
     vedge2vx: &Bound<'_, PyAny>,
@@ -416,7 +409,7 @@ pub fn rasterized_edge_gradient_interpolate(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::edgegrad::interpolate_staggered_grid(
+            del_msh_cpu::edgegrad::interpolate_from_edges(
                 (img_w as usize, img_h as usize),
                 slice_mut!(hedge2vy, f32).unwrap(),
                 slice_mut!(vedge2vx, f32).unwrap(),
