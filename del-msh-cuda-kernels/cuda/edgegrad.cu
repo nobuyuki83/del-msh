@@ -138,66 +138,7 @@ void vedge_gradient_and_type(
     vedge2dldr[i_vedge] = dldr;
 }
 
-__global__
-void smooth_hedge_red_black(
-    unsigned int img_w,
-    unsigned int img_h,
-    const unsigned char* __restrict__ hedge2type,
-    float* __restrict__ hedge2dldr,
-    const unsigned char* __restrict__ vedge2type,
-    unsigned int color)
-{
-    const unsigned int i_hedge = blockIdx.x * blockDim.x + threadIdx.x;
-    const unsigned int num_hedges = (img_h - 1) * img_w;
-    if (i_hedge >= num_hedges) { return; }
-    const unsigned int iw = i_hedge % img_w;
-    const unsigned int ih = i_hedge / img_w;
-    if (((iw + ih) & 1u) != color) { return; }  // red-black coloring
 
-    const unsigned char type_c = hedge2type[i_hedge];
-    if (type_c == 1) { return; }  // fixed-value edges
-
-    float value_sum = 0.0f;
-    unsigned int count = 0;
-
-    // North
-    if (ih > 0) {
-        const unsigned int i_north = (ih - 1) * img_w + iw;
-        value_sum += hedge2dldr[i_north];
-        count += 1;
-    }
-
-    // South
-    if (ih + 1 < img_h - 1) {
-        const unsigned int i_south = (ih + 1) * img_w + iw;
-        value_sum += hedge2dldr[i_south];
-        count += 1;
-    }
-
-    // West
-    if (iw > 0) {
-        const unsigned int i_vedge_nw = ih * (img_w - 1) + iw - 1;
-        const unsigned int i_vedge_sw = (ih + 1) * (img_w - 1) + iw - 1;
-        const unsigned char type_nw = vedge2type[i_vedge_nw];
-        const unsigned char type_sw = vedge2type[i_vedge_sw];
-        value_sum += hedge2dldr[ih * img_w + iw - 1];
-        count += 1;
-    }
-
-    // East
-    if (iw + 1 < img_w) {
-        const unsigned int i_vedge_ne = ih * (img_w - 1) + iw;
-        const unsigned int i_vedge_se = (ih + 1) * (img_w - 1) + iw;
-        const unsigned char type_ne = vedge2type[i_vedge_ne];
-        const unsigned char type_se = vedge2type[i_vedge_se];
-        value_sum += hedge2dldr[ih * img_w + iw + 1];
-        count += 1;
-    }
-
-    if (count > 0) {
-        hedge2dldr[i_hedge] = value_sum / static_cast<float>(count);
-    }
-}
 
 
 __global__

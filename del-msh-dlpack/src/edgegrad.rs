@@ -72,8 +72,8 @@ pub fn edgegrad_bwd(
             // hedge: grid covers img_w × (img_h - 1)
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
+                    "del_msh::edgegrad",
+                    del_msh_cuda_kernels::get("edgegrad").unwrap(),
                     "bwd_hedge",
                 )
                 .unwrap();
@@ -102,8 +102,8 @@ pub fn edgegrad_bwd(
             // vedge: grid covers (img_w - 1) × img_h
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
+                    "del_msh::edgegrad",
+                    del_msh_cuda_kernels::get("edgegrad").unwrap(),
                     "bwd_vedge",
                 )
                 .unwrap();
@@ -211,8 +211,8 @@ pub fn edgegrad_edge_gradient_and_type(
             // horizontal edges: img_w * (img_h - 1) work items
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
+                    "del_msh::edgegrad",
+                    del_msh_cuda_kernels::get("edgegrad").unwrap(),
                     "hedge_gradient_and_type",
                 )
                 .unwrap();
@@ -242,8 +242,8 @@ pub fn edgegrad_edge_gradient_and_type(
             // vertical edges: (img_w - 1) * img_h work items
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
+                    "del_msh::edgegrad",
+                    del_msh_cuda_kernels::get("edgegrad").unwrap(),
                     "vedge_gradient_and_type",
                 )
                 .unwrap();
@@ -330,46 +330,36 @@ pub fn edgegrad_smooth_gradient(
             use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
-            {
-                let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
-                    "smooth_hedge_red_black",
-                )
-                .unwrap();
-                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(((img_h - 1) * img_w) as u32);
-                for _ in 0..num_iter {
-                    for color in [0u32, 1u32] {
-                        let mut builder = del_cudarc_sys::Builder::new(stream);
-                        builder.arg_u32(img_w as u32);
-                        builder.arg_u32(img_h as u32);
-                        builder.arg_data(&hedge2type.data);
-                        builder.arg_data(&hedge2dldr.data);
-                        builder.arg_data(&vedge2type.data);
-                        builder.arg_u32(color);
-                        builder.launch_kernel(func, cfg).unwrap();
-                    }
+            let func = del_cudarc_sys::cache_func::get_function_cached(
+                "del_msh::grid2_partially_fixed::smooth_gauss_seidel",
+                del_msh_cuda_kernels::get("grid2_partially_fixed").unwrap(),
+                "smooth_red_black_gauss_seidel",
+            )
+            .unwrap();
+            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(((img_h - 1) * img_w) as u32);
+            for _ in 0..num_iter {
+                for color in [0u32, 1u32] {
+                    let mut builder = del_cudarc_sys::Builder::new(stream);
+                    builder.arg_u32(img_w as u32);
+                    builder.arg_u32((img_h - 1) as u32);
+                    builder.arg_data(&hedge2type.data);
+                    builder.arg_u32(1u32); // num_vdim = 1 for scalar edge gradients
+                    builder.arg_data(&hedge2dldr.data);
+                    builder.arg_u32(color);
+                    builder.launch_kernel(func, cfg).unwrap();
                 }
             }
-            {
-                let func = del_cudarc_sys::cache_func::get_function_cached(
-                    "del_msh::rasterized_edge_gradient",
-                    del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
-                    "smooth_vedge_red_black",
-                )
-                .unwrap();
-                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems((img_h * (img_w - 1)) as u32);
-                for _ in 0..num_iter {
-                    for color in [0u32, 1u32] {
-                        let mut builder = del_cudarc_sys::Builder::new(stream);
-                        builder.arg_u32(img_w as u32);
-                        builder.arg_u32(img_h as u32);
-                        builder.arg_data(&vedge2type.data);
-                        builder.arg_data(&vedge2dldr.data);
-                        builder.arg_data(&hedge2type.data);
-                        builder.arg_u32(color);
-                        builder.launch_kernel(func, cfg).unwrap();
-                    }
+            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems((img_h * (img_w - 1)) as u32);
+            for _ in 0..num_iter {
+                for color in [0u32, 1u32] {
+                    let mut builder = del_cudarc_sys::Builder::new(stream);
+                    builder.arg_u32((img_w - 1) as u32);
+                    builder.arg_u32(img_h as u32);
+                    builder.arg_data(&vedge2type.data);
+                    builder.arg_u32(1u32); // num_vdim = 1 for scalar edge gradients
+                    builder.arg_data(&vedge2dldr.data);
+                    builder.arg_u32(color);
+                    builder.launch_kernel(func, cfg).unwrap();
                 }
             }
         }
@@ -423,8 +413,8 @@ pub fn edgegrad_interpolate(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
-                "del_msh::rasterized_edge_gradient",
-                del_msh_cuda_kernels::get("rasterized_edge_gradient").unwrap(),
+                "del_msh::edgegrad",
+                del_msh_cuda_kernels::get("edgegrad").unwrap(),
                 "interpolate_staggered_grid",
             )
             .unwrap();

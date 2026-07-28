@@ -160,7 +160,7 @@ def test_silhouette_optimization():
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
-    nres = 256
+    nres = 128
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2(nres)
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
@@ -675,7 +675,7 @@ def test_shading_optimization():
     opt = UniformAdam([vtx2xyz], lr=0.01)
 
     lr = 30.0
-    for iter in range(0, 31):
+    for _iter in range(0, 31):
         opt.zero_grad()
         bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
         pix2tri = Pix2Tri.by_raycasting(
@@ -696,7 +696,7 @@ def test_shading_optimization():
             tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2rgb, 100
         )
         loss = torch.nn.functional.mse_loss(pix2rgb, pix2rgb_trg)
-        print("iter = :", iter, "  loss=", loss.item())
+        print("iter = :", _iter, "  loss=", loss.item())
         if loss.item() < 1.0e-5:
             break
         loss.backward()
@@ -714,9 +714,9 @@ def test_shading_optimization():
             vtx2xyz.grad[:, :] = dldw_vtx2xyz[:, :]
         opt.step()
 
-        if iter % 10 == 0:
+        if _iter % 10 == 0:
             img = (pix2rgb.detach().numpy() * 255).clip(0, 255).astype("uint8")
-            Image.fromarray(img).save(path_dir / f"shading_opt_cpu_{iter}.png")
+            Image.fromarray(img).save(path_dir / f"shading_opt_cpu_{_iter}.png")
 
     TriMesh3.save_wavefront_obj(
         tri2vtx, vtx2xyz, str(path_dir / f"shading_opt_fin.obj")
@@ -741,7 +741,7 @@ def test_shading_optimization():
 
         opt = UniformAdam([d_vtx2xyz], lr=0.01)
 
-        for iter in range(0, 31):
+        for _iter in range(0, 31):
             opt.zero_grad()
             d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(
                 d_tri2vtx, d_vtx2xyz
@@ -769,19 +769,19 @@ def test_shading_optimization():
                 d_tri2vtx, d_vtx2xyz, d_transform_world2pix, d_pix2tri, d_pix2rgb, 100
             )
             d_loss = torch.nn.functional.mse_loss(d_pix2rgb, d_pix2rgb_trg)
-            print("iter = :", iter, "  loss=", d_loss.item())
+            print("iter = :", _iter, "  loss=", d_loss.item())
             if d_loss.item() < 1.0e-5:
                 break
             d_loss.backward()
             opt.step()
 
-            if iter % 10 == 0:
+            if _iter % 10 == 0:
                 img = (
                     (d_pix2rgb.detach().cpu().numpy() * 255)
                     .clip(0, 255)
                     .astype("uint8")
                 )
-                Image.fromarray(img).save(path_dir / f"shading_opt_gpu_{iter}.png")
+                Image.fromarray(img).save(path_dir / f"shading_opt_gpu_{_iter}.png")
 
 
 def test_shading_opt_multiview():

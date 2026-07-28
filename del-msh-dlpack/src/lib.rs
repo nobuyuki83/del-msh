@@ -9,6 +9,7 @@ mod differentiable_antialias;
 mod edge2elem;
 mod edge2vtx;
 mod edgegrad;
+mod grid2_partially_fixed;
 mod io_cfd_mesh_txt;
 mod io_nastran;
 mod io_vtk;
@@ -53,6 +54,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     io_cfd_mesh_txt::add_functions(_py, m)?;
     io_vtk::add_functions(_py, m)?;
     edgegrad::add_functions(_py, m)?;
+    grid2_partially_fixed::add_functions(_py, m)?;
     Ok(())
 }
 
