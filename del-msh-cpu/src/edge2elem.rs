@@ -89,11 +89,11 @@ where
 
 #[test]
 pub fn test_edge2tri() {
-    let (tri2vtx, vtx2xyz) : (Vec<usize>, Vec<f32>)
+    let (tri2vtx, vtx2xyz) : (Vec<[usize;3]>, Vec<[f32;3]>)
         //= crate::trimesh3_primitive::capsule_yup(1., 2., 32, 32, 8);
         = crate::trimesh3_primitive::sphere_yup(1., 32, 32);
-    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_slice(), vtx2xyz.len() / 3);
-    let edge2tri = from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len() / 3);
+    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_flattened(), vtx2xyz.len());
+    let edge2tri = from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx.as_flattened(), vtx2xyz.len());
     edge2tri
         .iter()
         .for_each(|&i_tri| assert_ne!(i_tri, usize::MAX));

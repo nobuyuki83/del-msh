@@ -224,23 +224,34 @@ fn test_depthmap() {
                 let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(0.8, 0.05, 32, 32);
                 let transform =
                     del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI / 12.0);
-                let vtx2xyz = crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform);
+                let vtx2xyz =
+                    crate::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform);
+                let vtx2xyz = vtx2xyz.chunks(3).map(|v| [v[0], v[1], v[2]]).collect();
                 (tri2vtx, vtx2xyz)
             }
             _ => unreachable!(),
         };
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("../target/trimesh3_raycast_mesh{i_case}.obj"),
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             3,
         )
         .unwrap();
-        let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
+        let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz.as_flattened(), 0.);
         dbg!(aabb3);
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
+            3,
+        );
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+            0,
+            &bvhnodes,
+            &tri2vtx.as_flattened(),
+            3,
+            &vtx2xyz.as_flattened(),
+            None,
         );
         let img_shape = (300, 300);
         let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];
@@ -250,8 +261,8 @@ fn test_depthmap() {
             img_shape,
             &mut pix2depth,
             &transform_ndc2world,
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             &bvhnodes,
             &bvhnode2aabb,
         );

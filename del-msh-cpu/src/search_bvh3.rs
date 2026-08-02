@@ -247,9 +247,19 @@ fn is_point_closer(aabb: &[f32; 6], ray_dir: &[f32; 3], t: f32) -> bool {
 #[test]
 fn test_first_intersection_ray() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let bvhnode2aabb =
-        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
+        3,
+    );
+    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+        0,
+        &bvhnodes,
+        &tri2vtx.as_flattened(),
+        3,
+        &vtx2xyz.as_flattened(),
+        None,
+    );
     use rand::RngExt;
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
@@ -262,8 +272,8 @@ fn test_first_intersection_ray() {
             &ray_org,
             &ray_dir,
             &TriMeshWithBvh {
-                tri2vtx: &tri2vtx,
-                vtx2xyz: &vtx2xyz,
+                tri2vtx: &tri2vtx.as_flattened(),
+                vtx2xyz: &vtx2xyz.as_flattened(),
                 bvhnodes: &bvhnodes,
                 bvhnode2aabb: &bvhnode2aabb,
             },
@@ -286,8 +296,8 @@ fn test_first_intersection_ray() {
                 &ray_org,
                 &ray_dir,
                 &TriMeshWithBvh {
-                    tri2vtx: &tri2vtx,
-                    vtx2xyz: &vtx2xyz,
+                    tri2vtx: &tri2vtx.as_flattened(),
+                    vtx2xyz: &vtx2xyz.as_flattened(),
                     bvhnodes: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },

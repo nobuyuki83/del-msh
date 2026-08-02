@@ -128,20 +128,26 @@ fn test_pix2tri() {
         let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
         let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.01, 0.61, 0.03]);
         let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-        crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
+        crate::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform)
     };
     let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri_raycast = {
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+        let bvhnodes =
+            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx.as_flattened(), &vtx2xyz, 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+            0,
+            &bvhnodes,
+            &tri2vtx.as_flattened(),
+            3,
+            &vtx2xyz,
+            None,
         );
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
         crate::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
-            &tri2vtx,
+            &tri2vtx.as_flattened(),
             &vtx2xyz,
             &bvhnodes,
             &bvhnode2aabb,
@@ -156,7 +162,7 @@ fn test_pix2tri() {
         crate::pix2tri::pix2tri_by_rasterization(
             &mut pix2tri,
             &mut pix2depth,
-            &tri2vtx,
+            &tri2vtx.as_flattened(),
             &vtx2xyz,
             img_shape,
             &transform_ndc2world,
@@ -315,22 +321,28 @@ fn test_interpolate() {
         let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
         let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.01, 0.61, 0.03]);
         let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-        crate::vtx2xyz::transform_homogeneous(&vtx2xyz0, &transform)
+        crate::vtx2xyz::transform_homogeneous(&vtx2xyz0.as_flattened(), &transform)
     };
     let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
     let transform_ndc2world: [Real; 16] =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri = {
         let vtx2xyz0: Vec<_> = vtx2xyz0.iter().map(|v| *v as f32).collect();
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz0, 3);
+        let bvhnodes =
+            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx.as_flattened(), &vtx2xyz0, 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0, &bvhnodes, &tri2vtx, 3, &vtx2xyz0, None,
+            0,
+            &bvhnodes,
+            &tri2vtx.as_flattened(),
+            3,
+            &vtx2xyz0,
+            None,
         );
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
         let transform_ndc2world: [f32; 16] = std::array::from_fn(|i| transform_ndc2world[i] as f32);
         pix2tri_by_raycast(
             &mut pix2tri,
-            &tri2vtx,
+            &tri2vtx.as_flattened(),
             &vtx2xyz0,
             &bvhnodes,
             &bvhnode2aabb,
@@ -353,7 +365,7 @@ fn test_interpolate() {
     interpolate(
         img_shape,
         &pix2tri,
-        tri2vtx.as_chunks::<3>().0,
+        &tri2vtx,
         vtx2xyz0.as_chunks::<3>().0,
         num_vdim,
         &vtx2val0,
@@ -370,7 +382,7 @@ fn test_interpolate() {
     interpolate_bwd(
         img_shape,
         &pix2tri,
-        tri2vtx.as_chunks::<3>().0,
+        &tri2vtx,
         vtx2xyz0.as_chunks::<3>().0,
         num_vdim,
         &vtx2val0,
@@ -391,7 +403,7 @@ fn test_interpolate() {
                 interpolate(
                     img_shape,
                     &pix2tri,
-                    tri2vtx.as_chunks::<3>().0,
+                    &tri2vtx,
                     vtx2xyz1.as_chunks::<3>().0,
                     num_vdim,
                     &vtx2val0,
@@ -429,7 +441,7 @@ fn test_interpolate() {
                 interpolate(
                     img_shape,
                     &pix2tri,
-                    tri2vtx.as_chunks::<3>().0,
+                    &tri2vtx,
                     vtx2xyz0.as_chunks::<3>().0,
                     num_vdim,
                     &vtx2val1,

@@ -67,9 +67,18 @@ fn main() -> anyhow::Result<()> {
     };
      */
 
-    let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+    let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
+        3,
+    );
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+        0,
+        &bvhnodes,
+        &tri2vtx.as_flattened(),
+        3,
+        &vtx2xyz.as_flattened(),
+        None,
     );
     //
     let img_asp = 1.0;
@@ -95,8 +104,8 @@ fn main() -> anyhow::Result<()> {
     let mut pix2tri = vec![0u32; img_shape.0 * img_shape.1];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
-        &tri2vtx,
-        &vtx2xyz,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         &bvhnodes,
         &bvhnode2aabb,
         img_shape,
@@ -107,8 +116,8 @@ fn main() -> anyhow::Result<()> {
         let img_out = del_msh_cpu::pix2nrm::render_normalmap_from_pix2tri(
             img_shape,
             &cam_modelview,
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             &pix2tri,
         );
         del_canvas::write_png_from_float_image(
@@ -120,15 +129,16 @@ fn main() -> anyhow::Result<()> {
     }
 
     let cedge2vtx = {
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
+        let edge2vtx =
+            del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx.as_flattened(), vtx2xyz.len() / 3);
         let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
             &edge2vtx,
-            &tri2vtx,
+            &tri2vtx.as_flattened(),
             vtx2xyz.len() / 3,
         );
         del_msh_cpu::edge2vtx::contour_for_triangle_mesh(
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -152,7 +162,7 @@ fn main() -> anyhow::Result<()> {
         let mut pix2vout = pix2vin.clone();
         del_msh_cpu::antialias::antialias(
             &cedge2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             &transform_world2pix,
             img_shape,
             &pix2tri,
@@ -172,7 +182,7 @@ fn main() -> anyhow::Result<()> {
         &img_data,
         &transform_world2ndc,
         &cedge2vtx,
-        &vtx2xyz,
+        &vtx2xyz.as_flattened(),
     )?;
     {
         // compute loss for random target image
@@ -189,7 +199,7 @@ fn main() -> anyhow::Result<()> {
             let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
             del_msh_cpu::antialias::bwd_antialias(
                 &cedge2vtx,
-                &vtx2xyz,
+                &vtx2xyz.as_flattened(),
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
                 img_shape,
@@ -211,7 +221,7 @@ fn main() -> anyhow::Result<()> {
             for i_dim in 0..3 {
                 let vtx2xyz1 = {
                     let mut vtx2xyz1 = vtx2xyz.clone();
-                    vtx2xyz1[i_vtx * 3 + i_dim] += eps;
+                    vtx2xyz1[i_vtx][i_dim] += eps;
                     vtx2xyz1
                 };
                 let pix2vin = {
@@ -230,7 +240,7 @@ fn main() -> anyhow::Result<()> {
                 let mut pix2vout = pix2vin.clone();
                 del_msh_cpu::antialias::antialias(
                     &cedge2vtx,
-                    &vtx2xyz1,
+                    &vtx2xyz1.as_flattened(),
                     &transform_world2pix,
                     img_shape,
                     &pix2tri,

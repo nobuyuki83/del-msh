@@ -441,17 +441,30 @@ pub fn test_contour() {
         del_geo_core::mat4_col_major::transpose(&t)
     };
     //
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let bvhnode2aabb =
-        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None);
-    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_slice(), vtx2xyz.len() / 3);
-    let edge2tri =
-        crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len() / 3);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
+        3,
+    );
+    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+        0,
+        &bvhnodes,
+        &tri2vtx.as_flattened(),
+        3,
+        &vtx2xyz.as_flattened(),
+        None,
+    );
+    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_flattened(), vtx2xyz.len());
+    let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(
+        &edge2vtx,
+        &tri2vtx.as_flattened(),
+        vtx2xyz.len(),
+    );
 
     {
         let edge2vtx_contour = occluding_contour_for_triangle_mesh(
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -461,15 +474,15 @@ pub fn test_contour() {
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_countour.obj",
             &edge2vtx_contour,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             3,
         )
         .unwrap();
     }
     {
         let edge2vtx_contour = silhouette_for_triangle_mesh(
-            &tri2vtx,
-            &vtx2xyz,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -479,15 +492,15 @@ pub fn test_contour() {
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_silhouette.obj",
             &edge2vtx_contour,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             3,
         )
         .unwrap();
     }
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/edge2vtx_trimsh.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         3,
     )
     .unwrap();

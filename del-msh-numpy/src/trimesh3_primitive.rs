@@ -21,8 +21,12 @@ fn trimesh3_primitive_torus_zup(
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f64>>) {
     let (tri2vtx, vtx2xyz) =
         del_msh_cpu::trimesh3_primitive::torus_zup::<usize, f64>(radius, radius_tube, nlg, nlt);
-    let v = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz).unwrap();
-    let f = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx).unwrap();
+    let v =
+        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.as_flattened().to_vec())
+            .unwrap();
+    let f =
+        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.as_flattened().to_vec())
+            .unwrap();
     (f.into_pyarray(py), v.into_pyarray(py))
 }
 
@@ -37,13 +41,13 @@ fn trimesh3_primitive_capsule_yup(
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f64>>) {
     let (tri_vtx, vtx_xyz) = del_msh_cpu::trimesh3_primitive::capsule_yup::<f64>(r, l, nc, nr, nl);
     let v = numpy::ndarray::Array2::from_shape_vec(
-        (vtx_xyz.len() / 3, 3),
-        Vec::from(vtx_xyz.as_slice()),
+        (vtx_xyz.len(), 3),
+        Vec::from(vtx_xyz.as_flattened()),
     )
     .unwrap();
     let f = numpy::ndarray::Array2::from_shape_vec(
-        (tri_vtx.len() / 3, 3),
-        Vec::from(tri_vtx.as_slice()),
+        (tri_vtx.len(), 3),
+        Vec::from(tri_vtx.as_flattened()),
     )
     .unwrap();
     (f.into_pyarray(py), v.into_pyarray(py))
@@ -77,13 +81,13 @@ fn trimesh3_primitive_cylinder_yup(
         )
     };
     let v = numpy::ndarray::Array2::from_shape_vec(
-        (vtx2xyz.len() / 3, 3),
-        Vec::from(vtx2xyz.as_slice()),
+        (vtx2xyz.len(), 3),
+        Vec::from(vtx2xyz.as_flattened()),
     )
     .unwrap();
     let f = numpy::ndarray::Array2::from_shape_vec(
-        (tri2vtx.len() / 3, 3),
-        Vec::from(tri2vtx.as_slice()),
+        (tri2vtx.len(), 3),
+        Vec::from(tri2vtx.as_flattened()),
     )
     .unwrap();
     (f.into_pyarray(py), v.into_pyarray(py))
@@ -97,8 +101,12 @@ fn trimesh3_primitive_sphere_yup(
     nl: usize,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
     let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup(r, nr, nl);
-    let v = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz).unwrap();
-    let f = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx).unwrap();
+    let v =
+        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.as_flattened().to_vec())
+            .unwrap();
+    let f =
+        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.as_flattened().to_vec())
+            .unwrap();
     (f.into_pyarray(py), v.into_pyarray(py))
 }
 

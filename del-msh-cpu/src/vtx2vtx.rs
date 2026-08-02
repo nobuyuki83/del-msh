@@ -291,7 +291,7 @@ pub fn laplacian_smoothing<IDX>(
 }
 
 pub fn multiply_graph_laplacian<IDX>(
-    vtx2idx: &[IDX],
+    vtx2idx_offset: &[IDX],
     idx2vtx: &[IDX],
     num_dim: usize,
     vtx2rhs: &[f32],
@@ -299,12 +299,15 @@ pub fn multiply_graph_laplacian<IDX>(
 ) where
     IDX: PrimInt + AsPrimitive<usize> + AsPrimitive<f32> + std::marker::Sync,
 {
+    let num_vtx = vtx2idx_offset.len() - 1;
+    assert_eq!(vtx2rhs.len(), num_vtx * num_dim);
+    assert_eq!(vtx2lhs.len(), num_vtx * num_dim);
     let func_upd = |i_vtx: usize, lhs: &mut [f32]| {
-        let valence: f32 = (vtx2idx[i_vtx + 1] - vtx2idx[i_vtx]).as_();
+        let valence: f32 = (vtx2idx_offset[i_vtx + 1] - vtx2idx_offset[i_vtx]).as_();
         for i in 0..num_dim {
             lhs[i] = valence * vtx2rhs[i_vtx * num_dim + i];
         }
-        for &j_vtx in &idx2vtx[vtx2idx[i_vtx].as_()..vtx2idx[i_vtx + 1].as_()] {
+        for &j_vtx in &idx2vtx[vtx2idx_offset[i_vtx].as_()..vtx2idx_offset[i_vtx + 1].as_()] {
             let j_vtx: usize = j_vtx.as_();
             for i in 0..num_dim {
                 lhs[i] -= vtx2rhs[j_vtx * num_dim + i];
@@ -322,20 +325,20 @@ pub fn multiply_graph_laplacian<IDX>(
 fn test_laplacian_smoothing() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<usize, f32>(1.0, 0.3, 32, 32);
     let (vtx2idx, idx2vtx) =
-        crate::vtx2vtx::from_uniform_mesh(&tri2vtx, 3, vtx2xyz.len() / 3, false);
+        crate::vtx2vtx::from_uniform_mesh(&tri2vtx.as_flattened(), 3, vtx2xyz.len(), false);
     let num_vdim = 3;
     let vtx2rhs = {
         use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(42);
-        (0..vtx2xyz.len() / 3 * num_vdim)
+        (0..vtx2xyz.len() * num_vdim)
             .map(|_| rng.random())
             .collect::<Vec<f32>>()
     };
     let lambda = 1f32;
-    let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
+    let mut vtx2lhs = vec![0f32; vtx2xyz.len() * num_vdim];
     let res0: f32 = {
-        let mut vtx2tmp = vec![0f32; vtx2xyz.len()];
+        let mut vtx2tmp = vec![0f32; vtx2xyz.len() * num_vdim];
         multiply_graph_laplacian::<usize>(&vtx2idx, &idx2vtx, num_vdim, &vtx2lhs, &mut vtx2tmp);
         vtx2tmp
             .iter()
@@ -363,7 +366,7 @@ fn test_laplacian_smoothing() {
         );
     }
     let res1: f32 = {
-        let mut vtx2tmp = vec![0f32; vtx2xyz.len()];
+        let mut vtx2tmp = vec![0f32; vtx2xyz.len() * num_vdim];
         multiply_graph_laplacian::<usize>(&vtx2idx, &idx2vtx, num_vdim, &vtx2lhs, &mut vtx2tmp);
         vtx2tmp
             .iter()

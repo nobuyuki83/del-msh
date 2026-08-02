@@ -198,7 +198,7 @@ pub fn to_trimesh3_capsule<T>(
     ndiv_circum: usize,
     ndiv_longtitude: usize,
     r: T,
-) -> (Vec<usize>, Vec<T>)
+) -> (Vec<[usize; 3]>, Vec<[T; 3]>)
 where
     T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
     usize: num_traits::AsPrimitive<T>,
@@ -218,10 +218,10 @@ where
         2 * ndiv_longtitude + ndiv_length - 2,
         true,
     );
-    let tri2vtx = Vec::<usize>::from(tri2vtx.as_slice());
-    let mut vtx2xyz = Vec::<T>::from(vtx2xyz.as_slice());
+    let tri2vtx = Vec::<[usize; 3]>::from(tri2vtx.as_slice());
+    let mut vtx2xyz = Vec::<[T; 3]>::from(vtx2xyz.as_slice());
     assert_eq!(
-        vtx2xyz.len() / 3,
+        vtx2xyz.len(),
         (2 * ndiv_longtitude + ndiv_length - 1) * ndiv_circum + 2
     );
     let pi: T = T::PI();
@@ -232,9 +232,9 @@ where
         let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
         let ez = framez(vtxl2xyz, 0);
         let q = p0.sub(&ez.scale(r));
-        vtx2xyz[0] = q[0];
-        vtx2xyz[1] = q[1];
-        vtx2xyz[2] = q[2];
+        vtx2xyz[0][0] = q[0];
+        vtx2xyz[0][1] = q[1];
+        vtx2xyz[0][2] = q[2];
     }
     for ir in 0..ndiv_longtitude {
         let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
@@ -249,9 +249,9 @@ where
             let ay = ey.scale(c0 * num_traits::Float::cos(theta));
             let ax = ex.scale(c0 * num_traits::Float::sin(theta));
             let q = p0.add(&az).add(&ay).add(&ax);
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3] = q[0];
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 1] = q[1];
-            vtx2xyz[(1 + ir * ndiv_circum + ic) * 3 + 2] = q[2];
+            vtx2xyz[1 + ir * ndiv_circum + ic][0] = q[0];
+            vtx2xyz[1 + ir * ndiv_circum + ic][1] = q[1];
+            vtx2xyz[1 + ir * ndiv_circum + ic][2] = q[2];
         }
     }
     for il in 0..ndiv_length - 1 {
@@ -263,9 +263,9 @@ where
             let ay = ey.scale(r * num_traits::Float::cos(theta));
             let ax = ex.scale(r * num_traits::Float::sin(theta));
             let q = p0.add(&ay).add(&ax);
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3] = q[0];
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 1] = q[1];
-            vtx2xyz[(1 + (il + ndiv_longtitude) * ndiv_circum + ic) * 3 + 2] = q[2];
+            vtx2xyz[1 + (il + ndiv_longtitude) * ndiv_circum + ic][0] = q[0];
+            vtx2xyz[1 + (il + ndiv_longtitude) * ndiv_circum + ic][1] = q[1];
+            vtx2xyz[1 + (il + ndiv_longtitude) * ndiv_circum + ic][2] = q[2];
         }
     }
     for ir in 0..ndiv_longtitude {
@@ -281,11 +281,9 @@ where
             let ay = ey.scale(c0 * num_traits::Float::cos(theta));
             let ax = ex.scale(c0 * num_traits::Float::sin(theta));
             let q = p0.add(&az).add(&ax).add(&ay);
-            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3] = q[0];
-            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 1] =
-                q[1];
-            vtx2xyz[(1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic) * 3 + 2] =
-                q[2];
+            vtx2xyz[1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic][0] = q[0];
+            vtx2xyz[1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic][1] = q[1];
+            vtx2xyz[1 + (ir + ndiv_length + ndiv_longtitude - 1) * ndiv_circum + ic][2] = q[2];
         }
     }
     {
@@ -294,9 +292,9 @@ where
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let q = p0.add(&ez.scale(r));
         let np = vtx2xyz.len() / 3;
-        vtx2xyz[(np - 1) * 3] = q[0];
-        vtx2xyz[(np - 1) * 3 + 1] = q[1];
-        vtx2xyz[(np - 1) * 3 + 2] = q[2];
+        vtx2xyz[np - 1][0] = q[0];
+        vtx2xyz[np - 1][1] = q[1];
+        vtx2xyz[np - 1][2] = q[2];
     }
     (tri2vtx, vtx2xyz)
 }
@@ -563,8 +561,8 @@ fn test_generate_trimesh() {
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_helix.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         3,
     )
     .unwrap();
@@ -582,8 +580,8 @@ fn test_generate_trimesh() {
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline.flat(), 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_bezier.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         3,
     )
     .unwrap();

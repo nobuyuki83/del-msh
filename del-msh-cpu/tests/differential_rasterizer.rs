@@ -14,13 +14,18 @@ mod tests {
             //let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.6, eps]);
             let transform =
                 del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-            del_msh_cpu::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
+            del_msh_cpu::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform)
         };
         let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
         let dxyz: Vec<f32> = (0..vtx2xyz.len() / 3).flat_map(|_| [1., 0., 0.]).collect();
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 1., 0.]).collect();
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 0., 1.]).collect();
-        (tri2vtx, vtx2xyz, transform_world2ndc, dxyz)
+        (
+            tri2vtx.as_flattened().to_vec(),
+            vtx2xyz,
+            transform_world2ndc,
+            dxyz,
+        )
     }
 
     fn save_diff_image(path: &str, img_shape: (usize, usize), pix2grad: &[f32]) {

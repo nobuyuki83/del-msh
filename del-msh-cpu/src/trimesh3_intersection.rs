@@ -209,12 +209,25 @@ mod tests {
     #[test]
     fn test0() {
         let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1.0, 16, 32);
-        let pairs = crate::trimesh3_intersection::search_brute_force(&tri2vtx, &vtx2xyz);
+        let pairs = crate::trimesh3_intersection::search_brute_force(
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
+        );
         assert_eq!(pairs.len(), 0);
         let (face2idx, idx2node) = elem2elem::face2node_of_polygon_element(3);
-        let tri2tri =
-            elem2elem::from_uniform_mesh(&tri2vtx, 3, &face2idx, &idx2node, vtx2xyz.len() / 3);
-        let tri2center = elem2center::from_uniform_mesh_as_points(&tri2vtx, 3, &vtx2xyz, 3);
+        let tri2tri = elem2elem::from_uniform_mesh(
+            &tri2vtx.as_flattened(),
+            3,
+            &face2idx,
+            &idx2node,
+            vtx2xyz.len(),
+        );
+        let tri2center = elem2center::from_uniform_mesh_as_points(
+            &tri2vtx.as_flattened(),
+            3,
+            &vtx2xyz.as_flattened(),
+            3,
+        );
         let bvhnodes =
             crate::bvhnodes_topdown_trimesh3::from_uniform_mesh_with_elem2elem_elem2center(
                 &tri2tri,
@@ -224,11 +237,22 @@ mod tests {
         let mut aabb = Vec::<f32>::new();
         aabb.resize(bvhnodes.len() / 3 * 6, 0.);
         crate::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
-            &mut aabb, 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+            &mut aabb,
+            0,
+            &bvhnodes,
+            &tri2vtx.as_flattened(),
+            3,
+            &vtx2xyz.as_flattened(),
+            None,
         );
         let mut pairs = Vec::<IntersectingPair<f32>>::new();
         crate::trimesh3_intersection::search_with_bvh_inside_branch(
-            &mut pairs, &tri2vtx, &vtx2xyz, 0, &bvhnodes, &aabb,
+            &mut pairs,
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
+            0,
+            &bvhnodes,
+            &aabb,
         );
         assert_eq!(pairs.len(), 0);
     }

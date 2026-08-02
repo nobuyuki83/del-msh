@@ -307,8 +307,8 @@ where
         crate::uniform_mesh::merge(
             &mut out_tri2vtx,
             &mut out_vtx2xyz,
-            tri2vtx.as_slice(),
-            vtx2xyz.as_slice(),
+            tri2vtx.as_slice().as_flattened(),
+            vtx2xyz.as_slice().as_flattened(),
             3,
         );
     }

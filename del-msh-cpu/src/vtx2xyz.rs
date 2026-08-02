@@ -202,13 +202,13 @@ where
         .collect()
 }
 
-pub fn transform_linear<Real>(vtx2xyz: &[Real], m: &[Real; 9]) -> Vec<Real>
+pub fn transform_linear<Real>(vtx2xyz: &[[Real; 3]], m: &[Real; 9]) -> Vec<[Real; 3]>
 where
     Real: num_traits::Float,
 {
     vtx2xyz
-        .chunks(3)
-        .flat_map(|v| del_geo_core::mat3_col_major::mult_vec(m, arrayref::array_ref![v, 0, 3]))
+        .iter()
+        .map(|v| del_geo_core::mat3_col_major::mult_vec(m, v))
         .collect()
 }
 

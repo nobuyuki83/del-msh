@@ -19,18 +19,19 @@ def make_tri2centroid(tri2vtx: np.ndarray, vtx2xyz: np.ndarray) -> np.ndarray:
 
 def tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
     num_tri = tri2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
     #
-    assert tri2vtx.shape == (num_tri, 3) and tri2vtx.dtype == np.uint32
-    assert len(vtx2xyz.shape) == 2
-    assert vtx2xyz.shape[1] == 3
-    assert vtx2xyz.dtype == np.float32
+    util_numpy.assert_shape_dtype(tri2vtx, (num_tri,3), np.uint32)
+    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx,3), np.float32)
     #
     tri2nrm = np.zeros(shape=(num_tri, 3), dtype=np.float32)
     #
     from .. import TriMesh3
 
     TriMesh3.tri2normal(
-        tri2vtx.__dlpack__(), vtx2xyz.__dlpack__(), tri2nrm.__dlpack__()
+        tri2vtx.__dlpack__(),
+        vtx2xyz.__dlpack__(),
+        tri2nrm.__dlpack__()
     )
     return tri2nrm
 

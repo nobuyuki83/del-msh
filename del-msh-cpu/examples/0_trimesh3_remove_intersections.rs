@@ -6,22 +6,24 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         use rand::RngExt;
         use rand::SeedableRng;
         let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
-        vtx2xyz
-            .iter_mut()
-            .for_each(|v| *v += (reng.random::<f64>() - 0.5) * 0.01);
+        vtx2xyz.iter_mut().for_each(|v| {
+            v[0] += (reng.random::<f64>() - 0.5) * 0.01;
+            v[1] += (reng.random::<f64>() - 0.5) * 0.01;
+            v[2] += (reng.random::<f64>() - 0.5) * 0.01;
+        });
         (tri2vtx, vtx2xyz)
     };
     {
         let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.1, 0.1);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[1.0, 0.1, 0.1]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
-        let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();
-        let vtx2xyz1 = del_msh_cpu::vtx2xyz::transform_homogeneous(
-            vtx2xyz.as_slice(),
+        let mut vtx2xyz0 = vtx2xyz.as_flattened().to_vec();
+        let vtx2xyz1: Vec<f64> = del_msh_cpu::vtx2xyz::transform_homogeneous(
+            vtx2xyz.as_flattened(),
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );
-        let mut tri2vtx0 = tri2vtx.as_slice().to_vec();
-        let tri2vtx1 = tri2vtx.as_slice().to_vec();
+        let mut tri2vtx0 = tri2vtx.as_flattened().to_vec();
+        let tri2vtx1 = tri2vtx.as_flattened().to_vec();
         del_msh_cpu::uniform_mesh::merge(&mut tri2vtx0, &mut vtx2xyz0, &tri2vtx1, &vtx2xyz1, 3);
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_start, &tri2vtx0, &vtx2xyz0, 3)
             .unwrap()
@@ -30,13 +32,13 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.0, 0.0);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[0.5, 0.0, 0.0]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
-        let mut vtx2xyz0 = vtx2xyz.as_slice().to_vec();
-        let vtx2xyz1 = del_msh_cpu::vtx2xyz::transform_homogeneous(
-            vtx2xyz.as_slice(),
+        let mut vtx2xyz0 = vtx2xyz.as_flattened().to_vec();
+        let vtx2xyz1: Vec<f64> = del_msh_cpu::vtx2xyz::transform_homogeneous(
+            vtx2xyz.as_flattened(),
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );
-        let mut tri2vtx0 = tri2vtx.as_slice().to_vec();
-        let tri2vtx1 = tri2vtx.as_slice().to_vec();
+        let mut tri2vtx0 = tri2vtx.as_flattened().to_vec();
+        let tri2vtx1 = tri2vtx.as_flattened().to_vec();
         del_msh_cpu::uniform_mesh::merge(&mut tri2vtx0, &mut vtx2xyz0, &tri2vtx1, &vtx2xyz1, 3);
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_goal, &tri2vtx0, &vtx2xyz0, 3)
             .unwrap()

@@ -79,7 +79,7 @@ where
 #[test]
 fn test_vtx2area() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1_f64, 128, 256);
-    let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
+    let vtx2area = crate::trimesh3::vtx2area(&tri2vtx.as_flattened(), &vtx2xyz.as_flattened());
     let total_area: f64 = vtx2area.iter().sum();
     assert!((total_area - std::f64::consts::PI * 4.0).abs() < 1.0e-2);
 }
@@ -120,15 +120,15 @@ where
 #[test]
 fn test_vtx2curvature_gaussian() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(1_f32, 0.3f32, 32, 32);
-    let vtx2curv = vtx2curvature_gaussian(&tri2vtx, &vtx2xyz);
+    let vtx2curv = vtx2curvature_gaussian(&tri2vtx.as_flattened(), &vtx2xyz.as_flattened());
     let vtx2rgb = vtx2curv
         .iter()
         .flat_map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
         .collect::<Vec<f32>>();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/curvature.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         &vtx2rgb,
     )
     .unwrap()

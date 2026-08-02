@@ -21,10 +21,16 @@ fn trimesh3_primitive_torus_zup(
         ndiv_major,
         ndiv_minor,
     );
-    let tri2vtx_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![tri2vtx.len() as i64 / 3, 3], tri2vtx);
-    let vtx2xyz_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![vtx2xyz.len() as i64 / 3, 3], vtx2xyz);
+    let tri2vtx_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![tri2vtx.len() as i64, 3],
+        tri2vtx.as_flattened().to_vec(),
+    );
+    let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![vtx2xyz.len() as i64, 3],
+        vtx2xyz.as_flattened().to_vec(),
+    );
     Ok((tri2vtx_cap, vtx2xyz_cap))
 }
 
@@ -40,9 +46,15 @@ fn trimesh3_primitive_sphere_yup(
         ndiv_longtitude,
         ndiv_latitude,
     );
-    let tri2vtx_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![tri2vtx.len() as i64 / 3, 3], tri2vtx);
-    let vtx2xyz_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![vtx2xyz.len() as i64 / 3, 3], vtx2xyz);
+    let tri2vtx_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![tri2vtx.len() as i64, 3],
+        tri2vtx.as_flattened().to_vec(),
+    );
+    let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![vtx2xyz.len() as i64, 3],
+        vtx2xyz.as_flattened().to_vec(),
+    );
     Ok((tri2vtx_cap, vtx2xyz_cap))
 }
