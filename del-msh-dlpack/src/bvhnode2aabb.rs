@@ -44,8 +44,8 @@ pub fn bvhnode2aabb_update_aabb(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let vtx2xyz0 = slice!(vtx2xyz0, f32).unwrap();
-            let vtx2xyz1 = slice!(vtx2xyz1, f32).unwrap();
+            let vtx2xyz0 = slice!(vtx2xyz0, f32).unwrap().as_chunks::<3>().0;
+            let vtx2xyz1 = slice!(vtx2xyz1, f32).unwrap().as_chunks::<3>().0;
             let vtx2xyz1 = if vtx2xyz0.len() == vtx2xyz1.len() {
                 Some(vtx2xyz1)
             } else {

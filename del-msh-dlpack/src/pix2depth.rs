@@ -136,7 +136,10 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
                 slice!(dldw_pix2depth, f32).unwrap(),
                 arrayref::array_ref![slice!(transform_ndc2world, f32).unwrap(), 0, 16],
                 (img_shape[0] as usize, img_shape[1] as usize),
-                slice_mut!(dldw_vtx2xyz, f32).unwrap(),
+                slice_mut!(dldw_vtx2xyz, f32)
+                    .unwrap()
+                    .as_chunks_mut::<3>()
+                    .0,
                 &del_msh_cpu::pix2depth::Depth,
             );
         }

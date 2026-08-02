@@ -242,7 +242,7 @@ mod tests {
             &bvhnodes,
             &tri2vtx.as_flattened(),
             3,
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             None,
         );
         let mut pairs = Vec::<IntersectingPair<f32>>::new();

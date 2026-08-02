@@ -7,7 +7,12 @@ fn main() -> anyhow::Result<()> {
     // let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup(0.8, 64, 64);
     let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+        0,
+        &bvhnodes,
+        &tri2vtx,
+        3,
+        &vtx2xyz.as_chunks::<3>().0,
+        None,
     );
     //
     let img_shape = {
@@ -55,7 +60,7 @@ fn main() -> anyhow::Result<()> {
         del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_chunks::<3>().0,
             &bvhnodes,
             &bvhnode2aabb,
             img_shape,

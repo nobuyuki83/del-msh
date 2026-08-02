@@ -114,10 +114,10 @@ fn test_obb3() {
     let aabb3 = [-x_size, -y_size, -z_size, x_size, y_size, z_size];
     use rand::SeedableRng;
     let mut reng = rand_chacha::ChaCha20Rng::seed_from_u64(0);
-    let vtx2xyz0: Vec<f32> = (0..10000)
-        .flat_map(|_v| del_geo_core::aabb3::sample(&aabb3, &mut reng))
+    let vtx2xyz0: Vec<[f32; 3]> = (0..10000)
+        .map(|_v| del_geo_core::aabb3::sample(&aabb3, &mut reng))
         .collect();
-    let obb0 = obb3(&vtx2xyz0);
+    let obb0 = obb3(&vtx2xyz0.as_flattened());
     assert!(obb0[0].abs() < 0.01);
     assert!(obb0[1].abs() < 0.01);
     assert!(obb0[2].abs() < 0.01);
@@ -127,7 +127,7 @@ fn test_obb3() {
     let rot = del_geo_core::mat4_col_major::from_bryant_angles(0.5, 0.0, 0.0);
     let mat = del_geo_core::mat4_col_major::mult_mat_col_major(&transl, &rot);
     let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, &mat);
-    let obb1 = obb3(&vtx2xyz1);
+    let obb1 = obb3(&vtx2xyz1.as_flattened());
     assert!((obb1[0] - transl_vec[0]).abs() < 0.01);
     assert!((obb1[1] - transl_vec[1]).abs() < 0.01);
     assert!((obb1[2] - transl_vec[2]).abs() < 0.01);
@@ -151,8 +151,8 @@ fn test_obb3() {
     let dirc0 = ec.normalize();
     assert!(dirc0.cross(&dirc1).norm() < 0.01);
     // check all the points are included
-    for xyz in vtx2xyz1.chunks(3) {
-        let is_include = del_geo_core::obb3::is_include_point(&obb1, xyz.try_into().unwrap(), 0.01);
+    for xyz in vtx2xyz1.iter() {
+        let is_include = del_geo_core::obb3::is_include_point(&obb1, xyz, 0.01);
         assert!(is_include);
     }
 }
@@ -189,16 +189,13 @@ pub fn translate_then_scale<Real>(
      */
 }
 
-pub fn transform_homogeneous<Real>(vtx2xyz: &[Real], m: &[Real; 16]) -> Vec<Real>
+pub fn transform_homogeneous<Real>(vtx2xyz: &[[Real; 3]], m: &[Real; 16]) -> Vec<[Real; 3]>
 where
     Real: num_traits::Float,
 {
     vtx2xyz
-        .chunks(3)
-        .flat_map(|v| {
-            del_geo_core::mat4_col_major::transform_homogeneous(m, arrayref::array_ref![v, 0, 3])
-                .unwrap()
-        })
+        .iter()
+        .map(|v| del_geo_core::mat4_col_major::transform_homogeneous(m, v).unwrap())
         .collect()
 }
 

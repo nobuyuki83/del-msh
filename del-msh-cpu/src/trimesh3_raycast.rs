@@ -29,7 +29,7 @@ pub fn bwd_continuous<T: ScalarRender<f32>>(
     dldw_pix2val: &[f32],
     transform_ndc2world: &[f32; 16],
     img_shape: (usize, usize),
-    dldw_vtx2xyz: &mut [f32],
+    dldw_vtx2xyz: &mut [[f32; 3]],
     mode: &T,
 ) {
     let transform_world2ndc =
@@ -64,9 +64,9 @@ pub fn bwd_continuous<T: ScalarRender<f32>>(
             &transform_world2ndc,
         );
         use del_geo_core::vec3::Vec3;
-        arrayref::array_mut_ref![dldw_vtx2xyz, i0 * 3, 3].add_in_place(&dp0);
-        arrayref::array_mut_ref![dldw_vtx2xyz, i1 * 3, 3].add_in_place(&dp1);
-        arrayref::array_mut_ref![dldw_vtx2xyz, i2 * 3, 3].add_in_place(&dp2);
+        dldw_vtx2xyz[i0].add_in_place(&dp0);
+        dldw_vtx2xyz[i1].add_in_place(&dp1);
+        dldw_vtx2xyz[i2].add_in_place(&dp2);
     }
 }
 
@@ -105,7 +105,7 @@ pub fn fwd_continuous<T: ScalarRender<f32>>(
 
 pub fn multi_sample<T, F, R>(
     tri2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     img_shape: (usize, usize),
     num_sample: usize,
@@ -121,7 +121,7 @@ where
     // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2ndc).unwrap();
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz, 3);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz.as_flattened(), 3);
     let bvhnode2aabb =
         crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, tri2vtx, 3, vtx2xyz, None);
     let fn_pix2val = |i_pix: usize| -> f32 {
@@ -144,14 +144,20 @@ where
                 &ray_dir,
                 &crate::search_bvh3::TriMeshWithBvh {
                     tri2vtx,
-                    vtx2xyz,
+                    vtx2xyz: vtx2xyz.as_flattened(),
                     bvhnodes: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },
                 0,
                 f32::INFINITY,
             ) {
-                sum += mode.fwd(&bc, i_tri as u32, tri2vtx, vtx2xyz, transform_world2ndc);
+                sum += mode.fwd(
+                    &bc,
+                    i_tri as u32,
+                    tri2vtx,
+                    vtx2xyz.as_flattened(),
+                    transform_world2ndc,
+                );
             }
         }
         sum / num_sample as f32

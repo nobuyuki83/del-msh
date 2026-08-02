@@ -33,9 +33,9 @@ pub fn trimesh3_tri2normal(
     match device_type {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::trimesh3::tri2normal::<f32, u32>(
-                slice!(tri2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
-                slice_mut!(tri2nrm, f32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+                slice_mut!(tri2nrm, f32).unwrap().as_chunks_mut::<3>().0,
             );
         }
         #[cfg(feature = "cuda")]
@@ -96,10 +96,10 @@ pub fn trimesh3_bwd_tri2normal(
     match device_type {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::trimesh3::bwd_tri2normal::<u32>(
-                slice!(tri2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
-                slice_mut!(dw_tri2nrm, f32).unwrap(),
-                slice_mut!(dw_vtx2xyz, f32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+                slice_mut!(dw_tri2nrm, f32).unwrap().as_chunks_mut::<3>().0,
+                slice_mut!(dw_vtx2xyz, f32).unwrap().as_chunks_mut::<3>().0,
             );
         }
         #[cfg(feature = "cuda")]

@@ -194,7 +194,7 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
 }
 
 pub fn to_trimesh3_capsule<T>(
-    vtxl2xyz: &[T],
+    vtxl2xyz: &[[T; 3]],
     ndiv_circum: usize,
     ndiv_longtitude: usize,
     r: T,
@@ -206,11 +206,11 @@ where
     use del_geo_core::vec3::Vec3;
     use num_traits::AsPrimitive;
     assert!(ndiv_circum > 2);
-    let num_vtxl = vtxl2xyz.len() / 3;
-    let vtxl2framex = vtx2framex(vtxl2xyz);
-    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
+    let num_vtxl = vtxl2xyz.len();
+    let vtxl2framex = vtx2framex(vtxl2xyz.as_flattened());
+    let vtxl2framey = vtx2framey(vtxl2xyz.as_flattened(), &vtxl2framex);
     //
-    let ndiv_length = vtxl2xyz.len() / 3 - 1;
+    let ndiv_length = num_vtxl - 1;
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
         T::one(),
         T::one(),
@@ -229,18 +229,18 @@ where
     let half: T = one / (one + one);
     {
         // south pole
-        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
-        let ez = framez(vtxl2xyz, 0);
+        let p0 = vtxl2xyz[0];
+        let ez = framez(vtxl2xyz.as_flattened(), 0);
         let q = p0.sub(&ez.scale(r));
         vtx2xyz[0][0] = q[0];
         vtx2xyz[0][1] = q[1];
         vtx2xyz[0][2] = q[2];
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, 0);
+        let p0 = vtxl2xyz[0];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, 0);
         let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, 0);
-        let ez = framez(vtxl2xyz, 0);
+        let ez = framez(vtxl2xyz.as_flattened(), 0);
         let t0 = pi * half * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
         for ic in 0..ndiv_circum {
@@ -255,7 +255,7 @@ where
         }
     }
     for il in 0..ndiv_length - 1 {
-        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, il + 1);
+        let p0 = vtxl2xyz[il + 1];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, il + 1);
         let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, il + 1);
         for ic in 0..ndiv_circum {
@@ -269,10 +269,10 @@ where
         }
     }
     for ir in 0..ndiv_longtitude {
-        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, num_vtxl - 1);
+        let p0 = vtxl2xyz[num_vtxl - 1];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, num_vtxl - 1);
         let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, num_vtxl - 1);
-        let ez = framez(vtxl2xyz, num_vtxl - 1);
+        let ez = framez(vtxl2xyz.as_flattened(), num_vtxl - 1);
         let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
         for ic in 0..ndiv_circum {
@@ -288,10 +288,10 @@ where
     }
     {
         // North Pole
-        let p0 = crate::vtx2xyz::to_vec3(vtxl2xyz, num_vtxl - 1);
-        let ez = framez(vtxl2xyz, num_vtxl - 1);
+        let p0 = vtxl2xyz[num_vtxl - 1];
+        let ez = framez(vtxl2xyz.as_flattened(), num_vtxl - 1);
         let q = p0.add(&ez.scale(r));
-        let np = vtx2xyz.len() / 3;
+        let np = vtx2xyz.len();
         vtx2xyz[np - 1][0] = q[0];
         vtx2xyz[np - 1][1] = q[1];
         vtx2xyz[np - 1][2] = q[2];
@@ -512,13 +512,13 @@ fn test_reduce() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn helix_from_delta_angle<T>(num_points: usize, dangle: T, rad0: T, pitch: T) -> Vec<T>
+pub fn helix_from_delta_angle<T>(num_points: usize, dangle: T, rad0: T, pitch: T) -> Vec<[T; 3]>
 where
     T: num_traits::Float + FloatConst + 'static,
     usize: AsPrimitive<T>,
 {
     let two = T::one() + T::one();
-    let mut vtx2xyz = Vec::with_capacity(num_points * 3);
+    let mut vtx2xyz = Vec::with_capacity(num_points);
     for ip in 0..num_points {
         let angle = ip.as_() * dangle;
         let pos = [
@@ -526,14 +526,12 @@ where
             rad0 * angle.cos(),
             rad0 * angle.sin(),
         ];
-        vtx2xyz.push(pos[0]);
-        vtx2xyz.push(pos[1]);
-        vtx2xyz.push(pos[2]);
+        vtx2xyz.push(pos);
     }
     vtx2xyz
 }
 
-pub fn helix<T>(num_points: usize, elen: T, rad0: T, pitch: T) -> Vec<T>
+pub fn helix<T>(num_points: usize, elen: T, rad0: T, pitch: T) -> Vec<[T; 3]>
 where
     T: num_traits::Float + num_traits::FloatConst + 'static,
     usize: num_traits::AsPrimitive<T>,
@@ -576,8 +574,7 @@ fn test_generate_trimesh() {
         true,
         true,
     );
-    use slice_of_array::SliceFlatExt;
-    let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline.flat(), 32, 32, 0.05);
+    let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_bezier.obj",
         &tri2vtx.as_flattened(),

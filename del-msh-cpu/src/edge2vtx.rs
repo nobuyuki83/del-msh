@@ -451,7 +451,7 @@ pub fn test_contour() {
         &bvhnodes,
         &tri2vtx.as_flattened(),
         3,
-        &vtx2xyz.as_flattened(),
+        &vtx2xyz,
         None,
     );
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_flattened(), vtx2xyz.len());

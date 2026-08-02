@@ -426,7 +426,11 @@ fn test_sphere_yup() {
 // ----------------------------------------
 
 #[allow(clippy::identity_op)]
-pub fn hemisphere_zup<T>(radius: T, n_longitude: usize, n_latitude: usize) -> (Vec<usize>, Vec<T>)
+pub fn hemisphere_zup<T>(
+    radius: T,
+    n_longitude: usize,
+    n_latitude: usize,
+) -> (Vec<[usize; 3]>, Vec<[T; 3]>)
 where
     T: num_traits::Float + 'static,
     f32: AsPrimitive<T>,
@@ -439,29 +443,25 @@ where
     let dl: T = 0.5.as_() * pi / n_longitude.as_();
     let dr: T = 2.as_() * pi / n_latitude.as_();
     let nvtx = n_latitude * n_longitude + 1;
-    let mut vtx2xyz = Vec::<T>::with_capacity(nvtx * 3);
+    let mut vtx2xyz = Vec::<[T; 3]>::with_capacity(nvtx);
     for ila in 0..n_longitude + 1 {
         let z0 = (dl * ila.as_()).cos();
         let r0 = (dl * ila.as_()).sin();
         for ilo in 0..n_latitude {
             let x0 = r0 * (dr * ilo.as_()).sin();
             let y0 = r0 * (dr * ilo.as_()).cos();
-            vtx2xyz.push(radius * x0);
-            vtx2xyz.push(radius * y0);
-            vtx2xyz.push(radius * z0);
+            vtx2xyz.push([radius * x0, radius * y0, radius * z0]);
             if ila == 0 {
                 break;
             }
         }
     }
-    assert_eq!(nvtx * 3, vtx2xyz.len());
+    assert_eq!(nvtx, vtx2xyz.len());
     //
     let ntri = n_latitude * (n_longitude - 1) * 2 + n_latitude;
-    let mut tri2vtx = Vec::<usize>::with_capacity(ntri * 3);
+    let mut tri2vtx = Vec::<[usize; 3]>::with_capacity(ntri);
     for ilo in 0..n_latitude {
-        tri2vtx.push(0);
-        tri2vtx.push((ilo + 0) % n_latitude + 1);
-        tri2vtx.push((ilo + 1) % n_latitude + 1);
+        tri2vtx.push([0, (ilo + 0) % n_latitude + 1, (ilo + 1) % n_latitude + 1]);
     }
     for ilong in 0..n_longitude - 1 {
         for ilat in 0..n_latitude {
@@ -469,15 +469,11 @@ where
             let i2 = (ilong + 0) * n_latitude + 1 + (ilat + 1) % n_latitude;
             let i3 = (ilong + 1) * n_latitude + 1 + (ilat + 1) % n_latitude;
             let i4 = (ilong + 1) * n_latitude + 1 + (ilat + 0) % n_latitude;
-            tri2vtx.push(i3);
-            tri2vtx.push(i2);
-            tri2vtx.push(i1);
-            tri2vtx.push(i4);
-            tri2vtx.push(i3);
-            tri2vtx.push(i1);
+            tri2vtx.push([i3, i2, i1]);
+            tri2vtx.push([i4, i3, i1]);
         }
     }
-    assert_eq!(ntri * 3, tri2vtx.len());
+    assert_eq!(ntri, tri2vtx.len());
     (tri2vtx, vtx2xyz)
 }
 
@@ -488,34 +484,28 @@ pub fn bypyramid_zup<Real>(
     length: Real,
     rad_ratio: Real,
     node_ratio: Real,
-) -> (Vec<usize>, Vec<Real>)
+) -> (Vec<[usize; 3]>, Vec<[Real; 3]>)
 where
     Real: num_traits::FloatConst + num_traits::Float + 'static,
     usize: AsPrimitive<Real>,
 {
     let zero = Real::zero();
-    let mut vtx2xyz: Vec<Real> = vec![zero, zero, zero, zero, zero, length];
+    let mut vtx2xyz: Vec<[Real; 3]> = vec![[zero, zero, zero], [zero, zero, length]];
     {
         let dt = Real::PI() / (Real::one() + Real::one());
         let r0 = length * rad_ratio;
         for idiv in 0..4 {
             let s0 = r0 * (idiv.as_() * dt).sin();
             let c0 = r0 * (idiv.as_() * dt).cos();
-            vtx2xyz.push(s0);
-            vtx2xyz.push(c0);
-            vtx2xyz.push(length * node_ratio);
+            vtx2xyz.push([s0, c0, length * node_ratio]);
         }
     }
     //
-    let mut tri2vtx: Vec<usize> = vec![];
+    let mut tri2vtx: Vec<[usize; 3]> = vec![];
     for idiv in 0..4 {
-        tri2vtx.push(0);
-        tri2vtx.push(2 + (0 + idiv) % 4);
-        tri2vtx.push(2 + (1 + idiv) % 4);
+        tri2vtx.push([0, 2 + (0 + idiv) % 4, 2 + (1 + idiv) % 4]);
         //
-        tri2vtx.push(1);
-        tri2vtx.push(2 + (1 + idiv) % 4);
-        tri2vtx.push(2 + (0 + idiv) % 4);
+        tri2vtx.push([1, 2 + (1 + idiv) % 4, 2 + (0 + idiv) % 4]);
     }
     (tri2vtx, vtx2xyz)
 }
@@ -523,10 +513,12 @@ where
 #[test]
 fn test_biypyramid_zup() {
     let (tri2vtx, vtx2xyz) = bypyramid_zup::<f64>(2.0, 0.2, 0.3);
+    let path = std::path::Path::new("../target/out_del_msh_cpu/bipyramid_zup.obj");
+
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/bipyramid_zup.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        path,
+        &tri2vtx.as_flattened(),
+        &vtx2xyz.as_flattened(),
         3,
     )
     .unwrap();
@@ -584,8 +576,10 @@ where
 #[test]
 fn test_arrow_zup() {
     let (tri2vtx, vtx2xyz) = arrow_yup::<f64>(16);
+    let path = std::path::Path::new("../target/out_del_msh_cpu/arrow_zup.obj");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/arrow_zup.obj",
+        path,
         tri2vtx.as_flattened(),
         vtx2xyz.as_flattened(),
         3,
@@ -623,8 +617,10 @@ where
 fn test_arrow_connecting_two_points() {
     let (tri2vtx, vtx2xyz) =
         arrow_connecting_two_points::<f64>(&[1.0, 1.0, 1.0], &[1.0, 1.0, 2.0], 16);
+    let path = std::path::Path::new("../target/out_del_msh_cpu/arrow_connecting_two_points.obj");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/arrow_connecting_two_points.obj",
+        path,
         tri2vtx.as_flattened(),
         vtx2xyz.as_flattened(),
         3,
@@ -654,7 +650,7 @@ pub fn annulus_yup<Real>(
     r_large: Real,
     ndiv_radius: usize,
     ndiv_theta: usize,
-) -> (Vec<usize>, Vec<Real>)
+) -> (Vec<[usize; 3]>, Vec<[Real; 3]>)
 where
     Real: num_traits::Float + num_traits::FloatConst + 'static,
     usize: AsPrimitive<Real>,
@@ -663,7 +659,7 @@ where
     let one = Real::one();
     let two = one + one;
     let half = one / two;
-    let mut vtx2xyz = Vec::<Real>::with_capacity((ndiv_radius + 1) * ndiv_theta * 3);
+    let mut vtx2xyz = Vec::<[Real; 3]>::with_capacity((ndiv_radius + 1) * ndiv_theta);
     {
         // make coordinates
         let dr = (r_large - r_small) / ndiv_radius.as_();
@@ -672,14 +668,12 @@ where
             for ith in 0..ndiv_theta {
                 let rad = dr * ir.as_() + r_small;
                 let theta = (ith.as_() + (ir % 2).as_() * half) * dth;
-                vtx2xyz.push(rad * theta.cos());
-                vtx2xyz.push(zero);
-                vtx2xyz.push(rad * theta.sin());
+                vtx2xyz.push([rad * theta.cos(), zero, rad * theta.sin()]);
             }
         }
     }
 
-    let mut tri2vtx = Vec::<usize>::with_capacity(ndiv_radius * ndiv_theta * 6);
+    let mut tri2vtx = Vec::<[usize; 3]>::with_capacity(ndiv_radius * ndiv_theta * 2);
     for ir in 0..ndiv_radius {
         #[allow(clippy::identity_op)]
         for ith in 0..ndiv_theta {
@@ -688,19 +682,11 @@ where
             let i3 = (ir + 1) * ndiv_theta + (ith + 1) % ndiv_theta;
             let i4 = (ir + 1) * ndiv_theta + (ith + 0) % ndiv_theta;
             if ir % 2 == 1 {
-                tri2vtx.push(i3);
-                tri2vtx.push(i1);
-                tri2vtx.push(i2);
-                tri2vtx.push(i4);
-                tri2vtx.push(i1);
-                tri2vtx.push(i3);
+                tri2vtx.push([i3, i1, i2]);
+                tri2vtx.push([i4, i1, i3]);
             } else {
-                tri2vtx.push(i4);
-                tri2vtx.push(i2);
-                tri2vtx.push(i3);
-                tri2vtx.push(i4);
-                tri2vtx.push(i1);
-                tri2vtx.push(i2);
+                tri2vtx.push([i4, i2, i3]);
+                tri2vtx.push([i4, i1, i2]);
             }
         }
     }
@@ -710,10 +696,12 @@ where
 #[test]
 fn test_annulus_yup() {
     let (tri2vtx, vtx2xyz) = annulus_yup(0.3, 0.8, 32, 64);
+    let path = std::path::Path::new("../target/out_del_msh_cpu/annulus.obj");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/annulus.obj",
-        tri2vtx.as_slice(),
-        vtx2xyz.as_slice(),
+        path,
+        tri2vtx.as_flattened(),
+        vtx2xyz.as_flattened(),
         3,
     )
     .unwrap();

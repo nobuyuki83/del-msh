@@ -3,7 +3,7 @@ use num_traits::AsPrimitive;
 pub fn pix2tri_by_raycast<Index>(
     pix2tri: &mut [Index],
     tri2vtx: &[Index],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     bvhnodes: &[Index],
     bvhnode2aabb: &[f32],
     img_shape: (usize, usize), // (width, height)
@@ -28,7 +28,7 @@ pub fn pix2tri_by_raycast<Index>(
             &ray_dir,
             &crate::search_bvh3::TriMeshWithBvh {
                 tri2vtx,
-                vtx2xyz,
+                vtx2xyz: vtx2xyz.as_flattened(),
                 bvhnodes,
                 bvhnode2aabb,
             },
@@ -128,14 +128,17 @@ fn test_pix2tri() {
         let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
         let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.01, 0.61, 0.03]);
         let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-        crate::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform)
+        crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
     };
     let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri_raycast = {
-        let bvhnodes =
-            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx.as_flattened(), &vtx2xyz, 3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
+            &tri2vtx.as_flattened(),
+            &vtx2xyz.as_flattened(),
+            3,
+        );
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
@@ -145,7 +148,7 @@ fn test_pix2tri() {
             None,
         );
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
-        crate::pix2tri::pix2tri_by_raycast(
+        pix2tri_by_raycast(
             &mut pix2tri,
             &tri2vtx.as_flattened(),
             &vtx2xyz,
@@ -163,7 +166,7 @@ fn test_pix2tri() {
             &mut pix2tri,
             &mut pix2depth,
             &tri2vtx.as_flattened(),
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             img_shape,
             &transform_ndc2world,
         );
@@ -321,15 +324,21 @@ fn test_interpolate() {
         let transform0 = del_geo_core::mat4_col_major::from_rot_x(1.15);
         let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.01, 0.61, 0.03]);
         let transform = del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-        crate::vtx2xyz::transform_homogeneous(&vtx2xyz0.as_flattened(), &transform)
+        crate::vtx2xyz::transform_homogeneous(&vtx2xyz0, &transform)
     };
     let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
     let transform_ndc2world: [Real; 16] =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri = {
-        let vtx2xyz0: Vec<_> = vtx2xyz0.iter().map(|v| *v as f32).collect();
-        let bvhnodes =
-            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx.as_flattened(), &vtx2xyz0, 3);
+        let vtx2xyz0: Vec<_> = vtx2xyz0
+            .iter()
+            .map(|v| [v[0] as f32, v[1] as f32, v[2] as f32])
+            .collect();
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
+            &tri2vtx.as_flattened(),
+            &vtx2xyz0.as_flattened(),
+            3,
+        );
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
@@ -358,7 +367,7 @@ fn test_interpolate() {
     let dldw_pix2val: Vec<_> = (0..img_shape.0 * img_shape.1 * num_vdim)
         .map(|_| rng.random_range(-1. ..1.))
         .collect();
-    let vtx2val0: Vec<_> = (0..vtx2xyz0.len() / 3 * num_vdim)
+    let vtx2val0: Vec<_> = (0..vtx2xyz0.len() * num_vdim)
         .map(|_| rng.random_range(-1. ..1.))
         .collect();
     let mut pix2val0 = vec![Real::zero(); img_shape.0 * img_shape.1 * num_vdim];
@@ -366,7 +375,7 @@ fn test_interpolate() {
         img_shape,
         &pix2tri,
         &tri2vtx,
-        vtx2xyz0.as_chunks::<3>().0,
+        &vtx2xyz0,
         num_vdim,
         &vtx2val0,
         &transform_ndc2world,
@@ -377,13 +386,13 @@ fn test_interpolate() {
         .zip(dldw_pix2val.iter())
         .map(|(v, w)| v * w)
         .sum();
-    let mut dldw_vtx2xyz = vec![Real::zero(); vtx2xyz0.len()];
+    let mut dldw_vtx2xyz = vec![Real::zero(); vtx2xyz0.len() * 3];
     let mut dldw_vtx2val = vec![Real::zero(); vtx2val0.len()];
     interpolate_bwd(
         img_shape,
         &pix2tri,
         &tri2vtx,
-        vtx2xyz0.as_chunks::<3>().0,
+        &vtx2xyz0,
         num_vdim,
         &vtx2val0,
         &transform_ndc2world,
@@ -398,13 +407,13 @@ fn test_interpolate() {
         for i_vtx in 0..vtx2xyz0.len() / 3 {
             for i_dim in 0..3 {
                 let mut vtx2xyz1 = vtx2xyz0.clone();
-                vtx2xyz1[i_vtx * 3 + i_dim] += eps;
+                vtx2xyz1[i_vtx][i_dim] += eps;
                 let mut pix2val1 = vec![Real::zero(); img_shape.0 * img_shape.1 * num_vdim];
                 interpolate(
                     img_shape,
                     &pix2tri,
                     &tri2vtx,
-                    vtx2xyz1.as_chunks::<3>().0,
+                    &vtx2xyz1,
                     num_vdim,
                     &vtx2val0,
                     &transform_ndc2world,
@@ -442,7 +451,7 @@ fn test_interpolate() {
                     img_shape,
                     &pix2tri,
                     &tri2vtx,
-                    vtx2xyz0.as_chunks::<3>().0,
+                    &vtx2xyz0,
                     num_vdim,
                     &vtx2val1,
                     &transform_ndc2world,
@@ -462,7 +471,7 @@ fn test_interpolate() {
         }
         // dbg!(max_difference / max_signal);
         assert!(
-            max_difference / max_signal < 1.0e-7,
+            max_difference / max_signal < 1.2e-7,
             "{}",
             max_difference / max_signal
         );

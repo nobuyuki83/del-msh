@@ -21,7 +21,12 @@ impl Content {
         };
         let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
         let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+            0,
+            &bvhnodes,
+            &tri2vtx,
+            3,
+            vtx2xyz.as_chunks::<3>().0,
+            None,
         );
         //println!("{:?}",img.color());
         let (tex_data, tex_shape, _bitdepth) =
@@ -54,7 +59,7 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
         del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
             &self.tri2vtx,
-            &self.vtx2xyz,
+            &self.vtx2xyz.as_chunks::<3>().0,
             &self.bvhnodes,
             &self.aabbs,
             img_shape,

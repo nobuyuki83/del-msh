@@ -216,17 +216,13 @@ fn test_depthmap() {
                     true,
                     true,
                 );
-                use slice_of_array::SliceFlatExt;
-                let vtx2xyz_polyline = vtx2xyz_polyline.flat().to_owned();
                 crate::polyline3::to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05)
             }
             2 => {
                 let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(0.8, 0.05, 32, 32);
                 let transform =
                     del_geo_core::mat4_col_major::from_rot_x(std::f32::consts::PI / 12.0);
-                let vtx2xyz =
-                    crate::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform);
-                let vtx2xyz = vtx2xyz.chunks(3).map(|v| [v[0], v[1], v[2]]).collect();
+                let vtx2xyz = crate::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform);
                 (tri2vtx, vtx2xyz)
             }
             _ => unreachable!(),
@@ -250,7 +246,7 @@ fn test_depthmap() {
             &bvhnodes,
             &tri2vtx.as_flattened(),
             3,
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             None,
         );
         let img_shape = (300, 300);

@@ -130,11 +130,11 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     let num_noel = elem2vtx.shape()[1];
     let elem2vtx = elem2vtx.as_slice().unwrap();
     let vtx2xyz1 = if vtx2xyz0.shape() == vtx2xyz1.shape() {
-        Some(vtx2xyz1.as_slice().unwrap())
+        Some(vtx2xyz1.as_slice().unwrap().as_chunks::<3>().0)
     } else {
         None
     };
-    let vtx2xyz0 = vtx2xyz0.as_slice().unwrap();
+    let vtx2xyz0 = vtx2xyz0.as_slice().unwrap().as_chunks::<3>().0;
     del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
         aabbs,
         i_bvhnode_root,

@@ -20,11 +20,9 @@ fn polyline_vtx2xyz_from_helix(
     pitch: f32,
 ) -> Bound<PyArray2<f32>> {
     let vtx2xyz = del_msh_cpu::polyline3::helix(num_vtx, elen, rad, pitch);
-    let vtx2xyz = numpy::ndarray::Array2::from_shape_vec(
-        (vtx2xyz.len() / 3, 3),
-        Vec::from(vtx2xyz.as_slice()),
-    )
-    .unwrap();
+    let vtx2xyz =
+        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.as_flattened().to_vec())
+            .unwrap();
     use numpy::IntoPyArray;
     vtx2xyz.into_pyarray(py)
 }

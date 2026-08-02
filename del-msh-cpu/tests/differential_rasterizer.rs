@@ -3,7 +3,7 @@ mod tests {
 
     const IMG_RES: usize = 128;
 
-    fn geometry(eps: f32) -> (Vec<u32>, Vec<f32>, [f32; 16], Vec<f32>) {
+    fn geometry(eps: f32) -> (Vec<u32>, Vec<[f32; 3]>, [f32; 16], Vec<[f32; 3]>) {
         let (tri2vtx, vtx2xyz) =
             del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
@@ -14,10 +14,10 @@ mod tests {
             //let transform1 = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.6, eps]);
             let transform =
                 del_geo_core::mat4_col_major::mult_mat_col_major(&transform1, &transform0);
-            del_msh_cpu::vtx2xyz::transform_homogeneous(&vtx2xyz.as_flattened(), &transform)
+            del_msh_cpu::vtx2xyz::transform_homogeneous(&vtx2xyz, &transform)
         };
         let transform_world2ndc = del_geo_core::mat4_col_major::from_diagonal(0.5, 0.5, 0.5, 1.0);
-        let dxyz: Vec<f32> = (0..vtx2xyz.len() / 3).flat_map(|_| [1., 0., 0.]).collect();
+        let dxyz: Vec<[f32; 3]> = (0..vtx2xyz.len()).map(|_| [1., 0., 0.]).collect();
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 1., 0.]).collect();
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 0., 1.]).collect();
         (
@@ -134,19 +134,23 @@ mod tests {
             &transform_ndc2pix,
             &transform_world2ndc,
         );
-        let num_vtx = vtx2xyz.len() / 3;
+        let num_vtx = vtx2xyz.len();
         let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
         let edge2tri =
             del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
         let cedge2vtx = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
         );
         let pix2tri = {
-            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
+                &tri2vtx,
+                &vtx2xyz.as_flattened(),
+                3,
+            );
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
             );
@@ -166,14 +170,14 @@ mod tests {
             &pix2tri,
             img_shape,
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             &transform_ndc2world,
             mode,
         );
         let mut pix2vout = pix2vin.clone();
         del_msh_cpu::antialias::antialias(
             &cedge2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_flattened(),
             &transform_world2pix,
             img_shape,
             &pix2tri,
@@ -192,8 +196,8 @@ mod tests {
         let mut pix2isedge = vec![1f32; img_shape.0 * img_shape.1];
         for chunk in cedge2vtx.chunks(2) {
             let (iv0, iv1) = (chunk[0] as usize, chunk[1] as usize);
-            let xyz0_world = del_msh_cpu::vtx2xyz::to_vec3(&vtx2xyz, iv0);
-            let xyz1_world = del_msh_cpu::vtx2xyz::to_vec3(&vtx2xyz, iv1);
+            let xyz0_world = &vtx2xyz[iv0];
+            let xyz1_world = &vtx2xyz[iv1];
             let xyz0_ndc = del_geo_core::mat4_col_major::transform_homogeneous(
                 &transform_world2ndc,
                 xyz0_world,
@@ -256,11 +260,11 @@ mod tests {
                     dldw_pix2val[i_pix] = 1.0;
                     dldw_pix2val
                 };
-                let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
+                let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
                 del_msh_cpu::trimesh3_raycast::bwd_continuous(
                     &pix2tri,
                     &tri2vtx,
-                    &vtx2xyz,
+                    &vtx2xyz.as_flattened(),
                     &dldw_pix2val,
                     &transform_ndc2world,
                     img_shape,
@@ -280,7 +284,7 @@ mod tests {
                 let grad: f32 = dxyz
                     .iter()
                     .zip(dldw_vtx2xyz.iter())
-                    .map(|(&v0, &v1)| v0 * v1)
+                    .map(|(v0, v1)| del_geo_core::vec3::dot(v0, v1))
                     .sum();
                 pix2grad[i_pix] = grad;
             }
@@ -331,7 +335,11 @@ mod tests {
             &transform_world2ndc,
         );
         let pix2tri = {
-            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
+                &tri2vtx,
+                &vtx2xyz.as_flattened(),
+                3,
+            );
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
             );
@@ -358,7 +366,7 @@ mod tests {
                 dldw_pix2val[i_pix] = 1.0;
                 dldw_pix2val
             };
-            let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
+            let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
             //
             del_msh_cpu::edgegrad::bwd(
                 &tri2vtx,
@@ -375,7 +383,7 @@ mod tests {
             let dpix: f32 = dxyz
                 .iter()
                 .zip(dldw_vtx2xyz.iter())
-                .map(|(&v0, &v1)| v0 * v1)
+                .map(|(v0, v1)| del_geo_core::vec3::dot(&v0, v1))
                 .sum();
             let c = del_canvas::colormap::apply_colormap(
                 dpix,

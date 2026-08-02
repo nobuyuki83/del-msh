@@ -277,20 +277,22 @@ mod test {
     #[test]
     fn trimesh3_scalardata() {
         let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::hemisphere_zup::<f64>(1., 16, 32);
-        let mut file = std::fs::File::create("../target/trimesh3.vtk").expect("file not found.");
-        crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3).unwrap();
-        crate::io_vtk::write_vtk_cells(&mut file, VtkElementType::TRIANGLE, &tri2vtx).unwrap();
+        let path = std::path::Path::new("../target/out_del_msh_cpu/trimesh3.vtk");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let mut file = std::fs::File::create(path).expect("file not found.");
+        crate::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_flattened(), 3).unwrap();
+        crate::io_vtk::write_vtk_cells(&mut file, VtkElementType::TRIANGLE, tri2vtx.as_flattened())
+            .unwrap();
         let vtx2data = {
-            let mut vtx2data = Vec::<f64>::with_capacity(vtx2xyz.len() / 3);
-            for i_vtx in 0..vtx2xyz.len() / 3 {
-                let z = vtx2xyz[i_vtx * 3 + 2];
+            let mut vtx2data = Vec::<f64>::with_capacity(vtx2xyz.len());
+            for i_vtx in 0..vtx2xyz.len() {
+                let z = vtx2xyz[i_vtx][2];
                 vtx2data.push(z.powi(3));
             }
             vtx2data
         };
         use std::io::Write;
-        let _ = writeln!(file, "POINT_DATA {}", vtx2xyz.len() / 3);
-        let _ =
-            crate::io_vtk::write_vtk_data_point_scalar(&mut file, &vtx2data, vtx2xyz.len() / 3, 1);
+        let _ = writeln!(file, "POINT_DATA {}", vtx2xyz.len());
+        let _ = crate::io_vtk::write_vtk_data_point_scalar(&mut file, &vtx2data, vtx2xyz.len(), 1);
     }
 }

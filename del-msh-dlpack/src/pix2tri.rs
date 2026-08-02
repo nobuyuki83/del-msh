@@ -49,7 +49,7 @@ pub fn pix2tri_by_raycast(
             del_msh_cpu::pix2tri::pix2tri_by_raycast(
                 slice_mut!(pix2tri, u32).unwrap(),
                 slice!(tri2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice!(bvhnodes, u32).unwrap(),
                 slice!(bvhnode2aabb, f32).unwrap(),
                 (img_shape[0] as usize, img_shape[1] as usize),

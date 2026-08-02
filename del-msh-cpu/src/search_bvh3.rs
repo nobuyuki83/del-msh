@@ -257,7 +257,7 @@ fn test_first_intersection_ray() {
         &bvhnodes,
         &tri2vtx.as_flattened(),
         3,
-        &vtx2xyz.as_flattened(),
+        &vtx2xyz,
         None,
     );
     use rand::RngExt;

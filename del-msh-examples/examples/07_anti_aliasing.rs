@@ -77,7 +77,7 @@ fn main() -> anyhow::Result<()> {
         &bvhnodes,
         &tri2vtx.as_flattened(),
         3,
-        &vtx2xyz.as_flattened(),
+        &vtx2xyz,
         None,
     );
     //
@@ -105,7 +105,7 @@ fn main() -> anyhow::Result<()> {
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
         &tri2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
+        &vtx2xyz,
         &bvhnodes,
         &bvhnode2aabb,
         img_shape,
@@ -196,10 +196,10 @@ fn main() -> anyhow::Result<()> {
             .map(|(&a, &b)| a * b)
             .sum::<f32>();
         let dldw_vtx2xyz = {
-            let mut dldw_vtx2xyz = vec![0f32; vtx2xyz.len()];
+            let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
             del_msh_cpu::antialias::bwd_antialias(
                 &cedge2vtx,
-                &vtx2xyz.as_flattened(),
+                &vtx2xyz.as_flattened().as_chunks::<3>().0,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
                 img_shape,
@@ -253,7 +253,7 @@ fn main() -> anyhow::Result<()> {
                     .map(|(&a, &b)| a * b)
                     .sum::<f32>();
                 let diff_num = (loss1 - loss) / eps;
-                let diff_ana = dldw_vtx2xyz[i_vtx * 3 + i_dim];
+                let diff_ana = dldw_vtx2xyz[i_vtx][i_dim];
                 let err = (diff_num - diff_ana).abs();
                 // println!("{} {}", diff_num, diff_ana);
                 let ratio = err / (diff_ana.abs() + 0.1);

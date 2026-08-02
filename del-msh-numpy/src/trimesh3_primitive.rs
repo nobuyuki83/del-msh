@@ -119,10 +119,10 @@ fn trimesh3_primitive_hemisphere_zup(
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
     let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::hemisphere_zup(r, nr, nl);
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
+        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.as_flattened().to_vec())
             .unwrap()
             .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
+        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.as_flattened().to_vec())
             .unwrap()
             .into_pyarray(py),
     )

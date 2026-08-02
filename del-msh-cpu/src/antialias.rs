@@ -101,8 +101,8 @@ pub fn antialias(
 #[allow(clippy::too_many_arguments)]
 pub fn bwd_antialias(
     cedge2vtx: &[u32],
-    vtx2xyz: &[f32],
-    dldw_vtx2xyz: &mut [f32],
+    vtx2xyz: &[[f32; 3]],
+    dldw_vtx2xyz: &mut [[f32; 3]],
     transform_world2pix: &[f32; 16],
     img_shape: (usize, usize),
     pix2val: &[f32],
@@ -115,8 +115,8 @@ pub fn bwd_antialias(
     for node2vtx in cedge2vtx.chunks(2) {
         use del_geo_core::vec3::Vec3;
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-        let p0 = crate::vtx2xyz::to_xyz(vtx2xyz, i0_vtx as usize).p;
-        let p1 = crate::vtx2xyz::to_xyz(vtx2xyz, i1_vtx as usize).p;
+        let p0 = &vtx2xyz[i0_vtx as usize];
+        let p1 = &vtx2xyz[i1_vtx as usize];
         let q0 = p0.transform_homogeneous(transform_world2pix).unwrap().xy();
         let q1 = p1.transform_homogeneous(transform_world2pix).unwrap().xy();
         let v01 = del_geo_core::vec2::sub(&q1, &q0);
@@ -149,10 +149,8 @@ pub fn bwd_antialias(
                 let dldp0 = mat2x3_col_major::vec3_from_mult_transpose_vec2(&dqdp0, &dldq0);
                 let dldp1 = mat2x3_col_major::vec3_from_mult_transpose_vec2(&dqdp1, &dldq1);
                 use del_geo_core::vec3::Vec3;
-                arrayref::array_mut_ref![dldw_vtx2xyz, (i0_vtx as usize) * 3, 3]
-                    .add_in_place(&dldp0);
-                arrayref::array_mut_ref![dldw_vtx2xyz, (i1_vtx as usize) * 3, 3]
-                    .add_in_place(&dldp1);
+                dldw_vtx2xyz[i0_vtx as usize].add_in_place(&dldp0);
+                dldw_vtx2xyz[i1_vtx as usize].add_in_place(&dldp1);
             }
         }
     }
