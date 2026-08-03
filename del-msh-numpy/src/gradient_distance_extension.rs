@@ -33,7 +33,12 @@ pub fn extend_trimesh3<'a>(
             vtx2xyz[i_vtx * 3 + 2] + step * vtx2nrm[i_vtx * 3 + 2],
         ];
         for _ in 1..niter {
-            p0 = del_msh_cpu::trimesh3::extend_avoid_intersection(tri2vtx, vtx2xyz.as_chunks::<3>().0, &p0, step);
+            p0 = del_msh_cpu::trimesh3::extend_avoid_intersection(
+                tri2vtx,
+                vtx2xyz.as_chunks::<3>().0,
+                &p0,
+                step,
+            );
         }
         a[i_vtx * 3 + 0] = p0[0];
         a[i_vtx * 3 + 1] = p0[1];
@@ -54,12 +59,8 @@ pub fn extend_polyloop3<'a>(
     assert_eq!(lpvtx2xyz.shape()[1], 3);
     let lpvtx2xyz = lpvtx2xyz.as_slice().unwrap().as_chunks::<3>().0;
     let lpvtx2bin = del_msh_cpu::polyloop3::smooth_frame(lpvtx2xyz);
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::polyloop3::tube_mesh_avoid_intersection(
-        lpvtx2xyz,
-        &lpvtx2bin,
-        step,
-        niter,
-    );
+    let (tri2vtx, vtx2xyz) =
+        del_msh_cpu::polyloop3::tube_mesh_avoid_intersection(lpvtx2xyz, &lpvtx2bin, step, niter);
     let v1 = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
         .unwrap()
         .into_pyarray(py);

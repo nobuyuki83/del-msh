@@ -311,8 +311,7 @@ where
         let vtx2xyz: &mut [[T; 3]] = vtx2xyz.as_chunks_mut::<3>().0;
         for i_vtxl in 0..num_vtxl {
             vtx2xyz[i_vtxl * 2] = vtxl2xyz[i_vtxl];
-            vtx2xyz[i_vtxl * 2 + 1] =
-                vtxl2xyz[i_vtxl].add(&vtxl2framex[i_vtxl].scale(width));
+            vtx2xyz[i_vtxl * 2 + 1] = vtxl2xyz[i_vtxl].add(&vtxl2framex[i_vtxl].scale(width));
         }
     }
     let num_tri = (num_vtxl - 1) * 2;

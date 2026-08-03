@@ -152,13 +152,7 @@ where
                 0,
                 f32::INFINITY,
             ) {
-                sum += mode.fwd(
-                    &bc,
-                    i_tri as u32,
-                    tri2vtx,
-                    vtx2xyz,
-                    transform_world2ndc,
-                );
+                sum += mode.fwd(&bc, i_tri as u32, tri2vtx, vtx2xyz, transform_world2ndc);
             }
         }
         sum / num_sample as f32

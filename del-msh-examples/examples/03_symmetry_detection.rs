@@ -50,7 +50,8 @@ fn extract_triangles_in_symmetry(
         let a_cog = del_geo_core::mat3x4_col_major::transform_affine(affine, &cog);
         //dbg!(cog, a_cog);
         // compute distance
-        let dist_a = del_msh_cpu::trimesh3::distance_to_point3(tri2vtx, vtx2xyz.as_chunks::<3>().0, &a_cog);
+        let dist_a =
+            del_msh_cpu::trimesh3::distance_to_point3(tri2vtx, vtx2xyz.as_chunks::<3>().0, &a_cog);
         //dbg!(i_tri, dist_a);
         if dist_a > 0.03 {
             tri2flg[i_tri] = 1;

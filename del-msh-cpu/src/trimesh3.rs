@@ -268,15 +268,10 @@ pub fn distance_to_point3(tri2vtx: &[usize], vtx2xyz: &[[f32; 3]], q: &[f32; 3])
     dist_min
 }
 
-pub fn distance_to_points3(
-    tri2vtx: &[usize],
-    vtx2xyz: &[[f32; 3]],
-    hv2xyz: &[[f32; 3]],
-) -> f32 {
+pub fn distance_to_points3(tri2vtx: &[usize], vtx2xyz: &[[f32; 3]], hv2xyz: &[[f32; 3]]) -> f32 {
     let mut max_dist = 0f32;
     for xyz in hv2xyz {
-        let min_dist =
-            crate::trimesh3::distance_to_point3(tri2vtx, vtx2xyz, xyz);
+        let min_dist = crate::trimesh3::distance_to_point3(tri2vtx, vtx2xyz, xyz);
         if max_dist < min_dist {
             max_dist = min_dist;
         }
