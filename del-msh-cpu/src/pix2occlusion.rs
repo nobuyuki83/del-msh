@@ -5,7 +5,7 @@ impl<T> ScalarRender<T> for Occlusion
 where
     T: num_traits::Float,
 {
-    fn fwd(&self, _: &[T; 3], i_tri: u32, _: &[u32], _: &[T], _: &[T; 16]) -> T {
+    fn fwd(&self, _: &[T; 3], i_tri: u32, _: &[u32], _: &[[T; 3]], _: &[T; 16]) -> T {
         if i_tri == u32::MAX {
             T::zero()
         } else {

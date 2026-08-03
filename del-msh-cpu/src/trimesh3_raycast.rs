@@ -4,7 +4,7 @@ pub trait ScalarRender<T> {
         bc: &[T; 3],
         i_tri: u32,
         tri2vtx: &[u32],
-        vtx2xyz: &[T],
+        vtx2xyz: &[[T; 3]],
         transform_world2ndc: &[T; 16],
     ) -> T;
 
@@ -25,7 +25,7 @@ pub trait ScalarRender<T> {
 pub fn bwd_continuous<T: ScalarRender<f32>>(
     pix2tri: &[u32],
     tri2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     dldw_pix2val: &[f32],
     transform_ndc2world: &[f32; 16],
     img_shape: (usize, usize),
@@ -50,9 +50,9 @@ pub fn bwd_continuous<T: ScalarRender<f32>>(
         let i0 = tri2vtx[i_tri * 3] as usize;
         let i1 = tri2vtx[i_tri * 3 + 1] as usize;
         let i2 = tri2vtx[i_tri * 3 + 2] as usize;
-        let p0 = arrayref::array_ref![vtx2xyz, i0 * 3, 3];
-        let p1 = arrayref::array_ref![vtx2xyz, i1 * 3, 3];
-        let p2 = arrayref::array_ref![vtx2xyz, i2 * 3, 3];
+        let p0 = &vtx2xyz[i0];
+        let p1 = &vtx2xyz[i1];
+        let p2 = &vtx2xyz[i2];
         let dldw_val = dldw_pix2val[i_pix];
         let (dp0, dp1, dp2) = mode.bwd(
             dldw_val,
@@ -74,7 +74,7 @@ pub fn fwd_continuous<T: ScalarRender<f32>>(
     pix2tri: &[u32],
     img_shape: (usize, usize),
     tri2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_ndc2world: &[f32; 16],
     model: &T,
 ) -> Vec<f32> {
@@ -93,8 +93,9 @@ pub fn fwd_continuous<T: ScalarRender<f32>>(
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
-        let Some((_t, bc)) = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
-            .intersection_against_ray(&ray_org, &ray_dir)
+        let Some((_t, bc)) =
+            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i_tri as usize)
+                .intersection_against_ray(&ray_org, &ray_dir)
         else {
             unreachable!()
         };
@@ -144,7 +145,7 @@ where
                 &ray_dir,
                 &crate::search_bvh3::TriMeshWithBvh {
                     tri2vtx,
-                    vtx2xyz: vtx2xyz.as_flattened(),
+                    vtx2xyz,
                     bvhnodes: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },
@@ -155,7 +156,7 @@ where
                     &bc,
                     i_tri as u32,
                     tri2vtx,
-                    vtx2xyz.as_flattened(),
+                    vtx2xyz,
                     transform_world2ndc,
                 );
             }

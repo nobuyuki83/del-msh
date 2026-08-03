@@ -170,7 +170,7 @@ mod tests {
             &pix2tri,
             img_shape,
             &tri2vtx,
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             &transform_ndc2world,
             mode,
         );
@@ -264,7 +264,7 @@ mod tests {
                 del_msh_cpu::trimesh3_raycast::bwd_continuous(
                     &pix2tri,
                     &tri2vtx,
-                    &vtx2xyz.as_flattened(),
+                    &vtx2xyz,
                     &dldw_pix2val,
                     &transform_ndc2world,
                     img_shape,

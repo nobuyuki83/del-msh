@@ -2,18 +2,18 @@
 
 use num_traits::AsPrimitive;
 
-pub fn vtx2framex<T>(vtx2xyz: &[T]) -> Vec<T>
+pub fn vtx2framex<T>(vtx2xyz: &[[T; 3]]) -> Vec<T>
 where
     T: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let mut vtx2bin = vec![T::zero(); num_vtx * 3];
     {
         // first segment
-        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, 0);
-        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, 1);
+        let p0 = &vtx2xyz[0];
+        let p1 = &vtx2xyz[1];
         let v01 = p1.sub(p0);
         let (x, _) = del_geo_core::vec3::basis_xy_from_basis_z(&v01);
         crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, 0).copy_from_slice(&x);
@@ -24,9 +24,9 @@ where
         let iv1 = iseg1;
         let iv2 = (iseg1 + 1) % num_vtx;
         let iseg0 = iseg1 - 1;
-        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, iv0);
-        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, iv1);
-        let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, iv2);
+        let p0 = &vtx2xyz[iv0];
+        let p1 = &vtx2xyz[iv1];
+        let p2 = &vtx2xyz[iv2];
         let v01 = p1.sub(p0);
         let v12 = p2.sub(p1);
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
@@ -37,37 +37,36 @@ where
     vtx2bin
 }
 
-pub fn framez<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
+pub fn framez<T>(vtx2xyz: &[[T; 3]], i_vtx: usize) -> [T; 3]
 where
     T: num_traits::Float + Copy,
 {
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     assert!(i_vtx < num_vtx);
     let i0_vtx = (i_vtx + num_vtx - 1) % num_vtx;
-    // let i1_vtx = i_vtx;
     let i2_vtx = (i_vtx + 1) % num_vtx;
-    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, i0_vtx);
-    let p2 = crate::vtx2xyz::to_vec3(vtx2xyz, i2_vtx);
+    let p0 = &vtx2xyz[i0_vtx];
+    let p2 = &vtx2xyz[i2_vtx];
     use del_geo_core::vec3::Vec3;
     p2.sub(p0).normalize()
 }
 
-fn match_frames_of_two_ends<T>(vtx2xyz: &[T], vtx2bin0: &[T]) -> Vec<T>
+fn match_frames_of_two_ends<T>(vtx2xyz: &[[T; 3]], vtx2bin0: &[T]) -> Vec<T>
 where
     T: num_traits::Float + Copy + 'static + std::fmt::Display,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let theta = {
         let x0 = crate::vtx2xyz::to_vec3(vtx2bin0, 0);
-        let p0 = &crate::vtx2xyz::to_vec3(vtx2xyz, 0);
-        let p1 = &crate::vtx2xyz::to_vec3(vtx2xyz, 1);
+        let p0 = &vtx2xyz[0];
+        let p1 = &vtx2xyz[1];
         let v01 = p1.sub(p0).normalize();
         assert!(x0.dot(&v01).abs() < 1.0e-6_f64.as_());
         let xn = crate::vtx2xyz::to_vec3(vtx2bin0, num_vtx - 1);
-        let pn = &crate::vtx2xyz::to_vec3(vtx2xyz, num_vtx - 1);
+        let pn = &vtx2xyz[num_vtx - 1];
         let vn0 = p0.sub(pn).normalize();
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&vn0, &v01);
         let x1a = del_geo_core::mat3_col_major::mult_vec(&rot, xn);
@@ -89,8 +88,8 @@ where
         let x0 = crate::vtx2xyz::to_vec3(vtx2bin0, iseg);
         let ivtx0 = iseg;
         let ivtx1 = (iseg + 1) % num_vtx;
-        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx1);
-        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx0);
+        let p1 = &vtx2xyz[ivtx1];
+        let p0 = &vtx2xyz[ivtx0];
         let v01 = p1.sub(p0).normalize();
         let y0 = v01.cross(x0);
         assert!(
@@ -106,31 +105,30 @@ where
     vtx2bin1
 }
 
-pub fn smooth_frame<T>(vtx2xyz: &[T]) -> Vec<T>
+pub fn smooth_frame<T>(vtx2xyz: &[[T; 3]]) -> Vec<T>
 where
     T: num_traits::Float + 'static + Copy + std::fmt::Display,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
     let vtx2bin0 = vtx2framex(vtx2xyz);
-    // dbg!(&vtx2bin0);
     match_frames_of_two_ends(vtx2xyz, &vtx2bin0)
 }
 
-pub fn normal_binormal<T>(vtx2xyz: &[T]) -> (Vec<T>, Vec<T>)
+pub fn normal_binormal<T>(vtx2xyz: &[[T; 3]]) -> (Vec<T>, Vec<T>)
 where
     T: num_traits::Float + Copy,
 {
     use del_geo_core::vec3::Vec3;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let mut vtx2bin = vec![T::zero(); num_vtx * 3];
     let mut vtx2nrm = vec![T::zero(); num_vtx * 3];
     for ivtx1 in 0..num_vtx {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
-        let v0 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx0);
-        let v1 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx1);
-        let v2 = crate::vtx2xyz::to_vec3(vtx2xyz, ivtx2);
+        let v0 = &vtx2xyz[ivtx0];
+        let v1 = &vtx2xyz[ivtx1];
+        let v2 = &vtx2xyz[ivtx2];
         let v01 = v1.sub(v0);
         let v12 = v2.sub(v1);
         let binormal = v12.cross(&v01).normalize();
@@ -141,17 +139,17 @@ where
     (vtx2nrm, vtx2bin)
 }
 
-pub fn smooth_gradient_of_distance(vtx2xyz: &[f64], q: &[f64; 3]) -> [f64; 3] {
+pub fn smooth_gradient_of_distance(vtx2xyz: &[[f64; 3]], q: &[f64; 3]) -> [f64; 3] {
     use del_geo_core::vec3::Vec3;
-    let n = vtx2xyz.len() / 3;
+    let n = vtx2xyz.len();
     let mut dd = [0f64; 3];
     for i_seg in 0..n {
         let ip0 = i_seg;
         let ip1 = (i_seg + 1) % n;
         let (_, dd0) = del_geo_core::edge3::wdw_integral_of_inverse_distance_cubic(
             q,
-            crate::vtx2xyz::to_vec3(vtx2xyz, ip0),
-            crate::vtx2xyz::to_vec3(vtx2xyz, ip1),
+            &vtx2xyz[ip0],
+            &vtx2xyz[ip1],
         );
         dd.add_in_place(&dd0);
     }
@@ -161,7 +159,7 @@ pub fn smooth_gradient_of_distance(vtx2xyz: &[f64], q: &[f64; 3]) -> [f64; 3] {
 pub fn extend_avoid_intersection(
     p0: &[f64; 3],
     v0: &[f64; 3],
-    vtx2xyz: &[f64],
+    vtx2xyz: &[[f64; 3]],
     eps: f64,
     n: usize,
 ) -> [f64; 3] {
@@ -177,7 +175,7 @@ pub fn extend_avoid_intersection(
 }
 
 pub fn tube_mesh_avoid_intersection(
-    vtx2xyz: &[f64],
+    vtx2xyz: &[[f64; 3]],
     vtx2bin: &[f64],
     eps: f64,
     niter: usize,
@@ -185,11 +183,11 @@ pub fn tube_mesh_avoid_intersection(
     use del_geo_core::vec3::Vec3;
     let n = 8;
     let dtheta = std::f64::consts::PI * 2. / n as f64;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let mut pnt2xyz = Vec::<f64>::new();
     for ipnt in 0..num_vtx {
-        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ipnt);
-        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, (ipnt + 1) % num_vtx);
+        let p0 = &vtx2xyz[ipnt];
+        let p1 = &vtx2xyz[(ipnt + 1) % num_vtx];
         let z0 = p1.sub(p0).normalize();
         let x0 = crate::vtx2xyz::to_vec3(vtx2bin, ipnt);
         let y0 = z0.cross(x0);
@@ -199,7 +197,6 @@ pub fn tube_mesh_avoid_intersection(
             let y0 = y0.scale(theta.sin());
             let v0 = x0.add(&y0);
             let q0 = extend_avoid_intersection(p0, &v0, vtx2xyz, eps, niter);
-            // let q0 = p0 + v0.scale(rad);
             q0.iter().for_each(|&v| pnt2xyz.push(v));
         }
     }
@@ -221,38 +218,35 @@ pub fn tube_mesh_avoid_intersection(
     (tri2pnt, pnt2xyz)
 }
 
-pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(filepath: P, vtx2xyz: &[f32]) {
+pub fn write_wavefrontobj<P: AsRef<std::path::Path>>(filepath: P, vtx2xyz: &[[f32; 3]]) {
     use std::io::Write;
     let mut file = std::fs::File::create(filepath).expect("file not found.");
-    for vtx in vtx2xyz.chunks(3) {
+    for vtx in vtx2xyz {
         writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2]).expect("fail");
     }
     write!(file, "l ").expect("fail");
-    for i in 1..vtx2xyz.len() / 3 + 1 {
+    for i in 1..vtx2xyz.len() + 1 {
         write!(file, "{i} ").expect("fail");
     }
     writeln!(file, "1").expect("fail");
 }
 
-pub fn nearest_to_edge3<T>(vtx2xyz: &[T], p0: &[T; 3], p1: &[T; 3]) -> (T, T, T)
+pub fn nearest_to_edge3<T>(vtx2xyz: &[[T; 3]], p0: &[T; 3], p1: &[T; 3]) -> (T, T, T)
 where
     T: num_traits::Float + Copy + 'static,
     usize: AsPrimitive<T>,
 {
-    let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let num_vtx = vtx2xyz.len();
     let mut res = (T::max_value(), T::zero(), T::zero());
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xyz::to_vec3(vtx2xyz, iv0);
-        let q1 = crate::vtx2xyz::to_vec3(vtx2xyz, iv1);
+        let q0 = &vtx2xyz[iv0];
+        let q1 = &vtx2xyz[iv1];
         let (dist, r0, r1) = del_geo_core::edge3::nearest_to_edge3(p0, p1, q0, q1);
         if dist > res.0 {
             continue;
         }
-        //dbg!((p0+(p1-p0)*r0));
-        //dbg!((q0+(q1-q0)*r1));
         res.0 = dist;
         res.1 = <usize as AsPrimitive<T>>::as_(i_edge) + r1;
         res.2 = r0;
@@ -260,25 +254,21 @@ where
     res
 }
 
-pub fn nearest_to_point3<T>(vtx2xyz: &[T], p0: &[T; 3]) -> (T, T)
+pub fn nearest_to_point3<T>(vtx2xyz: &[[T; 3]], p0: &[T; 3]) -> (T, T)
 where
     T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
-    assert_eq!(p0.len(), 3);
-    let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let num_vtx = vtx2xyz.len();
     let mut res = (T::max_value(), T::zero());
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xyz::to_vec3(vtx2xyz, iv0);
-        let q1 = crate::vtx2xyz::to_vec3(vtx2xyz, iv1);
+        let q0 = &vtx2xyz[iv0];
+        let q1 = &vtx2xyz[iv1];
         let (dist, rq) = del_geo_core::edge3::nearest_to_point3(q0, q1, p0);
         if dist < res.0 {
-            //dbg!((p0+(p1-p0)*r0));
-            //dbg!((q0+(q1-q0)*r1));
             res.0 = dist;
             res.1 = <usize as AsPrimitive<T>>::as_(i_edge) + rq;
         }
@@ -286,19 +276,16 @@ where
     res
 }
 
-pub fn winding_number(vtx2xyz: &[f64], org: &[f64; 3], dir: &[f64; 3]) -> f64 {
+pub fn winding_number(vtx2xyz: &[[f64; 3]], org: &[f64; 3], dir: &[f64; 3]) -> f64 {
     use del_geo_core::vec3::Vec3;
     use num_traits::FloatConst;
-    //let org = nalgebra::Vector3::<f64>::from_row_slice(org);
-    //let dir = nalgebra::Vector3::<f64>::from_row_slice(dir);
-    let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vtx2xyz.len(), num_vtx * 3);
+    let num_vtx = vtx2xyz.len();
     let mut sum = 0.;
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xyz::to_vec3(vtx2xyz, iv0).sub(org);
-        let q1 = crate::vtx2xyz::to_vec3(vtx2xyz, iv1).sub(org);
+        let q0 = vtx2xyz[iv0].sub(org);
+        let q1 = vtx2xyz[iv1].sub(org);
         let q0 = q0.sub(&dir.scale(q0.dot(dir)));
         let q1 = q1.sub(&dir.scale(q1.dot(dir)));
         let q0 = q0.normalize();
@@ -311,53 +298,51 @@ pub fn winding_number(vtx2xyz: &[f64], org: &[f64; 3], dir: &[f64; 3]) -> f64 {
 }
 
 #[allow(clippy::identity_op)]
-pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[T], r: T) -> [T; 3]
+pub fn position_from_barycentric_coordinate<T>(vtx2xyz: &[[T; 3]], r: T) -> [T; 3]
 where
     T: num_traits::Float + AsPrimitive<usize> + std::fmt::Display + std::fmt::Debug,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
     let ied: usize = r.as_();
-    let ned = vtx2xyz.len() / 3;
+    let ned = vtx2xyz.len();
     if r.as_() == ned {
         assert_eq!(ied.as_(), r);
-        return *crate::vtx2xyz::to_vec3(vtx2xyz, 0);
+        return vtx2xyz[0];
     }
     assert!(ied < ned, "{r}, {ied}, {ned}");
-    let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ied);
-    let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, (ied + 1) % ned);
+    let p0 = &vtx2xyz[ied];
+    let p1 = &vtx2xyz[(ied + 1) % ned];
     let r0 = r - ied.as_();
     p0.add(&p1.sub(p0).scale(r0))
 }
 
 #[allow(clippy::identity_op)]
-pub fn smooth<T>(vtx2xyz: &[T], r: T, num_iter: usize) -> Vec<T>
+pub fn smooth<T>(vtx2xyz: &[[T; 3]], r: T, num_iter: usize) -> Vec<[T; 3]>
 where
     T: num_traits::Float + Copy + 'static,
     f64: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let mut vtx2xyz1 = Vec::from(vtx2xyz);
     for _iter in 0..num_iter {
         for ip1 in 0..num_vtx {
             let ip0 = (ip1 + num_vtx - 1) % num_vtx;
             let ip2 = (ip1 + 1) % num_vtx;
-            let p0 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip0);
-            let p1 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip1);
-            let p2 = crate::vtx2xyz::to_vec3(&vtx2xyz1, ip2);
+            let p0 = &vtx2xyz1[ip0];
+            let p1 = &vtx2xyz1[ip1];
+            let p2 = &vtx2xyz1[ip2];
             let pm = p0.add(p2).scale(0.5f64.as_());
             let p1n = del_geo_core::edge3::position_from_ratio(p1, &pm, r);
-            vtx2xyz1[ip1 * 3 + 0] = p1n[0];
-            vtx2xyz1[ip1 * 3 + 1] = p1n[1];
-            vtx2xyz1[ip1 * 3 + 2] = p1n[2];
+            vtx2xyz1[ip1] = p1n;
         }
     }
     vtx2xyz1
 }
 
 pub fn to_trimesh3_torus(
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     vtx2bin: &[f32],
     rad: f32,
     ndiv_circum: usize,
@@ -365,11 +350,11 @@ pub fn to_trimesh3_torus(
     use del_geo_core::vec3::Vec3;
     let n = ndiv_circum;
     let dtheta = std::f32::consts::PI * 2. / n as f32;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let mut pnt2xyz = Vec::<f32>::new();
     for ipnt in 0..num_vtx {
-        let p0 = crate::vtx2xyz::to_vec3(vtx2xyz, ipnt);
-        let p1 = crate::vtx2xyz::to_vec3(vtx2xyz, (ipnt + 1) % num_vtx);
+        let p0 = &vtx2xyz[ipnt];
+        let p1 = &vtx2xyz[(ipnt + 1) % num_vtx];
         let z0 = p1.sub(p0).normalize();
         let x0 = crate::vtx2xyz::to_vec3(vtx2bin, ipnt);
         let y0 = z0.cross(x0);
@@ -398,23 +383,23 @@ pub fn to_trimesh3_torus(
     (tri2pnt, pnt2xyz)
 }
 
-pub fn gauss_linking_number<T>(vtx2xyz: &[T], wtx2xyz: &[T]) -> T
+pub fn gauss_linking_number<T>(vtx2xyz: &[[T; 3]], wtx2xyz: &[[T; 3]]) -> T
 where
     T: num_traits::Float + num_traits::FloatConst,
 {
     let one = T::one();
     let four = one + one + one + one;
 
-    let num_vtx = vtx2xyz.len() / 3;
-    let num_wtx = wtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
+    let num_wtx = wtx2xyz.len();
 
     let mut sum = T::zero();
     for i_vtx in 0..num_vtx {
-        let a = crate::vtx2xyz::to_vec3(vtx2xyz, i_vtx);
-        let b = crate::vtx2xyz::to_vec3(vtx2xyz, (i_vtx + 1) % num_vtx);
+        let a = &vtx2xyz[i_vtx];
+        let b = &vtx2xyz[(i_vtx + 1) % num_vtx];
         for i_wtx in 0..num_wtx {
-            let c = crate::vtx2xyz::to_vec3(wtx2xyz, i_wtx);
-            let d = crate::vtx2xyz::to_vec3(wtx2xyz, (i_wtx + 1) % num_wtx);
+            let c = &wtx2xyz[i_wtx];
+            let d = &wtx2xyz[(i_wtx + 1) % num_wtx];
             sum = sum + del_geo_core::tet::gauss_linking_number_edge_edge(a, b, c, d);
         }
     }
@@ -425,14 +410,29 @@ where
 
 #[test]
 fn test_gauss_linkling_number() {
-    let p = vec![1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0];
+    let p: Vec<[f64; 3]> = vec![
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, -1.0, 0.0],
+    ];
     {
-        let q = vec![0.0, 0.0, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, -1.0, 0.0, 0.0, -1.0];
+        let q: Vec<[f64; 3]> = vec![
+            [0.0, 0.0, 1.0],
+            [0.0, 0.5, 1.0],
+            [0.0, 0.5, -1.0],
+            [0.0, 0.0, -1.0],
+        ];
         let lk: f64 = gauss_linking_number(&p, &q);
         assert!(lk.abs() < 1.0e-10);
     }
     {
-        let q = vec![0.0, 0.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0, -1.0, 0.0, 0.0, -1.0];
+        let q: Vec<[f64; 3]> = vec![
+            [0.0, 0.0, 1.0],
+            [0.0, 2.0, 1.0],
+            [0.0, 2.0, -1.0],
+            [0.0, 0.0, -1.0],
+        ];
         let lk: f64 = gauss_linking_number(&p, &q);
         assert!((lk - 1.0).abs() < 1.0e-10);
     }

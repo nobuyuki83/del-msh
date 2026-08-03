@@ -117,7 +117,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &cam_modelview,
             &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             &pix2tri,
         );
         del_canvas::write_png_from_float_image(

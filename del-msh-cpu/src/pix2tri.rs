@@ -28,7 +28,7 @@ pub fn pix2tri_by_raycast<Index>(
             &ray_dir,
             &crate::search_bvh3::TriMeshWithBvh {
                 tri2vtx,
-                vtx2xyz: vtx2xyz.as_flattened(),
+                vtx2xyz,
                 bvhnodes,
                 bvhnode2aabb,
             },
@@ -51,7 +51,7 @@ pub fn pix2tri_by_rasterization<Index>(
     pix2tri: &mut [Index],
     pix2depth: &mut [f32],
     tri2vtx: &[Index],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     img_shape: (usize, usize), // (width, height)
     transform_ndc2world: &[f32; 16],
 ) where
@@ -67,9 +67,9 @@ pub fn pix2tri_by_rasterization<Index>(
         let i0: usize = tri2vtx[i_tri * 3].as_();
         let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
         let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
-        let p0 = arrayref::array_ref!(vtx2xyz, i0 * 3, 3);
-        let p1 = arrayref::array_ref!(vtx2xyz, i1 * 3, 3);
-        let p2 = arrayref::array_ref!(vtx2xyz, i2 * 3, 3);
+        let p0 = &vtx2xyz[i0];
+        let p1 = &vtx2xyz[i1];
+        let p2 = &vtx2xyz[i2];
         let Some(ndc0) =
             del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, p0)
         else {
@@ -166,7 +166,7 @@ fn test_pix2tri() {
             &mut pix2tri,
             &mut pix2depth,
             &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             img_shape,
             &transform_ndc2world,
         );
@@ -404,7 +404,7 @@ fn test_interpolate() {
         let mut max_difference = 0.0;
         let mut max_signal = 0.0;
         let eps = 1.0e-8;
-        for i_vtx in 0..vtx2xyz0.len() / 3 {
+        for i_vtx in 0..vtx2xyz0.len() {
             for i_dim in 0..3 {
                 let mut vtx2xyz1 = vtx2xyz0.clone();
                 vtx2xyz1[i_vtx][i_dim] += eps;
@@ -442,7 +442,7 @@ fn test_interpolate() {
         let mut max_difference = 0.0;
         let mut max_signal = 0.0;
         let eps = 1.0e-7;
-        for i_vtx in 0..vtx2xyz0.len() / 3 {
+        for i_vtx in 0..vtx2xyz0.len() {
             for i_vdim in 0..num_vdim {
                 let mut vtx2val1 = vtx2val0.clone();
                 vtx2val1[i_vtx * num_vdim + i_vdim] += eps;

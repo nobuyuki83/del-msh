@@ -259,7 +259,7 @@ where
 /// * `Vec<usize>` - Visible contour edge connectivity
 pub fn occluding_contour_for_triangle_mesh(
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[usize],
     edge2tri: &[usize],
@@ -275,7 +275,7 @@ pub fn occluding_contour_for_triangle_mesh(
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         // Calculate edge midpoint for testing
         let pos_mid: [f32; 3] =
-            std::array::from_fn(|i| (vtx2xyz[i0_vtx * 3 + i] + vtx2xyz[i1_vtx * 3 + i]) * 0.5);
+            std::array::from_fn(|i| (vtx2xyz[i0_vtx][i] + vtx2xyz[i1_vtx][i]) * 0.5);
         // Get viewing direction
         let (_ray_org, ray_dir) = mat4_col_major::ray_from_transform_world2ndc(
             transform_world2ndc,
@@ -299,8 +299,8 @@ pub fn occluding_contour_for_triangle_mesh(
             tri2vtx.len() / 3
         );
         // Calculate triangle normals
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i1_tri).unit_normal();
 
         // First check if this is a contour edge (triangles face opposite directions)
         {
@@ -355,7 +355,7 @@ pub fn occluding_contour_for_triangle_mesh(
 /// * `Vec<usize>` - Silhouette edge connectivity
 pub fn silhouette_for_triangle_mesh(
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[usize],
     edge2tri: &[usize],
@@ -368,7 +368,7 @@ pub fn silhouette_for_triangle_mesh(
     for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let pos_mid: [f32; 3] =
-            std::array::from_fn(|i| (vtx2xyz[i0_vtx * 3 + i] + vtx2xyz[i1_vtx * 3 + i]) * 0.5);
+            std::array::from_fn(|i| (vtx2xyz[i0_vtx][i] + vtx2xyz[i1_vtx][i]) * 0.5);
         let (_ray_org, ray_dir) = mat4_col_major::ray_from_transform_world2ndc(
             transform_world2ndc,
             &pos_mid,
@@ -389,8 +389,8 @@ pub fn silhouette_for_triangle_mesh(
             i1_tri,
             tri2vtx.len() / 3
         );
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i1_tri).unit_normal();
         // Check contour condition first
         {
             let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.;
@@ -464,7 +464,7 @@ pub fn test_contour() {
     {
         let edge2vtx_contour = occluding_contour_for_triangle_mesh(
             &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -482,7 +482,7 @@ pub fn test_contour() {
     {
         let edge2vtx_contour = silhouette_for_triangle_mesh(
             &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,

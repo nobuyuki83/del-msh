@@ -132,7 +132,7 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
             del_msh_cpu::trimesh3_raycast::bwd_continuous(
                 slice!(pix2tri, u32).unwrap(),
                 slice!(tri2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice!(dldw_pix2depth, f32).unwrap(),
                 arrayref::array_ref![slice!(transform_ndc2world, f32).unwrap(), 0, 16],
                 (img_shape[0] as usize, img_shape[1] as usize),

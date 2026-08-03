@@ -73,7 +73,7 @@ pub fn areas_of_triangles_of_mesh<'a>(
         ),
         3 => del_msh_cpu::trimesh3::tri2area(
             tri2vtx.as_slice().unwrap(),
-            vtx2xyz.as_slice().unwrap(),
+            vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
         ),
         _ => {
             panic!();

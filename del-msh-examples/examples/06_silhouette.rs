@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
         del_msh_cpu::edge2vtx::silhouette_for_triangle_mesh(
             //del_msh_cpu::edge2vtx::occluding_contour_for_triangle_mesh(
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_chunks::<3>().0,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -70,7 +70,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &cam_modelview,
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_chunks::<3>().0,
             &pix2tri,
         );
         for i_pix in 0..img_shape.0 * img_shape.1 {

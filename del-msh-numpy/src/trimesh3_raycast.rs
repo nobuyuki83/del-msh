@@ -72,7 +72,7 @@ pub fn trimesh3_raycast_render_depth_bvh<'a>(
         pix2depth.as_slice_mut().unwrap(),
         transform_ndc2world,
         tri2vtx.as_slice().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
+        vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
         bvhnodes.as_slice().unwrap(),
         bvhnode2aabb.as_slice().unwrap(),
     );

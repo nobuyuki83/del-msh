@@ -53,7 +53,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &cam_modelview,
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_chunks::<3>().0,
             &pix2tri,
         );
         del_canvas::write_png_from_float_image(
@@ -72,7 +72,7 @@ fn main() -> anyhow::Result<()> {
             &mut img_data,
             &transform_ndc2world,
             &tri2vtx,
-            &vtx2xyz,
+            &vtx2xyz.as_chunks::<3>().0,
             &bvhnodes,
             &aabbs,
         );

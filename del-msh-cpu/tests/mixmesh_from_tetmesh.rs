@@ -178,7 +178,7 @@ mod tests {
             let mut ovtx2nrm = vec![0f64; num_ovtx * 3];
             del_msh_cpu::trimesh3::vtx2normal_with_mapping(
                 &tri2vtx,
-                &vtx2xyz,
+                &vtx2xyz.as_chunks::<3>().0,
                 &vtx2ovtx,
                 &mut ovtx2nrm,
             );
