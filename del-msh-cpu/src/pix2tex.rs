@@ -29,7 +29,7 @@ where
                 continue;
             }
             let i_tri: usize = i_tri.as_();
-            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri);
+            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri);
             let Some((a, _bc)) = tri.intersection_against_ray(&ray_org, &ray_dir) else {
                 continue;
             };

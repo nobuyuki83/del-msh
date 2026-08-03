@@ -30,7 +30,8 @@ where
 
 #[allow(dead_code)]
 fn dominant_direction_aabb(remaining_elems: &[usize], elem2center: &[f32]) -> ([f32; 3], [f32; 3]) {
-    let aabb = crate::vtx2xyz::aabb3_indexed(remaining_elems, elem2center.as_chunks::<3>().0, 1.0e-6);
+    let aabb =
+        crate::vtx2xyz::aabb3_indexed(remaining_elems, elem2center.as_chunks::<3>().0, 1.0e-6);
     let lenx = aabb[3] - aabb[0];
     let leny = aabb[4] - aabb[1];
     let lenz = aabb[5] - aabb[2];

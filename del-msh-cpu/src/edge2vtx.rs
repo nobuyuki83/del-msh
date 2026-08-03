@@ -224,8 +224,12 @@ where
         assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len() / 3);
 
         // Calculate normal vectors of adjacent triangles
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri.as_()).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri.as_()).unit_normal();
+        let nrm0_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri.as_())
+                .unit_normal();
+        let nrm1_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri.as_())
+                .unit_normal();
 
         // Check if triangles face opposite directions relative to viewing direction
         let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.; // Triangle 0 facing toward/away from viewer
@@ -299,8 +303,10 @@ pub fn occluding_contour_for_triangle_mesh(
             tri2vtx.len() / 3
         );
         // Calculate triangle normals
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri).unit_normal();
+        let nrm0_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri).unit_normal();
+        let nrm1_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri).unit_normal();
 
         // First check if this is a contour edge (triangles face opposite directions)
         {
@@ -389,8 +395,10 @@ pub fn silhouette_for_triangle_mesh(
             i1_tri,
             tri2vtx.len() / 3
         );
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri).unit_normal();
+        let nrm0_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri).unit_normal();
+        let nrm1_world =
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri).unit_normal();
         // Check contour condition first
         {
             let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.;

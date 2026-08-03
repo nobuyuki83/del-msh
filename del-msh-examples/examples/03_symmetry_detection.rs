@@ -46,11 +46,12 @@ fn extract_triangles_in_symmetry(
         if tri2flg[i_tri] != 0 {
             continue;
         }
-        let cog = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri).cog();
+        let cog = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri).cog();
         let a_cog = del_geo_core::mat3x4_col_major::transform_affine(affine, &cog);
         //dbg!(cog, a_cog);
         // compute distance
-        let dist_a = del_msh_cpu::trimesh3::distance_to_point3(tri2vtx.as_chunks::<3>().0, vtx2xyz, &a_cog);
+        let dist_a =
+            del_msh_cpu::trimesh3::distance_to_point3(tri2vtx.as_chunks::<3>().0, vtx2xyz, &a_cog);
         //dbg!(i_tri, dist_a);
         if dist_a > 0.03 {
             tri2flg[i_tri] = 1;
@@ -108,7 +109,8 @@ pub fn sym_detector(
         let p0 = del_msh_cpu::trimesh::position_from_barycentric_coordinate::<_, 3>(
             tri2vtx, vtx2xyz, i_tri, r0, r1,
         );
-        let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri).unit_normal();
+        let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri)
+            .unit_normal();
         samples[i_sample].xyz.copy_from_slice(&p0);
         samples[i_sample].nrm.copy_from_slice(&n0);
         samples[i_sample].i_tri = i_tri;

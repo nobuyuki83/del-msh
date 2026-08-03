@@ -378,7 +378,11 @@ pub fn enforce_edge<T>(
     loop {
         if let Some((i0_tri, i0_node, i1_node)) =
             crate::trimesh_topology::find_edge_by_looking_around_point(
-                i0_vtx, i1_vtx, tri2vtx.as_chunks::<3>().0, tri2tri, vtx2tri,
+                i0_vtx,
+                i1_vtx,
+                tri2vtx.as_chunks::<3>().0,
+                tri2tri,
+                vtx2tri,
             )
         {
             // this edge divides outside and inside
@@ -544,15 +548,21 @@ where
         // delete triangles outside
         let Some((itri0_ker, _iedtri)) =
             crate::trimesh_topology::find_edge_by_looking_all_triangles(
-                idx2vtx[0], idx2vtx[1], tri2vtx.as_chunks::<3>().0,
+                idx2vtx[0],
+                idx2vtx[1],
+                tri2vtx.as_chunks::<3>().0,
             )
         else {
             panic!()
         };
         assert!(itri0_ker < tri2vtx.len() / 3);
         let mut _tri2flg = crate::trimesh_topology::flag_connected(&tri2tri, itri0_ker, 1);
-        (tri2vtx, tri2tri, _tri2flg) =
-            crate::trimesh_topology::delete_tri_flag(tri2vtx.as_chunks::<3>().0, &tri2tri, &_tri2flg, 0);
+        (tri2vtx, tri2tri, _tri2flg) = crate::trimesh_topology::delete_tri_flag(
+            tri2vtx.as_chunks::<3>().0,
+            &tri2tri,
+            &_tri2flg,
+            0,
+        );
     }
     assert_eq!(vtx2tri.len(), vtx2xy.len());
     // crate::io_obj::save_tri_mesh("target/c.obj", &tri2vtx, vtx2xy);

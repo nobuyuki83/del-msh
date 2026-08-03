@@ -285,7 +285,7 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,itri1)
+                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, itri1)
                     .position_from_barycentric_coordinates(b[0], b[1]);
                 let dpixdxyz =
                     del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
@@ -302,7 +302,7 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,itri0)
+                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, itri0)
                     .position_from_barycentric_coordinates(b[0], b[1]);
                 let dpixdxyz =
                     del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
@@ -367,7 +367,7 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr1, itri1, transform_world2pix)
                     .unwrap();
                 let itri1 = itri1 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,itri1)
+                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, itri1)
                     .position_from_barycentric_coordinates(b[0], b[1]);
                 let dpixdxyz =
                     del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);
@@ -384,7 +384,7 @@ pub fn bwd(
                 let b = fn_barycentric(tri2vtx, vtx2xyz, &pixcntr0, itri0, transform_world2pix)
                     .unwrap();
                 let itri0 = itri0 as usize;
-                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,itri0)
+                let xyz = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, itri0)
                     .position_from_barycentric_coordinates(b[0], b[1]);
                 let dpixdxyz =
                     del_geo_core::mat4_col_major::jacobian_transform(transform_world2pix, &xyz);

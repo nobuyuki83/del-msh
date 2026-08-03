@@ -93,7 +93,11 @@ pub fn is_point_inside_sphere(
 ) -> bool {
     use del_geo_core::vec3;
     let pos_i = crate::trimesh::position_from_barycentric_coordinate(
-        tri2vtx.as_flattened(), vtx2xyz, smpli.0, smpli.1, smpli.2,
+        tri2vtx.as_flattened(),
+        vtx2xyz,
+        smpli.0,
+        smpli.1,
+        smpli.2,
     );
     let indexes_tri = triangles_in_sphere(pos_i, rad, smpli.0, vtx2xyz, tri2vtx, tri2adjtri);
     for idx_tri in indexes_tri.iter() {
@@ -103,7 +107,11 @@ pub fn is_point_inside_sphere(
         for &j_smpl in elem2smpl[idx_tri].iter() {
             let smpl_j = samples[j_smpl];
             let pos_j = crate::trimesh::position_from_barycentric_coordinate(
-                tri2vtx.as_flattened(), vtx2xyz, smpl_j.0, smpl_j.1, smpl_j.2,
+                tri2vtx.as_flattened(),
+                vtx2xyz,
+                smpl_j.0,
+                smpl_j.1,
+                smpl_j.2,
             );
             let dist = vec3::distance(&pos_i, &pos_j);
             if dist < rad {

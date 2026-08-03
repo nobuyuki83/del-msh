@@ -14,7 +14,11 @@ pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize]) -> (Vec<[usize; 
         let num_node = elem2idx[i_elem + 1] - elem2idx[i_elem];
         let idx0 = elem2idx[i_elem];
         for i_node in 0..num_node - 2 {
-            tri2vtx.push([idx2vtx[idx0], idx2vtx[idx0 + 1 + i_node], idx2vtx[idx0 + 2 + i_node]]);
+            tri2vtx.push([
+                idx2vtx[idx0],
+                idx2vtx[idx0 + 1 + i_node],
+                idx2vtx[idx0 + 2 + i_node],
+            ]);
             new2old.push(i_elem);
         }
     }
@@ -26,8 +30,16 @@ pub fn from_quad_mesh(quad2vtx: &[usize]) -> Vec<[usize; 3]> {
     let nquad = quad2vtx.len() / 4;
     let mut tri2vtx = Vec::with_capacity(nquad * 2);
     for iquad in 0..nquad {
-        tri2vtx.push([quad2vtx[iquad * 4], quad2vtx[iquad * 4 + 1], quad2vtx[iquad * 4 + 2]]);
-        tri2vtx.push([quad2vtx[iquad * 4], quad2vtx[iquad * 4 + 2], quad2vtx[iquad * 4 + 3]]);
+        tri2vtx.push([
+            quad2vtx[iquad * 4],
+            quad2vtx[iquad * 4 + 1],
+            quad2vtx[iquad * 4 + 2],
+        ]);
+        tri2vtx.push([
+            quad2vtx[iquad * 4],
+            quad2vtx[iquad * 4 + 2],
+            quad2vtx[iquad * 4 + 3],
+        ]);
     }
     tri2vtx
 }

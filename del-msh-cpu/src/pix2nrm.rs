@@ -18,7 +18,7 @@ where
                 continue;
             }
             let i_tri: usize = i_tri.as_();
-            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri);
+            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri);
             let nrm = tri.normal();
             let nrm = del_geo_core::mat4_col_major::transform_direction(cam_modelviewd, &nrm);
             let unrm = del_geo_core::vec3::normalize(&nrm);

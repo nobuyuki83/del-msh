@@ -23,7 +23,8 @@ pub fn extend_trimesh3<'a>(
 ) -> Bound<'a, PyArray2<f64>> {
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let vtx2nrm = del_msh_cpu::trimesh3::vtx2normal(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0);
+    let vtx2nrm =
+        del_msh_cpu::trimesh3::vtx2normal(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0);
     let num_vtx = vtx2xyz.len() / 3;
     let mut a = vec![0_f64; num_vtx * 3];
     for i_vtx in 0..num_vtx {
