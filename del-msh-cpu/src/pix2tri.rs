@@ -2,7 +2,7 @@ use num_traits::AsPrimitive;
 
 pub fn pix2tri_by_raycast<Index>(
     pix2tri: &mut [Index],
-    tri2vtx: &[Index],
+    tri2vtx: &[[Index; 3]],
     vtx2xyz: &[[f32; 3]],
     bvhnodes: &[Index],
     bvhnode2aabb: &[f32],
@@ -27,7 +27,7 @@ pub fn pix2tri_by_raycast<Index>(
             &ray_org,
             &ray_dir,
             &crate::search_bvh3::TriMeshWithBvh {
-                tri2vtx,
+                tri2vtx: tri2vtx.as_flattened(),
                 vtx2xyz,
                 bvhnodes,
                 bvhnode2aabb,
@@ -150,7 +150,7 @@ fn test_pix2tri() {
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
         pix2tri_by_raycast(
             &mut pix2tri,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &bvhnodes,
             &bvhnode2aabb,
@@ -351,7 +351,7 @@ fn test_interpolate() {
         let transform_ndc2world: [f32; 16] = std::array::from_fn(|i| transform_ndc2world[i] as f32);
         pix2tri_by_raycast(
             &mut pix2tri,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz0,
             &bvhnodes,
             &bvhnode2aabb,

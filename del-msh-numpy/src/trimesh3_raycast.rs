@@ -44,7 +44,7 @@ pub fn trimesh3_raycast_pix2tri_by_raycast<'a>(
     let transform_ndc2world = arrayref::array_ref![transform_ndc2world.as_slice().unwrap(), 0, 16];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         pix2tri.as_slice_mut().unwrap(),
-        tri2vtx.as_slice().unwrap(),
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
         vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
         bvhnodes.as_slice().unwrap(),
         bvhnode2aabb.as_slice().unwrap(),

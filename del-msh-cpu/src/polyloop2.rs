@@ -428,7 +428,11 @@ where
         let (i_tri, r0, r1) =
             crate::trimesh::sample_uniformly(&tri2cumarea, reng.random(), reng.random());
         let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(
-            &tri2vtx, &vtx2xyz, i_tri, r0, r1,
+            &tri2vtx,
+            vtx2xyz.as_chunks::<2>().0,
+            i_tri,
+            r0,
+            r1,
         );
         let mut is_near = false;
         for pos0 in &vtx2vectwo {

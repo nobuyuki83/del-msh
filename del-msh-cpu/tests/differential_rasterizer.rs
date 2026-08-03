@@ -3,7 +3,7 @@ mod tests {
 
     const IMG_RES: usize = 128;
 
-    fn geometry(eps: f32) -> (Vec<u32>, Vec<[f32; 3]>, [f32; 16], Vec<[f32; 3]>) {
+    fn geometry(eps: f32) -> (Vec<[u32;3]>, Vec<[f32; 3]>, [f32; 16], Vec<[f32; 3]>) {
         let (tri2vtx, vtx2xyz) =
             del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
@@ -21,7 +21,7 @@ mod tests {
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 1., 0.]).collect();
         //let dxyz: Vec<f32> = (0..vtx2xyz.len()/3).flat_map(|_| [0., 0., 1.]).collect();
         (
-            tri2vtx.as_flattened().to_vec(),
+            tri2vtx,
             vtx2xyz,
             transform_world2ndc,
             dxyz,
@@ -135,24 +135,24 @@ mod tests {
             &transform_world2ndc,
         );
         let num_vtx = vtx2xyz.len();
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx.as_flattened(), num_vtx);
         let edge2tri =
-            del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
+            del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx.as_flattened(), num_vtx);
         let cedge2vtx = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
-            &tri2vtx,
-            &vtx2xyz.as_flattened(),
+            &tri2vtx.as_flattened(),
+            &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
         );
         let pix2tri = {
             let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx,
+                &tri2vtx.as_flattened(),
                 &vtx2xyz.as_flattened(),
                 3,
             );
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-                0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+                0, &bvhnodes, &tri2vtx.as_flattened(), 3, &vtx2xyz, None,
             );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
             del_msh_cpu::pix2tri::pix2tri_by_raycast(
@@ -336,12 +336,12 @@ mod tests {
         );
         let pix2tri = {
             let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx,
+                &tri2vtx.as_flattened(),
                 &vtx2xyz.as_flattened(),
                 3,
             );
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-                0, &bvhnodes, &tri2vtx, 3, &vtx2xyz, None,
+                0, &bvhnodes, &tri2vtx.as_flattened(), 3, &vtx2xyz, None,
             );
             let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
             del_msh_cpu::pix2tri::pix2tri_by_raycast(
@@ -369,7 +369,7 @@ mod tests {
             let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
             //
             del_msh_cpu::edgegrad::bwd(
-                &tri2vtx,
+                &tri2vtx.as_flattened(),
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,

@@ -92,13 +92,13 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             // element index is provided
             let aabb0 = crate::vtx2xyz::aabb3_indexed(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                vtx2xyz0.as_flattened(),
+                vtx2xyz0,
                 Real::zero(),
             );
             if let Some(vtx2xyz1) = vtx2xyz1 {
                 let aabb1 = crate::vtx2xyz::aabb3_indexed(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                    vtx2xyz1.as_flattened(),
+                    vtx2xyz1,
                     Real::zero(),
                 );
                 del_geo_core::aabb3::from_two_aabbs(&aabb0, &aabb1)

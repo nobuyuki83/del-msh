@@ -23,18 +23,18 @@ pub fn extend_trimesh3<'a>(
 ) -> Bound<'a, PyArray2<f64>> {
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let vtx2nrm = del_msh_cpu::trimesh3::vtx2normal(tri2vtx, vtx2xyz.as_chunks::<3>().0);
+    let vtx2nrm = del_msh_cpu::trimesh3::vtx2normal(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0);
     let num_vtx = vtx2xyz.len() / 3;
     let mut a = vec![0_f64; num_vtx * 3];
     for i_vtx in 0..num_vtx {
         let mut p0 = [
-            vtx2xyz[i_vtx * 3 + 0] + step * vtx2nrm[i_vtx * 3 + 0],
-            vtx2xyz[i_vtx * 3 + 1] + step * vtx2nrm[i_vtx * 3 + 1],
-            vtx2xyz[i_vtx * 3 + 2] + step * vtx2nrm[i_vtx * 3 + 2],
+            vtx2xyz[i_vtx * 3 + 0] + step * vtx2nrm[i_vtx][0],
+            vtx2xyz[i_vtx * 3 + 1] + step * vtx2nrm[i_vtx][1],
+            vtx2xyz[i_vtx * 3 + 2] + step * vtx2nrm[i_vtx][2],
         ];
         for _ in 1..niter {
             p0 = del_msh_cpu::trimesh3::extend_avoid_intersection(
-                tri2vtx,
+                tri2vtx.as_chunks::<3>().0,
                 vtx2xyz.as_chunks::<3>().0,
                 &p0,
                 step,

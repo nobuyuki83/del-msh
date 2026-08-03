@@ -39,8 +39,8 @@ fn main() -> anyhow::Result<()> {
     let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
-        &tri2vtx,
-        &vtx2xyz.as_chunks::<3>().0,
+        tri2vtx.as_chunks::<3>().0,
+        vtx2xyz.as_chunks::<3>().0,
         &bvhnodes,
         &aabbs,
         img_shape,
@@ -93,7 +93,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &transform_ndc2world,
             &tri2vtx,
-            &vtx2xyz,
+            vtx2xyz.as_chunks::<3>().0,
             &vtx2uv,
             &pix2tri,
             tex_shape,
@@ -111,7 +111,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &transform_ndc2world,
             &tri2vtx,
-            &vtx2xyz,
+            vtx2xyz.as_chunks::<3>().0,
             &vtx2uv,
             &pix2tri,
             tex_shape,

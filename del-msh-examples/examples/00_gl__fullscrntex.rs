@@ -58,8 +58,8 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
         let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
         del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
-            &self.tri2vtx,
-            &self.vtx2xyz.as_chunks::<3>().0,
+            self.tri2vtx.as_chunks::<3>().0,
+            self.vtx2xyz.as_chunks::<3>().0,
             &self.bvhnodes,
             &self.aabbs,
             img_shape,
@@ -69,7 +69,7 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
             img_shape,
             &transform_ndc2world,
             &self.tri2vtx,
-            &self.vtx2xyz,
+            self.vtx2xyz.as_chunks::<3>().0,
             &self.vtx2uv,
             &pix2tri,
             self.tex_shape,

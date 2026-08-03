@@ -60,7 +60,7 @@ fn boundaryedge2vtx_triangle_mesh<'a>(
     // let num_node = tri2vtx.shape()[1];
     // let num_tri = tri2vtx.shape()[0];
     let tri2vtx = tri2vtx.as_slice().unwrap();
-    let (bedge2vtx, tri2tri) = del_msh_cpu::trimesh_topology::boundaryedge2vtx(tri2vtx, num_vtx);
+    let (bedge2vtx, tri2tri) = del_msh_cpu::trimesh_topology::boundaryedge2vtx(tri2vtx.as_chunks::<3>().0, num_vtx);
     (
         numpy::ndarray::Array2::from_shape_vec((bedge2vtx.len() / 2, 2), bedge2vtx)
             .unwrap()

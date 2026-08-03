@@ -369,7 +369,7 @@ pub fn update_sorted_morton_code<Index>(
             sorted_morten_code2(idx2tri, idx2morton, tri2morton, vtx2xyz, &transform_xy2uni);
         }
         3 => {
-            let aabb = crate::vtx2xyz::aabb3(vtx2xyz, 0f32);
+            let aabb = crate::vtx2xyz::aabb3(vtx2xyz.as_chunks::<3>().0, 0f32);
             let transform_xy2uni =
                 del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(&aabb);
             // del_geo_core::mat4_col_major::from_aabb3_fit_into_unit(&aabb);

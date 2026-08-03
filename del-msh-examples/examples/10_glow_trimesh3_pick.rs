@@ -139,8 +139,8 @@ impl MyApp {
                 let res = del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
                     &ray_org,
                     &ray_dir,
-                    &self.tri2vtx,
-                    &self.vtx2xyz,
+                    self.tri2vtx.as_chunks::<3>().0,
+                    self.vtx2xyz.as_chunks::<3>().0,
                 );
                 if let Some((depth, i_tri)) = res {
                     let pos = del_geo_core::vec3::axpy(depth, &ray_dir, &ray_org);

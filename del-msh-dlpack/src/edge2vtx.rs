@@ -46,7 +46,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
         dlpack::device_type_codes::CPU => {
             let edge2vtx_contour = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
                 slice!(tri2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice!(transform_world2ndc, f32)
                     .unwrap()
                     .try_into()

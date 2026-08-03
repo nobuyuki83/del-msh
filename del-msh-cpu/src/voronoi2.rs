@@ -431,7 +431,7 @@ fn test_voronoi_sites_on_edge() {
         crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(&vtxl2xy, 0.08, 0.08);
     let tri2xycc = crate::trimesh2::tri2circumcenter(&tri2vtx, &vtx2xy);
     let (bedge2vtx, tri2triedge) =
-        crate::trimesh_topology::boundaryedge2vtx(&tri2vtx, vtx2xy.len() / 2);
+        crate::trimesh_topology::boundaryedge2vtx(tri2vtx.as_chunks::<3>().0, vtx2xy.len() / 2);
     //
     let bedge2xymp = {
         let mut bedge2xymp = vec![0f32; bedge2vtx.len()];

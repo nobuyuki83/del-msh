@@ -8,14 +8,14 @@ where
         &self,
         bc: &[T; 3],
         i_tri: u32,
-        tri2vtx: &[u32],
+        tri2vtx: &[[u32; 3]],
         vtx2xyz: &[[T; 3]],
         transform_world2ndc: &[T; 16],
     ) -> T {
         if i_tri == u32::MAX {
             return T::zero();
         };
-        let q = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i_tri as usize)
+        let q = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
             .position_from_barycentric_coordinates(bc[0], bc[1]);
         let ndc =
             del_geo_core::mat4_col_major::transform_homogeneous(transform_world2ndc, &q).unwrap();
@@ -67,7 +67,7 @@ fn test_hoge() {
     let (_t0, bc0) =
         del_geo_core::tri3::intersection_against_line(&p0[0], &p0[1], &p0[2], &ray_org, &ray_dir)
             .unwrap();
-    let depth0 = depth_layer.fwd(&bc0, 0, &[0, 1, 2], &p0, &transform_world2ndc);
+    let depth0 = depth_layer.fwd(&bc0, 0, &[[0, 1, 2]], &p0, &transform_world2ndc);
     let dldw_depth = 1.3;
     let l0 = depth0 * dldw_depth;
     let (dldw_p0, dldw_p1, dldw_p2) = depth_layer.bwd(
@@ -90,7 +90,7 @@ fn test_hoge() {
             &p1[0], &p1[1], &p1[2], &ray_org, &ray_dir,
         )
         .unwrap();
-        let depth1 = depth_layer.fwd(&bc1, 0, &[0, 1, 2], &p1, &transform_world2ndc);
+        let depth1 = depth_layer.fwd(&bc1, 0, &[[0, 1, 2]], &p1, &transform_world2ndc);
         let l1 = depth1 * dldw_depth;
         let num_diff = (l1 - l0) / eps;
         let ana_diff = match i_node {
@@ -108,7 +108,7 @@ pub fn pix2depth_from_pix2tri(
     pix2depth: &mut [f32],
     pix2tri: &[u32],
     tri2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     img_shape: (usize, usize), // (width, height)
     transform_ndc2world: &[f32; 16],
 ) {
@@ -127,7 +127,7 @@ pub fn pix2depth_from_pix2tri(
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
-        let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize);
+        let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri as usize);
         let (coeff, _bc) = del_geo_core::tri3::intersection_against_line(
             tri.p0, tri.p1, tri.p2, &ray_org, &ray_dir,
         )
@@ -234,7 +234,7 @@ fn test_depthmap() {
             3,
         )
         .unwrap();
-        let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz.as_flattened(), 0.);
+        let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
         dbg!(aabb3);
         let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
             &tri2vtx.as_flattened(),

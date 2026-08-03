@@ -4,7 +4,7 @@ pub fn render_texture_from_pix2tri<Index>(
     img_shape: (usize, usize),
     transform_ndc2world: &[f32; 16],
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     vtx2uv: &[f32],
     pix2tri: &[Index],
     tex_shape: (usize, usize),
@@ -29,7 +29,7 @@ where
                 continue;
             }
             let i_tri: usize = i_tri.as_();
-            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri);
+            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri);
             let Some((a, _bc)) = tri.intersection_against_ray(&ray_org, &ray_dir) else {
                 continue;
             };

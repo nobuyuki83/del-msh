@@ -36,7 +36,7 @@ fn extract_triangles_in_symmetry(
     tri2flg: &mut [u8],
     i_tri_start: usize,
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     affine: &[f32; 12],
     tri2tri: &[usize],
 ) {
@@ -46,12 +46,11 @@ fn extract_triangles_in_symmetry(
         if tri2flg[i_tri] != 0 {
             continue;
         }
-        let cog = del_msh_cpu::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).cog();
+        let cog = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri).cog();
         let a_cog = del_geo_core::mat3x4_col_major::transform_affine(affine, &cog);
         //dbg!(cog, a_cog);
         // compute distance
-        let dist_a =
-            del_msh_cpu::trimesh3::distance_to_point3(tri2vtx, vtx2xyz.as_chunks::<3>().0, &a_cog);
+        let dist_a = del_msh_cpu::trimesh3::distance_to_point3(tri2vtx.as_chunks::<3>().0, vtx2xyz, &a_cog);
         //dbg!(i_tri, dist_a);
         if dist_a > 0.03 {
             tri2flg[i_tri] = 1;
@@ -78,7 +77,7 @@ pub struct Sample {
 
 pub fn sym_detector(
     tri2vtx: &[usize],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     i_seed: u64,
     num_sample: usize,
 ) -> Vec<DetectedSymmetry> {
@@ -87,13 +86,13 @@ pub fn sym_detector(
         3,
         &[0, 2, 4, 6],
         &[1, 2, 2, 0, 0, 1],
-        vtx2xyz.len() / 3,
+        vtx2xyz.len(),
     );
     // use del_geo_core::vec3::Vec3;
     use rand::RngExt;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
-    let tri2cumsumarea = del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz, 3);
+    let tri2cumsumarea = del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz.as_flattened(), 3);
     let mut samples = vec![
         Sample {
             xyz: [0f32; 3],
@@ -109,7 +108,7 @@ pub fn sym_detector(
         let p0 = del_msh_cpu::trimesh::position_from_barycentric_coordinate::<_, 3>(
             tri2vtx, vtx2xyz, i_tri, r0, r1,
         );
-        let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri).unit_normal();
+        let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i_tri).unit_normal();
         samples[i_sample].xyz.copy_from_slice(&p0);
         samples[i_sample].nrm.copy_from_slice(&n0);
         samples[i_sample].i_tri = i_tri;
@@ -227,7 +226,7 @@ fn main() -> anyhow::Result<()> {
         );
         del_msh_cpu::vtx2xyz::transform_linear(&vtx2xyz, &rot)
     };
-    let syms = sym_detector(&tri2vtx, &vtx2xyz.as_flattened(), 9, 200);
+    let syms = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
     for (i_sym, sym) in syms.iter().enumerate() {
         let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&sym.affine);
         let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&n);

@@ -104,7 +104,7 @@ fn main() -> anyhow::Result<()> {
     let mut pix2tri = vec![0u32; img_shape.0 * img_shape.1];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
-        &tri2vtx.as_flattened(),
+        &tri2vtx,
         &vtx2xyz,
         &bvhnodes,
         &bvhnode2aabb,
@@ -138,7 +138,7 @@ fn main() -> anyhow::Result<()> {
         );
         del_msh_cpu::edge2vtx::contour_for_triangle_mesh(
             &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,

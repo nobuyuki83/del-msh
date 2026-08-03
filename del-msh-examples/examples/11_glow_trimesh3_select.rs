@@ -160,8 +160,8 @@ impl MyApp {
                     del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
                         &ray_org,
                         &ray_dir,
-                        &self.tri2vtx,
-                        &self.vtx2xyz,
+                        self.tri2vtx.as_chunks::<3>().0,
+                        self.vtx2xyz.as_chunks::<3>().0,
                     )
                 {
                     // hit something
@@ -203,8 +203,8 @@ impl MyApp {
                     del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
                         &ray_org,
                         &ray_dir,
-                        &self.tri2vtx,
-                        &self.vtx2xyz,
+                        self.tri2vtx.as_chunks::<3>().0,
+                        self.vtx2xyz.as_chunks::<3>().0,
                     )
                 {
                     self.cur_dist = Some(self.tri2dist[i_tri as usize]);

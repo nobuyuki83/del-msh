@@ -48,7 +48,7 @@ pub fn pix2tri_by_raycast(
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::pix2tri::pix2tri_by_raycast(
                 slice_mut!(pix2tri, u32).unwrap(),
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice!(bvhnodes, u32).unwrap(),
                 slice!(bvhnode2aabb, f32).unwrap(),

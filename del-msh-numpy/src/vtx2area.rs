@@ -30,7 +30,7 @@ fn vtx2area_from_uniformmesh<'a>(
         if num_dim == 2 {
             del_msh_cpu::trimesh2::vtx2area(elem2vtx, vtx2xyz)
         } else if num_dim == 3 {
-            del_msh_cpu::trimesh3::vtx2area(elem2vtx, vtx2xyz.as_chunks::<3>().0)
+            del_msh_cpu::trimesh3::vtx2area(elem2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0)
         } else {
             panic!();
         }

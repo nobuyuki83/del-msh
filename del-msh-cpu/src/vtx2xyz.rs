@@ -2,32 +2,24 @@
 
 use num_traits::AsPrimitive;
 
-pub fn to_array3<T>(vtx2xyz: &[T], i_vtx: usize) -> [T; 3]
+pub fn to_array3<T>(vtx2xyz: &[[T; 3]], i_vtx: usize) -> [T; 3]
 where
     T: Copy,
 {
-    [
-        vtx2xyz[i_vtx * 3],
-        vtx2xyz[i_vtx * 3 + 1],
-        vtx2xyz[i_vtx * 3 + 2],
-    ]
+    vtx2xyz[i_vtx]
 }
 
 /// 3D Axis-aligned bonding box for 3D points
 /// # Arguments
 /// * eps: T - margin
-pub fn aabb3<T>(vtx2xyz: &[T], eps: T) -> [T; 6]
+pub fn aabb3<T>(vtx2xyz: &[[T; 3]], eps: T) -> [T; 6]
 where
     T: num_traits::Float,
 {
     assert!(!vtx2xyz.is_empty());
     let mut aabb = [T::zero(); 6];
-    {
-        let xyz = arrayref::array_ref!(vtx2xyz, 0, 3);
-        del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, eps);
-    }
-    for xyz in vtx2xyz.chunks(3) {
-        let xyz = arrayref::array_ref!(xyz, 0, 3);
+    del_geo_core::aabb3::set_as_cube(&mut aabb, &vtx2xyz[0], eps);
+    for xyz in vtx2xyz.iter() {
         del_geo_core::aabb3::add_point(&mut aabb, xyz, eps);
     }
     assert!(aabb[0] <= aabb[3]);
@@ -36,7 +28,7 @@ where
     aabb
 }
 
-pub fn aabb3_indexed<Index, Real>(idx2vtx: &[Index], vtx2xyz: &[Real], eps: Real) -> [Real; 6]
+pub fn aabb3_indexed<Index, Real>(idx2vtx: &[Index], vtx2xyz: &[[Real; 3]], eps: Real) -> [Real; 6]
 where
     Real: num_traits::Float,
     Index: AsPrimitive<usize>,
@@ -45,13 +37,11 @@ where
     let mut aabb = [Real::zero(); 6];
     {
         let i_vtx: usize = idx2vtx[0].as_();
-        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
-        del_geo_core::aabb3::set_as_cube(&mut aabb, xyz, eps);
+        del_geo_core::aabb3::set_as_cube(&mut aabb, &vtx2xyz[i_vtx], eps);
     }
     for &i_vtx in idx2vtx.iter().skip(1) {
         let i_vtx: usize = i_vtx.as_();
-        let xyz = arrayref::array_ref!(vtx2xyz, i_vtx * 3, 3);
-        del_geo_core::aabb3::add_point(&mut aabb, xyz, eps);
+        del_geo_core::aabb3::add_point(&mut aabb, &vtx2xyz[i_vtx], eps);
     }
     assert!(aabb[0] <= aabb[3]);
     assert!(aabb[1] <= aabb[4]);
@@ -60,13 +50,13 @@ where
 }
 
 /// Oriented Bounding Box (OBB)
-pub fn obb3<Real>(vtx2xyz: &[Real]) -> [Real; 12]
+pub fn obb3<Real>(vtx2xyz: &[[Real; 3]]) -> [Real; 12]
 where
     Real: num_traits::Float + Copy + 'static + std::iter::Sum + num_traits::FloatConst,
     usize: AsPrimitive<Real>,
 {
     use del_geo_core::vec3::Vec3;
-    let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz);
+    let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz.as_flattened());
     use slice_of_array::SliceFlatExt;
     let cov = cov.flat();
     let cov = arrayref::array_ref![cov, 0, 9];
@@ -79,8 +69,7 @@ where
     let mut x_size = Real::zero();
     let mut y_size = Real::zero();
     let mut z_size = Real::zero();
-    for xyz in vtx2xyz.chunks(3) {
-        let xyz = arrayref::array_ref![xyz, 0, 3];
+    for xyz in vtx2xyz.iter() {
         let l = del_geo_core::mat3_col_major::mult_vec(&v, &xyz.sub(&cog)); // v^t * (v-cog)
         x_size = if l[0].abs() > x_size {
             l[0].abs()
@@ -117,7 +106,7 @@ fn test_obb3() {
     let vtx2xyz0: Vec<[f32; 3]> = (0..10000)
         .map(|_v| del_geo_core::aabb3::sample(&aabb3, &mut reng))
         .collect();
-    let obb0 = obb3(&vtx2xyz0.as_flattened());
+    let obb0 = obb3(&vtx2xyz0);
     assert!(obb0[0].abs() < 0.01);
     assert!(obb0[1].abs() < 0.01);
     assert!(obb0[2].abs() < 0.01);
@@ -127,7 +116,7 @@ fn test_obb3() {
     let rot = del_geo_core::mat4_col_major::from_bryant_angles(0.5, 0.0, 0.0);
     let mat = del_geo_core::mat4_col_major::mult_mat_col_major(&transl, &rot);
     let vtx2xyz1 = transform_homogeneous(&vtx2xyz0, &mat);
-    let obb1 = obb3(&vtx2xyz1.as_flattened());
+    let obb1 = obb3(&vtx2xyz1);
     assert!((obb1[0] - transl_vec[0]).abs() < 0.01);
     assert!((obb1[1] - transl_vec[1]).abs() < 0.01);
     assert!((obb1[2] - transl_vec[2]).abs() < 0.01);
@@ -161,8 +150,8 @@ fn test_obb3() {
 // ---------------------
 
 pub fn translate_then_scale<Real>(
-    vtx2xyz_out: &mut [Real],
-    vtx2xyz_in: &[Real],
+    vtx2xyz_out: &mut [[Real; 3]],
+    vtx2xyz_in: &[[Real; 3]],
     transl: &[Real; 3],
     scale: Real,
 ) where
@@ -170,8 +159,8 @@ pub fn translate_then_scale<Real>(
 {
     assert_eq!(vtx2xyz_in.len(), vtx2xyz_out.len());
     vtx2xyz_out
-        .chunks_mut(3)
-        .zip(vtx2xyz_in.chunks(3))
+        .iter_mut()
+        .zip(vtx2xyz_in.iter())
         .for_each(|(o, v)| {
             o[0] = (v[0] + transl[0]) * scale;
             o[1] = (v[1] + transl[1]) * scale;
@@ -209,7 +198,7 @@ where
         .collect()
 }
 
-pub fn normalize<Real>(vtx2xyz: &[Real]) -> Vec<Real>
+pub fn normalize<Real>(vtx2xyz: &[[Real; 3]]) -> Vec<[Real; 3]>
 where
     Real: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<Real>,
@@ -225,17 +214,16 @@ where
 }
 
 #[allow(clippy::identity_op)]
-pub fn normalize_in_place<Real>(vtx2xyz: &mut [Real], size: Real)
+pub fn normalize_in_place<Real>(vtx2xyz: &mut [[Real; 3]], size: Real)
 where
     Real: num_traits::Float,
 {
-    let num_vtx = vtx2xyz.len() / 3;
     let mut mins = [Real::one(); 3];
     let mut maxs = [-Real::one(); 3];
-    for ivtx in 0..num_vtx {
-        let x0 = vtx2xyz[ivtx * 3 + 0];
-        let y0 = vtx2xyz[ivtx * 3 + 1];
-        let z0 = vtx2xyz[ivtx * 3 + 2];
+    for (ivtx, xyz) in vtx2xyz.iter().enumerate() {
+        let x0 = xyz[0];
+        let y0 = xyz[1];
+        let z0 = xyz[2];
         if ivtx == 0 {
             mins[0] = x0;
             maxs[0] = x0;
@@ -268,13 +256,13 @@ where
         }
         size / size0
     };
-    for ivtx in 0..num_vtx {
-        let x0 = vtx2xyz[ivtx * 3 + 0];
-        let y0 = vtx2xyz[ivtx * 3 + 1];
-        let z0 = vtx2xyz[ivtx * 3 + 2];
-        vtx2xyz[ivtx * 3 + 0] = (x0 - cntr[0]) * scale;
-        vtx2xyz[ivtx * 3 + 1] = (y0 - cntr[1]) * scale;
-        vtx2xyz[ivtx * 3 + 2] = (z0 - cntr[2]) * scale;
+    for xyz in vtx2xyz.iter_mut() {
+        let x0 = xyz[0];
+        let y0 = xyz[1];
+        let z0 = xyz[2];
+        xyz[0] = (x0 - cntr[0]) * scale;
+        xyz[1] = (y0 - cntr[1]) * scale;
+        xyz[2] = (z0 - cntr[2]) * scale;
     }
 }
 

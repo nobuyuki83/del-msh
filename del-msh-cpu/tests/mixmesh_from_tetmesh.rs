@@ -175,10 +175,10 @@ mod tests {
                 .collect();
             let num_vtx = vtx2xyz.len() / 3;
             let num_ovtx = ovtx2vtxs.len();
-            let mut ovtx2nrm = vec![0f64; num_ovtx * 3];
+            let mut ovtx2nrm = vec![[0f64; 3]; num_ovtx];
             del_msh_cpu::trimesh3::vtx2normal_with_mapping(
-                &tri2vtx,
-                &vtx2xyz.as_chunks::<3>().0,
+                tri2vtx.as_chunks::<3>().0,
+                vtx2xyz.as_chunks::<3>().0,
                 &vtx2ovtx,
                 &mut ovtx2nrm,
             );
@@ -186,7 +186,7 @@ mod tests {
             let mut nvtx2xyz: Vec<f64> = vtx2xyz.clone();
             for (i_ovtx, &i_vtx) in ovtx2vtxs.iter().enumerate() {
                 let xyz0 = arrayref::array_ref![vtx2xyz, i_vtx * 3, 3];
-                let nrm = arrayref::array_ref![ovtx2nrm, i_ovtx * 3, 3];
+                let nrm = &ovtx2nrm[i_ovtx];
                 let dxyz = del_geo_core::vec3::scale(nrm, 0.005);
                 let xyz1 = del_geo_core::vec3::add(xyz0, &dxyz);
                 //let xyz2 = crate::trimesh3::extend_avoid_intersection(&tri2vtx, &vtx2xyz, &xyz1, 0.002);

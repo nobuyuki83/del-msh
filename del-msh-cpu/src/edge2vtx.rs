@@ -190,7 +190,7 @@ pub fn from_polyline(num_vtx: usize) -> Vec<usize> {
 /// * `Vec<INDEX>` - Contour edge connectivity
 pub fn contour_for_triangle_mesh<INDEX>(
     tri2vtx: &[INDEX],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[INDEX],
     edge2tri: &[INDEX],
@@ -209,7 +209,7 @@ where
         let (i0_vtx, i1_vtx) = (node2vtx[0].as_(), node2vtx[1].as_());
         // Calculate midpoint of edge for ray casting
         let pos_mid: [f32; 3] =
-            std::array::from_fn(|i| (vtx2xyz[i0_vtx * 3 + i] + vtx2xyz[i1_vtx * 3 + i]) * 0.5);
+            std::array::from_fn(|i| (vtx2xyz[i0_vtx][i] + vtx2xyz[i1_vtx][i]) * 0.5);
         // Get viewing direction at this point
         let (_ray_org, ray_dir) = mat4_col_major::ray_from_transform_world2ndc(
             transform_world2ndc,
@@ -224,8 +224,8 @@ where
         assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len() / 3);
 
         // Calculate normal vectors of adjacent triangles
-        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri.as_()).unit_normal();
-        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri.as_()).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri.as_()).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri.as_()).unit_normal();
 
         // Check if triangles face opposite directions relative to viewing direction
         let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.; // Triangle 0 facing toward/away from viewer
@@ -299,10 +299,8 @@ pub fn occluding_contour_for_triangle_mesh(
             tri2vtx.len() / 3
         );
         // Calculate triangle normals
-        let nrm0_world =
-            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i0_tri).unit_normal();
-        let nrm1_world =
-            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i1_tri).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri).unit_normal();
 
         // First check if this is a contour edge (triangles face opposite directions)
         {
@@ -391,10 +389,8 @@ pub fn silhouette_for_triangle_mesh(
             i1_tri,
             tri2vtx.len() / 3
         );
-        let nrm0_world =
-            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i0_tri).unit_normal();
-        let nrm1_world =
-            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz.as_flattened(), i1_tri).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz,i1_tri).unit_normal();
         // Check contour condition first
         {
             let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.;

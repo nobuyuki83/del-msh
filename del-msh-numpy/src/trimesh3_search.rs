@@ -27,8 +27,8 @@ fn first_intersection_ray_meshtri3<'a>(
     let res = del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
         ray_org,
         ray_dir,
-        tri2vtx.as_slice().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+        vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
     );
     match res {
         None => {
@@ -60,8 +60,8 @@ fn pick_vertex_meshtri3<'a>(
     let res = del_msh_cpu::trimesh3_search_bruteforce::first_intersection_ray(
         ray_org,
         ray_dir,
-        tri2vtx.as_slice().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+        vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
     );
     match res {
         None => -1,

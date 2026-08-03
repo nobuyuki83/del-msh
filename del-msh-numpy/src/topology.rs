@@ -23,7 +23,7 @@ fn triangles_from_polygon_mesh<'a>(
         elem2idx.as_slice().unwrap(),
         idx2vtx.as_slice().unwrap(),
     );
-    numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
+    numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.into_flattened())
         .unwrap()
         .into_pyarray(py)
 }

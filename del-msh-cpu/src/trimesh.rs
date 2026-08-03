@@ -1,6 +1,6 @@
 pub fn position_from_barycentric_coordinate<Real, const N: usize>(
     tri2vtx: &[usize],
-    vtx2xyz: &[Real],
+    vtx2xyz: &[[Real; N]],
     i_tri: usize,
     r0: Real,
     r1: Real,
@@ -12,9 +12,9 @@ where
     let i0 = tri2vtx[i_tri * 3];
     let i1 = tri2vtx[i_tri * 3 + 1];
     let i2 = tri2vtx[i_tri * 3 + 2];
-    let p0 = &vtx2xyz[i0 * N..i0 * N + N];
-    let p1 = &vtx2xyz[i1 * N..i1 * N + N];
-    let p2 = &vtx2xyz[i2 * N..i2 * N + N];
+    let p0 = vtx2xyz[i0];
+    let p1 = vtx2xyz[i1];
+    let p2 = vtx2xyz[i2];
     let r2 = Real::one() - r0 - r1;
     let mut res = [Real::zero(); N];
     for i in 0..N {
@@ -43,7 +43,7 @@ where
         } else if num_dim == 2 {
             crate::trimesh2::to_tri2(idx_tri, tri2vtx, vtx2xyz).area()
         } else {
-            crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, idx_tri).area()
+            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0, idx_tri).area()
         };
         let t0 = cumulative_area_sum[cumulative_area_sum.len() - 1];
         cumulative_area_sum.push(a0 + t0);

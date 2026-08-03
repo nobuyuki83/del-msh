@@ -68,7 +68,7 @@ fn main() {
     let vtx2lhs1 = {
         let max_depth = 10;
         let transform_world2unit = {
-            let aabb3 = del_msh_cpu::vtx2xyz::aabb3(&vtx2xyz, 0.);
+            let aabb3 = del_msh_cpu::vtx2xyz::aabb3(vtx2xyz.as_chunks::<3>().0, 0.);
             let scale_unit2world = del_geo_core::aabb3::max_edge_size(&aabb3);
             let scale_world2unit = 1.0 / scale_unit2world;
             let center = del_geo_core::aabb3::center(&aabb3);

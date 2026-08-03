@@ -242,7 +242,7 @@ where
     let mut vtx2xyz = obj.vtx2xyz;
     if let Some(scale_) = scale {
         // scale the vertex positions if scale is provided
-        crate::vtx2xyz::normalize_in_place(&mut vtx2xyz, scale_);
+        crate::vtx2xyz::normalize_in_place(vtx2xyz.as_chunks_mut::<3>().0, scale_);
     }
     Ok((tri2vtx, vtx2xyz))
 }
