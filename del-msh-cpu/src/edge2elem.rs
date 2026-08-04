@@ -18,8 +18,8 @@ use num_traits::AsPrimitive;
 /// * No T-junctions in the mesh (each edge shared by at most 2 triangles)
 /// * Valid mesh topology with consistent vertex ordering
 pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
-    edge2vtx: &[INDEX],
-    tri2vtx: &[INDEX],
+    edge2vtx: &[[INDEX; 2]],
+    tri2vtx: &[[INDEX; 3]],
     vtx2idx: &[INDEX],
     idx2tri: &[INDEX],
     edge2tri: &mut [INDEX],
@@ -29,10 +29,10 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
 {
     use num_traits::AsPrimitive;
     // Initialize result array with max values (indicating no triangle found)
-    let num_edge = edge2vtx.len() / 2;
+    let num_edge = edge2vtx.len();
     assert_eq!(edge2tri.len(), num_edge * 2);
     // Process each edge
-    for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
+    for (i_edge, node2vtx) in edge2vtx.iter().enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let (i0_vtx, i1_vtx): (usize, usize) = (i0_vtx.as_(), i1_vtx.as_());
         let mut i_cnt = 0; // Count of adjacent triangles found for this edge
@@ -40,11 +40,8 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
         for &i_tri in &idx2tri[vtx2idx[i0_vtx].as_()..vtx2idx[i0_vtx + 1].as_()] {
             let i_tri = i_tri.as_();
             // Get the three vertices of the current triangle
-            let (j0_vtx, j1_vtx, j2_vtx) = (
-                tri2vtx[i_tri * 3],
-                tri2vtx[i_tri * 3 + 1],
-                tri2vtx[i_tri * 3 + 2],
-            );
+            let (j0_vtx, j1_vtx, j2_vtx) =
+                (tri2vtx[i_tri][0], tri2vtx[i_tri][1], tri2vtx[i_tri][2]);
             let (j0_vtx, j1_vtx, j2_vtx) = (j0_vtx.as_(), j1_vtx.as_(), j2_vtx.as_());
             // Check if this triangle contains the edge by finding which vertex position
             // matches i0_vtx, then checking if either of the other two matches i1_vtx
@@ -69,8 +66,8 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
 }
 
 pub fn from_edge2vtx_of_tri2vtx<INDEX>(
-    edge2vtx: &[INDEX],
-    tri2vtx: &[INDEX],
+    edge2vtx: &[[INDEX; 2]],
+    tri2vtx: &[[INDEX; 3]],
     num_vtx: usize,
 ) -> Vec<INDEX>
 where
@@ -80,8 +77,8 @@ where
         + std::fmt::Debug,
     usize: num_traits::AsPrimitive<INDEX>,
 {
-    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, 3, num_vtx);
-    let num_edge = edge2vtx.len() / 2;
+    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx.as_flattened(), 3, num_vtx);
+    let num_edge = edge2vtx.len();
     let mut edge2tri = vec![INDEX::zero(); num_edge * 2];
     from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri, &mut edge2tri);
     edge2tri
@@ -92,8 +89,8 @@ pub fn test_edge2tri() {
     let (tri2vtx, vtx2xyz) : (Vec<[usize;3]>, Vec<[f32;3]>)
         //= crate::trimesh3_primitive::capsule_yup(1., 2., 32, 32, 8);
         = crate::trimesh3_primitive::sphere_yup(1., 32, 32);
-    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_flattened(), vtx2xyz.len());
-    let edge2tri = from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx.as_flattened(), vtx2xyz.len());
+    let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
+    let edge2tri = from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len());
     edge2tri
         .iter()
         .for_each(|&i_tri| assert_ne!(i_tri, usize::MAX));

@@ -153,7 +153,9 @@ pub fn match_vtx2xyz_while_avoid_collision(
         }
         assert_eq!(tripairs.len(), 0, "there should be no intersections in start mesh but there are {:} intersecting try pairs", tripairs.len());
     }
-    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx, vtx2xyz_start.len() / 3);
+    let edge2vtx =
+        crate::edge2vtx::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, vtx2xyz_start.len() / 3);
+    let edge2vtx = edge2vtx.into_flattened();
     assert_eq!(vtx2xyz_start.len(), vtx2xyz_goal.len());
     //
     let mut vtx2xyz = Vec::<f64>::from(vtx2xyz_start);

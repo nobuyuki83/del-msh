@@ -129,15 +129,14 @@ fn main() -> anyhow::Result<()> {
     }
 
     let cedge2vtx = {
-        let edge2vtx =
-            del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx.as_flattened(), vtx2xyz.len() / 3);
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
         let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
             &edge2vtx,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             vtx2xyz.len() / 3,
         );
         del_msh_cpu::edge2vtx::contour_for_triangle_mesh(
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
@@ -161,7 +160,7 @@ fn main() -> anyhow::Result<()> {
         };
         let mut pix2vout = pix2vin.clone();
         del_msh_cpu::antialias::antialias(
-            &cedge2vtx,
+            cedge2vtx.as_flattened(),
             &vtx2xyz.as_flattened(),
             &transform_world2pix,
             img_shape,
@@ -181,7 +180,7 @@ fn main() -> anyhow::Result<()> {
         img_shape,
         &img_data,
         &transform_world2ndc,
-        &cedge2vtx,
+        cedge2vtx.as_flattened(),
         &vtx2xyz.as_flattened(),
     )?;
     {
@@ -198,7 +197,7 @@ fn main() -> anyhow::Result<()> {
         let dldw_vtx2xyz = {
             let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
             del_msh_cpu::antialias::bwd_antialias(
-                &cedge2vtx,
+                cedge2vtx.as_flattened(),
                 &vtx2xyz.as_flattened().as_chunks::<3>().0,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
@@ -211,7 +210,8 @@ fn main() -> anyhow::Result<()> {
         };
         // the vertex to move
         let list_vtx_on_silhouette = {
-            let unique: std::collections::HashSet<u32> = cedge2vtx.clone().into_iter().collect();
+            let unique: std::collections::HashSet<u32> =
+                cedge2vtx.iter().flatten().copied().collect();
             Vec::from_iter(unique)
         };
         // check gradient
@@ -239,7 +239,7 @@ fn main() -> anyhow::Result<()> {
                 };
                 let mut pix2vout = pix2vin.clone();
                 del_msh_cpu::antialias::antialias(
-                    &cedge2vtx,
+                    cedge2vtx.as_flattened(),
                     &vtx2xyz1.as_flattened(),
                     &transform_world2pix,
                     img_shape,

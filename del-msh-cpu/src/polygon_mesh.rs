@@ -1,4 +1,4 @@
-pub fn edge2vtx(elem2idx_offset: &[usize], idx2vtx: &[usize], num_vtx: usize) -> Vec<usize> {
+pub fn edge2vtx(elem2idx_offset: &[usize], idx2vtx: &[usize], num_vtx: usize) -> Vec<[usize; 2]> {
     crate::edge2vtx::from_polygon_mesh(elem2idx_offset, idx2vtx, num_vtx)
 }
 

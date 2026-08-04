@@ -861,7 +861,7 @@ where
     );
     // Convert to edge list
     let mut edge2vtx = vec![INDEX::zero(); vtx2vtx.1.len() * 2];
-    crate::edge2vtx::from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
+    crate::edge2vtx::from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, edge2vtx.as_chunks_mut::<2>().0);
     edge2vtx
 }
 

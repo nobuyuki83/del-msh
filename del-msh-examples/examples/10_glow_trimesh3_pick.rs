@@ -50,9 +50,12 @@ impl MyApp {
         let drawer_mesh = {
             let mut drawer_mesh = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
             drawer_mesh.compile_shader(gl);
-            let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
+            let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
+                tri2vtx.as_chunks::<3>().0,
+                vtx2xyz.len() / 3,
+            );
             drawer_mesh.set_vtx2xyz(gl, &vtx2xyz, 3);
-            drawer_mesh.add_elem2vtx(gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+            drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
             drawer_mesh.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
         };

@@ -45,17 +45,21 @@ pub fn edge2vtx_contour_for_triangle_mesh(
     match device {
         dlpack::device_type_codes::CPU => {
             let edge2vtx_contour = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice!(transform_world2ndc, f32)
                     .unwrap()
                     .try_into()
                     .unwrap(),
-                slice!(edge2vtx, u32).unwrap(),
+                slice!(edge2vtx, u32).unwrap().as_chunks::<2>().0,
                 slice!(edge2tri, u32).unwrap(),
             );
-            let num_contour = edge2vtx_contour.len() as i64 / 2;
-            Ok(capsule(py, vec![num_contour, 2], edge2vtx_contour))
+            let num_contour = edge2vtx_contour.len() as i64;
+            Ok(capsule(
+                py,
+                vec![num_contour, 2],
+                edge2vtx_contour.into_flattened(),
+            ))
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
@@ -140,7 +144,7 @@ pub fn edge2vtx_from_vtx2vtx(
             del_msh_cpu::edge2vtx::from_vtx2vtx(
                 slice!(vtx2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice_mut!(edge2vtx, u32).unwrap(),
+                slice_mut!(edge2vtx, u32).unwrap().as_chunks_mut::<2>().0,
             );
         }
         #[cfg(feature = "cuda")]

@@ -40,7 +40,10 @@ impl MyApp {
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz.len() / 3,
+        );
         //
         let gl = cc
             .gl
@@ -49,7 +52,7 @@ impl MyApp {
         let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
         drawer.compile_shader(gl);
         drawer.set_vtx2xyz(gl, &vtx2xyz, 3);
-        drawer.add_elem2vtx(gl, glow::LINES, &edge2vtx, [0.0, 0.0, 0.0]);
+        drawer.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
         drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.8, 0.8]);
         Self {
             drawer: Arc::new(Mutex::new(drawer)),

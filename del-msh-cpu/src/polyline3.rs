@@ -496,7 +496,7 @@ pub fn reduce(vtx2xyz: &[[f32; 3]], threshold: f32) -> Vec<[f32; 3]> {
 #[test]
 fn test_reduce() -> anyhow::Result<()> {
     let vtx2xy = crate::polyloop2::from_circle(1.0, 100);
-    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(&vtx2xy);
+    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(vtx2xy.as_flattened());
     let vtx2xyz_reduced = reduce(vtx2xyz.as_chunks::<3>().0, 0.01);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
         "../target/reduce_polyline.obj",

@@ -52,7 +52,7 @@ pub fn edgegrad_bwd(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::edgegrad::bwd(
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice_mut!(dldw_vtx2xyz, f32)
                     .unwrap()
@@ -191,7 +191,7 @@ pub fn edgegrad_edge_gradient_and_type(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::edgegrad::edge_gradient_and_type(
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),

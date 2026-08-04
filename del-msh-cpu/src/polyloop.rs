@@ -22,17 +22,15 @@ where
 }
 
 /// return  arc-length of a 2D or 3D poly loop
-pub fn arclength<T, const N: usize>(vtx2xyz: &[T]) -> T
+pub fn arclength<T, const N: usize>(vtx2xyz: &[[T; N]]) -> T
 where
     T: num_traits::Float,
 {
-    let np = vtx2xyz.len() / N;
+    let np = vtx2xyz.len();
     let mut len: T = T::zero();
     for ip0 in 0..np {
         let ip1 = (ip0 + 1) % np;
-        let p0: &[T; N] = &vtx2xyz[ip0 * N..ip0 * N + N].try_into().unwrap();
-        let p1: &[T; N] = &vtx2xyz[ip1 * N..ip1 * N + N].try_into().unwrap();
-        len = len + del_geo_core::edge::length::<T, N>(p0, p1);
+        len = len + del_geo_core::edge::length::<T, N>(&vtx2xyz[ip0], &vtx2xyz[ip1]);
     }
     len
 }
@@ -81,11 +79,11 @@ where
 fn test_cog() {
     let mut vtx2xy = crate::polyloop2::from_circle(1f32, 32);
     let (x0, y0) = (1.3, 0.5);
-    vtx2xy.chunks_mut(2).for_each(|v| {
+    vtx2xy.iter_mut().for_each(|v| {
         v[0] += x0;
         v[1] += y0
     });
-    let cog = cog_as_edges::<f32, 2>(vtx2xy.as_slice());
+    let cog = cog_as_edges::<f32, 2>(vtx2xy.as_flattened());
     assert!(
         del_geo_core::edge::length::<f32, 2>(&[x0, y0], cog.as_slice().try_into().unwrap())
             < 1.0e-5
@@ -161,7 +159,7 @@ where
     use del_geo_core::vecn::VecN;
     let mut v2x_out = Vec::<T>::new();
     let num_edge_in = vtx2xyz_in.len() / N;
-    let len_edge_out = arclength::<T, N>(vtx2xyz_in) / num_edge_out.as_();
+    let len_edge_out = arclength::<T, N>(vtx2xyz_in.as_chunks::<N>().0) / num_edge_out.as_();
     v2x_out.extend_from_slice(&vtx2xyz_in[0..N]);
     let mut i_edge_in = 0;
     let mut traveled_ratio0 = T::zero();

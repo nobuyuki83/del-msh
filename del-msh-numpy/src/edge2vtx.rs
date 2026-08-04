@@ -26,7 +26,7 @@ fn edge2vtx_uniform_mesh<'a>(
         &[0, 1, 1, 2, 2, 0],
         num_vtx,
     );
-    numpy::ndarray::Array2::from_shape_vec((mshline.len() / 2, 2), mshline)
+    numpy::ndarray::Array2::from_shape_vec((mshline.len(), 2), mshline.into_flattened())
         .unwrap()
         .into_pyarray(py)
 }
@@ -43,7 +43,7 @@ fn edge2vtx_polygon_mesh<'a>(
         idx2vtx.as_slice().unwrap(),
         num_vtx,
     );
-    numpy::ndarray::Array2::from_shape_vec((mshline.len() / 2, 2), mshline)
+    numpy::ndarray::Array2::from_shape_vec((mshline.len(), 2), mshline.into_flattened())
         .unwrap()
         .into_pyarray(py)
 }

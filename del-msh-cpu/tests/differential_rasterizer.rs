@@ -119,7 +119,7 @@ mod tests {
     fn nvdiffrast<T: del_msh_cpu::trimesh3_raycast::ScalarRender<f32>>(
         eps: f32,
         mode: &T,
-    ) -> (Vec<f32>, Vec<f32>, Vec<u32>, Vec<u32>) {
+    ) -> (Vec<f32>, Vec<f32>, Vec<u32>, Vec<[u32; 2]>) {
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(eps);
         let transform_ndc2world =
@@ -130,14 +130,11 @@ mod tests {
             &transform_world2ndc,
         );
         let num_vtx = vtx2xyz.len();
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx.as_flattened(), num_vtx);
-        let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
-            &edge2vtx,
-            &tri2vtx.as_flattened(),
-            num_vtx,
-        );
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, num_vtx);
+        let edge2tri =
+            del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, num_vtx);
         let cedge2vtx = del_msh_cpu::edge2vtx::contour_for_triangle_mesh::<u32>(
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
@@ -179,7 +176,7 @@ mod tests {
         );
         let mut pix2vout = pix2vin.clone();
         del_msh_cpu::antialias::antialias(
-            &cedge2vtx,
+            cedge2vtx.as_flattened(),
             &vtx2xyz.as_flattened(),
             &transform_world2pix,
             img_shape,
@@ -197,7 +194,7 @@ mod tests {
         let (_, _, _, cedge2vtx) = nvdiffrast(0., &del_msh_cpu::pix2occlusion::Occlusion);
         // draw edge image
         let mut pix2isedge = vec![1f32; img_shape.0 * img_shape.1];
-        for chunk in cedge2vtx.chunks(2) {
+        for chunk in cedge2vtx.iter() {
             let (iv0, iv1) = (chunk[0] as usize, chunk[1] as usize);
             let xyz0_world = &vtx2xyz[iv0];
             let xyz1_world = &vtx2xyz[iv1];
@@ -275,7 +272,7 @@ mod tests {
                     mode,
                 );
                 del_msh_cpu::antialias::bwd_antialias(
-                    &cedge2vtx,
+                    cedge2vtx.as_flattened(),
                     &vtx2xyz,
                     &mut dldw_vtx2xyz,
                     &transform_world2pix,
@@ -377,7 +374,7 @@ mod tests {
             let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
             //
             del_msh_cpu::edgegrad::bwd(
-                &tri2vtx.as_flattened(),
+                &tri2vtx,
                 &vtx2xyz,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,

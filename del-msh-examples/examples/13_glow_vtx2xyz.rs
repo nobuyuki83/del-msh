@@ -37,8 +37,7 @@ impl MyApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let (tri2vtx, vtx2xyz) =
             del_msh_cpu::trimesh3_primitive::torus_zup::<usize, f32>(0.6, 0.2, 32, 16);
-        let _edge2vtx =
-            del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx.as_flattened(), vtx2xyz.len());
+        let _edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
         //
         let gl = cc
             .gl

@@ -13,12 +13,12 @@ use num_traits::AsPrimitive;
 ///
 /// # Returns
 /// * `Vec<Index>` - Flattened edge list (pairs of vertex indices)
-pub fn from_vtx2vtx<Index>(vtx2idx: &[Index], idx2vtx: &[Index], edge2vtx: &mut [Index])
+pub fn from_vtx2vtx<Index>(vtx2idx: &[Index], idx2vtx: &[Index], edge2vtx: &mut [[Index; 2]])
 where
     Index: AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    assert_eq!(edge2vtx.len(), idx2vtx.len() * 2);
+    assert_eq!(edge2vtx.len(), idx2vtx.len());
 
     // Process each vertex and its adjacent vertices
     let mut icnt = 0usize;
@@ -27,9 +27,7 @@ where
         let idx1 = vtx2idx[i_vtx + 1].as_();
         // Add an edge from current vertex to each of its neighbors
         for &j_vtx in &idx2vtx[idx0..idx1] {
-            edge2vtx[icnt] = i_vtx.as_(); // Source vertex
-            icnt += 1;
-            edge2vtx[icnt] = j_vtx; // Target vertex
+            edge2vtx[icnt] = [i_vtx.as_(), j_vtx];
             icnt += 1;
         }
     }
@@ -53,7 +51,7 @@ pub fn from_uniform_mesh_with_specific_edges<Index>(
     num_node: usize,
     edge2node: &[usize],
     num_vtx: usize,
-) -> Vec<Index>
+) -> Vec<[Index; 2]>
 where
     Index: num_traits::PrimInt + std::ops::AddAssign + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
@@ -70,7 +68,7 @@ where
         false, // Don't include duplicate edges
     );
     // Convert vertex adjacency to edge list
-    let mut edge2vtx = vec![Index::zero(); vtx2vtx.1.len() * 2];
+    let mut edge2vtx = vec![[Index::zero(); 2]; vtx2vtx.1.len()];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
 }
@@ -86,13 +84,13 @@ where
 ///
 /// # Returns
 /// * `Vec<INDEX>` - Flattened edge connectivity
-pub fn from_triangle_mesh<INDEX>(tri2vtx: &[INDEX], num_vtx: usize) -> Vec<INDEX>
+pub fn from_triangle_mesh<INDEX>(tri2vtx: &[[INDEX; 3]], num_vtx: usize) -> Vec<[INDEX; 2]>
 where
     INDEX: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
     usize: AsPrimitive<INDEX>,
 {
     // Extract triangle edges: vertex 0-1, 1-2, 2-0
-    from_uniform_mesh_with_specific_edges(tri2vtx, 3, &[0, 1, 1, 2, 2, 0], num_vtx)
+    from_uniform_mesh_with_specific_edges(tri2vtx.as_flattened(), 3, &[0, 1, 1, 2, 2, 0], num_vtx)
 }
 
 /// Extract edges from a mesh with mixed polygonal elements.
@@ -111,7 +109,7 @@ pub fn from_polygon_mesh<INDEX>(
     elem2idx_offset: &[INDEX],
     idx2vtx: &[INDEX],
     num_vtx: usize,
-) -> Vec<INDEX>
+) -> Vec<[INDEX; 2]>
 where
     INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: AsPrimitive<INDEX>,
@@ -127,7 +125,7 @@ where
         false, // Don't include duplicate edges
     );
     // Convert to edge list
-    let mut edge2vtx = vec![INDEX::zero(); vtx2vtx.1.len() * 2];
+    let mut edge2vtx = vec![[INDEX::zero(); 2]; vtx2vtx.1.len()];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
 }
@@ -141,12 +139,11 @@ where
 /// * `num_vtx` - Number of vertices in the loop
 ///
 /// # Returns
-/// * `Vec<usize>` - Edge connectivity for closed loop
-pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
-    let mut edge2vtx = Vec::<usize>::with_capacity(num_vtx * 2);
+/// * `Vec<[usize; 2]>` - Edge connectivity for closed loop
+pub fn from_polyloop(num_vtx: usize) -> Vec<[usize; 2]> {
+    let mut edge2vtx = Vec::<[usize; 2]>::with_capacity(num_vtx);
     for i in 0..num_vtx {
-        edge2vtx.push(i);
-        edge2vtx.push((i + 1) % num_vtx); // Wrap around to close the loop
+        edge2vtx.push([i, (i + 1) % num_vtx]);
     }
     edge2vtx
 }
@@ -160,12 +157,11 @@ pub fn from_polyloop(num_vtx: usize) -> Vec<usize> {
 /// * `num_vtx` - Number of vertices in the polyline
 ///
 /// # Returns
-/// * `Vec<usize>` - Edge connectivity for open polyline
-pub fn from_polyline(num_vtx: usize) -> Vec<usize> {
-    let mut edge2vtx = Vec::<usize>::with_capacity((num_vtx - 1) * 2);
+/// * `Vec<[usize; 2]>` - Edge connectivity for open polyline
+pub fn from_polyline(num_vtx: usize) -> Vec<[usize; 2]> {
+    let mut edge2vtx = Vec::<[usize; 2]>::with_capacity(num_vtx - 1);
     for i in 0..num_vtx - 1 {
-        edge2vtx.push(i);
-        edge2vtx.push(i + 1); // Connect to next vertex (no wrap-around)
+        edge2vtx.push([i, i + 1]);
     }
     edge2vtx
 }
@@ -187,25 +183,25 @@ pub fn from_polyline(num_vtx: usize) -> Vec<usize> {
 /// * `edge2tri` - Edge-to-triangle adjacency
 ///
 /// # Returns
-/// * `Vec<INDEX>` - Contour edge connectivity
+/// * `Vec<[INDEX; 2]>` - Contour edge connectivity
 pub fn contour_for_triangle_mesh<INDEX>(
-    tri2vtx: &[INDEX],
+    tri2vtx: &[[INDEX; 3]],
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
-    edge2vtx: &[INDEX],
+    edge2vtx: &[[INDEX; 2]],
     edge2tri: &[INDEX],
-) -> Vec<INDEX>
+) -> Vec<[INDEX; 2]>
 where
     INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::fmt::Display,
     usize: AsPrimitive<INDEX>,
 {
     use del_geo_core::{mat4_col_major, vec3};
-    let num_tri = tri2vtx.len() / 3;
+    let num_tri = tri2vtx.len();
     let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
-    let mut edge2vtx_contour: Vec<INDEX> = vec![];
+    let mut edge2vtx_contour: Vec<[INDEX; 2]> = vec![];
 
     // Check each edge for contour condition
-    for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
+    for (i_edge, node2vtx) in edge2vtx.iter().enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0].as_(), node2vtx[1].as_());
         // Calculate midpoint of edge for ray casting
         let pos_mid: [f32; 3] =
@@ -220,16 +216,12 @@ where
         // Get the two triangles adjacent to this edge
         let i0_tri = edge2tri[i_edge * 2];
         let i1_tri = edge2tri[i_edge * 2 + 1];
-        assert!(i0_tri.as_() < num_tri, "{} {}", i0_tri, tri2vtx.len() / 3);
-        assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len() / 3);
+        assert!(i0_tri.as_() < num_tri, "{} {}", i0_tri, tri2vtx.len());
+        assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len());
 
         // Calculate normal vectors of adjacent triangles
-        let nrm0_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri.as_())
-                .unit_normal();
-        let nrm1_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri.as_())
-                .unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri.as_()).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri.as_()).unit_normal();
 
         // Check if triangles face opposite directions relative to viewing direction
         let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.; // Triangle 0 facing toward/away from viewer
@@ -239,8 +231,7 @@ where
         if flg0 == flg1 {
             continue; // Both triangles face same direction, not a contour edge
         }
-        edge2vtx_contour.push(i0_vtx.as_());
-        edge2vtx_contour.push(i1_vtx.as_());
+        edge2vtx_contour.push([i0_vtx.as_(), i1_vtx.as_()]);
     }
     edge2vtx_contour
 }
@@ -290,18 +281,8 @@ pub fn occluding_contour_for_triangle_mesh(
         // Get adjacent triangles for this edge
         let i0_tri = edge2tri[i_edge * 2];
         let i1_tri = edge2tri[i_edge * 2 + 1];
-        assert!(
-            i0_tri < tri2vtx.len() / 3,
-            "{} {}",
-            i0_tri,
-            tri2vtx.len() / 3
-        );
-        assert!(
-            i1_tri < tri2vtx.len() / 3,
-            "{} {}",
-            i1_tri,
-            tri2vtx.len() / 3
-        );
+        assert!(i0_tri < tri2vtx.len(), "{} {}", i0_tri, tri2vtx.len());
+        assert!(i1_tri < tri2vtx.len(), "{} {}", i1_tri, tri2vtx.len());
         // Calculate triangle normals
         let nrm0_world =
             crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri).unit_normal();
@@ -360,10 +341,10 @@ pub fn occluding_contour_for_triangle_mesh(
 /// # Returns
 /// * `Vec<usize>` - Silhouette edge connectivity
 pub fn silhouette_for_triangle_mesh(
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
-    edge2vtx: &[usize],
+    edge2vtx: &[[usize; 2]],
     edge2tri: &[usize],
     bvhnodes: &[usize],
     bvhnode2aabb: &[f32],
@@ -371,7 +352,7 @@ pub fn silhouette_for_triangle_mesh(
     use del_geo_core::{mat4_col_major, vec3};
     let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
-    for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
+    for (i_edge, node2vtx) in edge2vtx.iter().enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let pos_mid: [f32; 3] =
             std::array::from_fn(|i| (vtx2xyz[i0_vtx][i] + vtx2xyz[i1_vtx][i]) * 0.5);
@@ -383,22 +364,10 @@ pub fn silhouette_for_triangle_mesh(
         // -------
         let i0_tri = edge2tri[i_edge * 2];
         let i1_tri = edge2tri[i_edge * 2 + 1];
-        assert!(
-            i0_tri < tri2vtx.len() / 3,
-            "{} {}",
-            i0_tri,
-            tri2vtx.len() / 3
-        );
-        assert!(
-            i1_tri < tri2vtx.len() / 3,
-            "{} {}",
-            i1_tri,
-            tri2vtx.len() / 3
-        );
-        let nrm0_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri).unit_normal();
-        let nrm1_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri).unit_normal();
+        assert!(i0_tri < tri2vtx.len(), "{} {}", i0_tri, tri2vtx.len());
+        assert!(i1_tri < tri2vtx.len(), "{} {}", i1_tri, tri2vtx.len());
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri).unit_normal();
         // Check contour condition first
         {
             let flg0 = vec3::dot(&nrm0_world, &ray_dir) > 0.;
@@ -421,7 +390,7 @@ pub fn silhouette_for_triangle_mesh(
             &crate::search_bvh3::TriMeshWithBvh {
                 bvhnodes,
                 bvhnode2aabb,
-                tri2vtx,
+                tri2vtx: tri2vtx.as_flattened(),
                 vtx2xyz,
             },
             0,
@@ -437,7 +406,7 @@ pub fn silhouette_for_triangle_mesh(
 
 #[test]
 pub fn test_contour() {
-    let (tri2vtx, vtx2xyz)
+    let (tri2vtx, vtx2xyz): (Vec<[usize; 3]>, Vec<[f32; 3]>)
         // = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1., 32, 32);
         = crate::trimesh3_primitive::torus_zup(2.0, 0.5, 32, 32);
     let dir = del_geo_core::vec3::normalize(&[1f32, 1.0, 0.1]);
@@ -462,19 +431,15 @@ pub fn test_contour() {
         &vtx2xyz,
         None,
     );
-    let edge2vtx = crate::edge2vtx::from_triangle_mesh(tri2vtx.as_flattened(), vtx2xyz.len());
-    let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(
-        &edge2vtx,
-        &tri2vtx.as_flattened(),
-        vtx2xyz.len(),
-    );
+    let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
+    let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len());
 
     {
         let edge2vtx_contour = occluding_contour_for_triangle_mesh(
             &tri2vtx.as_flattened(),
             &vtx2xyz,
             &transform_world2ndc,
-            &edge2vtx,
+            edge2vtx.as_flattened(),
             &edge2tri,
             &bvhnodes,
             &bvhnode2aabb,
@@ -489,7 +454,7 @@ pub fn test_contour() {
     }
     {
         let edge2vtx_contour = silhouette_for_triangle_mesh(
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,

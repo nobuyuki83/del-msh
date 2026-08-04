@@ -32,16 +32,18 @@ fn main() -> anyhow::Result<()> {
         del_geo_core::mat4_col_major::mult_mat_col_major(&cam_projection, &cam_modelview);
     dbg!(&transform_world2ndc);
     let edge2vtx_silhouette = {
-        let edge2vtx =
-            del_msh_cpu::edge2vtx::from_triangle_mesh(tri2vtx.as_slice(), vtx2xyz.len() / 3);
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz.len() / 3,
+        );
         let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
             &edge2vtx,
-            &tri2vtx,
+            tri2vtx.as_chunks::<3>().0,
             vtx2xyz.len() / 3,
         );
         del_msh_cpu::edge2vtx::silhouette_for_triangle_mesh(
             //del_msh_cpu::edge2vtx::occluding_contour_for_triangle_mesh(
-            &tri2vtx,
+            tri2vtx.as_chunks::<3>().0,
             &vtx2xyz.as_chunks::<3>().0,
             &transform_world2ndc,
             &edge2vtx,

@@ -3,7 +3,7 @@
 use num_traits::AsPrimitive;
 
 /// Compute N×N covariance matrix for an N-dimensional polyline based on edge integration.
-pub fn cov<T, const N: usize>(vtx2xyz: &[T]) -> [[T; N]; N]
+pub fn cov<T, const N: usize>(vtx2xyz: &[[T; N]]) -> [[T; N]; N]
 where
     T: num_traits::Float + Copy + 'static + std::iter::Sum,
     f64: AsPrimitive<T>,
@@ -11,11 +11,10 @@ where
     let one = T::one();
     let three = one + one + one;
     let six = three + three;
-    let num_vtx = vtx2xyz.len() / N;
-    assert_eq!(vtx2xyz.len(), num_vtx * N);
+    let num_vtx = vtx2xyz.len();
 
     // Compute center of geometry weighted by edge lengths
-    let cog: [T; N] = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz);
+    let cog: [T; N] = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz.as_flattened());
     let mut cov = [[T::zero(); N]; N];
 
     // Integrate covariance contributions from each edge
@@ -25,10 +24,8 @@ where
         use del_geo_core::vecn::VecN;
 
         // Get edge endpoint coordinates centered at center of geometry
-        let q0: &[T; N] = &vtx2xyz[iv0 * N..iv0 * N + N].try_into().unwrap();
-        let q0 = q0.sub(&cog); // Translate to COG
-        let q1: &[T; N] = &vtx2xyz[iv1 * N..iv1 * N + N].try_into().unwrap();
-        let q1 = q1.sub(&cog); // Translate to COG
+        let q0 = vtx2xyz[iv0].sub(&cog); // Translate to COG
+        let q1 = vtx2xyz[iv1].sub(&cog); // Translate to COG
 
         // Edge length for numerical integration weighting
         let l = q0.sub(&q1).norm();

@@ -46,7 +46,10 @@ impl MyApp {
         let pix2rgb = pix2rgb.decode().unwrap().to_rgb8();
         let pix2rgb = image::imageops::flip_vertical(&pix2rgb);
         println!("{:?}", pix2rgb.dimensions());
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz.len() / 3,
+        );
         // gl start from here
         let gl = cc
             .gl
@@ -56,7 +59,7 @@ impl MyApp {
         drawer.compile_shader(gl);
         drawer.update_vtx2xyz(gl, &vtx2xyz, 3);
         drawer.set_vtx2uv(gl, &vtx2uv);
-        drawer.add_elem2vtx(gl, glow::LINES, &edge2vtx, None);
+        drawer.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), None);
         drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, None);
         //
         let id_tex = unsafe {

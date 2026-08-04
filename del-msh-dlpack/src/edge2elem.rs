@@ -45,8 +45,8 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx_with_vtx2vtx(
-                slice!(edge2vtx, u32).unwrap(),
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(edge2vtx, u32).unwrap().as_chunks::<2>().0,
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
                 slice_mut!(edge2tri, u32).unwrap(),
