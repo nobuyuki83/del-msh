@@ -3,25 +3,20 @@
 use num_traits::AsPrimitive;
 use rand::RngExt;
 
-pub fn winding_number<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> Real
+pub fn winding_number<Real>(vtx2xy: &[[Real; 2]], p: &[Real; 2]) -> Real
 where
     Real: num_traits::Float + num_traits::FloatConst,
 {
-    let num_vtx = vtx2xy.len() / 2;
+    let num_vtx = vtx2xy.len();
     let mut wn: Real = Real::zero();
     for i in 0..num_vtx {
         let j = (i + 1) % num_vtx;
-        wn = wn
-            + del_geo_core::edge2::winding_number(
-                arrayref::array_ref![vtx2xy, i * 2, 2],
-                arrayref::array_ref![vtx2xy, j * 2, 2],
-                p,
-            );
+        wn = wn + del_geo_core::edge2::winding_number(&vtx2xy[i], &vtx2xy[j], p);
     }
     wn
 }
 
-pub fn is_include_a_point<Real>(vtx2xy: &[Real], p: &[Real; 2]) -> bool
+pub fn is_include_a_point<Real>(vtx2xy: &[[Real; 2]], p: &[Real; 2]) -> bool
 where
     Real: num_traits::Float + num_traits::FloatConst,
 {
@@ -34,7 +29,7 @@ where
     false
 }
 
-pub fn is_include_polyloop2<Real>(vtx2xy_outside: &[Real], vtx2xy_inside: &[Real]) -> bool
+pub fn is_include_polyloop2<Real>(vtx2xy_outside: &[[Real; 2]], vtx2xy_inside: &[[Real; 2]]) -> bool
 where
     Real: num_traits::Float + num_traits::FloatConst + std::fmt::Debug,
 {
@@ -42,9 +37,8 @@ where
     let mut is_out = false;
     let one = Real::one();
     let thres = one / (one + one + one + one + one);
-    for xy_in in vtx2xy_inside.chunks(2) {
-        let xy_in = [xy_in[0], xy_in[1]];
-        let wn = winding_number(vtx2xy_outside, &xy_in);
+    for xy_in in vtx2xy_inside {
+        let wn = winding_number(vtx2xy_outside, xy_in);
         if (wn - one).abs() > thres {
             is_out = true
         }
@@ -53,8 +47,8 @@ where
 }
 
 pub fn maximum_penetration_of_included_point2s<Real>(
-    vtx2xy_outside: &[Real],
-    vtx2xy_inside: &[Real],
+    vtx2xy_outside: &[[Real; 2]],
+    vtx2xy_inside: &[[Real; 2]],
 ) -> Option<([Real; 2], [Real; 2])>
 where
     Real: num_traits::Float + num_traits::FloatConst + 'static + std::fmt::Debug,
@@ -66,14 +60,13 @@ where
     let mut dist_min: Option<Real> = None;
     let mut pos_outside_min = [zero; 2];
     let mut pos_inside_min = [zero; 2];
-    for xy_in in vtx2xy_inside.chunks(2) {
-        let xy_in = [xy_in[0], xy_in[1]];
-        let wn = winding_number(vtx2xy_outside, &xy_in);
+    for xy_in in vtx2xy_inside {
+        let wn = winding_number(vtx2xy_outside, xy_in);
         if (wn - one).abs() < thres {
             continue;
         }
-        let (_lcoord, po) = nearest_to_point(vtx2xy_outside, &xy_in).unwrap();
-        let dist = del_geo_core::edge2::length(&xy_in, &po);
+        let (_lcoord, po) = nearest_to_point(vtx2xy_outside, xy_in).unwrap();
+        let dist = del_geo_core::edge2::length(xy_in, &po);
         let is_update = if let Some(dist_min) = dist_min {
             dist > dist_min
         } else {
@@ -82,7 +75,7 @@ where
         if is_update {
             dist_min = Some(dist);
             pos_outside_min = po;
-            pos_inside_min = xy_in;
+            pos_inside_min = *xy_in;
         }
     }
     let _dist_min = dist_min?;
@@ -90,40 +83,36 @@ where
 }
 
 /// area
-pub fn area<T>(vtx2xy: &[T]) -> T
+pub fn area<T>(vtx2xy: &[[T; 2]]) -> T
 where
     T: num_traits::Float,
 {
-    let num_vtx = vtx2xy.len() / 2;
-    assert_eq!(vtx2xy.len(), num_vtx * 2);
+    let num_vtx = vtx2xy.len();
     let zero = [T::zero(), T::zero()];
     let mut area = T::zero();
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
-        let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
-        area = area + del_geo_core::tri2::area(&zero, p0, p1);
+        area = area + del_geo_core::tri2::area(&zero, &vtx2xy[i0], &vtx2xy[i1]);
     }
     area
 }
 
 /// center of the gravity of a area bounded by this polyloop
-pub fn cog_as_face<T>(vtx2xy: &[T]) -> [T; 2]
+pub fn cog_as_face<T>(vtx2xy: &[[T; 2]]) -> [T; 2]
 where
     T: num_traits::Float + std::ops::AddAssign + std::ops::DivAssign,
 {
     let frac_three = T::one() / (T::one() + T::one() + T::one());
-    let num_vtx = vtx2xy.len() / 2;
-    assert_eq!(vtx2xy.len(), num_vtx * 2);
+    let num_vtx = vtx2xy.len();
     let zero = [T::zero(); 2];
     let mut area = T::zero();
     let mut cog = [T::zero(); 2];
     for i_edge in 0..num_vtx {
         let i0 = i_edge;
         let i1 = (i_edge + 1) % num_vtx;
-        let p0 = arrayref::array_ref![vtx2xy, i0 * 2, 2];
-        let p1 = arrayref::array_ref![vtx2xy, i1 * 2, 2];
+        let p0 = &vtx2xy[i0];
+        let p1 = &vtx2xy[i1];
         let area0 = del_geo_core::tri2::area(&zero, p0, p1);
         area += area0;
         cog[0] += (p0[0] + p1[0]) * frac_three * area0;
@@ -136,8 +125,13 @@ where
 
 #[test]
 fn test_cog_() {
-    let vtx2xy: Vec<f32> = vec![
-        -1.0, -5.0, -0.5, -5.0, 0.5, -5.0, 1.0, -5.0, 1.0, 5.0, -1.0, 5.0,
+    let vtx2xy: Vec<[f32; 2]> = vec![
+        [-1.0, -5.0],
+        [-0.5, -5.0],
+        [0.5, -5.0],
+        [1.0, -5.0],
+        [1.0, 5.0],
+        [-1.0, 5.0],
     ];
     let cog = cog_as_face(&vtx2xy);
     assert!(cog[0].abs() < 1.0e-8);
@@ -145,7 +139,7 @@ fn test_cog_() {
 }
 
 /// star shape
-pub fn from_pentagram<Real>(center: &[Real], scale: Real) -> Vec<Real>
+pub fn from_pentagram<Real>(center: &[Real], scale: Real) -> Vec<[Real; 2]>
 where
     Real: num_traits::Float + num_traits::FloatConst,
 {
@@ -156,27 +150,29 @@ where
     let dt: Real = Real::PI() / five;
     let hp: Real = Real::FRAC_PI_2();
     let ratio = two / (three + five.sqrt());
-    let mut xys = Vec::<Real>::new();
+    let mut xys = Vec::<[Real; 2]>::new();
     for i in 0..10usize {
         let rad = if i % 2 == 0 { scale } else { ratio * scale };
         let i = Real::from(rad).unwrap();
-        xys.push((dt * i + hp).cos() * rad + center[0]);
-        xys.push((dt * i + hp).sin() * rad + center[1]);
+        xys.push([
+            (dt * i + hp).cos() * rad + center[0],
+            (dt * i + hp).sin() * rad + center[1],
+        ]);
     }
     xys
 }
 
-pub fn from_circle(rad: f32, n: usize) -> Vec<f32> {
-    let mut vtx2xy = vec![0f32; 2 * n];
-    for i in 0..n {
+pub fn from_circle(rad: f32, n: usize) -> Vec<[f32; 2]> {
+    let mut vtx2xy = vec![[0f32; 2]; n];
+    for (i, xy) in vtx2xy.iter_mut().enumerate() {
         let theta = std::f32::consts::PI * 2_f32 * i as f32 / n as f32;
-        vtx2xy[i * 2] = rad * f32::cos(theta);
-        vtx2xy[i * 2 + 1] = rad * f32::sin(theta);
+        xy[0] = rad * f32::cos(theta);
+        xy[1] = rad * f32::sin(theta);
     }
     vtx2xy
 }
 
-pub fn distance_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Option<Real>
+pub fn distance_to_point<Real>(vtx2xy: &[[Real; 2]], g: &[Real; 2]) -> Option<Real>
 where
     Real: num_traits::Float + std::fmt::Debug + 'static,
     usize: AsPrimitive<Real>,
@@ -186,21 +182,21 @@ where
     Some(dist)
 }
 
-pub fn nearest_to_point<Real>(vtx2xy: &[Real], g: &[Real; 2]) -> Option<(Real, [Real; 2])>
+pub fn nearest_to_point<Real>(vtx2xy: &[[Real; 2]], g: &[Real; 2]) -> Option<(Real, [Real; 2])>
 where
     Real: num_traits::Float + std::fmt::Debug + 'static,
     usize: AsPrimitive<Real>,
 {
     // visit all the boudnary
-    let np = vtx2xy.len() / 2;
+    let np = vtx2xy.len();
     let mut dist_min: Option<Real> = None;
     let mut p_near = [Real::zero(), Real::zero()];
     let mut i_edge_min = usize::MAX;
     let mut ratio_min = Real::zero();
     for ip in 0..np {
         let jp = (ip + 1) % np;
-        let pi = crate::vtx2xy::to_vec2(vtx2xy, ip);
-        let pj = crate::vtx2xy::to_vec2(vtx2xy, jp);
+        let pi = &vtx2xy[ip];
+        let pj = &vtx2xy[jp];
         let (ratio, pos) = del_geo_core::edge2::nearest_to_point(pi, pj, g);
         let dist = del_geo_core::edge2::length(&pos, g);
         let is_update = if let Some(dist_min) = dist_min {
@@ -218,15 +214,15 @@ where
     dist_min.map(|_dist_min| (i_edge_min.as_() + ratio_min, p_near))
 }
 
-pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
+pub fn moment_of_inertia(vtx2xy: &[[f32; 2]], pivot: &[f32; 2]) -> f32 {
     use del_geo_core::vec2;
-    let ne = vtx2xy.len() / 2;
+    let ne = vtx2xy.len();
     let mut sum_i = 0.0;
     for ie in 0..ne {
         let ip0 = ie;
         let ip1 = (ie + 1) % ne;
-        let p0 = [vtx2xy[ip0 * 2] - pivot[0], vtx2xy[ip0 * 2 + 1] - pivot[1]];
-        let p1 = [vtx2xy[ip1 * 2] - pivot[0], vtx2xy[ip1 * 2 + 1] - pivot[1]];
+        let p0 = [vtx2xy[ip0][0] - pivot[0], vtx2xy[ip0][1] - pivot[1]];
+        let p1 = [vtx2xy[ip1][0] - pivot[0], vtx2xy[ip1][1] - pivot[1]];
         let a0 = vec2::area_quadrilateral(&p0, &p1) * 0.5;
         sum_i += a0 * (vec2::dot(&p0, &p0) + vec2::dot(&p0, &p1) + vec2::dot(&p1, &p1));
     }
@@ -236,16 +232,16 @@ pub fn moment_of_inertia(vtx2xy: &[f32], pivot: &[f32; 2]) -> f32 {
 /// signed distance function
 /// * `vtx2xy` - flat array of coordinates
 /// * `q` - pont to be evaluated
-pub fn wdw_sdf(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
+pub fn wdw_sdf(vtx2xy: &[[f32; 2]], q: &[f32; 2]) -> (f32, [f32; 2]) {
     use del_geo_core::vec2;
-    let nej = vtx2xy.len() / 2;
+    let nej = vtx2xy.len();
     let mut min_dist = -1.0;
     let mut winding_number = 0f32;
     let mut pos_near = [0f32; 2];
     let mut ie_near = 0;
     for iej in 0..nej {
-        let ps = arrayref::array_ref!(vtx2xy, (iej % nej) * 2, 2);
-        let pe = arrayref::array_ref!(vtx2xy, ((iej + 1) % nej) * 2, 2);
+        let ps = &vtx2xy[iej % nej];
+        let pe = &vtx2xy[(iej + 1) % nej];
         winding_number += del_geo_core::edge2::winding_number(ps, pe, q);
         let (_rm, pm) = del_geo_core::edge2::nearest_to_point(ps, pe, q);
         let dist0 = del_geo_core::edge2::length(&pm, q);
@@ -259,8 +255,8 @@ pub fn wdw_sdf(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
     //
     let normal_out = {
         // if distance is small use edge's normal
-        let ps = arrayref::array_ref!(vtx2xy, (ie_near % nej) * 2, 2);
-        let pe = arrayref::array_ref!(vtx2xy, ((ie_near + 1) % nej) * 2, 2);
+        let ps = &vtx2xy[ie_near % nej];
+        let pe = &vtx2xy[(ie_near + 1) % nej];
         let ne = vec2::sub(pe, ps);
         let ne = vec2::rotate(&ne, -std::f32::consts::PI * 0.5);
         vec2::normalize(&ne)
@@ -287,7 +283,7 @@ pub fn wdw_sdf(vtx2xy: &[f32], q: &[f32; 2]) -> (f32, [f32; 2]) {
 
 #[test]
 fn test_polygon2_sdf() {
-    let vtx2xy = vec![0., 0., 1.0, 0.0, 1.0, 0.2, 0.0, 0.2];
+    let vtx2xy: Vec<[f32; 2]> = vec![[0., 0.], [1.0, 0.0], [1.0, 0.2], [0.0, 0.2]];
     use del_geo_core::vec2;
     {
         let (sdf, normal) = wdw_sdf(&vtx2xy, &[0.01, 0.1]);
@@ -302,16 +298,16 @@ fn test_polygon2_sdf() {
 }
 
 pub fn to_uniform_density_random_points<Real>(
-    vtx2xy: &[Real],
+    vtx2xy: &[[Real; 2]],
     cell_len: Real,
     rng: &mut rand::rngs::StdRng,
-) -> Vec<Real>
+) -> Vec<[Real; 2]>
 where
     Real: num_traits::Float + num_traits::FloatConst + AsPrimitive<usize>,
     rand::distr::StandardUniform: rand::distr::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
-    let aabb = crate::vtx2xy::aabb2(vtx2xy);
+    let aabb = crate::vtx2xy::aabb2(vtx2xy.as_flattened());
     use rand::RngExt;
     let base_pos = [
         aabb[0] - cell_len * rng.random::<Real>(),
@@ -328,25 +324,23 @@ where
             if !is_inside {
                 continue;
             }
-            res.push(x);
-            res.push(y);
+            res.push([x, y]);
         }
     }
     res
 }
 
 #[allow(clippy::identity_op)]
-pub fn to_svg<Real>(vtx2xy: &[Real], transform: &[Real; 9]) -> String
+pub fn to_svg<Real>(vtx2xy: &[[Real; 2]], transform: &[Real; 9]) -> String
 where
     Real: std::fmt::Display + Copy + num_traits::Float,
 {
     let mut res = String::new();
-    for ivtx in 0..vtx2xy.len() / 2 {
-        let x = vtx2xy[ivtx * 2 + 0];
-        let y = vtx2xy[ivtx * 2 + 1];
-        let a = del_geo_core::mat3_col_major::transform_homogeneous(transform, &[x, y]).unwrap();
+    let num_vtx = vtx2xy.len();
+    for (ivtx, xy) in vtx2xy.iter().enumerate() {
+        let a = del_geo_core::mat3_col_major::transform_homogeneous(transform, xy).unwrap();
         res += format!("{} {}", a[0], a[1]).as_str();
-        if ivtx != vtx2xy.len() / 2 - 1 {
+        if ivtx != num_vtx - 1 {
             res += ",";
         }
     }
@@ -361,9 +355,9 @@ fn test_circle() {
     //
     {
         let ndiv1 = 330;
-        let vtx2xy1 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_slice(), ndiv1);
+        let vtx2xy1 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_flattened(), ndiv1);
         assert_eq!(vtx2xy1.len(), ndiv1 * 2);
-        let arclen1 = crate::polyloop::arclength::<f32, 2>(vtx2xy1.as_slice());
+        let arclen1 = crate::polyloop::arclength::<f32, 2>(vtx2xy1.as_chunks::<2>().0);
         assert!((arclen0 - arclen1).abs() < 1.0e-3);
         let edge2length1 = crate::polyloop::edge2length::<f32, 2>(vtx2xy1.as_slice());
         let min_edge_len1 = edge2length1
@@ -374,9 +368,9 @@ fn test_circle() {
     }
     {
         let ndiv2 = 156;
-        let vtx2xy2 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_slice(), ndiv2);
+        let vtx2xy2 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_flattened(), ndiv2);
         assert_eq!(vtx2xy2.len(), ndiv2 * 2);
-        let arclen2 = crate::polyloop::arclength::<f32, 2>(vtx2xy2.as_slice());
+        let arclen2 = crate::polyloop::arclength::<f32, 2>(vtx2xy2.as_chunks::<2>().0);
         assert!((arclen0 - arclen2).abs() < 1.0e-3);
         let edge2length2 = crate::polyloop::edge2length::<f32, 2>(vtx2xy2.as_slice());
         let min_edge_len2 = edge2length2
@@ -388,7 +382,7 @@ fn test_circle() {
 }
 
 pub fn meshing_to_trimesh2<Index, Real>(
-    vtxl2xy: &[Real],
+    vtxl2xy: &[[Real; 2]],
     edge_length_boundary: Real,
     edge_length_internal: Real,
 ) -> (Vec<Index>, Vec<Real>)
@@ -404,24 +398,27 @@ where
     usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
     crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
-        vtxl2xy,
+        vtxl2xy.as_flattened(),
         edge_length_boundary,
         edge_length_internal,
     )
 }
 
 pub fn poisson_disk_sampling<RNG>(
-    vtxl2xy: &[f32],
+    vtxl2xy: &[[f32; 2]],
     radius: f32,
     num_iteration: usize,
     reng: &mut RNG,
-) -> Vec<f32>
+) -> Vec<[f32; 2]>
 where
     RNG: rand::Rng,
 {
     use del_geo_core::vec2::Vec2;
-    let (tri2vtx, vtx2xyz) =
-        crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(vtxl2xy, -1., -1.);
+    let (tri2vtx, vtx2xyz) = crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(
+        vtxl2xy.as_flattened(),
+        -1.,
+        -1.,
+    );
     let tri2cumarea = crate::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 2);
     let mut vtx2vectwo: Vec<[f32; 2]> = vec![];
     for _iter in 0..num_iteration {
@@ -448,23 +445,22 @@ where
         }
         vtx2vectwo.push(pos);
     }
-    use slice_of_array::SliceFlatExt;
-    vtx2vectwo.flat().to_vec()
+    vtx2vectwo
 }
 
 #[test]
 fn test_poisson_disk_sampling() {
     let mut reng = rand::rng();
-    let vtxl2xy = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
+    let vtxl2xy: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
     let vtx2xy = poisson_disk_sampling(&vtxl2xy, 0.1, 2000, &mut reng);
     {
         // write boundary and
-        let mut vtxl2xy = vtxl2xy.clone();
-        vtxl2xy.extend(vtx2xy);
+        let mut flat = vtxl2xy.as_flattened().to_vec();
+        flat.extend(vtx2xy.as_flattened());
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/poisson_disk.obj",
             &[0, 1, 1, 2, 2, 3, 3, 0],
-            &vtxl2xy,
+            &flat,
             2,
         )
         .unwrap();

@@ -12,7 +12,7 @@ pub fn make_super_triangle<T>(
     vtx2xy: &mut Vec<[T; 2]>,
     min_xy: &[T; 2],
     max_xy: &[T; 2],
-) -> (Vec<usize>, Vec<usize>, Vec<usize>)
+) -> (Vec<[usize; 3]>, Vec<usize>, Vec<usize>)
 where
     T: num_traits::Float,
 {
@@ -52,13 +52,13 @@ where
     //
     vtx2tri.resize(npo + 3, 0);
     //
-    let tri2vtx = vec![npo, npo + 1, npo + 2];
+    let tri2vtx: Vec<[usize; 3]> = vec![[npo, npo + 1, npo + 2]];
     let tri2tri = vec![usize::MAX; 3];
     (tri2vtx, tri2tri, vtx2tri)
 }
 
 pub fn add_points_to_mesh<T>(
-    tri2vtx: &mut Vec<usize>,
+    tri2vtx: &mut Vec<[usize; 3]>,
     tri2tri: &mut Vec<usize>,
     vtx2tri: &mut [usize],
     vtx2xy: &[[T; 2]],
@@ -76,18 +76,18 @@ pub fn add_points_to_mesh<T>(
         let areas = [
             del_geo_core::tri2::area(
                 &po_add,
-                &vtx2xy[tri2vtx[i_tri * 3 + 1]],
-                &vtx2xy[tri2vtx[i_tri * 3 + 2]],
+                &vtx2xy[tri2vtx[i_tri][1]],
+                &vtx2xy[tri2vtx[i_tri][2]],
             ),
             del_geo_core::tri2::area(
                 &po_add,
-                &vtx2xy[tri2vtx[i_tri * 3 + 2]],
-                &vtx2xy[tri2vtx[i_tri * 3]],
+                &vtx2xy[tri2vtx[i_tri][2]],
+                &vtx2xy[tri2vtx[i_tri][0]],
             ),
             del_geo_core::tri2::area(
                 &po_add,
-                &vtx2xy[tri2vtx[i_tri * 3]],
-                &vtx2xy[tri2vtx[i_tri * 3 + 1]],
+                &vtx2xy[tri2vtx[i_tri][0]],
+                &vtx2xy[tri2vtx[i_tri][1]],
             ),
         ];
         let area_sum: T = areas[0] + areas[1] + areas[2];
@@ -503,7 +503,7 @@ pub fn triangulate_single_connected_shape<Real>(
     vtx2xy: &mut Vec<[Real; 2]>,
     loop2idx: &[usize],
     idx2vtx: &[usize],
-) -> (Vec<usize>, Vec<usize>, Vec<usize>)
+) -> (Vec<[usize; 3]>, Vec<usize>, Vec<usize>)
 where
     Real: num_traits::Float + std::fmt::Display + std::fmt::Debug + 'static,
     f64: AsPrimitive<Real>,
@@ -526,7 +526,13 @@ where
     // crate::io_obj::save_tri_mesh("target/a.obj", &tri2vtx, vtx2xy);
     for i_vtx in 0..vtx2tri.len() - 3 {
         add_points_to_mesh(&mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy, i_vtx);
-        delaunay_around_point(i_vtx, &mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy);
+        delaunay_around_point(
+            i_vtx,
+            tri2vtx.as_flattened_mut(),
+            &mut tri2tri,
+            &mut vtx2tri,
+            vtx2xy,
+        );
     }
     // crate::io_obj::save_tri_mesh("target/b.obj", &tri2vtx, vtx2xy);
     for i_loop in 0..loop2idx.len() - 1 {
@@ -535,7 +541,7 @@ where
             let i0_vtx = idx2vtx[loop2idx[i_loop] + idx % num_vtx_in_loop];
             let i1_vtx = idx2vtx[loop2idx[i_loop] + (idx + 1) % num_vtx_in_loop];
             enforce_edge(
-                &mut tri2vtx,
+                tri2vtx.as_flattened_mut(),
                 &mut tri2tri,
                 &mut vtx2tri,
                 i0_vtx,
@@ -548,26 +554,24 @@ where
         // delete triangles outside
         let Some((itri0_ker, _iedtri)) =
             crate::trimesh_topology::find_edge_by_looking_all_triangles(
-                idx2vtx[0],
-                idx2vtx[1],
-                tri2vtx.as_chunks::<3>().0,
+                idx2vtx[0], idx2vtx[1], &tri2vtx,
             )
         else {
             panic!()
         };
-        assert!(itri0_ker < tri2vtx.len() / 3);
+        assert!(itri0_ker < tri2vtx.len());
         let mut _tri2flg = crate::trimesh_topology::flag_connected(&tri2tri, itri0_ker, 1);
-        (tri2vtx, tri2tri, _tri2flg) = crate::trimesh_topology::delete_tri_flag(
-            tri2vtx.as_chunks::<3>().0,
-            &tri2tri,
-            &_tri2flg,
-            0,
-        );
+        (tri2vtx, tri2tri, _tri2flg) =
+            crate::trimesh_topology::delete_tri_flag(&tri2vtx, &tri2tri, &_tri2flg, 0);
     }
     assert_eq!(vtx2tri.len(), vtx2xy.len());
     // crate::io_obj::save_tri_mesh("target/c.obj", &tri2vtx, vtx2xy);
-    (vtx2tri, *vtx2xy) =
-        delete_unreferenced_points(&mut tri2vtx, &vtx2tri, vtx2xy, &point_idx_to_delete);
+    (vtx2tri, *vtx2xy) = delete_unreferenced_points(
+        tri2vtx.as_flattened_mut(),
+        &vtx2tri,
+        vtx2xy,
+        &point_idx_to_delete,
+    );
     assert_eq!(vtx2tri.len(), vtx2xy.len());
     (tri2vtx, tri2tri, vtx2tri)
 }
@@ -643,7 +647,7 @@ where
 }
 
 pub struct MeshForTopologicalChange<'a, T> {
-    pub tri2vtx: &'a mut Vec<usize>,
+    pub tri2vtx: &'a mut Vec<[usize; 3]>,
     pub tri2tri: &'a mut Vec<usize>,
     pub vtx2tri: &'a mut Vec<usize>,
     pub vtx2xy: &'a mut Vec<[T; 2]>,
@@ -664,12 +668,13 @@ pub fn add_points_uniformly<T>(
     use del_geo_core::vec2::Vec2;
     assert_eq!(dm.vtx2xy.len(), dm.vtx2tri.len());
     assert_eq!(vtx2flag.len(), dm.vtx2tri.len());
-    assert_eq!(tri2flag.len(), dm.tri2vtx.len() / 3);
+    assert_eq!(tri2flag.len(), dm.tri2vtx.len());
     let mut ratio: T = 3_f64.as_();
     loop {
         let mut nadd = 0;
-        for i_tri in 0..dm.tri2vtx.len() / 3 {
-            let area = crate::trimesh2::area_of_a_triangle(dm.tri2vtx, dm.vtx2xy, i_tri);
+        for i_tri in 0..dm.tri2vtx.len() {
+            let area =
+                crate::trimesh2::area_of_a_triangle(dm.tri2vtx.as_flattened(), dm.vtx2xy, i_tri);
             let len2 = target_len; // len * mesh_density.edgeLengthRatio(pcnt[0], pcnt[1]); //
             if area < len2 * len2 * ratio {
                 continue;
@@ -678,9 +683,9 @@ pub fn add_points_uniformly<T>(
             dm.vtx2tri.resize(dm.vtx2tri.len() + 1, usize::MAX);
             dm.vtx2xy.resize(dm.vtx2xy.len() + 1, [T::zero(); 2]);
             dm.vtx2xy[ipo0] = del_geo_core::vec2::add_three(
-                &dm.vtx2xy[dm.tri2vtx[i_tri * 3]],
-                &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 1]],
-                &dm.vtx2xy[dm.tri2vtx[i_tri * 3 + 2]],
+                &dm.vtx2xy[dm.tri2vtx[i_tri][0]],
+                &dm.vtx2xy[dm.tri2vtx[i_tri][1]],
+                &dm.vtx2xy[dm.tri2vtx[i_tri][2]],
             )
             .scale(T::one() / 3_f64.as_());
             crate::trimesh_topology::insert_a_point_inside_an_element(
@@ -690,12 +695,22 @@ pub fn add_points_uniformly<T>(
             tri2flag.push(flag_i_tri);
             tri2flag.push(flag_i_tri);
             vtx2flag.push(flag_i_tri + nflgpnt_offset);
-            delaunay_around_point(ipo0, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
+            delaunay_around_point(
+                ipo0,
+                dm.tri2vtx.as_flattened_mut(),
+                dm.tri2tri,
+                dm.vtx2tri,
+                dm.vtx2xy,
+            );
             nadd += 1;
         }
         for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
             laplacian_mesh_smoothing_around_point(
-                dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
+                dm.vtx2xy,
+                i_vtx,
+                dm.tri2vtx.as_flattened(),
+                dm.tri2tri,
+                dm.vtx2tri,
             );
         }
         if nadd != 0 {
@@ -709,8 +724,20 @@ pub fn add_points_uniformly<T>(
     }
 
     for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
-        laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
-        delaunay_around_point(i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
+        laplacian_mesh_smoothing_around_point(
+            dm.vtx2xy,
+            i_vtx,
+            dm.tri2vtx.as_flattened(),
+            dm.tri2tri,
+            dm.vtx2tri,
+        );
+        delaunay_around_point(
+            i_vtx,
+            dm.tri2vtx.as_flattened_mut(),
+            dm.tri2tri,
+            dm.vtx2tri,
+            dm.vtx2xy,
+        );
     }
 }
 
@@ -748,7 +775,7 @@ where
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) =
         triangulate_single_connected_shape(&mut vtx2xy, &loop2idx, &idx2vtx);
     let mut vtx2flag = vec![0; vtx2xy.len()];
-    let mut tri2flag = vec![0; tri2vtx.len() / 3];
+    let mut tri2flag = vec![0; tri2vtx.len()];
     let num_vtx_fix = vtx2xy.len();
     add_points_uniformly(
         MeshForTopologicalChange {
@@ -764,7 +791,7 @@ where
         edge_length_internal,
     );
     let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v[0], v[1]]).collect();
-    let tri2vtx: Vec<Index> = tri2vtx.iter().map(|&v| v.as_()).collect();
+    let tri2vtx: Vec<Index> = tri2vtx.as_flattened().iter().map(|&v| v.as_()).collect();
     (tri2vtx, vtx2xy)
 }
 
@@ -871,7 +898,11 @@ fn test_shape_with_hole() {
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        crate::io_wavefront_obj::save_tri2vtx_vtx2vecn("../target/d.obj", &tri2vtx, &vtx2xy0)
-            .unwrap();
+        crate::io_wavefront_obj::save_tri2vtx_vtx2vecn(
+            "../target/d.obj",
+            tri2vtx.as_flattened(),
+            &vtx2xy0,
+        )
+        .unwrap();
     }
 }

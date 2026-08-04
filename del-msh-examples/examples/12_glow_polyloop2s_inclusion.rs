@@ -28,7 +28,7 @@ fn main() -> eframe::Result {
 
 struct Geometry {
     vtx2xy_inside: Vec<f32>,
-    vtx2xy_outside: Vec<f32>,
+    vtx2xy_outside: Vec<[f32; 2]>,
 }
 
 enum PickedObject {
@@ -117,7 +117,10 @@ impl MyApp {
                     })
                 {
                     self.picked_object = VtxInside(i_vtx);
-                } else if del_msh_cpu::polyloop2::is_include_a_point(&geo.vtx2xy_inside, &pos_ndc) {
+                } else if del_msh_cpu::polyloop2::is_include_a_point(
+                    geo.vtx2xy_inside.as_chunks::<2>().0,
+                    &pos_ndc,
+                ) {
                     self.picked_object = FaceInside;
                 }
             }
@@ -157,7 +160,7 @@ impl MyApp {
         if self.is_updated_geometry {
             self.penetration = del_msh_cpu::polyloop2::maximum_penetration_of_included_point2s(
                 &geo.vtx2xy_outside,
-                &geo.vtx2xy_inside,
+                geo.vtx2xy_inside.as_chunks::<2>().0,
             );
         }
     }
@@ -193,7 +196,7 @@ impl MyApp {
                 drawer_edge.lock().draw_polyloop2(
                     painter.gl(),
                     &mat_mvp_opengl,
-                    &geo.vtx2xy_outside,
+                    geo.vtx2xy_outside.as_flattened(),
                     0.01,
                 );
                 if let Some(penetration) = penetration {

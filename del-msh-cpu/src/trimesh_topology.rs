@@ -24,23 +24,21 @@ pub fn find_adjacent_edge_index(
 pub fn insert_a_point_inside_an_element(
     idx_vtx_insert: usize,
     idx_tri_insert: usize,
-    tri2vtx: &mut Vec<usize>,
+    tri2vtx: &mut Vec<[usize; 3]>,
     tri2tri: &mut Vec<usize>,
     vtx2tri: &mut [usize],
 ) -> bool {
-    assert_eq!(tri2vtx.len(), tri2tri.len());
-    assert!(idx_tri_insert < tri2vtx.len() / 3);
+    assert_eq!(tri2vtx.len() * 3, tri2tri.len());
+    assert!(idx_tri_insert < tri2vtx.len());
     assert!(idx_vtx_insert < vtx2tri.len());
 
     let it_a = idx_tri_insert;
-    let it_b = tri2vtx.len() / 3;
-    let it_c = tri2vtx.len() / 3 + 1;
+    let it_b = tri2vtx.len();
+    let it_c = tri2vtx.len() + 1;
 
-    tri2vtx.resize(tri2vtx.len() + 6, usize::MAX);
+    tri2vtx.resize(tri2vtx.len() + 2, [usize::MAX; 3]);
     tri2tri.resize(tri2tri.len() + 6, usize::MAX);
-    let old_v: [usize; 3] = tri2vtx[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
-        .try_into()
-        .unwrap();
+    let old_v: [usize; 3] = tri2vtx[idx_tri_insert];
     let old_s: [usize; 3] = tri2tri[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
         .try_into()
         .unwrap();
@@ -50,30 +48,30 @@ pub fn insert_a_point_inside_an_element(
     vtx2tri[old_v[1]] = it_c;
     vtx2tri[old_v[2]] = it_a;
 
-    tri2vtx[it_a * 3..it_a * 3 + 3].copy_from_slice(&[idx_vtx_insert, old_v[1], old_v[2]]);
+    tri2vtx[it_a] = [idx_vtx_insert, old_v[1], old_v[2]];
     tri2tri[it_a * 3..it_a * 3 + 3].copy_from_slice(&[old_s[0], it_b, it_c]);
     if old_s[0] != usize::MAX {
         let jt0 = old_s[0];
         assert!(jt0 < tri2vtx.len());
-        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 0, tri2vtx.as_chunks::<3>().0);
+        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 0, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = it_a;
     }
 
-    tri2vtx[it_b * 3..it_b * 3 + 3].copy_from_slice(&[idx_vtx_insert, old_v[2], old_v[0]]);
+    tri2vtx[it_b] = [idx_vtx_insert, old_v[2], old_v[0]];
     tri2tri[it_b * 3..it_b * 3 + 3].copy_from_slice(&[old_s[1], it_c, it_a]);
     if old_s[1] != usize::MAX {
         let jt0 = old_s[1];
         assert!(jt0 < tri2vtx.len());
-        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 1, tri2vtx.as_chunks::<3>().0);
+        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 1, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = it_b;
     }
 
-    tri2vtx[it_c * 3..it_c * 3 + 3].copy_from_slice(&[idx_vtx_insert, old_v[0], old_v[1]]);
+    tri2vtx[it_c] = [idx_vtx_insert, old_v[0], old_v[1]];
     tri2tri[it_c * 3..it_c * 3 + 3].copy_from_slice(&[old_s[2], it_a, it_b]);
     if old_s[2] != usize::MAX {
         let jt0 = old_s[2];
         assert!(jt0 < tri2vtx.len());
-        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 2, tri2vtx.as_chunks::<3>().0);
+        let jno0 = find_adjacent_edge_index(&old_v, &old_s, 2, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = it_c;
     }
     true
@@ -83,41 +81,40 @@ pub fn insert_point_on_elem_edge(
     idx_vtx_insert: usize,
     idx_tri_insert: usize,
     idx_triedge_insert: usize,
-    tri2vtx: &mut Vec<usize>,
+    tri2vtx: &mut Vec<[usize; 3]>,
     tri2tri: &mut Vec<usize>,
     vtx2tri: &mut [usize],
 ) -> bool {
-    assert!(idx_tri_insert < tri2vtx.len() / 3);
+    assert!(idx_tri_insert < tri2vtx.len());
     assert!(idx_vtx_insert < vtx2tri.len());
-    assert_eq!(tri2vtx.len(), tri2tri.len());
-    assert_ne!(tri2vtx[idx_tri_insert * 3 + idx_triedge_insert], usize::MAX);
+    assert_eq!(tri2vtx.len() * 3, tri2tri.len());
+    assert_ne!(tri2vtx[idx_tri_insert][idx_triedge_insert], usize::MAX);
 
     let itri_adj = tri2tri[idx_tri_insert * 3 + idx_triedge_insert];
     let ied_adj = find_adjacent_edge_index(
-        tri2vtx[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
-            .try_into()
-            .unwrap(),
+        &tri2vtx[idx_tri_insert],
         tri2tri[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
             .try_into()
             .unwrap(),
         idx_triedge_insert,
-        tri2vtx.as_chunks::<3>().0,
+        tri2vtx,
     );
-    assert!(itri_adj < tri2vtx.len() / 3 && idx_triedge_insert < 3);
+    assert!(itri_adj < tri2vtx.len() && idx_triedge_insert < 3);
 
     let itri0 = idx_tri_insert;
     let itri1 = itri_adj;
-    let itri2 = tri2vtx.len() / 3;
-    let itri3 = tri2vtx.len() / 3 + 1;
+    let itri2 = tri2vtx.len();
+    let itri3 = tri2vtx.len() + 1;
 
-    tri2vtx.resize(tri2vtx.len() + 6, 0);
+    tri2vtx.resize(tri2vtx.len() + 2, [0; 3]);
     tri2tri.resize(tri2tri.len() + 6, 0);
 
-    use arrayref::array_ref;
-    let old_a_v: [usize; 3] = array_ref!(tri2vtx, idx_tri_insert * 3, 3).to_owned();
-    let old_a_s: [usize; 3] = array_ref!(tri2tri, idx_tri_insert * 3, 3).to_owned();
-    let old_b_v: [usize; 3] = array_ref!(tri2vtx, itri_adj * 3, 3).to_owned();
-    let old_b_s: [usize; 3] = array_ref!(tri2tri, itri_adj * 3, 3).to_owned();
+    let old_a_v: [usize; 3] = tri2vtx[idx_tri_insert];
+    let old_a_s: [usize; 3] = tri2tri[idx_tri_insert * 3..idx_tri_insert * 3 + 3]
+        .try_into()
+        .unwrap();
+    let old_b_v: [usize; 3] = tri2vtx[itri_adj];
+    let old_b_s: [usize; 3] = tri2tri[itri_adj * 3..itri_adj * 3 + 3].try_into().unwrap();
 
     let ino_a0 = idx_triedge_insert;
     let ino_a1 = (idx_triedge_insert + 1) % 3;
@@ -138,55 +135,39 @@ pub fn insert_point_on_elem_edge(
     vtx2tri[old_b_v[ino_b2]] = itri2;
     vtx2tri[old_b_v[ino_b0]] = itri3;
 
-    tri2vtx[itri0 * 3..itri0 * 3 + 3].copy_from_slice(&[
-        idx_vtx_insert,
-        old_a_v[ino_a2],
-        old_a_v[ino_a0],
-    ]);
+    tri2vtx[itri0] = [idx_vtx_insert, old_a_v[ino_a2], old_a_v[ino_a0]];
     tri2tri[itri0 * 3..itri0 * 3 + 3].copy_from_slice(&[old_a_s[ino_a1], itri1, itri3]);
     if old_a_s[ino_a1] != usize::MAX {
         let jt0 = old_a_s[ino_a1];
-        assert!(jt0 < tri2vtx.len() / 3);
-        let jno0 = find_adjacent_edge_index(&old_a_v, &old_a_s, ino_a1, tri2vtx.as_chunks::<3>().0);
+        assert!(jt0 < tri2vtx.len());
+        let jno0 = find_adjacent_edge_index(&old_a_v, &old_a_s, ino_a1, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = itri0;
     }
 
-    tri2vtx[itri1 * 3..itri1 * 3 + 3].copy_from_slice(&[
-        idx_vtx_insert,
-        old_a_v[ino_a0],
-        old_a_v[ino_a1],
-    ]);
+    tri2vtx[itri1] = [idx_vtx_insert, old_a_v[ino_a0], old_a_v[ino_a1]];
     tri2tri[itri1 * 3..itri1 * 3 + 3].copy_from_slice(&[old_a_s[ino_a2], itri2, itri0]);
     if old_a_s[ino_a2] != usize::MAX {
         let jt0 = old_a_s[ino_a2];
-        assert!(jt0 < tri2vtx.len() / 3);
-        let jno0 = find_adjacent_edge_index(&old_a_v, &old_a_s, ino_a2, tri2vtx.as_chunks::<3>().0);
+        assert!(jt0 < tri2vtx.len());
+        let jno0 = find_adjacent_edge_index(&old_a_v, &old_a_s, ino_a2, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = itri1;
     }
 
-    tri2vtx[itri2 * 3..itri2 * 3 + 3].copy_from_slice(&[
-        idx_vtx_insert,
-        old_b_v[ino_b2],
-        old_b_v[ino_b0],
-    ]);
+    tri2vtx[itri2] = [idx_vtx_insert, old_b_v[ino_b2], old_b_v[ino_b0]];
     tri2tri[itri2 * 3..itri2 * 3 + 3].copy_from_slice(&[old_b_s[ino_b1], itri3, itri1]);
     if old_b_s[ino_b1] != usize::MAX {
         let jt0 = old_b_s[ino_b1];
-        assert!(jt0 < tri2vtx.len() / 3);
-        let jno0 = find_adjacent_edge_index(&old_b_v, &old_b_s, ino_b1, tri2vtx.as_chunks::<3>().0);
+        assert!(jt0 < tri2vtx.len());
+        let jno0 = find_adjacent_edge_index(&old_b_v, &old_b_s, ino_b1, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = itri2;
     }
 
-    tri2vtx[itri3 * 3..itri3 * 3 + 3].copy_from_slice(&[
-        idx_vtx_insert,
-        old_b_v[ino_b0],
-        old_b_v[ino_b1],
-    ]);
+    tri2vtx[itri3] = [idx_vtx_insert, old_b_v[ino_b0], old_b_v[ino_b1]];
     tri2tri[itri3 * 3..itri3 * 3 + 3].copy_from_slice(&[old_b_s[ino_b2], itri0, itri2]);
     if old_b_s[ino_b2] != usize::MAX {
         let jt0 = old_b_s[ino_b2];
-        assert!(jt0 < tri2vtx.len() / 3);
-        let jno0 = find_adjacent_edge_index(&old_b_v, &old_b_s, ino_b2, tri2vtx.as_chunks::<3>().0);
+        assert!(jt0 < tri2vtx.len());
+        let jno0 = find_adjacent_edge_index(&old_b_v, &old_b_s, ino_b2, tri2vtx);
         tri2tri[jt0 * 3 + jno0] = itri3;
     }
     true
@@ -438,7 +419,7 @@ pub fn delete_tri_flag(
     tri2tri0: &[usize],
     tri2flag0: &[i32],
     flag: i32,
-) -> (Vec<usize>, Vec<usize>, Vec<i32>) {
+) -> (Vec<[usize; 3]>, Vec<usize>, Vec<i32>) {
     assert_eq!(tri2flag0.len(), tri2vtx0.len());
     let num_tri0 = tri2vtx0.len();
     let mut map01 = vec![usize::MAX; num_tri0];
@@ -449,14 +430,14 @@ pub fn delete_tri_flag(
             num_tri1 += 1;
         }
     }
-    let mut tri2vtx = vec![0; num_tri1 * 3];
+    let mut tri2vtx: Vec<[usize; 3]> = vec![[0; 3]; num_tri1];
     let mut tri2tri = vec![0; num_tri1 * 3];
     let mut tri2flag = vec![-1; num_tri1];
     for itri0 in 0..tri2vtx0.len() {
         if map01[itri0] != usize::MAX {
             let itri1 = map01[itri0];
             assert!(itri1 < num_tri1);
-            tri2vtx[itri1 * 3..itri1 * 3 + 3].copy_from_slice(&tri2vtx0[itri0]);
+            tri2vtx[itri1] = tri2vtx0[itri0];
             tri2tri[itri1 * 3..itri1 * 3 + 3].copy_from_slice(&tri2tri0[itri0 * 3..itri0 * 3 + 3]);
             tri2flag[itri1] = tri2flag0[itri0];
             assert_ne!(tri2flag[itri1], flag);
@@ -470,7 +451,7 @@ pub fn delete_tri_flag(
             let itri_s0 = tri2tri[itri1 * 3 + ifatri];
             assert!(itri_s0 < tri2vtx0.len());
             let jtri0 = map01[itri_s0];
-            assert!(jtri0 < tri2vtx.len() / 3);
+            assert!(jtri0 < tri2vtx.len());
             tri2tri[itri1 * 3 + ifatri] = jtri0;
         }
     }

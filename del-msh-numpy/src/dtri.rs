@@ -42,7 +42,7 @@ pub fn tesselation2d<'a>(
     if resolution_face > 1.0e-10 {
         let nvtx = vtx2xy.len();
         let mut vtx2flag = vec![0; nvtx];
-        let mut tri2flag = vec![0; tri2pnt.len() / 3];
+        let mut tri2flag = vec![0; tri2pnt.len()];
         del_msh_cpu::trimesh2_dynamic::add_points_uniformly(
             del_msh_cpu::trimesh2_dynamic::MeshForTopologicalChange {
                 tri2vtx: &mut tri2pnt,
@@ -65,7 +65,7 @@ pub fn tesselation2d<'a>(
     }
     use numpy::IntoPyArray;
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2pnt.len() / 3, 3), tri2pnt)
+        numpy::ndarray::Array2::from_shape_vec((tri2pnt.len(), 3), tri2pnt.into_flattened())
             .unwrap()
             .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec((vtx2xy_out.len() / 2, 2), vtx2xy_out)
