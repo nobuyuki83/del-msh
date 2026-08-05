@@ -4,8 +4,8 @@ pub fn pix2tri_by_raycast<Index>(
     pix2tri: &mut [Index],
     tri2vtx: &[[Index; 3]],
     vtx2xyz: &[[f32; 3]],
-    bvhnodes: &[Index],
-    bvhnode2aabb: &[f32],
+    bvhnodes: &[[Index; 3]],
+    bvhnode2aabb: &[[f32; 6]],
     img_shape: (usize, usize), // (width, height)
     transform_ndc2world: &[f32; 16],
 ) where
@@ -27,7 +27,7 @@ pub fn pix2tri_by_raycast<Index>(
             &ray_org,
             &ray_dir,
             &crate::search_bvh3::TriMeshWithBvh {
-                tri2vtx: tri2vtx.as_flattened(),
+                tri2vtx,
                 vtx2xyz,
                 bvhnodes,
                 bvhnode2aabb,
@@ -50,7 +50,7 @@ pub fn pix2tri_by_raycast<Index>(
 pub fn pix2tri_by_rasterization<Index>(
     pix2tri: &mut [Index],
     pix2depth: &mut [f32],
-    tri2vtx: &[Index],
+    tri2vtx: &[[Index; 3]],
     vtx2xyz: &[[f32; 3]],
     img_shape: (usize, usize), // (width, height)
     transform_ndc2world: &[f32; 16],
@@ -62,11 +62,10 @@ pub fn pix2tri_by_rasterization<Index>(
     let transform_world2ndc =
         del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
     let (width, height) = img_shape;
-    let num_tri = tri2vtx.len() / 3;
-    for i_tri in 0..num_tri {
-        let i0: usize = tri2vtx[i_tri * 3].as_();
-        let i1: usize = tri2vtx[i_tri * 3 + 1].as_();
-        let i2: usize = tri2vtx[i_tri * 3 + 2].as_();
+    for (i_tri, node2vtx) in tri2vtx.iter().enumerate() {
+        let i0: usize = node2vtx[0].as_();
+        let i1: usize = node2vtx[1].as_();
+        let i2: usize = node2vtx[2].as_();
         let p0 = &vtx2xyz[i0];
         let p1 = &vtx2xyz[i1];
         let p2 = &vtx2xyz[i2];
@@ -134,15 +133,12 @@ fn test_pix2tri() {
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri_raycast = {
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
-            &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
-            3,
-        );
+        let bvhnodes =
+            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
-            &tri2vtx.as_flattened(),
+            tri2vtx.as_flattened(),
             3,
             &vtx2xyz,
             None,
@@ -165,7 +161,7 @@ fn test_pix2tri() {
         crate::pix2tri::pix2tri_by_rasterization(
             &mut pix2tri,
             &mut pix2depth,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             img_shape,
             &transform_ndc2world,
@@ -334,15 +330,12 @@ fn test_interpolate() {
             .iter()
             .map(|v| [v[0] as f32, v[1] as f32, v[2] as f32])
             .collect();
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
-            &tri2vtx.as_flattened(),
-            &vtx2xyz0.as_flattened(),
-            3,
-        );
+        let bvhnodes =
+            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz0.as_flattened(), 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
-            &tri2vtx.as_flattened(),
+            tri2vtx.as_flattened(),
             3,
             &vtx2xyz0,
             None,

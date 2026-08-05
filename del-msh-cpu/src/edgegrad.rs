@@ -177,16 +177,16 @@ pub fn interpolate_from_edges(
     (img_w, img_h): (usize, usize),
     hedge2vy: &[f32],
     vedge2vx: &[f32],
-    vtx2xy: &[f32],
-    vtx2velo: &mut [f32],
+    vtx2xy: &[[f32; 2]],
+    vtx2velo: &mut [[f32; 2]],
 ) {
     assert_eq!(hedge2vy.len(), (img_h - 1) * img_w);
     assert_eq!(vedge2vx.len(), img_h * (img_w - 1));
-    let num_vtx = vtx2xy.len() / 2;
-    assert_eq!(vtx2velo.len(), num_vtx * 2);
+    let num_vtx = vtx2xy.len();
+    assert_eq!(vtx2velo.len(), num_vtx);
     for i_vtx in 0..num_vtx {
-        let px = vtx2xy[i_vtx * 2];
-        let py = vtx2xy[i_vtx * 2 + 1];
+        let px = vtx2xy[i_vtx][0];
+        let py = vtx2xy[i_vtx][1];
         // x-velocity: bilinear from vertical edges at (iw0+1.0, ih+0.5)
         {
             let gx = px - 1.0_f32;
@@ -198,7 +198,7 @@ pub fn interpolate_from_edges(
             let tx = (gx - ix0 as f32).clamp(0., 1.);
             let ty = (gy - iy0 as f32).clamp(0., 1.);
             let w = img_w - 1;
-            vtx2velo[i_vtx * 2] = (1. - tx) * (1. - ty) * vedge2vx[iy0 * w + ix0]
+            vtx2velo[i_vtx][0] = (1. - tx) * (1. - ty) * vedge2vx[iy0 * w + ix0]
                 + tx * (1. - ty) * vedge2vx[iy0 * w + ix1]
                 + (1. - tx) * ty * vedge2vx[iy1 * w + ix0]
                 + tx * ty * vedge2vx[iy1 * w + ix1];
@@ -213,7 +213,7 @@ pub fn interpolate_from_edges(
             let iy1 = (iy0 + 1).min(img_h - 2);
             let tx = (gx - ix0 as f32).clamp(0., 1.);
             let ty = (gy - iy0 as f32).clamp(0., 1.);
-            vtx2velo[i_vtx * 2 + 1] = (1. - tx) * (1. - ty) * hedge2vy[iy0 * img_w + ix0]
+            vtx2velo[i_vtx][1] = (1. - tx) * (1. - ty) * hedge2vy[iy0 * img_w + ix0]
                 + tx * (1. - ty) * hedge2vy[iy0 * img_w + ix1]
                 + (1. - tx) * ty * hedge2vy[iy1 * img_w + ix0]
                 + tx * ty * hedge2vy[iy1 * img_w + ix1];

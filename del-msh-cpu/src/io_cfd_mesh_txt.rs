@@ -319,7 +319,7 @@ mod tests {
             &bvhnodes,
             &elem2idx_offset,
             &idx2vtx,
-            &data.vtx2xyz,
+            data.vtx2xyz.as_chunks::<3>().0,
         );
     }
 

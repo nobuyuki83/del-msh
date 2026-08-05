@@ -37,8 +37,11 @@ fn build_bvh_topology_topdown<'a>(
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     // change this to uniform mesh
-    let bvhnodes = del_msh_cpu::bvhnodes_topdown_trimesh3::from_triangle_mesh(tri2vtx, vtx2xyz);
-    let bvhnodes = numpy::PyArray1::<usize>::from_slice(_py, &bvhnodes);
+    let bvhnodes = del_msh_cpu::bvhnodes_topdown_trimesh3::from_triangle_mesh(
+        tri2vtx.as_chunks::<3>().0,
+        vtx2xyz.as_chunks::<3>().0,
+    );
+    let bvhnodes = numpy::PyArray1::<usize>::from_slice(_py, bvhnodes.as_flattened());
     bvhnodes.reshape((bvhnodes.len() / 3, 3)).unwrap()
 }
 
@@ -60,7 +63,7 @@ fn build_bvh_topology_morton<'a>(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
-            vtx2xyz,
+            vtx2xyz.as_chunks::<3>().0,
             &del_geo_core::mat4_col_major::from_identity(),
         );
     } else if num_dim == 2 {
@@ -68,14 +71,18 @@ fn build_bvh_topology_morton<'a>(
             &mut idx2vtx,
             &mut idx2morton,
             &mut vtx2morton,
-            vtx2xyz,
+            vtx2xyz.as_chunks::<2>().0,
             &del_geo_core::mat3_col_major::from_identity(),
         );
     }
     let bvhnodes = numpy::PyArray2::<usize>::zeros(_py, (num_vtx * 2 - 1, 3), false);
     {
         let bvhnodes_slice = unsafe { bvhnodes.as_slice_mut().unwrap() };
-        del_msh_cpu::bvhnodes_morton::update_bvhnodes(bvhnodes_slice, &idx2vtx, &idx2morton);
+        del_msh_cpu::bvhnodes_morton::update_bvhnodes(
+            bvhnodes_slice.as_chunks_mut::<3>().0,
+            &idx2vtx,
+            &idx2morton,
+        );
     }
     bvhnodes
 }
@@ -136,9 +143,9 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     };
     let vtx2xyz0 = vtx2xyz0.as_slice().unwrap().as_chunks::<3>().0;
     del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
-        aabbs,
+        aabbs.as_chunks_mut::<6>().0,
         i_bvhnode_root,
-        bvhnodes,
+        bvhnodes.as_chunks::<3>().0,
         elem2vtx,
         num_noel,
         vtx2xyz0,
@@ -209,15 +216,15 @@ fn build_bvh_geometry_aabb_points<'a, T>(
     let aabbs = aabbs.as_slice_mut().unwrap();
     let bvhnodes = bvhnodes.as_slice().unwrap();
     let vtx2xyz1 = if vtx2xyz0.shape() == vtx2xyz1.shape() {
-        Some(vtx2xyz1.as_slice().unwrap())
+        Some(vtx2xyz1.as_slice().unwrap().as_chunks::<3>().0)
     } else {
         None
     };
-    let vtx2xyz0 = vtx2xyz0.as_slice().unwrap();
+    let vtx2xyz0 = vtx2xyz0.as_slice().unwrap().as_chunks::<3>().0;
     del_msh_cpu::bvhnode2aabb3::update_for_points_with_bvh(
-        aabbs,
+        aabbs.as_chunks_mut::<6>().0,
         i_bvhnode_root,
-        bvhnodes,
+        bvhnodes.as_chunks::<3>().0,
         vtx2xyz0,
         vtx2xyz1,
     );

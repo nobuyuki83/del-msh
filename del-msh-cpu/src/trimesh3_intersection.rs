@@ -235,9 +235,9 @@ mod tests {
                 &tri2center,
             );
         let mut aabb = Vec::<f32>::new();
-        aabb.resize(bvhnodes.len() / 3 * 6, 0.);
+        aabb.resize(bvhnodes.len() * 6, 0.);
         crate::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
-            &mut aabb,
+            aabb.as_chunks_mut::<6>().0,
             0,
             &bvhnodes,
             &tri2vtx.as_flattened(),
@@ -251,7 +251,7 @@ mod tests {
             &tri2vtx.as_flattened(),
             &vtx2xyz.as_flattened(),
             0,
-            &bvhnodes,
+            bvhnodes.as_flattened(),
             &aabb,
         );
         assert_eq!(pairs.len(), 0);

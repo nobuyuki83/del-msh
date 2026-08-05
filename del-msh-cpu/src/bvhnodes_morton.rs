@@ -7,15 +7,15 @@
 
 use num_traits::AsPrimitive;
 
-pub fn update_bvhnodes<Index>(bvhnodes: &mut [Index], idx2vtx: &[Index], idx2morton: &[u32])
+pub fn update_bvhnodes<Index>(bvhnodes: &mut [[Index; 3]], idx2vtx: &[Index], idx2morton: &[u32])
 where
     Index: num_traits::PrimInt + 'static + Copy,
     usize: AsPrimitive<Index>,
 {
     assert_eq!(idx2vtx.len(), idx2morton.len());
     assert!(!idx2morton.is_empty());
-    assert_eq!(bvhnodes.len(), (idx2morton.len() * 2 - 1) * 3);
-    bvhnodes[0] = Index::max_value();
+    assert_eq!(bvhnodes.len(), idx2morton.len() * 2 - 1);
+    bvhnodes[0][0] = Index::max_value();
 
     let num_branch = idx2morton.len() - 1; // number of branch
     for i_branch in 0..num_branch {
@@ -24,27 +24,27 @@ where
         assert_ne!(isplit, usize::MAX);
         if range.0 == isplit {
             let i_bvhnode_a = num_branch + isplit; // leaf node
-            bvhnodes[i_branch * 3 + 1] = i_bvhnode_a.as_();
-            bvhnodes[i_bvhnode_a * 3] = i_branch.as_();
-            bvhnodes[i_bvhnode_a * 3 + 1] = idx2vtx[isplit];
-            bvhnodes[i_bvhnode_a * 3 + 2] = Index::max_value();
+            bvhnodes[i_branch][1] = i_bvhnode_a.as_();
+            bvhnodes[i_bvhnode_a][0] = i_branch.as_();
+            bvhnodes[i_bvhnode_a][1] = idx2vtx[isplit];
+            bvhnodes[i_bvhnode_a][2] = Index::max_value();
         } else {
             let i_bvhnode_a = isplit;
-            bvhnodes[i_branch * 3 + 1] = i_bvhnode_a.as_();
-            bvhnodes[i_bvhnode_a * 3] = i_branch.as_();
+            bvhnodes[i_branch][1] = i_bvhnode_a.as_();
+            bvhnodes[i_bvhnode_a][0] = i_branch.as_();
         }
         // ----
         if range.1 == isplit + 1 {
             // leaf node
             let i_bvhnode_b = num_branch + isplit + 1;
-            bvhnodes[i_branch * 3 + 2] = i_bvhnode_b.as_();
-            bvhnodes[i_bvhnode_b * 3] = i_branch.as_();
-            bvhnodes[i_bvhnode_b * 3 + 1] = idx2vtx[isplit + 1];
-            bvhnodes[i_bvhnode_b * 3 + 2] = Index::max_value();
+            bvhnodes[i_branch][2] = i_bvhnode_b.as_();
+            bvhnodes[i_bvhnode_b][0] = i_branch.as_();
+            bvhnodes[i_bvhnode_b][1] = idx2vtx[isplit + 1];
+            bvhnodes[i_bvhnode_b][2] = Index::max_value();
         } else {
             let i_bvhnode_b = isplit + 1;
-            bvhnodes[i_branch * 3 + 2] = i_bvhnode_b.as_();
-            bvhnodes[i_bvhnode_b * 3] = i_branch.as_();
+            bvhnodes[i_branch][2] = i_bvhnode_b.as_();
+            bvhnodes[i_bvhnode_b][0] = i_branch.as_();
         }
     }
 }
@@ -64,7 +64,7 @@ fn test_3d() {
         &mut idx2vtx,
         &mut idx2morton,
         &mut vtx2morton,
-        &vtx2xyz,
+        vtx2xyz.as_chunks::<3>().0,
         &del_geo_core::mat4_col_major::from_identity(),
     );
     for idx in 0..num_vtx - 1 {
@@ -73,8 +73,8 @@ fn test_3d() {
     }
     crate::mortons::check_morton_code_range_split(&idx2morton);
     let mut bvhnodes = vec![0usize; (num_vtx * 2 - 1) * 3];
-    update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
-    crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
+    update_bvhnodes(bvhnodes.as_chunks_mut::<3>().0, &idx2vtx, &idx2morton);
+    crate::bvhnodes::check_bvh_topology(bvhnodes.as_chunks::<3>().0, num_vtx);
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn test_2d() {
         &mut idx2vtx,
         &mut idx2morton,
         &mut vtx2morton,
-        &vtx2xy,
+        vtx2xy.as_chunks::<2>().0,
         &del_geo_core::mat3_col_major::from_identity::<f32>(),
     );
     for idx in 0..num_vtx - 1 {
@@ -101,8 +101,8 @@ fn test_2d() {
     }
     crate::mortons::check_morton_code_range_split(&idx2morton);
     let mut bvhnodes = vec![0usize; (num_vtx * 2 - 1) * 3];
-    update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
-    crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
+    update_bvhnodes(bvhnodes.as_chunks_mut::<3>().0, &idx2vtx, &idx2morton);
+    crate::bvhnodes::check_bvh_topology(bvhnodes.as_chunks::<3>().0, num_vtx);
 }
 
 /*
@@ -127,7 +127,7 @@ where
 }
  */
 
-pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<Index>
+pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<[Index; 3]>
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
@@ -143,34 +143,46 @@ where
         vtx2xyz,
         num_dim,
     );
-    let mut bvhnodes = vec![Index::zero(); (num_vtx * 2 - 1) * 3];
+    let mut bvhnodes = vec![[Index::zero(); 3]; num_vtx * 2 - 1];
     update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
     bvhnodes
 }
 
-pub fn from_triangle_mesh<Index>(tri2vtx: &[Index], vtx2xy: &[f32], num_dim: usize) -> Vec<Index>
+pub fn from_triangle_mesh<Index>(
+    tri2vtx: &[[Index; 3]],
+    vtx2xy: &[f32],
+    num_dim: usize,
+) -> Vec<[Index; 3]>
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let tri2cntr =
-        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
+    let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(
+        tri2vtx.as_flattened(),
+        3,
+        vtx2xy,
+        num_dim,
+    );
     from_vtx2xyz(&tri2cntr, num_dim)
 }
 
 pub fn update_for_triangle_mesh<Index>(
-    bvhnodes: &mut [Index],
-    tri2vtx: &[Index],
+    bvhnodes: &mut [[Index; 3]],
+    tri2vtx: &[[Index; 3]],
     vtx2xy: &[f32],
     num_dim: usize,
 ) where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_tri = tri2vtx.len() / 3;
-    assert_eq!(bvhnodes.len(), (num_tri * 2 - 1) * 3);
-    let tri2cntr =
-        crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(tri2vtx, 3, vtx2xy, num_dim);
+    let num_tri = tri2vtx.len();
+    assert_eq!(bvhnodes.len(), num_tri * 2 - 1);
+    let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(
+        tri2vtx.as_flattened(),
+        3,
+        vtx2xy,
+        num_dim,
+    );
     let mut idx2tri = vec![Index::one(); num_tri];
     let mut idx2morton = vec![0u32; num_tri];
     let mut tri2morton = vec![0u32; num_tri];

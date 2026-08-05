@@ -33,13 +33,13 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             // element index is provided
             let aabb0 = crate::vtx2xy::aabb2_indexed(
                 &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                vtx2xy0,
+                vtx2xy0.as_chunks::<2>().0,
                 Real::zero(),
             );
             if let Some(vtx2xyz1) = vtx2xy1 {
                 let aabb1 = crate::vtx2xy::aabb2_indexed(
                     &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                    vtx2xyz1,
+                    vtx2xyz1.as_chunks::<2>().0,
                     Real::zero(),
                 );
                 del_geo_core::aabb2::from_two_aabbs(&aabb0, &aabb1)
@@ -48,9 +48,9 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             }
         } else {
             // no elements. vertex direct
-            let aabb0 = crate::vtx2xy::to_vec2(vtx2xy0, i_elem).aabb();
+            let aabb0 = crate::vtx2xy::to_vec2(vtx2xy0.as_chunks::<2>().0, i_elem).aabb();
             if let Some(vtx2xy1) = vtx2xy1 {
-                let aabb1 = crate::vtx2xy::to_vec2(vtx2xy1, i_elem).aabb();
+                let aabb1 = crate::vtx2xy::to_vec2(vtx2xy1.as_chunks::<2>().0, i_elem).aabb();
                 del_geo_core::aabb2::from_two_aabbs(&aabb0, &aabb1)
             } else {
                 aabb0

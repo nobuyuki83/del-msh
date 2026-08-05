@@ -26,20 +26,11 @@ pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize]) -> (Vec<[usize; 
 }
 
 /// split quad element to triangle element
-pub fn from_quad_mesh(quad2vtx: &[usize]) -> Vec<[usize; 3]> {
-    let nquad = quad2vtx.len() / 4;
-    let mut tri2vtx = Vec::with_capacity(nquad * 2);
-    for iquad in 0..nquad {
-        tri2vtx.push([
-            quad2vtx[iquad * 4],
-            quad2vtx[iquad * 4 + 1],
-            quad2vtx[iquad * 4 + 2],
-        ]);
-        tri2vtx.push([
-            quad2vtx[iquad * 4],
-            quad2vtx[iquad * 4 + 2],
-            quad2vtx[iquad * 4 + 3],
-        ]);
+pub fn from_quad_mesh(quad2vtx: &[[usize; 4]]) -> Vec<[usize; 3]> {
+    let mut tri2vtx = Vec::with_capacity(quad2vtx.len() * 2);
+    for q in quad2vtx {
+        tri2vtx.push([q[0], q[1], q[2]]);
+        tri2vtx.push([q[0], q[2], q[3]]);
     }
     tri2vtx
 }

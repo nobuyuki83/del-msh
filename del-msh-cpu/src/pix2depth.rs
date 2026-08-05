@@ -149,10 +149,10 @@ pub fn render_depth_bvh(
     image_size: (usize, usize),
     pix2depth: &mut [f32],
     transform_ndc2world: &[f32; 16],
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     vtx2xyz: &[[f32; 3]],
-    bvhnodes: &[usize],
-    bvhnode2aabb: &[f32],
+    bvhnodes: &[[usize; 3]],
+    bvhnode2aabb: &[[f32; 6]],
 ) {
     let transform_world2ndc: [f32; 16] =
         del_geo_core::mat4_col_major::try_inverse(transform_ndc2world).unwrap();
@@ -236,11 +236,8 @@ fn test_depthmap() {
         .unwrap();
         let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
         dbg!(aabb3);
-        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
-            &tri2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
-            3,
-        );
+        let bvhnodes =
+            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
@@ -257,7 +254,7 @@ fn test_depthmap() {
             img_shape,
             &mut pix2depth,
             &transform_ndc2world,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &bvhnodes,
             &bvhnode2aabb,

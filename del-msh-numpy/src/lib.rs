@@ -68,8 +68,8 @@ pub fn areas_of_triangles_of_mesh<'a>(
     assert!(vtx2xyz.is_c_contiguous());
     let tri2area = match vtx2xyz.shape()[1] {
         2 => del_msh_cpu::trimesh2::tri2area(
-            tri2vtx.as_slice().unwrap(),
-            vtx2xyz.as_slice().unwrap(),
+            tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+            vtx2xyz.as_slice().unwrap().as_chunks::<2>().0,
         ),
         3 => del_msh_cpu::trimesh3::tri2area(
             tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
@@ -95,14 +95,14 @@ pub fn circumcenters_of_triangles_of_mesh<'a>(
     let num_dim = vtx2xyz.shape()[1];
     let tri2cc = match num_dim {
         2 => del_msh_cpu::trimesh2::tri2circumcenter(
-            tri2vtx.as_slice().unwrap(),
-            vtx2xyz.as_slice().unwrap(),
+            tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+            vtx2xyz.as_slice().unwrap().as_chunks::<2>().0,
         ),
         _ => {
             panic!();
         }
     };
-    numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc)
+    numpy::ndarray::Array2::from_shape_vec((tri2vtx.shape()[0], num_dim), tri2cc.into_flattened())
         .unwrap()
         .into_pyarray(py)
 }

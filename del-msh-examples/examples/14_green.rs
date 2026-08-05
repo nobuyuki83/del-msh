@@ -85,7 +85,7 @@ fn main() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            &vtx2xyz,
+            vtx2xyz.as_chunks::<3>().0,
             &transform_world2unit,
         );
         let (idx2morton, idx2jdx_offset) = {

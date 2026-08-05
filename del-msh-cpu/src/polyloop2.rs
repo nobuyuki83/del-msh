@@ -307,7 +307,7 @@ where
     rand::distr::StandardUniform: rand::distr::Distribution<Real>,
     usize: AsPrimitive<Real>,
 {
-    let aabb = crate::vtx2xy::aabb2(vtx2xy.as_flattened());
+    let aabb = crate::vtx2xy::aabb2(vtx2xy);
     use rand::RngExt;
     let base_pos = [
         aabb[0] - cell_len * rng.random::<Real>(),
@@ -397,11 +397,12 @@ where
     f64: AsPrimitive<Real>,
     usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
-    crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
-        vtxl2xy.as_flattened(),
+    let (tri2vtx, vtx2xy) = crate::trimesh2_dynamic::meshing_from_polyloop2::<Index, Real>(
+        vtxl2xy,
         edge_length_boundary,
         edge_length_internal,
-    )
+    );
+    (tri2vtx.into_flattened(), vtx2xy.into_flattened())
 }
 
 pub fn poisson_disk_sampling<RNG>(
@@ -414,19 +415,17 @@ where
     RNG: rand::Rng,
 {
     use del_geo_core::vec2::Vec2;
-    let (tri2vtx, vtx2xyz) = crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(
-        vtxl2xy.as_flattened(),
-        -1.,
-        -1.,
-    );
-    let tri2cumarea = crate::trimesh::tri2cumsumarea(&tri2vtx, &vtx2xyz, 2);
+    let (tri2vtx, vtx2xyz) =
+        crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(vtxl2xy, -1., -1.);
+    let tri2cumarea =
+        crate::trimesh::tri2cumsumarea(tri2vtx.as_flattened(), vtx2xyz.as_flattened(), 2);
     let mut vtx2vectwo: Vec<[f32; 2]> = vec![];
     for _iter in 0..num_iteration {
         let (i_tri, r0, r1) =
             crate::trimesh::sample_uniformly(&tri2cumarea, reng.random(), reng.random());
         let pos = crate::trimesh::position_from_barycentric_coordinate::<f32, 2>(
-            &tri2vtx,
-            vtx2xyz.as_chunks::<2>().0,
+            tri2vtx.as_flattened(),
+            &vtx2xyz,
             i_tri,
             r0,
             r1,

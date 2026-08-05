@@ -46,8 +46,8 @@ pub fn trimesh3_raycast_pix2tri_by_raycast<'a>(
         pix2tri.as_slice_mut().unwrap(),
         tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
         vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
-        bvhnodes.as_slice().unwrap(),
-        bvhnode2aabb.as_slice().unwrap(),
+        bvhnodes.as_slice().unwrap().as_chunks::<3>().0,
+        bvhnode2aabb.as_slice().unwrap().as_chunks::<6>().0,
         img_shape,
         transform_ndc2world,
     );
@@ -71,9 +71,9 @@ pub fn trimesh3_raycast_render_depth_bvh<'a>(
         img_shape,
         pix2depth.as_slice_mut().unwrap(),
         transform_ndc2world,
-        tri2vtx.as_slice().unwrap(),
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
         vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
-        bvhnodes.as_slice().unwrap(),
-        bvhnode2aabb.as_slice().unwrap(),
+        bvhnodes.as_slice().unwrap().as_chunks::<3>().0,
+        bvhnode2aabb.as_slice().unwrap().as_chunks::<6>().0,
     );
 }

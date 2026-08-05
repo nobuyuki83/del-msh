@@ -6,8 +6,8 @@ pub struct Content {
     pub tri2vtx: Vec<usize>,
     pub vtx2xyz: Vec<f32>,
     pub vtx2uv: Vec<f32>,
-    pub bvhnodes: Vec<usize>,
-    pub aabbs: Vec<f32>,
+    pub bvhnodes: Vec<[usize; 3]>,
+    pub aabbs: Vec<[f32; 6]>,
     pub tex_shape: (usize, usize),
     pub tex_data: Vec<f32>,
 }
@@ -19,7 +19,11 @@ impl Content {
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             obj.unified_xyz_uv_as_trimesh()
         };
-        let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+        let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
+            tri2vtx.as_chunks::<3>().0,
+            &vtx2xyz,
+            3,
+        );
         let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,

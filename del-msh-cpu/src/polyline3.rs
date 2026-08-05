@@ -101,18 +101,18 @@ where
     u01.add(&u12).normalize()
 }
 
-pub fn vtx2framey<T>(vtx2xyz: &[[T; 3]], vtx2framex: &[T]) -> Vec<T>
+pub fn vtx2framey<T>(vtx2xyz: &[[T; 3]], vtx2framex: &[[T; 3]]) -> Vec<[T; 3]>
 where
     T: num_traits::Float,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
-    assert_eq!(vtx2framex.len(), num_vtx * 3);
-    let mut vtx2framey = vec![T::zero(); num_vtx * 3];
+    assert_eq!(vtx2framex.len(), num_vtx);
+    let mut vtx2framey = vec![[T::zero(); 3]; num_vtx];
     for i_vtx in 0..num_vtx {
         let framez = framez(vtx2xyz, i_vtx);
-        let framex = crate::vtx2xyz::to_vec3(vtx2framex, i_vtx);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2framey, i_vtx).copy_from_slice(&framez.cross(framex));
+        let framex = &vtx2framex[i_vtx];
+        vtx2framey[i_vtx] = framez.cross(framex);
     }
     vtx2framey
 }
@@ -174,11 +174,11 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
     let num_vtx = vtx2xyz.len();
     let ndiv_circum = num_vtx / num_vtxl;
     let vtxl2framex = vtx2framex(vtxl2xyz);
-    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
+    let vtxl2framey = vtx2framey(vtxl2xyz, vtxl2framex.as_chunks::<3>().0);
     for i_vtxl in 0..num_vtxl {
         let p0 = &vtxl2xyz[i_vtxl];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, i_vtxl);
-        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, i_vtxl);
+        let ey = &vtxl2framey[i_vtxl];
         for ic in 0..ndiv_circum {
             let theta = two * pi * ic.as_() / ndiv_circum.as_();
             let ay = ey.scale(rad * num_traits::Float::cos(theta));
@@ -204,7 +204,7 @@ where
     assert!(ndiv_circum > 2);
     let num_vtxl = vtxl2xyz.len();
     let vtxl2framex = vtx2framex(vtxl2xyz);
-    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
+    let vtxl2framey = vtx2framey(vtxl2xyz, vtxl2framex.as_chunks::<3>().0);
     //
     let ndiv_length = num_vtxl - 1;
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
@@ -235,7 +235,7 @@ where
     for ir in 0..ndiv_longtitude {
         let p0 = vtxl2xyz[0];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, 0);
-        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, 0);
+        let ey = &vtxl2framey[0];
         let ez = framez(vtxl2xyz, 0);
         let t0 = pi * half * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
@@ -253,7 +253,7 @@ where
     for il in 0..ndiv_length - 1 {
         let p0 = vtxl2xyz[il + 1];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, il + 1);
-        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, il + 1);
+        let ey = &vtxl2framey[il + 1];
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
             let ay = ey.scale(r * num_traits::Float::cos(theta));
@@ -267,7 +267,7 @@ where
     for ir in 0..ndiv_longtitude {
         let p0 = vtxl2xyz[num_vtxl - 1];
         let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, num_vtxl - 1);
-        let ey = crate::vtx2xyz::to_vec3(&vtxl2framey, num_vtxl - 1);
+        let ey = &vtxl2framey[num_vtxl - 1];
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
         let c0 = r * num_traits::Float::cos(t0);
@@ -299,30 +299,23 @@ pub fn to_trimesh3_ribbon<T>(
     vtxl2xyz: &[[T; 3]],
     vtxl2framex: &[[T; 3]],
     width: T,
-) -> (Vec<usize>, Vec<T>)
+) -> (Vec<[usize; 3]>, Vec<[T; 3]>)
 where
     T: num_traits::Float + Copy + num_traits::FloatConst + 'static,
     usize: num_traits::AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtxl = vtxl2xyz.len();
-    let mut vtx2xyz = vec![T::zero(); num_vtxl * 2 * 3];
-    {
-        let vtx2xyz: &mut [[T; 3]] = vtx2xyz.as_chunks_mut::<3>().0;
-        for i_vtxl in 0..num_vtxl {
-            vtx2xyz[i_vtxl * 2] = vtxl2xyz[i_vtxl];
-            vtx2xyz[i_vtxl * 2 + 1] = vtxl2xyz[i_vtxl].add(&vtxl2framex[i_vtxl].scale(width));
-        }
+    let mut vtx2xyz = vec![[T::zero(); 3]; num_vtxl * 2];
+    for i_vtxl in 0..num_vtxl {
+        vtx2xyz[i_vtxl * 2] = vtxl2xyz[i_vtxl];
+        vtx2xyz[i_vtxl * 2 + 1] = vtxl2xyz[i_vtxl].add(&vtxl2framex[i_vtxl].scale(width));
     }
     let num_tri = (num_vtxl - 1) * 2;
-    let mut tri2vtx = vec![0; num_tri * 3];
+    let mut tri2vtx = vec![[0usize; 3]; num_tri];
     for i_vtxl in 0..num_vtxl - 1 {
-        tri2vtx[i_vtxl * 6] = i_vtxl * 2;
-        tri2vtx[i_vtxl * 6 + 1] = i_vtxl * 2 + 1;
-        tri2vtx[i_vtxl * 6 + 2] = i_vtxl * 2 + 2;
-        tri2vtx[i_vtxl * 6 + 3] = i_vtxl * 2 + 1;
-        tri2vtx[i_vtxl * 6 + 4] = i_vtxl * 2 + 3;
-        tri2vtx[i_vtxl * 6 + 5] = i_vtxl * 2 + 2;
+        tri2vtx[i_vtxl * 2] = [i_vtxl * 2, i_vtxl * 2 + 1, i_vtxl * 2 + 2];
+        tri2vtx[i_vtxl * 2 + 1] = [i_vtxl * 2 + 1, i_vtxl * 2 + 3, i_vtxl * 2 + 2];
     }
     (tri2vtx, vtx2xyz)
 }
@@ -496,7 +489,7 @@ pub fn reduce(vtx2xyz: &[[f32; 3]], threshold: f32) -> Vec<[f32; 3]> {
 #[test]
 fn test_reduce() -> anyhow::Result<()> {
     let vtx2xy = crate::polyloop2::from_circle(1.0, 100);
-    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(vtx2xy.as_flattened());
+    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(&vtx2xy);
     let vtx2xyz_reduced = reduce(vtx2xyz.as_chunks::<3>().0, 0.01);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
         "../target/reduce_polyline.obj",

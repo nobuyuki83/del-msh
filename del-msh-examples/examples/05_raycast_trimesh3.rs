@@ -27,8 +27,9 @@ fn main() -> anyhow::Result<()> {
         del_msh_cpu::io_obj::save_tri2vtx_vtx2xyz("target/hoge.obj", &tri2vtx, &vtx2xyz2, 3);
     }
      */
-    let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
-    let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+    let bvhnodes =
+        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, &vtx2xyz, 3);
+    let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
         &tri2vtx,
@@ -42,7 +43,7 @@ fn main() -> anyhow::Result<()> {
         tri2vtx.as_chunks::<3>().0,
         vtx2xyz.as_chunks::<3>().0,
         &bvhnodes,
-        &aabbs,
+        &bvhnode2aabb,
         img_shape,
         &transform_ndc2world,
     );
@@ -71,10 +72,10 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &mut img_data,
             &transform_ndc2world,
-            &tri2vtx,
+            tri2vtx.as_chunks::<3>().0,
             &vtx2xyz.as_chunks::<3>().0,
             &bvhnodes,
-            &aabbs,
+            &bvhnode2aabb,
         );
         del_canvas::write_png_from_float_image(
             "target/05_trimesh3_depth.png",

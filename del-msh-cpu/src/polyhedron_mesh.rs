@@ -156,9 +156,9 @@ fn find_edges_for_subdiv<const NEDGE: usize>(
 pub fn subdivide(
     elem2idx_offset: &[u32],
     idx2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
 ) -> (Vec<u32>, Vec<u32>, Vec<f32>) {
-    let vtx2elem = vtx2elem(elem2idx_offset, idx2vtx, vtx2xyz.len() / 3);
+    let vtx2elem = vtx2elem(elem2idx_offset, idx2vtx, vtx2xyz.len());
     let edge2vtx = edge2vtx_with_vtx2elem(elem2idx_offset, idx2vtx, &vtx2elem.0, &vtx2elem.1);
     let elem2elem =
         elem2elem_with_vtx2elem::<u32>(elem2idx_offset, idx2vtx, &vtx2elem.0, &vtx2elem.1);
@@ -168,38 +168,38 @@ pub fn subdivide(
         .filter(|&i_elem| elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem] == 8)
         .collect();
     //
-    let num_vtx0 = vtx2xyz.len() / 3;
+    let num_vtx0 = vtx2xyz.len();
     let num_edge0 = edge2vtx.len() / 2;
     let num_quad0 = quad2vtx.len() / 4;
     let num_wtx = num_vtx0 + num_edge0 + num_quad0 + hex2elem.len();
     let wtx2xyz = {
         let mut wtx2xyz = Vec::<f32>::with_capacity(num_wtx * 3);
-        wtx2xyz.extend_from_slice(vtx2xyz);
+        wtx2xyz.extend_from_slice(vtx2xyz.as_flattened());
         use del_geo_core::vec3::Vec3;
         edge2vtx.chunks(2).for_each(|vtxs| {
-            let p0 = arrayref::array_ref![vtx2xyz, vtxs[0] as usize * 3, 3];
-            let p1 = arrayref::array_ref![vtx2xyz, vtxs[1] as usize * 3, 3];
+            let p0 = &vtx2xyz[vtxs[0] as usize];
+            let p1 = &vtx2xyz[vtxs[1] as usize];
             wtx2xyz.extend_from_slice(&p0.add(p1).scale(0.5));
         });
         quad2vtx.chunks(4).for_each(|vtxs| {
-            let p0 = arrayref::array_ref![vtx2xyz, vtxs[0] as usize * 3, 3];
-            let p1 = arrayref::array_ref![vtx2xyz, vtxs[1] as usize * 3, 3];
-            let p2 = arrayref::array_ref![vtx2xyz, vtxs[2] as usize * 3, 3];
-            let p3 = arrayref::array_ref![vtx2xyz, vtxs[3] as usize * 3, 3];
+            let p0 = &vtx2xyz[vtxs[0] as usize];
+            let p1 = &vtx2xyz[vtxs[1] as usize];
+            let p2 = &vtx2xyz[vtxs[2] as usize];
+            let p3 = &vtx2xyz[vtxs[3] as usize];
             wtx2xyz.extend_from_slice(&p0.add(p1).add(p2).add(p3).scale(0.25));
         });
         hex2elem.iter().for_each(|&i_elem| {
             let idx0 = elem2idx_offset[i_elem] as usize;
             let idx1 = elem2idx_offset[i_elem + 1] as usize;
             let vtxs = &idx2vtx[idx0..idx1];
-            let p0 = arrayref::array_ref![vtx2xyz, vtxs[0] as usize * 3, 3];
-            let p1 = arrayref::array_ref![vtx2xyz, vtxs[1] as usize * 3, 3];
-            let p2 = arrayref::array_ref![vtx2xyz, vtxs[2] as usize * 3, 3];
-            let p3 = arrayref::array_ref![vtx2xyz, vtxs[3] as usize * 3, 3];
-            let p4 = arrayref::array_ref![vtx2xyz, vtxs[4] as usize * 3, 3];
-            let p5 = arrayref::array_ref![vtx2xyz, vtxs[5] as usize * 3, 3];
-            let p6 = arrayref::array_ref![vtx2xyz, vtxs[6] as usize * 3, 3];
-            let p7 = arrayref::array_ref![vtx2xyz, vtxs[7] as usize * 3, 3];
+            let p0 = &vtx2xyz[vtxs[0] as usize];
+            let p1 = &vtx2xyz[vtxs[1] as usize];
+            let p2 = &vtx2xyz[vtxs[2] as usize];
+            let p3 = &vtx2xyz[vtxs[3] as usize];
+            let p4 = &vtx2xyz[vtxs[4] as usize];
+            let p5 = &vtx2xyz[vtxs[5] as usize];
+            let p6 = &vtx2xyz[vtxs[6] as usize];
+            let p7 = &vtx2xyz[vtxs[7] as usize];
             let p0123 = p0.add(p1).add(p2).add(p3);
             let p4567 = p4.add(p5).add(p6).add(p7);
             wtx2xyz.extend_from_slice(&p0123.add(&p4567).scale(0.125));
@@ -437,7 +437,7 @@ pub fn test_elem2volume() {
             (elem2idx_offset.clone(), idx2vtx.clone(), vtx2xyz.clone());
         for _itr in 0..4 {
             let (elem2idx1_offset, idx2vtx1, vtx2xyz1) =
-                subdivide(&elem2idx0_offset, &idx2vtx0, &vtx2xyz0);
+                subdivide(&elem2idx0_offset, &idx2vtx0, vtx2xyz0.as_chunks::<3>().0);
             (elem2idx0_offset, idx2vtx0, vtx2xyz0) =
                 (elem2idx1_offset.clone(), idx2vtx1.clone(), vtx2xyz1.clone());
         }
@@ -478,7 +478,7 @@ fn search_elem_contains_query_using_bvh(
     bvhnode2aabb: &[f32],
     elem2idx_offset: &[u32],
     idx2vtx: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     i_bvhnode: usize,
     best_elem: &mut usize,
     best_param: &mut [f32; 3],
@@ -495,7 +495,7 @@ fn search_elem_contains_query_using_bvh(
         let i_elem = bvhnodes[i_bvhnode * 3 + 1] as usize;
         let i0 = elem2idx_offset[i_elem] as usize;
         let i1 = elem2idx_offset[i_elem + 1] as usize;
-        if let Some(bc) = parametric_coord(query, &idx2vtx[i0..i1], vtx2xyz) {
+        if let Some(bc) = parametric_coord(query, &idx2vtx[i0..i1], vtx2xyz.as_flattened()) {
             *best_elem = i_elem;
             *best_param = bc;
         }
@@ -537,20 +537,19 @@ pub fn search_elem_contain_points(
     bvhnode2aabb: &[f32],
     elem2idx_offset: &[u32],
     idx2vtx: &[u32],
-    vtx2xyz: &[f32],
-    wtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
+    wtx2xyz: &[[f32; 3]],
 ) -> (Vec<u32>, Vec<f32>) {
     let _num_elem = elem2idx_offset.len() - 1;
-    let num_wtx = wtx2xyz.len() / 3;
+    let num_wtx = wtx2xyz.len();
     use rayon::prelude::*;
     let mut wtx2elem = vec![u32::MAX; num_wtx];
     let mut wtx2param = vec![0f32; num_wtx * 3];
     wtx2elem
         .par_iter_mut()
         .zip(wtx2param.par_chunks_mut(3))
-        .zip(wtx2xyz.par_chunks(3))
-        .for_each(|((e, p), q)| {
-            let query: &[f32; 3] = q.try_into().unwrap();
+        .zip(wtx2xyz.par_iter())
+        .for_each(|((e, p), query)| {
             let mut best_elem = usize::MAX;
             let mut best_weights = [0f32; 3];
 

@@ -119,28 +119,28 @@ pub fn add_points_to_mesh<T>(
 pub fn should_flip<T>(
     i_tri0: usize,
     i_node0: usize,
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     tri2tri: &[usize],
     vtx2xy: &[[T; 2]],
 ) -> bool
 where
     T: num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
-    if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() / 3 {
+    if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() {
         return false;
     } // there is adjacent triangle
     let j_tri0 = tri2tri[i_tri0 * 3 + i_node0];
     let j_node0 = crate::trimesh_topology::find_adjacent_edge_index(
-        arrayref::array_ref!(tri2vtx, i_tri0 * 3, 3),
+        &tri2vtx[i_tri0],
         arrayref::array_ref!(tri2tri, i_tri0 * 3, 3),
         i_node0,
-        tri2vtx.as_chunks::<3>().0,
+        tri2vtx,
     );
     assert_eq!(tri2tri[j_tri0 * 3 + j_node0], i_tri0);
-    let pj0 = vtx2xy[tri2vtx[j_tri0 * 3 + j_node0]];
-    let pi0 = vtx2xy[tri2vtx[i_tri0 * 3 + i_node0]];
-    let pi1 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]];
-    let pi2 = vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 2) % 3]];
+    let pj0 = vtx2xy[tri2vtx[j_tri0][j_node0]];
+    let pi0 = vtx2xy[tri2vtx[i_tri0][i_node0]];
+    let pi1 = vtx2xy[tri2vtx[i_tri0][(i_node0 + 1) % 3]];
+    let pi2 = vtx2xy[tri2vtx[i_tri0][(i_node0 + 2) % 3]];
     let a_i0_i1_i2 = del_geo_core::tri2::area(&pi0, &pi1, &pi2);
     let a_j0_i2_i1 = del_geo_core::tri2::area(&pj0, &pi2, &pi1);
     assert!(a_i0_i1_i2 > T::zero(), "{a_i0_i1_i2} {a_j0_i2_i1}");
@@ -165,7 +165,7 @@ where
 
 pub fn delaunay_around_point<T>(
     i_vtx0: usize,
-    tri2vtx: &mut [usize],
+    tri2vtx: &mut [[usize; 3]],
     tri2tri: &mut [usize],
     vtx2tri: &mut [usize],
     vtx2xy: &[[T; 2]],
@@ -179,32 +179,26 @@ pub fn delaunay_around_point<T>(
     }
 
     let mut i_tri0 = vtx2tri[i_vtx0];
-    let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx, i_tri0);
-    assert_eq!(i_vtx0, tri2vtx[i_tri0 * 3 + i_node0]);
+    let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx.as_flattened(), i_tri0);
+    assert_eq!(i_vtx0, tri2vtx[i_tri0][i_node0]);
 
     // ---------------------------
     // go counter-clock-wise
     let mut flag_is_wall = false;
     loop {
-        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
+        assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
         if should_flip(i_tri0, i_node0, tri2vtx, tri2tri, vtx2xy) {
             // there is adjacent triangle
-            crate::trimesh_topology::flip_edge(
-                i_tri0,
-                i_node0,
-                tri2vtx.as_chunks_mut::<3>().0,
-                tri2tri,
-                vtx2tri,
-            ); // this edge is not on the edge and should be successful
+            crate::trimesh_topology::flip_edge(i_tri0, i_node0, tri2vtx, tri2tri, vtx2tri); // this edge is not on the edge and should be successful
             i_node0 = 2;
-            assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0); // this is the rule from FlipEdge function
+            assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0); // this is the rule from FlipEdge function
             continue; // need to check the flipped element
         }
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0,
             &mut i_node0,
             usize::MAX,
-            tri2vtx.as_chunks::<3>().0,
+            tri2vtx,
             tri2tri,
         ) {
             flag_is_wall = true;
@@ -221,26 +215,20 @@ pub fn delaunay_around_point<T>(
     // ----------------------------
     // go clock-wise
     loop {
-        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
+        assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
         if should_flip(i_tri0, i_node0, tri2vtx, tri2tri, vtx2xy) {
             let j_tri0 = tri2tri[i_tri0 * 3 + i_node0];
-            crate::trimesh_topology::flip_edge(
-                i_tri0,
-                i_node0,
-                tri2vtx.as_chunks_mut::<3>().0,
-                tri2tri,
-                vtx2tri,
-            );
+            crate::trimesh_topology::flip_edge(i_tri0, i_node0, tri2vtx, tri2tri, vtx2tri);
             i_tri0 = j_tri0;
             i_node0 = 1;
-            assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
+            assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
             continue;
         }
         if !crate::trimesh_topology::move_cw(
             &mut i_tri0,
             &mut i_node0,
             usize::MAX,
-            tri2vtx.as_chunks::<3>().0,
+            tri2vtx,
             tri2tri,
         ) {
             return;
@@ -251,7 +239,7 @@ pub fn delaunay_around_point<T>(
 fn find_edge_point_across_edge<T>(
     ipo0: usize,
     ipo1: usize,
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     tri2tri: &[usize],
     vtx2tri: &[usize],
     vtx2xy: &[[T; 2]],
@@ -260,24 +248,24 @@ where
     T: num_traits::Float + std::fmt::Debug,
 {
     let i_tri_ini = vtx2tri[ipo0];
-    let i_node_ini = crate::trimesh_topology::find_node(ipo0, tri2vtx, i_tri_ini);
+    let i_node_ini = crate::trimesh_topology::find_node(ipo0, tri2vtx.as_flattened(), i_tri_ini);
     let mut i_tri_cur = i_tri_ini;
     let mut i_node_cur = i_node_ini;
     loop {
-        assert_eq!(tri2vtx[i_tri_cur * 3 + i_node_cur], ipo0);
+        assert_eq!(tri2vtx[i_tri_cur][i_node_cur], ipo0);
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
             let area0 = del_geo_core::tri2::area(
                 &vtx2xy[ipo0],
-                &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
+                &vtx2xy[tri2vtx[i_tri_cur][i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > -T::epsilon() {
                 let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
-                    &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
+                    &vtx2xy[tri2vtx[i_tri_cur][i3_node]],
                 );
                 if area1 > -T::epsilon() {
                     assert!(area0 + area1 > T::epsilon());
@@ -293,18 +281,14 @@ where
                 break;
             }
             let j_node = crate::trimesh_topology::find_adjacent_edge_index(
-                tri2vtx[i_tri_nex * 3..i_tri_nex * 3 + 3]
-                    .try_into()
-                    .unwrap(),
-                tri2tri[i_tri_nex * 3..i_tri_nex * 3 + 3]
-                    .try_into()
-                    .unwrap(),
+                &tri2vtx[i_tri_nex],
+                arrayref::array_ref!(tri2tri, i_tri_nex * 3, 3),
                 i2_node,
-                tri2vtx.as_chunks::<3>().0,
+                tri2vtx,
             );
             let i3_node = (j_node + 1) % 3;
             assert!(i_tri_nex < tri2vtx.len());
-            assert_eq!(tri2vtx[i_tri_nex * 3 + i3_node], ipo0);
+            assert_eq!(tri2vtx[i_tri_nex][i3_node], ipo0);
             if i_tri_nex == i_tri_ini {
                 return None;
             }
@@ -316,20 +300,20 @@ where
     i_node_cur = i_node_ini;
     i_tri_cur = i_tri_ini;
     loop {
-        assert_eq!(tri2vtx[i_tri_cur * 3 + i_node_cur], ipo0);
+        assert_eq!(tri2vtx[i_tri_cur][i_node_cur], ipo0);
         {
             let i2_node = (i_node_cur + 1) % 3;
             let i3_node = (i_node_cur + 2) % 3;
             let area0 = del_geo_core::tri2::area(
                 &vtx2xy[ipo0],
-                &vtx2xy[tri2vtx[i_tri_cur * 3 + i2_node]],
+                &vtx2xy[tri2vtx[i_tri_cur][i2_node]],
                 &vtx2xy[ipo1],
             );
             if area0 > -T::epsilon() {
                 let area1 = del_geo_core::tri2::area(
                     &vtx2xy[ipo0],
                     &vtx2xy[ipo1],
-                    &vtx2xy[tri2vtx[i_tri_cur * 3 + i3_node]],
+                    &vtx2xy[tri2vtx[i_tri_cur][i3_node]],
                 );
                 if area1 > -T::epsilon() {
                     assert!(area0 + area1 > T::epsilon());
@@ -342,17 +326,13 @@ where
             let i2_node = (i_node_cur + 2) % 3;
             let i_tri_nex = tri2tri[i_tri_cur * 3 + i2_node];
             let j_node = crate::trimesh_topology::find_adjacent_edge_index(
-                &tri2vtx[i_tri_cur * 3..i_tri_cur * 3 + 3]
-                    .try_into()
-                    .unwrap(),
-                &tri2tri[i_tri_cur * 3..i_tri_cur * 3 + 3]
-                    .try_into()
-                    .unwrap(),
+                &tri2vtx[i_tri_cur],
+                arrayref::array_ref!(tri2tri, i_tri_cur * 3, 3),
                 i2_node,
-                tri2vtx.as_chunks::<3>().0,
+                tri2vtx,
             );
             let i3_node = (j_node + 1) % 3;
-            assert_eq!(tri2vtx[i_tri_nex * 3 + i3_node], ipo0);
+            assert_eq!(tri2vtx[i_tri_nex][i3_node], ipo0);
             if i_tri_nex == i_tri_ini {
                 panic!();
             }
@@ -363,7 +343,7 @@ where
 }
 
 pub fn enforce_edge<T>(
-    tri2vtx: &mut [usize],
+    tri2vtx: &mut [[usize; 3]],
     tri2tri: &mut [usize],
     vtx2tri: &mut [usize],
     i0_vtx: usize,
@@ -378,27 +358,23 @@ pub fn enforce_edge<T>(
     loop {
         if let Some((i0_tri, i0_node, i1_node)) =
             crate::trimesh_topology::find_edge_by_looking_around_point(
-                i0_vtx,
-                i1_vtx,
-                tri2vtx.as_chunks::<3>().0,
-                tri2tri,
-                vtx2tri,
+                i0_vtx, i1_vtx, tri2vtx, tri2tri, vtx2tri,
             )
         {
             // this edge divides outside and inside
             assert_ne!(i0_node, i1_node);
             assert!(i0_node < 3);
             assert!(i1_node < 3);
-            assert_eq!(tri2vtx[i0_tri * 3 + i0_node], i0_vtx);
-            assert_eq!(tri2vtx[i0_tri * 3 + i1_node], i1_vtx);
+            assert_eq!(tri2vtx[i0_tri][i0_node], i0_vtx);
+            assert_eq!(tri2vtx[i0_tri][i1_node], i1_vtx);
             let ied0 = 3 - i0_node - i1_node;
             {
                 let itri1 = tri2tri[i0_tri * 3 + ied0];
                 let ied1 = crate::trimesh_topology::find_adjacent_edge_index(
-                    arrayref::array_ref![tri2vtx, i0_tri * 3, 3],
+                    &tri2vtx[i0_tri],
                     arrayref::array_ref![tri2tri, i0_tri * 3, 3],
                     ied0,
-                    tri2vtx.as_chunks::<3>().0,
+                    tri2vtx,
                 );
                 assert_eq!(tri2tri[itri1 * 3 + ied1], i0_tri);
                 tri2tri[itri1 * 3 + ied1] = usize::MAX;
@@ -417,7 +393,7 @@ pub fn enforce_edge<T>(
             assert!(
                 del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
-                    &vtx2xy[tri2vtx[i0_tri * 3 + i0_node]],
+                    &vtx2xy[tri2vtx[i0_tri][i0_node]],
                     &vtx2xy[i1_vtx]
                 ) > T::epsilon()
             );
@@ -425,7 +401,7 @@ pub fn enforce_edge<T>(
                 del_geo_core::tri2::area(
                     &vtx2xy[i0_vtx],
                     &vtx2xy[i1_vtx],
-                    &vtx2xy[tri2vtx[i0_tri * 3 + i1_node]]
+                    &vtx2xy[tri2vtx[i0_tri][i1_node]]
                 ) > T::epsilon()
             );
             if ratio < T::epsilon() || ratio > T::one() - T::epsilon() {
@@ -433,13 +409,8 @@ pub fn enforce_edge<T>(
             } else {
                 let ied0 = 3 - i0_node - i1_node;
                 assert!(tri2tri[i0_tri * 3 + ied0] < tri2vtx.len());
-                let res = crate::trimesh_topology::flip_edge(
-                    i0_tri,
-                    ied0,
-                    tri2vtx.as_chunks_mut::<3>().0,
-                    tri2tri,
-                    vtx2tri,
-                );
+                let res =
+                    crate::trimesh_topology::flip_edge(i0_tri, ied0, tri2vtx, tri2tri, vtx2tri);
                 if !res {
                     break;
                 }
@@ -450,7 +421,7 @@ pub fn enforce_edge<T>(
 
 /// Returns (vtx2tri, vtx2xy)
 pub fn delete_unreferenced_points<Real>(
-    tri2vtx: &mut [usize],
+    tri2vtx: &mut [[usize; 3]],
     vtx2tri_tmp: &[usize],
     vtx2xy_tmp: &[[Real; 2]],
     point_idxs_to_delete: &Vec<usize>,
@@ -487,7 +458,7 @@ where
             vtx2xy[ipo1] = vtx2xy_tmp[ipo];
         }
     }
-    for (i_tri, tri) in tri2vtx.chunks_mut(3).enumerate() {
+    for (i_tri, tri) in tri2vtx.iter_mut().enumerate() {
         for ipo in tri.iter_mut() {
             assert_ne!(map_po_del[*ipo], usize::MAX);
             *ipo = map_po_del[*ipo];
@@ -514,8 +485,7 @@ where
         vec![npo, npo + 1, npo + 2]
     };
     let (mut tri2vtx, mut tri2tri, mut vtx2tri) = {
-        use slice_of_array::SliceFlatExt;
-        let aabb = crate::vtx2xy::aabb2(vtx2xy.flat());
+        let aabb = crate::vtx2xy::aabb2(vtx2xy);
         make_super_triangle(
             vtx2xy,
             aabb[0..2].try_into().unwrap(),
@@ -526,13 +496,7 @@ where
     // crate::io_obj::save_tri_mesh("target/a.obj", &tri2vtx, vtx2xy);
     for i_vtx in 0..vtx2tri.len() - 3 {
         add_points_to_mesh(&mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy, i_vtx);
-        delaunay_around_point(
-            i_vtx,
-            tri2vtx.as_flattened_mut(),
-            &mut tri2tri,
-            &mut vtx2tri,
-            vtx2xy,
-        );
+        delaunay_around_point(i_vtx, &mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy);
     }
     // crate::io_obj::save_tri_mesh("target/b.obj", &tri2vtx, vtx2xy);
     for i_loop in 0..loop2idx.len() - 1 {
@@ -541,7 +505,7 @@ where
             let i0_vtx = idx2vtx[loop2idx[i_loop] + idx % num_vtx_in_loop];
             let i1_vtx = idx2vtx[loop2idx[i_loop] + (idx + 1) % num_vtx_in_loop];
             enforce_edge(
-                tri2vtx.as_flattened_mut(),
+                &mut tri2vtx,
                 &mut tri2tri,
                 &mut vtx2tri,
                 i0_vtx,
@@ -566,12 +530,8 @@ where
     }
     assert_eq!(vtx2tri.len(), vtx2xy.len());
     // crate::io_obj::save_tri_mesh("target/c.obj", &tri2vtx, vtx2xy);
-    (vtx2tri, *vtx2xy) = delete_unreferenced_points(
-        tri2vtx.as_flattened_mut(),
-        &vtx2tri,
-        vtx2xy,
-        &point_idx_to_delete,
-    );
+    (vtx2tri, *vtx2xy) =
+        delete_unreferenced_points(&mut tri2vtx, &vtx2tri, vtx2xy, &point_idx_to_delete);
     assert_eq!(vtx2tri.len(), vtx2xy.len());
     (tri2vtx, tri2tri, vtx2tri)
 }
@@ -579,7 +539,7 @@ where
 pub fn laplacian_mesh_smoothing_around_point<T>(
     vtx2xy: &mut [[T; 2]],
     i_vtx0: usize,
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     tri2tri: &[usize],
     vtx2tri: &[usize],
 ) -> bool
@@ -590,21 +550,21 @@ where
     use del_geo_core::vec2::Vec2;
     assert_eq!(vtx2xy.len(), vtx2tri.len());
     let mut i_tri0 = vtx2tri[i_vtx0];
-    let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx, i_tri0);
+    let mut i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx.as_flattened(), i_tri0);
     let pos_before = vtx2xy[i_vtx0];
     let mut pos_new = vtx2xy[i_vtx0];
     let mut num_tri_around: usize = 1;
     loop {
         // counter-clock wise
         assert!(i_tri0 < tri2vtx.len() && i_node0 < 3);
-        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
-        pos_new = pos_new.add(&vtx2xy[tri2vtx[i_tri0 * 3 + (i_node0 + 1) % 3]]);
+        assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
+        pos_new = pos_new.add(&vtx2xy[tri2vtx[i_tri0][(i_node0 + 1) % 3]]);
         num_tri_around += 1;
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0,
             &mut i_node0,
             usize::MAX,
-            tri2vtx.as_chunks::<3>().0,
+            tri2vtx,
             tri2tri,
         ) {
             return false;
@@ -617,7 +577,7 @@ where
     //
     let mut flipped = false;
     i_tri0 = vtx2tri[i_vtx0];
-    i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx, i_tri0);
+    i_node0 = crate::trimesh_topology::find_node(i_vtx0, tri2vtx.as_flattened(), i_tri0);
     loop {
         // counter-clock wise
         let area = crate::trimesh2::area_of_a_triangle(tri2vtx, vtx2xy, i_tri0);
@@ -626,12 +586,12 @@ where
             break;
         }
         assert!(i_tri0 < tri2vtx.len() && i_node0 < 3);
-        assert_eq!(tri2vtx[i_tri0 * 3 + i_node0], i_vtx0);
+        assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
         if !crate::trimesh_topology::move_ccw(
             &mut i_tri0,
             &mut i_node0,
             usize::MAX,
-            tri2vtx.as_chunks::<3>().0,
+            tri2vtx,
             tri2tri,
         ) {
             return false;
@@ -673,8 +633,7 @@ pub fn add_points_uniformly<T>(
     loop {
         let mut nadd = 0;
         for i_tri in 0..dm.tri2vtx.len() {
-            let area =
-                crate::trimesh2::area_of_a_triangle(dm.tri2vtx.as_flattened(), dm.vtx2xy, i_tri);
+            let area = crate::trimesh2::area_of_a_triangle(dm.tri2vtx, dm.vtx2xy, i_tri);
             let len2 = target_len; // len * mesh_density.edgeLengthRatio(pcnt[0], pcnt[1]); //
             if area < len2 * len2 * ratio {
                 continue;
@@ -695,22 +654,12 @@ pub fn add_points_uniformly<T>(
             tri2flag.push(flag_i_tri);
             tri2flag.push(flag_i_tri);
             vtx2flag.push(flag_i_tri + nflgpnt_offset);
-            delaunay_around_point(
-                ipo0,
-                dm.tri2vtx.as_flattened_mut(),
-                dm.tri2tri,
-                dm.vtx2tri,
-                dm.vtx2xy,
-            );
+            delaunay_around_point(ipo0, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
             nadd += 1;
         }
         for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
             laplacian_mesh_smoothing_around_point(
-                dm.vtx2xy,
-                i_vtx,
-                dm.tri2vtx.as_flattened(),
-                dm.tri2tri,
-                dm.vtx2tri,
+                dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
             );
         }
         if nadd != 0 {
@@ -724,20 +673,8 @@ pub fn add_points_uniformly<T>(
     }
 
     for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
-        laplacian_mesh_smoothing_around_point(
-            dm.vtx2xy,
-            i_vtx,
-            dm.tri2vtx.as_flattened(),
-            dm.tri2tri,
-            dm.vtx2tri,
-        );
-        delaunay_around_point(
-            i_vtx,
-            dm.tri2vtx.as_flattened_mut(),
-            dm.tri2tri,
-            dm.vtx2tri,
-            dm.vtx2xy,
-        );
+        laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
+        delaunay_around_point(i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
     }
 }
 
@@ -745,10 +682,10 @@ pub fn add_points_uniformly<T>(
 /// * `edge_leength` - length of the edge of triangles
 /// * `vtxl2xy` contiguous array of coordinates of the vertex of the polyloop. counter-clock wise order.
 pub fn meshing_from_polyloop2<Index, Real>(
-    vtxl2xy: &[Real],
+    vtxl2xy: &[[Real; 2]],
     edge_length_boundary: Real,
     edge_length_internal: Real,
-) -> (Vec<Index>, Vec<Real>)
+) -> (Vec<[Index; 3]>, Vec<[Real; 2]>)
 where
     Real: Copy
         + 'static
@@ -760,7 +697,7 @@ where
     f64: AsPrimitive<Real>,
     usize: AsPrimitive<Real> + AsPrimitive<Index>,
 {
-    let mut vtx2xy: Vec<[Real; 2]> = vtxl2xy.chunks(2).map(|v| [v[0], v[1]]).collect();
+    let mut vtx2xy: Vec<[Real; 2]> = vtxl2xy.to_vec();
     let mut loop2idx = vec![0, vtx2xy.len()];
     let mut idx2vtx: Vec<usize> = (0..vtx2xy.len()).collect();
     if edge_length_boundary > Real::zero() {
@@ -790,8 +727,10 @@ where
         0,
         edge_length_internal,
     );
-    let vtx2xy: Vec<Real> = vtx2xy.into_iter().flat_map(|v| [v[0], v[1]]).collect();
-    let tri2vtx: Vec<Index> = tri2vtx.as_flattened().iter().map(|&v| v.as_()).collect();
+    let tri2vtx: Vec<[Index; 3]> = tri2vtx
+        .iter()
+        .map(|t| [t[0].as_(), t[1].as_(), t[2].as_()])
+        .collect();
     (tri2vtx, vtx2xy)
 }
 
@@ -859,21 +798,23 @@ fn test_square() {
     {
         let vtx2xy: Vec<f32> = vtx2xy.iter().flat_map(|v| [v[0], v[1]]).collect();
         {
-            let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, -1., -1.);
+            let (tri2vtx, vtx2xy) =
+                meshing_from_polyloop2::<usize, _>(vtx2xy.as_chunks::<2>().0, -1., -1.);
             let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                 format!("../target/a{i_loop}.obj"),
-                &tri2vtx,
-                &vtx2xy,
+                tri2vtx.as_flattened(),
+                vtx2xy.as_flattened(),
                 2,
             );
             assert!(res.is_ok());
         }
         {
-            let (tri2vtx, vtx2xy) = meshing_from_polyloop2::<usize, _>(&vtx2xy, 0.1, 0.1);
+            let (tri2vtx, vtx2xy) =
+                meshing_from_polyloop2::<usize, _>(vtx2xy.as_chunks::<2>().0, 0.1, 0.1);
             let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                 format!("../target/b{i_loop}.obj"),
-                &tri2vtx,
-                &vtx2xy,
+                tri2vtx.as_flattened(),
+                vtx2xy.as_flattened(),
                 2,
             );
             assert!(res.is_ok());

@@ -4,40 +4,40 @@ use num_traits::{AsPrimitive, PrimInt};
 /// if 'elem2vtx' is None, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
 pub fn update_for_points_with_bvh<Index, Real>(
-    bvhnode2aabb: &mut [Real],
+    bvhnode2aabb: &mut [[Real; 6]],
     i_bvhnode: usize,
-    bvhnodes: &[Index],
-    vtx2xyz0: &[Real],
-    vtx2xyz1: Option<&[Real]>,
+    bvhnodes: &[[Index; 3]],
+    vtx2xyz0: &[[Real; 3]],
+    vtx2xyz1: Option<&[[Real; 3]]>,
 ) where
     Real: num_traits::Float,
     Index: PrimInt + AsPrimitive<usize>,
 {
     // aabbs.resize();
-    assert_eq!(bvhnode2aabb.len() / 6, bvhnodes.len() / 3);
-    assert!(i_bvhnode < bvhnodes.len() / 3);
+    assert_eq!(bvhnode2aabb.len(), bvhnodes.len());
+    assert!(i_bvhnode < bvhnodes.len());
     assert!(if let Some(vtx2xyz1) = vtx2xyz1 {
         vtx2xyz1.len() == vtx2xyz0.len()
     } else {
         true
     });
-    if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+    if bvhnodes[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let aabb0 = crate::vtx2xyz::to_xyz(vtx2xyz0, i_elem).aabb();
+        let i_elem: usize = bvhnodes[i_bvhnode][1].as_();
+        let aabb0 = crate::vtx2xyz::to_xyz(vtx2xyz0.as_flattened(), i_elem).aabb();
         let aabb = if let Some(vtx2xyz1) = vtx2xyz1 {
-            let aabb1 = crate::vtx2xyz::to_xyz(vtx2xyz1, i_elem).aabb();
+            let aabb1 = crate::vtx2xyz::to_xyz(vtx2xyz1.as_flattened(), i_elem).aabb();
             del_geo_core::aabb3::from_two_aabbs(&aabb0, &aabb1)
         } else {
             aabb0
         };
-        bvhnode2aabb[i_bvhnode * 6..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
+        bvhnode2aabb[i_bvhnode] = aabb;
     } else {
-        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode * 3 + 2].as_();
+        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode][1].as_();
+        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode][2].as_();
         // branch node
-        assert_eq!(bvhnodes[i_bvhnode_child0 * 3].as_(), i_bvhnode);
-        assert_eq!(bvhnodes[i_bvhnode_child1 * 3].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child0][0].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child1][0].as_(), i_bvhnode);
         // build right tree
         update_for_points_with_bvh::<Index, Real>(
             bvhnode2aabb,
@@ -55,10 +55,10 @@ pub fn update_for_points_with_bvh<Index, Real>(
             vtx2xyz1,
         );
         let aabb = del_geo_core::aabb3::from_two_aabbs(
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child0 * 6, 6),
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child1 * 6, 6),
+            &bvhnode2aabb[i_bvhnode_child0],
+            &bvhnode2aabb[i_bvhnode_child1],
         );
-        bvhnode2aabb[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
+        bvhnode2aabb[i_bvhnode] = aabb;
     }
 }
 
@@ -66,9 +66,9 @@ pub fn update_for_points_with_bvh<Index, Real>(
 /// if 'elem2vtx' is None, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
 pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
-    bvhnode2aabb: &mut [Real],
+    bvhnode2aabb: &mut [[Real; 6]],
     i_bvhnode: usize,
-    bvhnodes: &[Index],
+    bvhnodes: &[[Index; 3]],
     elem2vtx: &[Index],
     num_noel: usize,
     vtx2xyz0: &[[Real; 3]],
@@ -78,16 +78,16 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
     Index: PrimInt + AsPrimitive<usize>,
 {
     // aabbs.resize();
-    assert_eq!(bvhnode2aabb.len() / 6, bvhnodes.len() / 3);
-    assert!(i_bvhnode < bvhnodes.len() / 3);
+    assert_eq!(bvhnode2aabb.len(), bvhnodes.len());
+    assert!(i_bvhnode < bvhnodes.len());
     assert!(if let Some(vtx2xyz1) = vtx2xyz1 {
         vtx2xyz1.len() == vtx2xyz0.len()
     } else {
         true
     });
-    if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+    if bvhnodes[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
+        let i_elem: usize = bvhnodes[i_bvhnode][1].as_();
         let aabb = {
             // element index is provided
             let aabb0 = crate::vtx2xyz::aabb3_indexed(
@@ -106,13 +106,13 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
                 aabb0
             }
         };
-        bvhnode2aabb[i_bvhnode * 6..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
+        bvhnode2aabb[i_bvhnode] = aabb;
     } else {
-        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode * 3 + 2].as_();
+        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode][1].as_();
+        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode][2].as_();
         // branch node
-        assert_eq!(bvhnodes[i_bvhnode_child0 * 3].as_(), i_bvhnode);
-        assert_eq!(bvhnodes[i_bvhnode_child1 * 3].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child0][0].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child1][0].as_(), i_bvhnode);
         // build right tree
         update_for_uniform_mesh_with_bvh::<Index, Real>(
             bvhnode2aabb,
@@ -134,10 +134,10 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
             vtx2xyz1,
         );
         let aabb = del_geo_core::aabb3::from_two_aabbs(
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child0 * 6, 6),
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child1 * 6, 6),
+            &bvhnode2aabb[i_bvhnode_child0],
+            &bvhnode2aabb[i_bvhnode_child1],
         );
-        bvhnode2aabb[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
+        bvhnode2aabb[i_bvhnode] = aabb;
     }
 }
 
@@ -167,20 +167,20 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
 /// * This is the 3D variant; see `bvhnode2aabb2.rs` for 2D AABBs
 pub fn from_uniform_mesh_with_bvh<Index, Real>(
     i_bvhnode: usize,
-    bvhnodes: &[Index],
+    bvhnodes: &[[Index; 3]],
     elem2vtx: &[Index],
     num_noel: usize,
     vtx2xyz0: &[[Real; 3]],
     vtx2xyz1: Option<&[[Real; 3]]>,
-) -> Vec<Real>
+) -> Vec<[Real; 6]>
 where
     Real: num_traits::Float,
     Index: PrimInt + AsPrimitive<usize>,
 {
     // Calculate total number of BVH nodes (each node stores 3 indices)
-    let num_bvhnode = bvhnodes.len() / 3;
+    let num_bvhnode = bvhnodes.len();
     // Allocate 3D AABB storage: 6 values per node (x_min, y_min, z_min, x_max, y_max, z_max)
-    let mut bvhnode2aabb = vec![Real::zero(); num_bvhnode * 6];
+    let mut bvhnode2aabb = vec![[Real::zero(); 6]; num_bvhnode];
     // Recursively compute AABBs for entire tree from root node
     update_for_uniform_mesh_with_bvh::<Index, Real>(
         &mut bvhnode2aabb,
@@ -195,43 +195,41 @@ where
 }
 
 pub fn update_for_polygon_polyhedron_mesh_with_bvh<Index, Real>(
-    bvhnode2aabb: &mut [Real],
+    bvhnode2aabb: &mut [[Real; 6]],
     i_bvhnode: usize,
-    bvhnodes: &[Index],
+    bvhnodes: &[[Index; 3]],
     elem2idx: &[Index],
     idx2vtx: &[Index],
-    vtx2xyz: &[Real],
+    vtx2xyz: &[[Real; 3]],
 ) where
     Real: num_traits::Float,
     Index: PrimInt + AsPrimitive<usize>,
 {
     // aabbs.resize();
-    assert_eq!(bvhnode2aabb.len() / 6, bvhnodes.len() / 3);
-    assert!(i_bvhnode < bvhnodes.len() / 3);
-    if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+    assert_eq!(bvhnode2aabb.len(), bvhnodes.len());
+    assert!(i_bvhnode < bvhnodes.len());
+    if bvhnodes[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_elem: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
+        let i_elem: usize = bvhnodes[i_bvhnode][1].as_();
         let aabb = {
             let zero = Real::zero();
             let idx0: usize = elem2idx[i_elem].as_();
             let idx1: usize = elem2idx[i_elem + 1].as_();
-            let p0 = arrayref::array_ref![vtx2xyz, idx2vtx[idx0].as_() * 3, 3];
+            let p0 = &vtx2xyz[idx2vtx[idx0].as_()];
             let mut aabb3 = [zero; 6];
             del_geo_core::aabb3::set_as_cube(&mut aabb3, p0, zero);
             for &i_vtx in &idx2vtx[idx0 + 1..idx1] {
-                let i_vtx = i_vtx.as_();
-                let xyz = vtx2xyz[i_vtx * 3..i_vtx * 3 + 3].try_into().unwrap();
-                del_geo_core::aabb3::add_point(&mut aabb3, &xyz, zero);
+                del_geo_core::aabb3::add_point(&mut aabb3, &vtx2xyz[i_vtx.as_()], zero);
             }
             aabb3
         };
-        bvhnode2aabb[i_bvhnode * 6..i_bvhnode * 6 + 6].copy_from_slice(&aabb[0..6]);
+        bvhnode2aabb[i_bvhnode] = aabb;
     } else {
-        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
-        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode * 3 + 2].as_();
+        let i_bvhnode_child0: usize = bvhnodes[i_bvhnode][1].as_();
+        let i_bvhnode_child1: usize = bvhnodes[i_bvhnode][2].as_();
         // branch node
-        assert_eq!(bvhnodes[i_bvhnode_child0 * 3].as_(), i_bvhnode);
-        assert_eq!(bvhnodes[i_bvhnode_child1 * 3].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child0][0].as_(), i_bvhnode);
+        assert_eq!(bvhnodes[i_bvhnode_child1][0].as_(), i_bvhnode);
         // build right tree
         update_for_polygon_polyhedron_mesh_with_bvh::<Index, Real>(
             bvhnode2aabb,
@@ -251,28 +249,26 @@ pub fn update_for_polygon_polyhedron_mesh_with_bvh<Index, Real>(
             vtx2xyz,
         );
         let aabb = del_geo_core::aabb3::from_two_aabbs(
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child0 * 6, 6),
-            arrayref::array_ref!(bvhnode2aabb, i_bvhnode_child1 * 6, 6),
+            &bvhnode2aabb[i_bvhnode_child0],
+            &bvhnode2aabb[i_bvhnode_child1],
         );
-        bvhnode2aabb[i_bvhnode * 6..(i_bvhnode + 1) * 6].copy_from_slice(&aabb);
+        bvhnode2aabb[i_bvhnode] = aabb;
     }
 }
 
 pub fn from_polygon_polyhedron_mesh_with_bvh<Index, Real>(
     i_bvhnode: usize,
-    bvhnodes: &[Index],
+    bvhnodes: &[[Index; 3]],
     elem2idx: &[Index],
     idx2vtx: &[Index],
-    vtx2xyz: &[Real],
-) -> Vec<Real>
+    vtx2xyz: &[[Real; 3]],
+) -> Vec<[Real; 6]>
 where
     Real: num_traits::Float,
     Index: PrimInt + AsPrimitive<usize>,
 {
-    // Calculate total number of BVH nodes (each node stores 3 indices with parent, left, and right)
-    let num_bvhnode = bvhnodes.len() / 3;
-    // Allocate 3D AABB storage: 6 values per node (x_min, y_min, z_min, x_max, y_max, z_max)
-    let mut bvhnode2aabb = vec![Real::zero(); num_bvhnode * 6];
+    let num_bvhnode = bvhnodes.len();
+    let mut bvhnode2aabb = vec![[Real::zero(); 6]; num_bvhnode];
     update_for_polygon_polyhedron_mesh_with_bvh(
         &mut bvhnode2aabb,
         i_bvhnode,

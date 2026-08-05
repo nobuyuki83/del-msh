@@ -98,7 +98,7 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::bvhnodes_morton::update_bvhnodes(
-                slice_mut!(bvhnodes, u32).unwrap(),
+                slice_mut!(bvhnodes, u32).unwrap().as_chunks_mut::<3>().0,
                 slice!(idx2obj, u32).unwrap(),
                 slice!(idx2morton, u32).unwrap(),
             );

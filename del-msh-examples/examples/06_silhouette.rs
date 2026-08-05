@@ -5,7 +5,8 @@ fn main() -> anyhow::Result<()> {
         (obj.idx2vtx_xyz, obj.vtx2xyz)
     };
     // let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup(0.8, 64, 64);
-    let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+    let bvhnodes =
+        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, &vtx2xyz, 3);
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
@@ -81,7 +82,7 @@ fn main() -> anyhow::Result<()> {
             img_data[i_pix][2] = img_data_nrm[i_pix * 3 + 2];
         }
     }
-    for node2edge in edge2vtx_silhouette.chunks(2) {
+    for node2edge in &edge2vtx_silhouette {
         let (i0_vtx, i1_vtx) = (node2edge[0], node2edge[1]);
         let p0 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i0_vtx);
         let p1 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i1_vtx);

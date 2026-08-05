@@ -142,7 +142,7 @@ mod tests {
         );
         let pix2tri = {
             let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx.as_flattened(),
+                &tri2vtx,
                 &vtx2xyz.as_flattened(),
                 3,
             );
@@ -336,7 +336,7 @@ mod tests {
         );
         let pix2tri = {
             let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx.as_flattened(),
+                &tri2vtx,
                 &vtx2xyz.as_flattened(),
                 3,
             );

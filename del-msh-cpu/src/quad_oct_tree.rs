@@ -570,7 +570,7 @@ fn test_octree_2d() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            &vtx2xyz,
+            vtx2xyz.as_chunks::<2>().0,
             &transform_world2unit,
         );
         crate::mortons::check_morton_code_range_split(&jdx2morton);
@@ -670,7 +670,7 @@ fn test_octree_3d() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            &vtx2xyz,
+            vtx2xyz.as_chunks::<3>().0,
             &transform_world2unit,
         );
         crate::mortons::check_morton_code_range_split(&jdx2morton);

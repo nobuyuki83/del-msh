@@ -169,12 +169,15 @@ fn polyhedron_mesh_bvhnode2aabb_from_bvhnodes(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::bvhnode2aabb3::update_for_polygon_polyhedron_mesh_with_bvh::<u32, f32>(
-                slice_mut!(bvhnode2aabb, f32).unwrap(),
+                slice_mut!(bvhnode2aabb, f32)
+                    .unwrap()
+                    .as_chunks_mut::<6>()
+                    .0,
                 0,
-                slice!(bvhnodes, u32).unwrap(),
+                slice!(bvhnodes, u32).unwrap().as_chunks::<3>().0,
                 slice!(elem2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
             );
         }
         #[cfg(feature = "cuda")]
@@ -263,8 +266,8 @@ fn polyhedron_mesh_search_elem_contain_points(
                 slice!(bvhnode2aabb, f32).unwrap(),
                 slice!(elem2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
-                slice!(wtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+                slice!(wtx2xyz, f32).unwrap().as_chunks::<3>().0,
             );
             slice_mut!(wtx2elem, u32)
                 .unwrap()
@@ -336,7 +339,7 @@ fn polyhedron_mesh_subdivide(
             let (new_elem2idx, new_idx2vtx, new_vtx2xyz) = del_msh_cpu::polyhedron_mesh::subdivide(
                 slice!(elem2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
             );
             let num_new_elem = new_elem2idx.len() - 1;
             let num_new_idx = new_idx2vtx.len();

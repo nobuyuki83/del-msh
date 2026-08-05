@@ -406,8 +406,8 @@ pub fn edgegrad_interpolate(
                 (img_w as usize, img_h as usize),
                 slice_mut!(hedge2vy, f32).unwrap(),
                 slice_mut!(vedge2vx, f32).unwrap(),
-                slice!(vtx2xy, f32).unwrap(),
-                slice_mut!(vtx2velo, f32).unwrap(),
+                slice!(vtx2xy, f32).unwrap().as_chunks::<2>().0,
+                slice_mut!(vtx2velo, f32).unwrap().as_chunks_mut::<2>().0,
             );
         }
         #[cfg(feature = "cuda")]

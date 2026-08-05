@@ -253,20 +253,20 @@ where
 /// # Returns
 /// * `Vec<usize>` - Visible contour edge connectivity
 pub fn occluding_contour_for_triangle_mesh(
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
-    edge2vtx: &[usize],
+    edge2vtx: &[[usize; 2]],
     edge2tri: &[usize],
-    bvhnodes: &[usize],
-    bvhnode2aabb: &[f32],
+    bvhnodes: &[[usize; 3]],
+    bvhnode2aabb: &[[f32; 6]],
 ) -> Vec<usize> {
     use del_geo_core::{mat4_col_major, vec3};
     let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
 
     // Process each edge for visibility and contour conditions
-    for (i_edge, node2vtx) in edge2vtx.chunks(2).enumerate() {
+    for (i_edge, node2vtx) in edge2vtx.iter().enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         // Calculate edge midpoint for testing
         let pos_mid: [f32; 3] =
@@ -284,10 +284,8 @@ pub fn occluding_contour_for_triangle_mesh(
         assert!(i0_tri < tri2vtx.len(), "{} {}", i0_tri, tri2vtx.len());
         assert!(i1_tri < tri2vtx.len(), "{} {}", i1_tri, tri2vtx.len());
         // Calculate triangle normals
-        let nrm0_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i0_tri).unit_normal();
-        let nrm1_world =
-            crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i1_tri).unit_normal();
+        let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri).unit_normal();
+        let nrm1_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i1_tri).unit_normal();
 
         // First check if this is a contour edge (triangles face opposite directions)
         {
@@ -346,9 +344,9 @@ pub fn silhouette_for_triangle_mesh(
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[[usize; 2]],
     edge2tri: &[usize],
-    bvhnodes: &[usize],
-    bvhnode2aabb: &[f32],
-) -> Vec<usize> {
+    bvhnodes: &[[usize; 3]],
+    bvhnode2aabb: &[[f32; 6]],
+) -> Vec<[usize; 2]> {
     use del_geo_core::{mat4_col_major, vec3};
     let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
@@ -390,7 +388,7 @@ pub fn silhouette_for_triangle_mesh(
             &crate::search_bvh3::TriMeshWithBvh {
                 bvhnodes,
                 bvhnode2aabb,
-                tri2vtx: tri2vtx.as_flattened(),
+                tri2vtx,
                 vtx2xyz,
             },
             0,
@@ -398,8 +396,7 @@ pub fn silhouette_for_triangle_mesh(
         if !res.is_empty() {
             continue; // Edge is occluded (any intersection found)
         }
-        edge2vtx_contour.push(i0_vtx);
-        edge2vtx_contour.push(i1_vtx);
+        edge2vtx_contour.push([i0_vtx, i1_vtx]);
     }
     edge2vtx_contour
 }
@@ -418,11 +415,7 @@ pub fn test_contour() {
         del_geo_core::mat4_col_major::transpose(&t)
     };
     //
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(
-        &tri2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
-        3,
-    );
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
     let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
@@ -436,10 +429,10 @@ pub fn test_contour() {
 
     {
         let edge2vtx_contour = occluding_contour_for_triangle_mesh(
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &transform_world2ndc,
-            edge2vtx.as_flattened(),
+            &edge2vtx,
             &edge2tri,
             &bvhnodes,
             &bvhnode2aabb,
@@ -464,7 +457,7 @@ pub fn test_contour() {
         );
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_silhouette.obj",
-            &edge2vtx_contour,
+            edge2vtx_contour.as_flattened(),
             &vtx2xyz.as_flattened(),
             3,
         )

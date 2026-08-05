@@ -41,7 +41,12 @@ where
         let a0 = if !tri2isvalid(idx_tri) {
             Real::zero()
         } else if num_dim == 2 {
-            crate::trimesh2::to_tri2(idx_tri, tri2vtx, vtx2xyz).area()
+            crate::trimesh2::to_tri2(
+                idx_tri,
+                tri2vtx.as_chunks::<3>().0,
+                vtx2xyz.as_chunks::<2>().0,
+            )
+            .area()
         } else {
             crate::trimesh3::to_tri3(
                 tri2vtx.as_chunks::<3>().0,

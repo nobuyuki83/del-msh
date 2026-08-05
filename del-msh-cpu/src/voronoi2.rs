@@ -110,8 +110,8 @@ pub fn cut_polygon_by_line(
         let mut vtxnews: Vec<(f32, usize, [f32; 2], [usize; 4])> = vec![];
         for i0_vtx in 0..num_vtx {
             let i1_vtx = (i0_vtx + 1) % num_vtx;
-            let p0 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i0_vtx);
-            let p1 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i1_vtx);
+            let p0 = crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, i0_vtx);
+            let p1 = crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, i1_vtx);
             let d0 = depth(p0);
             if d0 < 0. {
                 is_inside = true;
@@ -265,7 +265,7 @@ pub fn indexing(site2cell: &[Cell]) -> VoronoiMesh {
             let info0 = sort_info(info);
             let i_vtxv = info2vtxv.get(&info0).unwrap();
             idx2vtxc.push(*i_vtxv);
-            vtxv2xy[*i_vtxv] = *crate::vtx2xy::to_vec2(&cell.vtx2xy, ind);
+            vtxv2xy[*i_vtxv] = *crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, ind);
         }
         site2idx.push(idx2vtxc.len());
     }
@@ -411,7 +411,7 @@ fn test_voronoi_convex() {
         let vtxc2info = &site2cell[i_site].vtx2info;
         for (i_vtxc, info) in vtxc2info.iter().enumerate() {
             let cc0 = position_of_voronoi_vertex(info, &vtxl2xy, &site2xy);
-            let cc1 = crate::vtx2xy::to_vec2(vtxc2xy, i_vtxc);
+            let cc1 = crate::vtx2xy::to_vec2(vtxc2xy.as_chunks::<2>().0, i_vtxc);
             assert!(cc0.sub(cc1).norm() < 1.0e-5);
         }
     }
@@ -443,26 +443,23 @@ fn test_voronoi_convex() {
 #[test]
 fn test_voronoi_sites_on_edge() {
     let vtxl2xy: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-    let (tri2vtx, vtx2xy) = crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(
-        vtxl2xy.as_flattened(),
-        0.08,
-        0.08,
-    );
+    let (tri2vtx, vtx2xy) =
+        crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(&vtxl2xy, 0.08, 0.08);
     let tri2xycc = crate::trimesh2::tri2circumcenter(&tri2vtx, &vtx2xy);
     let (bedge2vtx, tri2triedge) =
-        crate::trimesh_topology::boundaryedge2vtx(tri2vtx.as_chunks::<3>().0, vtx2xy.len() / 2);
+        crate::trimesh_topology::boundaryedge2vtx(&tri2vtx, vtx2xy.len());
     //
     let bedge2xymp = {
         let mut bedge2xymp = vec![0f32; bedge2vtx.len()];
         for (i_bedge, node2vtx) in bedge2vtx.chunks(2).enumerate() {
             let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-            bedge2xymp[i_bedge * 2] = (vtx2xy[i0_vtx * 2] + vtx2xy[i1_vtx * 2]) * 0.5;
-            bedge2xymp[i_bedge * 2 + 1] = (vtx2xy[i0_vtx * 2 + 1] + vtx2xy[i1_vtx * 2 + 1]) * 0.5;
+            bedge2xymp[i_bedge * 2] = (vtx2xy[i0_vtx][0] + vtx2xy[i1_vtx][0]) * 0.5;
+            bedge2xymp[i_bedge * 2 + 1] = (vtx2xy[i0_vtx][1] + vtx2xy[i1_vtx][1]) * 0.5;
         }
         bedge2xymp
     };
     let pnt2xy = {
-        let mut pnt2xy = tri2xycc;
+        let mut pnt2xy = tri2xycc.into_flattened();
         pnt2xy.extend(bedge2xymp);
         pnt2xy
     };
@@ -482,9 +479,9 @@ fn test_voronoi_sites_on_edge() {
             2,
             &del_geo_core::edge::EDGE_FACE2IDX,
             &del_geo_core::edge::EDGE_IDX2NODE,
-            vtx2xy.len() / 2,
+            vtx2xy.len(),
         );
-        let num_tri = tri2vtx.len() / 3;
+        let num_tri = tri2vtx.len();
         for (i_bedge, node2bedge) in bedge2bedge.chunks(2).enumerate() {
             for i_node in 0..2 {
                 let j_bedge = node2bedge[i_node];

@@ -342,8 +342,7 @@ fn hoge3() {
     // dbg!(&outline_path);
     let loops = svg_loops_from_outline_path(&outline_path);
     let vtxl2xy = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
-    use slice_of_array::SliceFlatExt;
-    let vtxl2xy = crate::vtx2xy::normalize(vtxl2xy.flat(), &[0.5, 0.5], 1.0);
+    let vtxl2xy = crate::vtx2xy::normalize(&vtxl2xy, &[0.5, 0.5], 1.0);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/duck_curve.obj", &vtxl2xy, 2)
         .unwrap();
 }
