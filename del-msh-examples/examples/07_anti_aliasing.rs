@@ -113,7 +113,7 @@ fn main() -> anyhow::Result<()> {
         let img_out = del_msh_cpu::pix2nrm::render_normalmap_from_pix2tri(
             img_shape,
             &cam_modelview,
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz,
             &pix2tri,
         );

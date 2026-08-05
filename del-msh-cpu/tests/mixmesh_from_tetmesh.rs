@@ -50,7 +50,7 @@ mod tests {
         );
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             "../target/tetmesh_boundary.obj",
-            &tri2vtx,
+            tri2vtx.as_chunks::<3>().0,
             &vtx2xyz,
             3,
         )

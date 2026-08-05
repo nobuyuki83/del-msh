@@ -3,9 +3,9 @@ use num_traits::AsPrimitive;
 pub fn render_texture_from_pix2tri<Index>(
     img_shape: (usize, usize),
     transform_ndc2world: &[f32; 16],
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     vtx2xyz: &[[f32; 3]],
-    vtx2uv: &[f32],
+    vtx2uv: &[[f32; 2]],
     pix2tri: &[Index],
     tex_shape: (usize, usize),
     tex_data: &[f32],
@@ -29,15 +29,15 @@ where
                 continue;
             }
             let i_tri: usize = i_tri.as_();
-            let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri);
+            let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri);
             let Some((a, _bc)) = tri.intersection_against_ray(&ray_org, &ray_dir) else {
                 continue;
             };
             let q = del_geo_core::vec3::axpy(a, &ray_dir, &ray_org);
             let bc = del_geo_core::tri3::to_barycentric_coords(tri.p0, tri.p1, tri.p2, &q);
-            let uv0 = arrayref::array_ref!(vtx2uv, tri2vtx[i_tri * 3] * 2, 2);
-            let uv1 = arrayref::array_ref!(vtx2uv, tri2vtx[i_tri * 3 + 1] * 2, 2);
-            let uv2 = arrayref::array_ref!(vtx2uv, tri2vtx[i_tri * 3 + 2] * 2, 2);
+            let uv0 = &vtx2uv[tri2vtx[i_tri][0]];
+            let uv1 = &vtx2uv[tri2vtx[i_tri][1]];
+            let uv2 = &vtx2uv[tri2vtx[i_tri][2]];
             let uv = [
                 uv0[0] * bc[0] + uv1[0] * bc[1] + uv2[0] * bc[2],
                 uv0[1] * bc[0] + uv1[1] * bc[1] + uv2[1] * bc[2],

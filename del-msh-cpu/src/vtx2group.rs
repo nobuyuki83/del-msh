@@ -38,9 +38,9 @@ fn test_vtx2dist_for_vtx2vtx() {
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
     let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.random::<f32>()).collect();
-    let vtx2rgb: Vec<_> = vtx2group
+    let vtx2rgb: Vec<[f32; 3]> = vtx2group
         .iter()
-        .flat_map(|&i_group| {
+        .map(|&i_group| {
             [
                 group2rgb[i_group * 3],
                 group2rgb[i_group * 3 + 1],
@@ -50,8 +50,8 @@ fn test_vtx2dist_for_vtx2vtx() {
         .collect();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/vtx2dist_from_vtx2vtx.obj",
-        &tri2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
+        &tri2vtx,
+        &vtx2xyz,
         &vtx2rgb,
     )
     .unwrap();

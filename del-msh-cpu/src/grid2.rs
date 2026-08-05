@@ -61,20 +61,20 @@ pub fn to_quadmesh3_hightmap(
     grid_shape: (usize, usize),
     height: &[f32],
     elen: f32,
-) -> (Vec<usize>, Vec<f32>) {
+) -> (Vec<[usize; 4]>, Vec<f32>) {
     let nw = grid_shape.0;
     let nh = grid_shape.1;
     let _num_vtx = nw * nh;
     let mw = nw - 1; // quads in width
     let mh = nh - 1; // quads in height
-    let mut quad2vtx = Vec::<usize>::with_capacity(mw * mh * 4);
+    let mut quad2vtx = Vec::<[usize; 4]>::with_capacity(mw * mh);
     for ih in 0..mh {
         for iw in 0..mw {
             let i01_vtx = ih * nw + iw;
             let i11_vtx = ih * nw + iw + 1;
             let i00_vtx = (ih + 1) * nw + iw;
             let i10_vtx = (ih + 1) * nw + iw + 1;
-            quad2vtx.extend_from_slice(&[i00_vtx, i10_vtx, i11_vtx, i01_vtx]);
+            quad2vtx.push([i00_vtx, i10_vtx, i11_vtx, i01_vtx]);
         }
     }
     let mut vtx2xyz = Vec::<f32>::with_capacity(nw * nh * 3);

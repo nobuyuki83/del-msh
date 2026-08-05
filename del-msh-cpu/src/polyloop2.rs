@@ -458,7 +458,7 @@ fn test_poisson_disk_sampling() {
         flat.extend(vtx2xy.as_flattened());
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/poisson_disk.obj",
-            &[0, 1, 1, 2, 2, 3, 3, 0],
+            &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
             &flat,
             2,
         )

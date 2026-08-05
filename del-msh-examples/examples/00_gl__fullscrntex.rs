@@ -3,9 +3,9 @@ use winit::event_loop::EventLoop;
 use winit::window::Window;
 
 pub struct Content {
-    pub tri2vtx: Vec<usize>,
-    pub vtx2xyz: Vec<f32>,
-    pub vtx2uv: Vec<f32>,
+    pub tri2vtx: Vec<[usize; 3]>,
+    pub vtx2xyz: Vec<[f32; 3]>,
+    pub vtx2uv: Vec<[f32; 2]>,
     pub bvhnodes: Vec<[usize; 3]>,
     pub aabbs: Vec<[f32; 6]>,
     pub tex_shape: (usize, usize),
@@ -20,16 +20,16 @@ impl Content {
             obj.unified_xyz_uv_as_trimesh()
         };
         let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-            tri2vtx.as_chunks::<3>().0,
-            &vtx2xyz,
+            &tri2vtx,
+            vtx2xyz.as_flattened(),
             3,
         );
         let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
-            &tri2vtx,
+            tri2vtx.as_flattened(),
             3,
-            vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             None,
         );
         //println!("{:?}",img.color());
@@ -62,8 +62,8 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
         let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
         del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
-            self.tri2vtx.as_chunks::<3>().0,
-            self.vtx2xyz.as_chunks::<3>().0,
+            &self.tri2vtx,
+            &self.vtx2xyz,
             &self.bvhnodes,
             &self.aabbs,
             img_shape,
@@ -73,7 +73,7 @@ impl del_gl_winit_glutin::viewer3d_for_image_generator::ImageGeneratorFrom3dCamP
             img_shape,
             &transform_ndc2world,
             &self.tri2vtx,
-            self.vtx2xyz.as_chunks::<3>().0,
+            &self.vtx2xyz,
             &self.vtx2uv,
             &pix2tri,
             self.tex_shape,

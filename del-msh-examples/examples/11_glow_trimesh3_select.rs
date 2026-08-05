@@ -51,7 +51,7 @@ impl MyApp {
         };
         let num_tri = tri2vtx.len() / 3;
         let tri2node2xyz =
-            del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(&tri2vtx, &vtx2xyz, 3);
+            del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
         let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
             &tri2vtx,
             3,
@@ -72,7 +72,7 @@ impl MyApp {
                 tri2vtx.as_chunks::<3>().0,
                 vtx2xyz.len() / 3,
             );
-            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz, 3);
+            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
             drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
             // drawer_mesh.add_element(&gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
@@ -91,7 +91,7 @@ impl MyApp {
             trackball: del_geo_core::view_rotation::Trackball::default(),
             mat_projection: del_geo_core::mat4_col_major::from_identity(),
             tri2vtx,
-            vtx2xyz,
+            vtx2xyz: vtx2xyz.as_flattened().to_vec(),
             tri2tri,
             tri2dist: vec![0; num_tri],
             tri2flag: vec![0; num_tri],

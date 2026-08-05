@@ -47,8 +47,8 @@ impl MyApp {
         let pix2rgb = image::imageops::flip_vertical(&pix2rgb);
         println!("{:?}", pix2rgb.dimensions());
         let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
-            tri2vtx.as_chunks::<3>().0,
-            vtx2xyz.len() / 3,
+            &tri2vtx,
+            vtx2xyz.len(),
         );
         // gl start from here
         let gl = cc
@@ -57,10 +57,10 @@ impl MyApp {
             .expect("You need to run eframe with the glow backend");
         let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz_vtx2uv::Drawer::new();
         drawer.compile_shader(gl);
-        drawer.update_vtx2xyz(gl, &vtx2xyz, 3);
-        drawer.set_vtx2uv(gl, &vtx2uv);
+        drawer.update_vtx2xyz(gl, vtx2xyz.as_flattened(), 3);
+        drawer.set_vtx2uv(gl, vtx2uv.as_flattened());
         drawer.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), None);
-        drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, None);
+        drawer.add_elem2vtx(gl, glow::TRIANGLES, tri2vtx.as_flattened(), None);
         //
         let id_tex = unsafe {
             // gl.enable(glow::TEXTURE_2D);

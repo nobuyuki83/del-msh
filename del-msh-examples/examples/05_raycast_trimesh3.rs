@@ -28,20 +28,20 @@ fn main() -> anyhow::Result<()> {
     }
      */
     let bvhnodes =
-        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, &vtx2xyz, 3);
+        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, vtx2xyz.as_flattened(), 3);
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
-        &tri2vtx,
+        tri2vtx.as_flattened(),
         3,
-        &vtx2xyz.as_chunks::<3>().0,
+        &vtx2xyz,
         None,
     );
     let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
-        tri2vtx.as_chunks::<3>().0,
-        vtx2xyz.as_chunks::<3>().0,
+        &tri2vtx,
+        &vtx2xyz,
         &bvhnodes,
         &bvhnode2aabb,
         img_shape,
@@ -54,7 +54,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &cam_modelview,
             &tri2vtx,
-            &vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &pix2tri,
         );
         del_canvas::write_png_from_float_image(
@@ -72,8 +72,8 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &mut img_data,
             &transform_ndc2world,
-            tri2vtx.as_chunks::<3>().0,
-            &vtx2xyz.as_chunks::<3>().0,
+            &tri2vtx,
+            &vtx2xyz,
             &bvhnodes,
             &bvhnode2aabb,
         );
@@ -94,7 +94,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &transform_ndc2world,
             &tri2vtx,
-            vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &vtx2uv,
             &pix2tri,
             tex_shape,
@@ -112,7 +112,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &transform_ndc2world,
             &tri2vtx,
-            vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &vtx2uv,
             &pix2tri,
             tex_shape,

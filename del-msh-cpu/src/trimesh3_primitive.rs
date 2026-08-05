@@ -416,7 +416,7 @@ fn test_sphere_yup() {
     let (tri2vtx, vtx2xyz) = sphere_yup::<usize, f64>(1.0, 16, 8);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/sphere_yup.obj",
-        &tri2vtx.as_flattened(),
+        &tri2vtx,
         &vtx2xyz.as_flattened(),
         3,
     )
@@ -517,7 +517,7 @@ fn test_biypyramid_zup() {
 
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path,
-        &tri2vtx.as_flattened(),
+        &tri2vtx,
         &vtx2xyz.as_flattened(),
         3,
     )
@@ -580,7 +580,7 @@ fn test_arrow_zup() {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path,
-        tri2vtx.as_flattened(),
+        &tri2vtx,
         vtx2xyz.as_flattened(),
         3,
     )
@@ -621,7 +621,7 @@ fn test_arrow_connecting_two_points() {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path,
-        tri2vtx.as_flattened(),
+        &tri2vtx,
         vtx2xyz.as_flattened(),
         3,
     )
@@ -700,7 +700,7 @@ fn test_annulus_yup() {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path,
-        tri2vtx.as_flattened(),
+        &tri2vtx,
         vtx2xyz.as_flattened(),
         3,
     )

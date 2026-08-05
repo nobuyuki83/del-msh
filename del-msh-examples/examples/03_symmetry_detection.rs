@@ -217,7 +217,6 @@ fn main() -> anyhow::Result<()> {
     )
     .unwrap();
     let vtx2xyz = {
-        let vtx2xyz: Vec<_> = (&vtx2xyz).chunks(3).map(|v| [v[0], v[1], v[2]]).collect();
         use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
@@ -228,7 +227,7 @@ fn main() -> anyhow::Result<()> {
         );
         del_msh_cpu::vtx2xyz::transform_linear(&vtx2xyz, &rot)
     };
-    let syms = sym_detector(&tri2vtx, &vtx2xyz, 9, 200);
+    let syms = sym_detector(tri2vtx.as_flattened(), &vtx2xyz, 9, 200);
     for (i_sym, sym) in syms.iter().enumerate() {
         let (n, p) = get_normal_and_origin_from_affine_matrix_of_reflection(&sym.affine);
         let (ex, ey) = del_geo_core::vec3::basis_xy_from_basis_z(&n);
@@ -247,7 +246,7 @@ fn main() -> anyhow::Result<()> {
             (triq2vtxq, vtxq2xyz)
         };
         let tris2vtx =
-            del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(&tri2vtx, 3, &sym.tris);
+            del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(tri2vtx.as_flattened(), 3, &sym.tris);
         let mut trio2vtxo = vec![];
         let mut vtxo2xyz = vec![];
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
@@ -260,7 +259,7 @@ fn main() -> anyhow::Result<()> {
         );
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("target/sym_{i_sym}.obj"),
-            &trio2vtxo,
+            trio2vtxo.as_chunks::<3>().0,
             &vtxo2xyz,
             3,
         )?;

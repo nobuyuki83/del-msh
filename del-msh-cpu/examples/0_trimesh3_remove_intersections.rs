@@ -31,7 +31,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             &vtx2xyz1.as_flattened(),
             3,
         );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_start, &tri2vtx0, &vtx2xyz0, 3)
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_start, tri2vtx0.as_chunks::<3>().0, &vtx2xyz0, 3)
             .unwrap()
     }
     {
@@ -52,7 +52,7 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             &vtx2xyz1.as_flattened(),
             3,
         );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_goal, &tri2vtx0, &vtx2xyz0, 3)
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_goal, tri2vtx0.as_chunks::<3>().0, &vtx2xyz0, 3)
             .unwrap()
     }
 }
@@ -82,9 +82,9 @@ fn main() -> anyhow::Result<()> {
     assert_eq!(tri2vtx, _tri2vtx);
     let vtx2xyz_out =
         del_msh_cpu::trimesh3_move_avoid_intersection::match_vtx2xyz_while_avoid_collision(
-            &tri2vtx,
-            &vtx2xyz_start,
-            &vtx2xyz_goal,
+            tri2vtx.as_flattened(),
+            vtx2xyz_start.as_flattened(),
+            vtx2xyz_goal.as_flattened(),
             del_msh_cpu::trimesh3_move_avoid_intersection::Params {
                 k_diff: 100.0,
                 k_contact: 1000.0,

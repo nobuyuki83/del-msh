@@ -2,17 +2,18 @@ fn main() -> anyhow::Result<()> {
     let (tri2vtx, vtx2xyz) = {
         let mut obj = del_msh_cpu::io_wavefront_obj::WavefrontObj::<usize, f32>::new();
         obj.load("asset/spot/spot_triangulated.obj")?;
-        (obj.idx2vtx_xyz, obj.vtx2xyz)
+        let tri2vtx = obj.idx2vtx_xyz.as_chunks::<3>().0.to_vec();
+        (tri2vtx, obj.vtx2xyz)
     };
     // let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup(0.8, 64, 64);
     let bvhnodes =
-        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, &vtx2xyz, 3);
+        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
-        &tri2vtx,
+        tri2vtx.as_flattened(),
         3,
-        &vtx2xyz.as_chunks::<3>().0,
+        &vtx2xyz,
         None,
     );
     //
@@ -34,18 +35,18 @@ fn main() -> anyhow::Result<()> {
     dbg!(&transform_world2ndc);
     let edge2vtx_silhouette = {
         let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
-            tri2vtx.as_chunks::<3>().0,
-            vtx2xyz.len() / 3,
+            &tri2vtx,
+            vtx2xyz.len(),
         );
         let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
             &edge2vtx,
-            tri2vtx.as_chunks::<3>().0,
-            vtx2xyz.len() / 3,
+            &tri2vtx,
+            vtx2xyz.len(),
         );
         del_msh_cpu::edge2vtx::silhouette_for_triangle_mesh(
             //del_msh_cpu::edge2vtx::occluding_contour_for_triangle_mesh(
-            tri2vtx.as_chunks::<3>().0,
-            &vtx2xyz.as_chunks::<3>().0,
+            &tri2vtx,
+            &vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -53,7 +54,7 @@ fn main() -> anyhow::Result<()> {
             &bvhnode2aabb,
         )
     };
-    println!("# of edge in silhouette: {}", edge2vtx_silhouette.len() / 3);
+    println!("# of edge in silhouette: {}", edge2vtx_silhouette.len());
     let transform_ndc2pix = del_geo_core::mat3_col_major::from_transform_ndc2pix(img_shape);
     let mut img_data = vec![[0f32; 3]; img_shape.0 * img_shape.1];
     {
@@ -62,8 +63,8 @@ fn main() -> anyhow::Result<()> {
         let mut pix2tri = vec![0usize; img_shape.0 * img_shape.1];
         del_msh_cpu::pix2tri::pix2tri_by_raycast(
             &mut pix2tri,
-            tri2vtx.as_chunks::<3>().0,
-            vtx2xyz.as_chunks::<3>().0,
+            &tri2vtx,
+            &vtx2xyz,
             &bvhnodes,
             &bvhnode2aabb,
             img_shape,
@@ -73,7 +74,7 @@ fn main() -> anyhow::Result<()> {
             img_shape,
             &cam_modelview,
             &tri2vtx,
-            &vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &pix2tri,
         );
         for i_pix in 0..img_shape.0 * img_shape.1 {
@@ -84,11 +85,9 @@ fn main() -> anyhow::Result<()> {
     }
     for node2edge in &edge2vtx_silhouette {
         let (i0_vtx, i1_vtx) = (node2edge[0], node2edge[1]);
-        let p0 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i0_vtx);
-        let p1 = del_msh_cpu::vtx2xyz::to_xyz(&vtx2xyz, i1_vtx);
-        let r0 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, p0.p)
+        let r0 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &vtx2xyz[i0_vtx])
             .unwrap();
-        let r1 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, p1.p)
+        let r1 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &vtx2xyz[i1_vtx])
             .unwrap();
         del_canvas::rasterize::line2::draw_dda(
             &mut img_data,

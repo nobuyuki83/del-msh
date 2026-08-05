@@ -123,12 +123,12 @@ fn test_vtx2curvature_gaussian() {
     let vtx2curv = vtx2curvature_gaussian(&tri2vtx, &vtx2xyz);
     let vtx2rgb = vtx2curv
         .iter()
-        .flat_map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
-        .collect::<Vec<f32>>();
+        .map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
+        .collect::<Vec<[f32; 3]>>();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/curvature.obj",
-        &tri2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
+        &tri2vtx,
+        &vtx2xyz,
         &vtx2rgb,
     )
     .unwrap()

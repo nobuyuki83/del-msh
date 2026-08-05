@@ -54,7 +54,7 @@ impl MyApp {
                 tri2vtx.as_chunks::<3>().0,
                 vtx2xyz.len() / 3,
             );
-            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz, 3);
+            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
             drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
             drawer_mesh.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
@@ -79,7 +79,7 @@ impl MyApp {
             trackball: del_geo_core::view_rotation::Trackball::default(),
             mat_projection: del_geo_core::mat4_col_major::from_identity(),
             tri2vtx: tri2vtx.to_vec(),
-            vtx2xyz,
+            vtx2xyz: vtx2xyz.as_flattened().to_vec(),
             picked_tri: None,
         }
     }

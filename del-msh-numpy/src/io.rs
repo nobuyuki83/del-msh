@@ -38,13 +38,22 @@ pub fn load_wavefront_obj(
     }
     use pyo3::IntoPyObject;
     (
-        numpy::ndarray::Array2::from_shape_vec((obj.vtx2xyz.len() / 3, 3), obj.vtx2xyz)
+        numpy::ndarray::Array2::from_shape_vec(
+            (obj.vtx2xyz.len(), 3),
+            obj.vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
+        )
             .unwrap()
             .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((obj.vtx2uv.len() / 2, 2), obj.vtx2uv)
+        numpy::ndarray::Array2::from_shape_vec(
+            (obj.vtx2uv.len(), 2),
+            obj.vtx2uv.into_iter().flatten().collect::<Vec<_>>(),
+        )
             .unwrap()
             .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((obj.vtx2nrm.len() / 3, 3), obj.vtx2nrm)
+        numpy::ndarray::Array2::from_shape_vec(
+            (obj.vtx2nrm.len(), 3),
+            obj.vtx2nrm.into_iter().flatten().collect::<Vec<_>>(),
+        )
             .unwrap()
             .into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.elem2idx).into_pyarray(py),
@@ -69,12 +78,18 @@ pub fn load_wavefront_obj_as_triangle_mesh(
         todo!()
     };
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
+        numpy::ndarray::Array2::from_shape_vec(
+            (tri2vtx.len(), 3),
+            tri2vtx.into_iter().flatten().collect::<Vec<_>>(),
+        )
             .unwrap()
             .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
-            .unwrap()
-            .into_pyarray(py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (vtx2xyz.len(), 3),
+            vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_pyarray(py),
     )
 }
 
@@ -123,5 +138,5 @@ pub fn save_wavefront_obj_for_uniform_mesh<'a>(
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     let _ =
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_file, tri2vtx, vtx2xyz, num_dim);
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_file, tri2vtx.as_chunks::<3>().0, vtx2xyz, num_dim);
 }

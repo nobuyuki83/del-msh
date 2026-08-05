@@ -135,9 +135,9 @@ fn test_vtx2dist_for_vtx2vtx() {
         crate::vtx2vtx::from_uniform_mesh(&tri2vtx.as_flattened(), 3, vtx2xyz.len(), false);
     let (vtx2dist, _) = vtx2dist_for_vtx2vtx(0, &vtx2idx, &idx2vtx, None);
     let &dist_max = vtx2dist.iter().max().unwrap();
-    let vtx2rgb: Vec<_> = vtx2dist
+    let vtx2rgb: Vec<[f32; 3]> = vtx2dist
         .iter()
-        .flat_map(|&v| {
+        .map(|&v| {
             let r = if v % 2 == 0 { 0. } else { 1. };
             let g = v as f32 / dist_max as f32;
             [r, g, 1.0 - g]
@@ -145,8 +145,8 @@ fn test_vtx2dist_for_vtx2vtx() {
         .collect();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/test_vtx2dist_for_vtx2vtx.obj",
-        &tri2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
+        &tri2vtx,
+        &vtx2xyz,
         &vtx2rgb,
     )
     .unwrap();

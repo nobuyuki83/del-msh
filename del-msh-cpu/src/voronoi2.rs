@@ -330,9 +330,10 @@ fn test_voronoi_concave() {
         let num_vtxl = vtxl2xy.len();
         let mut flat = vtxl2xy.as_flattened().to_vec();
         flat.extend(site2xy.as_flattened());
+        let edge2vtx_l = crate::edge2vtx::from_polyloop(num_vtxl);
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_input.obj",
-            crate::edge2vtx::from_polyloop(num_vtxl).as_flattened(),
+            &edge2vtx_l,
             &flat,
             2,
         );
@@ -355,7 +356,7 @@ fn test_voronoi_concave() {
         }
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_cells.obj",
-            &edge2vtxo,
+            edge2vtxo.as_chunks::<2>().0,
             &vtxo2xy,
             2,
         )
@@ -375,7 +376,7 @@ fn test_voronoi_convex() {
         flat.extend(site2xy.as_flattened());
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_input.obj",
-            &[0, 1, 1, 2, 2, 3, 3, 0],
+            &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
             &flat,
             2,
         )
@@ -400,7 +401,7 @@ fn test_voronoi_convex() {
         }
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_cells.obj",
-            &edge2vtxo,
+            edge2vtxo.as_chunks::<2>().0,
             &vtxo2xy,
             2,
         );
@@ -432,7 +433,7 @@ fn test_voronoi_convex() {
         let vtxc2xy = voronoi_mesh.vtxv2xy.flat();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_indexed.obj",
-            edge2vtxc.as_flattened(),
+            &edge2vtxc,
             vtxc2xy,
             2,
         )
@@ -495,7 +496,7 @@ fn test_voronoi_sites_on_edge() {
     };
     crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
         "../target/voronoi_sites_on_edge.obj",
-        &vedge2pnt,
+        vedge2pnt.as_chunks::<2>().0,
         &pnt2xy,
         2,
     )

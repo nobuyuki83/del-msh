@@ -20,7 +20,7 @@ impl del_gl_winit_glutin::viewer3d_for_gl_renderer::GlRenderer for MyViewTrg {
             tri2vtx.as_chunks::<3>().0,
             vtx2xyz.len() / 3,
         );
-        self.drawer.update_vertex(gl, &vtx2xyz, 3);
+        self.drawer.update_vertex(gl, &vtx2xyz.as_flattened().to_vec(), 3);
         self.drawer
             .add_element(gl, gl::TRIANGLES, &tri2vtx, [1.0, 0.0, 0.0]);
         self.drawer.add_element(

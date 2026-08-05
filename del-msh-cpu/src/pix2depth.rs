@@ -229,7 +229,7 @@ fn test_depthmap() {
         };
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("../target/trimesh3_raycast_mesh{i_case}.obj"),
-            &tri2vtx.as_flattened(),
+            &tri2vtx,
             &vtx2xyz.as_flattened(),
             3,
         )

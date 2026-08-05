@@ -7,9 +7,9 @@ use std::io::{BufRead, BufReader, Write};
 use std::ops::AddAssign;
 
 pub struct WavefrontObj<Index, Real> {
-    pub vtx2xyz: Vec<Real>,
-    pub vtx2uv: Vec<Real>,
-    pub vtx2nrm: Vec<Real>,
+    pub vtx2xyz: Vec<[Real; 3]>,
+    pub vtx2uv: Vec<[Real; 2]>,
+    pub vtx2nrm: Vec<[Real; 3]>,
     pub elem2idx: Vec<Index>,
     pub idx2vtx_xyz: Vec<Index>,
     pub idx2vtx_uv: Vec<Index>,
@@ -84,9 +84,7 @@ where
                 let x = v[1].parse::<Real>().ok().unwrap();
                 let y = v[2].parse::<Real>().ok().unwrap();
                 let z = v[3].parse::<Real>().ok().unwrap();
-                self.vtx2xyz.push(x);
-                self.vtx2xyz.push(y);
-                self.vtx2xyz.push(z);
+                self.vtx2xyz.push([x, y, z]);
             }
             if char0 == 'g' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
@@ -123,16 +121,13 @@ where
                 let x = v[1].parse::<Real>().ok().unwrap();
                 let y = v[2].parse::<Real>().ok().unwrap();
                 let z = v[3].parse::<Real>().ok().unwrap();
-                self.vtx2nrm.push(x);
-                self.vtx2nrm.push(y);
-                self.vtx2nrm.push(z);
+                self.vtx2nrm.push([x, y, z]);
             }
             if char0 == 'v' && char1 == 't' {
                 let v: Vec<&str> = line.split_whitespace().collect();
                 let u = v[1].parse::<Real>().ok().unwrap();
                 let v = v[2].parse::<Real>().ok().unwrap();
-                self.vtx2uv.push(u);
-                self.vtx2uv.push(v);
+                self.vtx2uv.push([u, v]);
             }
             if char0 == 'f' && char1 == ' ' {
                 let v: Vec<&str> = line.split_whitespace().collect();
@@ -158,7 +153,7 @@ where
         }
         {
             // fix veretx_xyz index
-            let nvtx_xyz = self.vtx2xyz.len() / 3;
+            let nvtx_xyz = self.vtx2xyz.len();
             self.idx2vtx_xyz = elem2vtx_xyz0
                 .iter()
                 .map(|i| {
@@ -172,7 +167,7 @@ where
         }
         {
             // fix veretx_uv index
-            let nvtx_uv = self.vtx2uv.len() / 3;
+            let nvtx_uv = self.vtx2uv.len();
             self.idx2vtx_uv = elem2vtx_uv0
                 .iter()
                 .map(|i| {
@@ -186,7 +181,7 @@ where
         }
         {
             // fix veretx_nrm index
-            let nvtx_nrm = self.vtx2nrm.len() / 3;
+            let nvtx_nrm = self.vtx2nrm.len();
             self.idx2vtx_nrm = elem2vtx_nrm0
                 .iter()
                 .map(|i| {
@@ -201,15 +196,18 @@ where
         Ok(())
     }
 
-    pub fn unified_xyz_uv_as_trimesh(&self) -> (Vec<Index>, Vec<Real>, Vec<Real>) {
+    pub fn unified_xyz_uv_as_trimesh(&self) -> (Vec<[Index; 3]>, Vec<[Real; 3]>, Vec<[Real; 2]>) {
         let (tri2uni, uni2vtx_xyz, uni2vtx_uv) =
             crate::unify_index::unify_two_indices_of_triangle_mesh(
                 &self.idx2vtx_xyz,
                 &self.idx2vtx_uv,
             );
         assert_eq!(uni2vtx_xyz.len(), uni2vtx_uv.len());
-        let uni2xyz = crate::map_idx::map_vertex_attibute_from(&self.vtx2xyz, 3, &uni2vtx_xyz);
-        let uni2uv = crate::map_idx::map_vertex_attibute_from(&self.vtx2uv, 2, &uni2vtx_uv);
+        let uni2xyz = crate::map_idx::map_vertex_attibute_from(self.vtx2xyz.as_flattened(), 3, &uni2vtx_xyz);
+        let uni2uv = crate::map_idx::map_vertex_attibute_from(self.vtx2uv.as_flattened(), 2, &uni2vtx_uv);
+        let tri2uni: Vec<[Index; 3]> = tri2uni.as_chunks::<3>().0.to_vec();
+        let uni2xyz: Vec<[Real; 3]> = uni2xyz.as_chunks::<3>().0.to_vec();
+        let uni2uv: Vec<[Real; 2]> = uni2uv.as_chunks::<2>().0.to_vec();
         (tri2uni, uni2xyz, uni2uv)
     }
 }
@@ -229,7 +227,7 @@ where
 pub fn load_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
     filepath: P,
     scale: Option<Real>,
-) -> anyhow::Result<(Vec<Index>, Vec<Real>)>
+) -> anyhow::Result<(Vec<[Index; 3]>, Vec<[Real; 3]>)>
 where
     Real: std::str::FromStr + std::fmt::Display + num_traits::Float,
     Index: num_traits::PrimInt + 'static + AddAssign + AsPrimitive<usize> + Copy,
@@ -238,46 +236,45 @@ where
 {
     let mut obj = WavefrontObj::<Index, Real>::new();
     obj.load(&filepath)?;
-    let tri2vtx = obj.idx2vtx_xyz;
+    let tri2vtx: Vec<[Index; 3]> = obj.idx2vtx_xyz.as_chunks::<3>().0.to_vec();
     let mut vtx2xyz = obj.vtx2xyz;
     if let Some(scale_) = scale {
-        // scale the vertex positions if scale is provided
-        crate::vtx2xyz::normalize_in_place(vtx2xyz.as_chunks_mut::<3>().0, scale_);
+        crate::vtx2xyz::normalize_in_place(&mut vtx2xyz, scale_);
     }
     Ok((tri2vtx, vtx2xyz))
 }
 
 pub fn save_tri_mesh_texture(
     filepath: &str,
-    tri2vtx_xyz: &[usize],
-    vtx2xyz: &[f32],
-    tri2vtx_uv: &[usize],
-    vtx2uv: &[f32],
+    tri2vtx_xyz: &[[usize; 3]],
+    vtx2xyz: &[[f32; 3]],
+    tri2vtx_uv: &[[usize; 3]],
+    vtx2uv: &[[f32; 2]],
 ) -> anyhow::Result<()> {
     assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
     let mut file = File::create(filepath).context("file not found.")?;
-    for i_vtx in 0..vtx2xyz.len() / 3 {
+    for i_vtx in 0..vtx2xyz.len() {
         writeln!(
             file,
             "v {} {} {}",
-            vtx2xyz[i_vtx * 3],
-            vtx2xyz[i_vtx * 3 + 1],
-            vtx2xyz[i_vtx * 3 + 2]
+            vtx2xyz[i_vtx][0],
+            vtx2xyz[i_vtx][1],
+            vtx2xyz[i_vtx][2]
         )?;
     }
-    for i_vtx in 0..vtx2uv.len() / 2 {
-        writeln!(file, "vt {} {}", vtx2uv[i_vtx * 2], vtx2uv[i_vtx * 2 + 1])?;
+    for i_vtx in 0..vtx2uv.len() {
+        writeln!(file, "vt {} {}", vtx2uv[i_vtx][0], vtx2uv[i_vtx][1])?;
     }
-    for i_tri in 0..tri2vtx_xyz.len() / 3 {
+    for i_tri in 0..tri2vtx_xyz.len() {
         writeln!(
             file,
             "f {}/{} {}/{} {}/{}",
-            tri2vtx_xyz[i_tri * 3] + 1,
-            tri2vtx_uv[i_tri * 3] + 1,
-            tri2vtx_xyz[i_tri * 3 + 1] + 1,
-            tri2vtx_uv[i_tri * 3 + 1] + 1,
-            tri2vtx_xyz[i_tri * 3 + 2] + 1,
-            tri2vtx_uv[i_tri * 3 + 2] + 1
+            tri2vtx_xyz[i_tri][0] + 1,
+            tri2vtx_uv[i_tri][0] + 1,
+            tri2vtx_xyz[i_tri][1] + 1,
+            tri2vtx_uv[i_tri][1] + 1,
+            tri2vtx_xyz[i_tri][2] + 1,
+            tri2vtx_uv[i_tri][2] + 1
         )?;
     }
     Ok(())
@@ -339,22 +336,17 @@ where
 
 fn write_vtx2xyz_vtx2rgb<Real>(
     file: &mut std::io::BufWriter<File>,
-    vtx2xyz: &[Real],
-    vtx2rgb: &[f32],
+    vtx2xyz: &[[Real; 3]],
+    vtx2rgb: &[[f32; 3]],
 ) -> anyhow::Result<()>
 where
     Real: std::fmt::Display,
 {
-    for i_vtx in 0..vtx2xyz.len() / 3 {
+    for (xyz, rgb) in vtx2xyz.iter().zip(vtx2rgb.iter()) {
         writeln!(
             file,
             "v {} {} {} {} {} {}",
-            vtx2xyz[i_vtx * 3],
-            vtx2xyz[i_vtx * 3 + 1],
-            vtx2xyz[i_vtx * 3 + 2],
-            vtx2rgb[i_vtx * 3],
-            vtx2rgb[i_vtx * 3 + 1],
-            vtx2rgb[i_vtx * 3 + 2]
+            xyz[0], xyz[1], xyz[2], rgb[0], rgb[1], rgb[2]
         )?;
     }
     Ok(())
@@ -387,7 +379,7 @@ where
 
 pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
     filepath: Path,
-    tri2vtx: &[Index],
+    tri2vtx: &[[Index; 3]],
     vtx2xyz: &[Real],
     num_dim: usize,
 ) -> anyhow::Result<()>
@@ -400,13 +392,13 @@ where
         .context(format!("file not found. {}", filepath.as_ref().display()))?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    for i_tri in 0..tri2vtx.len() / 3 {
+    for node2vtx in tri2vtx.iter() {
         writeln!(
             file,
             "f {} {} {}",
-            tri2vtx[i_tri * 3] + Index::one(),
-            tri2vtx[i_tri * 3 + 1] + Index::one(),
-            tri2vtx[i_tri * 3 + 2] + Index::one()
+            node2vtx[0] + Index::one(),
+            node2vtx[1] + Index::one(),
+            node2vtx[2] + Index::one()
         )?;
     }
     Ok(())
@@ -414,9 +406,9 @@ where
 
 pub fn save_tri2vtx_vtx2xyz_vtx2rgb<Path, Index, Real>(
     filepath: Path,
-    tri2vtx: &[Index],
-    vtx2xyz: &[Real],
-    vtx2rgb: &[f32],
+    tri2vtx: &[[Index; 3]],
+    vtx2xyz: &[[Real; 3]],
+    vtx2rgb: &[[f32; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -426,13 +418,13 @@ where
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz_vtx2rgb(&mut file, vtx2xyz, vtx2rgb)?;
-    for i_tri in 0..tri2vtx.len() / 3 {
+    for node2vtx in tri2vtx.iter() {
         writeln!(
             file,
             "f {} {} {}",
-            tri2vtx[i_tri * 3] + Index::one(),
-            tri2vtx[i_tri * 3 + 1] + Index::one(),
-            tri2vtx[i_tri * 3 + 2] + Index::one()
+            node2vtx[0] + Index::one(),
+            node2vtx[1] + Index::one(),
+            node2vtx[2] + Index::one()
         )?;
     }
     Ok(())
@@ -440,9 +432,9 @@ where
 
 pub fn save_tri2vtx_vtx2xyz_vtx2nrm<Path, Index, Real>(
     filepath: Path,
-    tri2vtx: &[Index],
-    vtx2xyz: &[Real],
-    vtx2nrm: &[Real],
+    tri2vtx: &[[Index; 3]],
+    vtx2xyz: &[[Real; 3]],
+    vtx2nrm: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -451,12 +443,12 @@ where
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, 3)?;
-    write_vtx2nrm(&mut file, vtx2nrm)?;
-    for i_tri in 0..tri2vtx.len() / 3 {
-        let i0 = tri2vtx[i_tri * 3] + Index::one();
-        let i1 = tri2vtx[i_tri * 3 + 1] + Index::one();
-        let i2 = tri2vtx[i_tri * 3 + 2] + Index::one();
+    write_vtx2xyz(&mut file, vtx2xyz.as_flattened(), 3)?;
+    write_vtx2nrm(&mut file, vtx2nrm.as_flattened())?;
+    for node2vtx in tri2vtx.iter() {
+        let i0 = node2vtx[0] + Index::one();
+        let i1 = node2vtx[1] + Index::one();
+        let i2 = node2vtx[2] + Index::one();
         writeln!(file, "f {i0}//{i0} {i1}//{i1} {i2}//{i2}")?;
     }
     Ok(())
@@ -464,7 +456,7 @@ where
 
 pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
     filepath: Path,
-    tri2vtx: &[usize],
+    tri2vtx: &[[usize; 3]],
     vtx2vecn: &[[Real; N]],
 ) -> anyhow::Result<()>
 where
@@ -474,8 +466,8 @@ where
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
-    for tri in tri2vtx.chunks(3) {
-        writeln!(file, "f {} {} {}", tri[0] + 1, tri[1] + 1, tri[2] + 1)?;
+    for node2vtx in tri2vtx.iter() {
+        writeln!(file, "f {} {} {}", node2vtx[0] + 1, node2vtx[1] + 1, node2vtx[2] + 1)?;
     }
     Ok(())
 }
@@ -548,7 +540,7 @@ where
 
 pub fn save_edge2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
-    edge2vtx: &[usize],
+    edge2vtx: &[[usize; 2]],
     vtx2xyz: &[Real],
     num_dim: usize,
 ) -> anyhow::Result<()>
@@ -559,10 +551,8 @@ where
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    // let num_vtx = vtx2xyz.len() / num_dim;
-    for node2vtx in edge2vtx.chunks(2) {
-        let (i0, i1) = (node2vtx[0], node2vtx[1]);
-        writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
+    for node2vtx in edge2vtx.iter() {
+        writeln!(file, "l {} {}", node2vtx[0] + 1, node2vtx[1] + 1)?;
     }
     Ok(())
 }
@@ -594,7 +584,7 @@ where
 
 pub fn save_quad2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
-    quad2vtx: &[usize],
+    quad2vtx: &[[usize; 4]],
     vtx2xyz: &[Real],
     num_dim: usize,
 ) -> anyhow::Result<()>
@@ -605,13 +595,8 @@ where
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    // let num_vtx = vtx2xyz.len() / num_dim;
-    for node2vtx in quad2vtx.chunks(4) {
-        let i0 = node2vtx[0];
-        let i1 = node2vtx[1];
-        let i2 = node2vtx[2];
-        let i3 = node2vtx[3];
-        writeln!(file, "f {} {} {} {}", i0 + 1, i1 + 1, i2 + 1, i3 + 1)?;
+    for node2vtx in quad2vtx.iter() {
+        writeln!(file, "f {} {} {} {}", node2vtx[0] + 1, node2vtx[1] + 1, node2vtx[2] + 1, node2vtx[3] + 1)?;
     }
     Ok(())
 }
@@ -653,17 +638,15 @@ where
 
 // ------------------------/
 
-pub fn save_tri2xyz<Path, Real>(filepath: Path, tri2xyz: &[Real]) -> anyhow::Result<()>
+pub fn save_tri2xyz<Path, Real>(filepath: Path, tri2xyz: &[[Real; 9]]) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
     Real: num_traits::Float + std::fmt::Display,
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, tri2xyz, 3)?;
-    // let num_vtx = vtx2xyz.len() / num_dim;
-    let num_tri = tri2xyz.len() / 9;
-    for i_tri in 0..num_tri {
+    write_vtx2xyz(&mut file, tri2xyz.as_flattened(), 3)?;
+    for (i_tri, _) in tri2xyz.iter().enumerate() {
         writeln!(
             file,
             "f {} {} {}",

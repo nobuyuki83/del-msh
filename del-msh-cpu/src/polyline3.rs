@@ -546,7 +546,7 @@ fn test_generate_trimesh() {
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_helix.obj",
-        &tri2vtx.as_flattened(),
+        &tri2vtx,
         &vtx2xyz.as_flattened(),
         3,
     )
@@ -564,7 +564,7 @@ fn test_generate_trimesh() {
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_bezier.obj",
-        &tri2vtx.as_flattened(),
+        &tri2vtx,
         &vtx2xyz.as_flattened(),
         3,
     )

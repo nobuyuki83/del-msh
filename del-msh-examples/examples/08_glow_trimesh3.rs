@@ -51,7 +51,7 @@ impl MyApp {
             .expect("You need to run eframe with the glow backend");
         let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
         drawer.compile_shader(gl);
-        drawer.set_vtx2xyz(gl, &vtx2xyz, 3);
+        drawer.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
         drawer.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
         drawer.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [1.0, 0.8, 0.8]);
         Self {

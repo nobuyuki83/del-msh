@@ -2,26 +2,26 @@ use num_traits::AsPrimitive;
 
 pub fn including_point<Real, Index>(
     hits: &mut Vec<(Index, Real, Real)>,
-    tri2vtx: &[Index],
-    vtx2xy: &[Real],
+    tri2vtx: &[[Index; 3]],
+    vtx2xy: &[[Real; 2]],
     point: &[Real; 2],
     i_bvhnode: usize,
-    bvhnodes: &[Index],
-    aabbs: &[Real],
+    bvhnodes: &[[Index; 3]],
+    aabbs: &[[Real; 4]],
 ) where
     Real: num_traits::Float,
     Index: AsPrimitive<usize> + num_traits::PrimInt,
     usize: AsPrimitive<Index>,
 {
-    if !del_geo_core::aabb2::from_aabbs(aabbs, i_bvhnode).is_include_point(point) {
+    if !del_geo_core::aabb2::from_aabbs(aabbs.as_flattened(), i_bvhnode).is_include_point(point) {
         return;
     }
-    assert_eq!(bvhnodes.len() / 3, aabbs.len() / 4);
-    if bvhnodes[i_bvhnode * 3 + 2] == Index::max_value() {
+    assert_eq!(bvhnodes.len(), aabbs.len());
+    if bvhnodes[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_tri: usize = bvhnodes[i_bvhnode * 3 + 1].as_();
+        let i_tri: usize = bvhnodes[i_bvhnode][1].as_();
         let Some((r0, r1)) =
-            crate::trimesh2::to_tri2(i_tri, tri2vtx.as_chunks::<3>().0, vtx2xy.as_chunks::<2>().0)
+            crate::trimesh2::to_tri2(i_tri, tri2vtx, vtx2xy)
                 .is_inside(point, Real::one())
         else {
             return;
@@ -34,7 +34,7 @@ pub fn including_point<Real, Index>(
         tri2vtx,
         vtx2xy,
         point,
-        bvhnodes[i_bvhnode * 3 + 1].as_(),
+        bvhnodes[i_bvhnode][1].as_(),
         bvhnodes,
         aabbs,
     );
@@ -43,7 +43,7 @@ pub fn including_point<Real, Index>(
         tri2vtx,
         vtx2xy,
         point,
-        bvhnodes[i_bvhnode * 3 + 2].as_(),
+        bvhnodes[i_bvhnode][2].as_(),
         bvhnodes,
         aabbs,
     );

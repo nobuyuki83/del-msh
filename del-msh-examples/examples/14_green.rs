@@ -14,7 +14,7 @@ fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
         vtxe2xyz[i_vtx * 6 + 4] = vtx2xyz[i_vtx * 3 + 1] + vt2lhs0[i_vtx * 3 + 1];
         vtxe2xyz[i_vtx * 6 + 5] = vtx2xyz[i_vtx * 3 + 2] + vt2lhs0[i_vtx * 3 + 2];
     }
-    del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(path, &edge2vtxe, &vtxe2xyz, 3).unwrap();
+    del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(path, edge2vtxe.as_chunks::<2>().0, &vtxe2xyz, 3).unwrap();
 }
 
 fn main() {
