@@ -51,9 +51,14 @@ fn io_vtk_write_mix_mesh(
     //
     let mut file = std::fs::File::create(&path)
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("{path}: {e}")))?;
-    del_msh_cpu::io_vtk::write_vtk_points(&mut file, "vtx2xyz", vtx2xyz, 3).unwrap();
+    del_msh_cpu::io_vtk::write_vtk_points(&mut file, "vtx2xyz", vtx2xyz.as_chunks::<3>().0)
+        .unwrap();
     del_msh_cpu::io_vtk::write_vtk_cells_mix::<u32>(
-        &mut file, tet2vtx, pyrmd2vtx, prism2vtx, hex2vtx,
+        &mut file,
+        tet2vtx.as_chunks::<4>().0,
+        pyrmd2vtx.as_chunks::<5>().0,
+        prism2vtx.as_chunks::<6>().0,
+        hex2vtx.as_chunks::<8>().0,
     )
     .unwrap();
     Ok(())
@@ -77,8 +82,8 @@ fn io_vtk_write_points_with_velocity(
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(format!("{path}: {e}")))?;
     del_msh_cpu::io_vtk::write_vtk_points_with_velocity(
         &mut file,
-        slice!(vtx2xyz, f32).unwrap(),
-        slice!(vtx2velocity, f32).unwrap(),
+        slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+        slice!(vtx2velocity, f32).unwrap().as_chunks::<3>().0,
     )
     .unwrap();
     Ok(())

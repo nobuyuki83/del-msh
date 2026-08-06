@@ -22,14 +22,14 @@ fn parse(s: &str) -> f32 {
     s.trim().parse::<f32>().ok().unwrap()
 }
 
-pub fn load_tri_mesh<P, Index>(path: P) -> (Vec<Index>, Vec<f32>)
+pub fn load_tri_mesh<P, Index>(path: P) -> (Vec<[Index; 3]>, Vec<[f32; 3]>)
 where
     P: AsRef<std::path::Path>,
     Index: num_traits::PrimInt + std::str::FromStr + 'static + AsPrimitive<usize>,
     <Index as std::str::FromStr>::Err: std::fmt::Debug,
     usize: AsPrimitive<Index>,
 {
-    let mut vtx2xyz = vec![0f32; 0];
+    let mut vtx2xyz = vec![];
     let mut vtx2idx: Vec<Index> = vec![];
     let mut tri2idx: Vec<Index> = vec![];
     //
@@ -50,9 +50,7 @@ where
             let v0 = parse(v0);
             let v1 = parse(v1);
             let v2 = parse(v2);
-            vtx2xyz.push(v0);
-            vtx2xyz.push(v1);
-            vtx2xyz.push(v2);
+            vtx2xyz.push([v0, v1, v2]);
             vtx2idx.push(idx);
         } else if line.starts_with("CTRIA3") {
             assert_eq!(line.len(), 48);
@@ -77,10 +75,15 @@ where
         .iter()
         .enumerate()
         .for_each(|(vtx, &idx)| idx2vtx[idx.as_()] = vtx.as_());
-    let mut tri2vtx = vec![Index::zero(); tri2idx.len()];
-    tri2vtx
-        .iter_mut()
-        .zip(tri2idx)
-        .for_each(|(vtx, idx)| *vtx = idx2vtx[idx.as_()]);
+    let tri2vtx = tri2idx
+        .chunks(3)
+        .map(|c| {
+            [
+                idx2vtx[c[0].as_()],
+                idx2vtx[c[1].as_()],
+                idx2vtx[c[2].as_()],
+            ]
+        })
+        .collect::<Vec<[Index; 3]>>();
     (tri2vtx, vtx2xyz)
 }

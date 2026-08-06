@@ -21,8 +21,7 @@ pub fn including_point<Real, Index>(
         // leaf node
         let i_tri: usize = bvhnodes[i_bvhnode][1].as_();
         let Some((r0, r1)) =
-            crate::trimesh2::to_tri2(i_tri, tri2vtx, vtx2xy)
-                .is_inside(point, Real::one())
+            crate::trimesh2::to_tri2(i_tri, tri2vtx, vtx2xy).is_inside(point, Real::one())
         else {
             return;
         };

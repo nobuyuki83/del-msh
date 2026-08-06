@@ -407,10 +407,10 @@ pub fn test_elem2volume() {
         let mut elem2idx_offset = vec![0u32; num_elem + 1];
         let mut idx2vtx = vec![0u32; num_idx];
         crate::mixed_mesh::to_polyhedron_mesh(
-            &data.tet2vtx,
-            &data.pyrmd2vtx,
-            &data.prism2vtx,
-            &data.hex2vtx,
+            data.tet2vtx.as_chunks::<4>().0,
+            data.pyrmd2vtx.as_chunks::<5>().0,
+            data.prism2vtx.as_chunks::<6>().0,
+            data.hex2vtx.as_chunks::<8>().0,
             &mut elem2idx_offset,
             &mut idx2vtx,
         );
@@ -453,7 +453,8 @@ pub fn test_elem2volume() {
         dbg!(volume_total1);
         {
             let mut file = std::fs::File::create("../target/subdiv.vtk").expect("file not found.");
-            crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz0, 3).unwrap();
+            crate::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz0.as_chunks::<3>().0)
+                .unwrap();
             crate::io_vtk::write_vtk_cells_polyhedron(&mut file, &elem2idx0_offset, &idx2vtx0)
                 .unwrap();
         }

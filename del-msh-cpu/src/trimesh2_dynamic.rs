@@ -839,11 +839,7 @@ fn test_shape_with_hole() {
         let idx2vtx: Vec<usize> = (0..vtx2xy0.len()).collect();
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
-        crate::io_wavefront_obj::save_tri2vtx_vtx2vecn(
-            "../target/d.obj",
-            &tri2vtx,
-            &vtx2xy0,
-        )
-        .unwrap();
+        crate::io_wavefront_obj::save_tri2vtx_vtx2vecn("../target/d.obj", &tri2vtx, &vtx2xy0)
+            .unwrap();
     }
 }

@@ -13,9 +13,17 @@ fn io_nastran_load_tri_mesh(
     path: String,
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
     let (tri2vtx, vtx2xyz) = del_msh_cpu::io_nastran::load_tri_mesh::<_, u32>(path);
-    let tri2vtx_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![(tri2vtx.len() as i64) / 3, 3], tri2vtx);
-    let vtx2xyz_cap =
-        del_dlpack::make_capsule_from_vec(py, vec![(vtx2xyz.len() as i64) / 3, 3], vtx2xyz);
+    let num_tri = tri2vtx.len() as i64;
+    let tri2vtx_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![num_tri, 3],
+        tri2vtx.into_iter().flatten().collect::<Vec<u32>>(),
+    );
+    let num_vtx = vtx2xyz.len() as i64;
+    let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
+        py,
+        vec![num_vtx, 3],
+        vtx2xyz.into_iter().flatten().collect::<Vec<f32>>(),
+    );
     Ok((tri2vtx_cap, vtx2xyz_cap))
 }

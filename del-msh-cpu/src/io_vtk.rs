@@ -14,29 +14,20 @@ pub enum VtkElementType {
 pub fn write_vtk_points<T>(
     file: &mut std::fs::File,
     name: &str,
-    vtx2xyz: &[T],
-    ndim: usize,
+    vtx2xyz: &[[T; 3]],
 ) -> std::io::Result<()>
 where
     T: std::fmt::Display,
 {
     use std::io::Write;
-    let np = vtx2xyz.len() / ndim;
+    let np = vtx2xyz.len();
     writeln!(file, "# vtk DataFile Version 2.0")?;
     writeln!(file, "{name}")?;
     writeln!(file, "ASCII")?;
     writeln!(file, "DATASET UNSTRUCTURED_GRID")?;
     writeln!(file, "POINTS {np} float")?;
-    if ndim == 3 {
-        for xyz in vtx2xyz.chunks(3) {
-            writeln!(file, "{} {} {}", xyz[0], xyz[1], xyz[2])?;
-        }
-    } else if ndim == 2 {
-        for xy in vtx2xyz.chunks(2) {
-            writeln!(file, "{} {}", xy[0], xy[1])?;
-        }
-    } else {
-        panic!();
+    for xyz in vtx2xyz.iter() {
+        writeln!(file, "{} {} {}", xyz[0], xyz[1], xyz[2])?;
     }
     Ok(())
 }
@@ -79,34 +70,34 @@ pub fn write_vtk_cells(
 
 pub fn write_vtk_cells_mix<IDX>(
     file: &mut std::fs::File,
-    tet2vtx: &[IDX],
-    pyramid2vtx: &[IDX],
-    prism2vtx: &[IDX],
-    hex2vtx: &[IDX],
+    tet2vtx: &[[IDX; 4]],
+    pyramid2vtx: &[[IDX; 5]],
+    prism2vtx: &[[IDX; 6]],
+    hex2vtx: &[[IDX; 8]],
 ) -> std::io::Result<()>
 where
     IDX: num_traits::PrimInt + std::fmt::Display,
 {
-    let num_tet = tet2vtx.len() / 4;
-    let num_pyramid = pyramid2vtx.len() / 5;
-    let num_prism = prism2vtx.len() / 6;
-    let num_hex = hex2vtx.len() / 8;
+    let num_tet = tet2vtx.len();
+    let num_pyramid = pyramid2vtx.len();
+    let num_prism = prism2vtx.len();
+    let num_hex = hex2vtx.len();
     let num_elem = num_tet + num_pyramid + num_prism + num_hex;
     let num_idx = 5 * num_tet + 6 * num_pyramid + 7 * num_prism + 9 * num_hex;
     use std::io::Write;
     let mut writer = std::io::BufWriter::new(file);
     writeln!(writer, "CELLS {num_elem} {num_idx}")?;
-    for av in tet2vtx.chunks(4) {
+    for av in tet2vtx.iter() {
         write!(writer, "4")?;
         av.iter().for_each(|v| write!(writer, " {v}").unwrap());
         writeln!(writer)?;
     }
-    for av in pyramid2vtx.chunks(5) {
+    for av in pyramid2vtx.iter() {
         write!(writer, "5")?;
         av.iter().for_each(|v| write!(writer, " {v}").unwrap());
         writeln!(writer)?;
     }
-    for av in prism2vtx.chunks(6) {
+    for av in prism2vtx.iter() {
         write!(writer, "6")?;
         //av.iter().for_each(|v| write!(writer, " {v}").unwrap());
         writeln!(
@@ -116,7 +107,7 @@ where
         )
         .unwrap();
     }
-    for av in hex2vtx.chunks(8) {
+    for av in hex2vtx.iter() {
         write!(writer, "8")?;
         //av.iter().for_each(|v| write!(writer, " {v}").unwrap());
         writeln!(
@@ -228,14 +219,12 @@ where
 
 pub fn write_vtk_points_with_velocity(
     file: &mut std::fs::File,
-    points: &[f32],
-    velocities: &[f32],
+    points: &[[f32; 3]],
+    velocities: &[[f32; 3]],
 ) -> std::io::Result<()> {
-    assert_eq!(points.len() % 3, 0);
-    assert_eq!(velocities.len() % 3, 0);
     assert_eq!(points.len(), velocities.len());
 
-    let n = points.len() / 3;
+    let n = points.len();
 
     use std::io::Write;
     let mut w = std::io::BufWriter::new(file);
@@ -246,11 +235,8 @@ pub fn write_vtk_points_with_velocity(
     writeln!(w, "DATASET POLYDATA")?;
 
     writeln!(w, "POINTS {} double", n)?;
-    for i in 0..n {
-        let x = points[3 * i];
-        let y = points[3 * i + 1];
-        let z = points[3 * i + 2];
-        writeln!(w, "{} {} {}", x, y, z)?;
+    for p in points.iter() {
+        writeln!(w, "{} {} {}", p[0], p[1], p[2])?;
     }
 
     writeln!(w, "VERTICES {} {}", n, 2 * n)?;
@@ -260,11 +246,8 @@ pub fn write_vtk_points_with_velocity(
 
     writeln!(w, "POINT_DATA {}", n)?;
     writeln!(w, "VECTORS velocity double")?;
-    for i in 0..n {
-        let vx = velocities[3 * i];
-        let vy = velocities[3 * i + 1];
-        let vz = velocities[3 * i + 2];
-        writeln!(w, "{} {} {}", vx, vy, vz)?;
+    for v in velocities.iter() {
+        writeln!(w, "{} {} {}", v[0], v[1], v[2])?;
     }
 
     Ok(())
@@ -280,7 +263,7 @@ mod test {
         let path = std::path::Path::new("../target/out_del_msh_cpu/trimesh3.vtk");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         let mut file = std::fs::File::create(path).expect("file not found.");
-        crate::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_flattened(), 3).unwrap();
+        crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz).unwrap();
         crate::io_vtk::write_vtk_cells(&mut file, VtkElementType::TRIANGLE, tri2vtx.as_flattened())
             .unwrap();
         let vtx2data = {

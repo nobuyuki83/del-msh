@@ -262,13 +262,14 @@ mod tests {
         {
             let mut file =
                 std::fs::File::create(format!("../target/{}.vtk", name)).expect("file not found.");
-            crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz, 3).unwrap();
+            crate::io_vtk::write_vtk_points(&mut file, "hoge", data.vtx2xyz.as_chunks::<3>().0)
+                .unwrap();
             crate::io_vtk::write_vtk_cells_mix(
                 &mut file,
-                &data.tet2vtx,
-                &data.pyrmd2vtx,
-                &data.prism2vtx,
-                &data.hex2vtx,
+                data.tet2vtx.as_chunks::<4>().0,
+                data.pyrmd2vtx.as_chunks::<5>().0,
+                data.prism2vtx.as_chunks::<6>().0,
+                data.hex2vtx.as_chunks::<8>().0,
             )
             .unwrap();
         }
@@ -280,10 +281,10 @@ mod tests {
             let mut elem2idx_offset = vec![0u32; num_tet + num_pyrmd + num_prism + num_hex + 1];
             let mut idx2vtx = vec![0u32; num_tet * 4 + num_pyrmd * 5 + num_prism * 6 + num_hex * 8];
             crate::mixed_mesh::to_polyhedron_mesh(
-                &data.tet2vtx,
-                &data.pyrmd2vtx,
-                &data.prism2vtx,
-                &data.hex2vtx,
+                data.tet2vtx.as_chunks::<4>().0,
+                data.pyrmd2vtx.as_chunks::<5>().0,
+                data.prism2vtx.as_chunks::<6>().0,
+                data.hex2vtx.as_chunks::<8>().0,
                 &mut elem2idx_offset,
                 &mut idx2vtx,
             );

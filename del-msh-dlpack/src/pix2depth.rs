@@ -43,7 +43,7 @@ pub fn pix2depth_update(
             del_msh_cpu::pix2depth::pix2depth_from_pix2tri(
                 slice_mut!(pix2depth, f32).unwrap(),
                 slice!(pix2tri, u32).unwrap(),
-                slice!(tri2vtx, u32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 (img_shape[0] as usize, img_shape[1] as usize),
                 arrayref::array_ref![slice!(transform_ndc2world, f32).unwrap(), 0, 16],

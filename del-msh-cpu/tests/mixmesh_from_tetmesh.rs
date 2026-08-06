@@ -24,7 +24,8 @@ mod tests {
         let mut tet2vtx = tet2vtx.iter().map(|v| *v as usize).collect::<Vec<_>>();
         {
             let mut file = std::fs::File::create("../target/tetmesh.vtk").expect("file not found.");
-            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3).unwrap();
+            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_chunks::<3>().0)
+                .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells(
                 &mut file,
                 del_msh_cpu::io_vtk::VtkElementType::TETRA,
@@ -58,30 +59,35 @@ mod tests {
         //
         let num_outer_face_before = tet2tet.iter().filter(|&i| *i == usize::MAX).count();
         let (tet2vtx, pyrmd2vtx) = {
-            let (pyrmd2vtx, tets) =
-                del_msh_cpu::tetmesh::make_pyramids_on_boundary(&tet2vtx, &tet2tet, &vtx2xyz);
-            for i_tet in tets {
-                del_msh_cpu::tetmesh::remove(i_tet, &mut tet2tet, &mut tet2vtx);
+            let (pyrmd2vtx, tets) = del_msh_cpu::tetmesh::make_pyramids_on_boundary(
+                tet2vtx.as_chunks::<4>().0,
+                &tet2tet,
+                vtx2xyz.as_chunks::<3>().0,
+            );
+            for [i_tet, j_tet] in tets {
+                del_msh_cpu::tetmesh::remove(i_tet, &mut tet2tet, tet2vtx.as_chunks_mut::<4>().0);
+                del_msh_cpu::tetmesh::remove(j_tet, &mut tet2tet, tet2vtx.as_chunks_mut::<4>().0);
             }
             let tet2vtx = del_msh_cpu::extract::from_uniform_mesh_lambda(&tet2vtx, 4, |i_tet| {
                 tet2vtx[i_tet * 4] != usize::MAX
             });
             dbg!(tet2vtx.len() / 4);
-            dbg!(pyrmd2vtx.len() / 5);
+            dbg!(pyrmd2vtx.len());
             (tet2vtx, pyrmd2vtx)
         };
         let (oelem2ldx_offset, ldx2vtx) = {
             // convert tet/prism mixed mesh to polyhedral mesh
             let (elem2idx_offset, idx2vtx) = {
                 let prism2vtx = vec![];
-                let num_elem = tet2vtx.len() / 4 + pyrmd2vtx.len() / 5 + prism2vtx.len() / 6;
+                let num_elem = tet2vtx.len() / 4 + pyrmd2vtx.len() + prism2vtx.len() / 6;
                 let mut elem2idx_offset = vec![0usize; num_elem + 1];
-                let mut idx2vtx = vec![0usize; tet2vtx.len() + pyrmd2vtx.len() + prism2vtx.len()];
+                let mut idx2vtx =
+                    vec![0usize; tet2vtx.len() + pyrmd2vtx.len() * 5 + prism2vtx.len()];
                 dbg!("num_idx", idx2vtx.len());
                 del_msh_cpu::mixed_mesh::to_polyhedron_mesh(
-                    &tet2vtx,
+                    tet2vtx.as_chunks::<4>().0,
                     &pyrmd2vtx,
-                    &prism2vtx,
+                    prism2vtx.as_chunks::<6>().0,
                     &vec![],
                     &mut elem2idx_offset,
                     &mut idx2vtx,
@@ -125,7 +131,7 @@ mod tests {
                 let num_outer_face_after = jdx2elem.iter().filter(|&i| *i == usize::MAX).count();
                 assert_eq!(
                     num_outer_face_after,
-                    num_outer_face_before - pyrmd2vtx.len() / 5
+                    num_outer_face_before - pyrmd2vtx.len()
                 );
             }
             del_msh_cpu::polyhedron_mesh::extract_boundary(
@@ -147,10 +153,11 @@ mod tests {
         {
             let mut file =
                 std::fs::File::create("../target/tetmesh1.vtk").expect("file not found.");
-            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz, 3).unwrap();
+            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_chunks::<3>().0)
+                .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells_mix(
                 &mut file,
-                &tet2vtx,
+                tet2vtx.as_chunks::<4>().0,
                 &pyrmd2vtx,
                 &vec![],
                 &vec![],
@@ -231,13 +238,14 @@ mod tests {
         {
             let mut file =
                 std::fs::File::create("../target/tetmesh2.vtk").expect("file not found.");
-            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", &nvtx2xyz, 3).unwrap();
+            del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", nvtx2xyz.as_chunks::<3>().0)
+                .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells_mix(
                 &mut file,
-                &tet2vtx,
+                tet2vtx.as_chunks::<4>().0,
                 &pyrmd2vtx,
-                &prism2nvtx,
-                &hex2nvtx,
+                prism2nvtx.as_chunks::<6>().0,
+                hex2nvtx.as_chunks::<8>().0,
             )
             .unwrap();
         }

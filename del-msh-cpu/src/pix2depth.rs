@@ -107,7 +107,7 @@ fn test_hoge() {
 pub fn pix2depth_from_pix2tri(
     pix2depth: &mut [f32],
     pix2tri: &[u32],
-    tri2vtx: &[u32],
+    tri2vtx: &[[u32; 3]],
     vtx2xyz: &[[f32; 3]],
     img_shape: (usize, usize), // (width, height)
     transform_ndc2world: &[f32; 16],
@@ -127,7 +127,7 @@ pub fn pix2depth_from_pix2tri(
                 &(img_shape.0 as f32, img_shape.1 as f32),
                 transform_ndc2world,
             );
-        let tri = crate::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri as usize);
+        let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize);
         let (coeff, _bc) = del_geo_core::tri3::intersection_against_line(
             tri.p0, tri.p1, tri.p2, &ray_org, &ray_dir,
         )

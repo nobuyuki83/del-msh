@@ -46,10 +46,7 @@ impl MyApp {
         let pix2rgb = pix2rgb.decode().unwrap().to_rgb8();
         let pix2rgb = image::imageops::flip_vertical(&pix2rgb);
         println!("{:?}", pix2rgb.dimensions());
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
-            &tri2vtx,
-            vtx2xyz.len(),
-        );
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
         // gl start from here
         let gl = cc
             .gl

@@ -247,5 +247,9 @@ fn hoge() {
         }
         del_geo_core::hex::iso_surface(&mut tri2xyz, node.cent, node.hw, &node.corner_dist);
     }
-    crate::io_wavefront_obj::save_tri2xyz("../target/sdf.obj", tri2xyz.as_flattened().as_chunks::<9>().0).unwrap();
+    crate::io_wavefront_obj::save_tri2xyz(
+        "../target/sdf.obj",
+        tri2xyz.as_flattened().as_chunks::<9>().0,
+    )
+    .unwrap();
 }

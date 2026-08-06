@@ -196,6 +196,7 @@ where
         Ok(())
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn unified_xyz_uv_as_trimesh(&self) -> (Vec<[Index; 3]>, Vec<[Real; 3]>, Vec<[Real; 2]>) {
         let (tri2uni, uni2vtx_xyz, uni2vtx_uv) =
             crate::unify_index::unify_two_indices_of_triangle_mesh(
@@ -203,8 +204,10 @@ where
                 &self.idx2vtx_uv,
             );
         assert_eq!(uni2vtx_xyz.len(), uni2vtx_uv.len());
-        let uni2xyz = crate::map_idx::map_vertex_attibute_from(self.vtx2xyz.as_flattened(), 3, &uni2vtx_xyz);
-        let uni2uv = crate::map_idx::map_vertex_attibute_from(self.vtx2uv.as_flattened(), 2, &uni2vtx_uv);
+        let uni2xyz =
+            crate::map_idx::map_vertex_attibute_from(self.vtx2xyz.as_flattened(), 3, &uni2vtx_xyz);
+        let uni2uv =
+            crate::map_idx::map_vertex_attibute_from(self.vtx2uv.as_flattened(), 2, &uni2vtx_uv);
         let tri2uni: Vec<[Index; 3]> = tri2uni.as_chunks::<3>().0.to_vec();
         let uni2xyz: Vec<[Real; 3]> = uni2xyz.as_chunks::<3>().0.to_vec();
         let uni2uv: Vec<[Real; 2]> = uni2uv.as_chunks::<2>().0.to_vec();
@@ -224,6 +227,7 @@ where
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn load_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
     filepath: P,
     scale: Option<Real>,
@@ -253,17 +257,11 @@ pub fn save_tri_mesh_texture(
 ) -> anyhow::Result<()> {
     assert_eq!(tri2vtx_xyz.len(), tri2vtx_uv.len());
     let mut file = File::create(filepath).context("file not found.")?;
-    for i_vtx in 0..vtx2xyz.len() {
-        writeln!(
-            file,
-            "v {} {} {}",
-            vtx2xyz[i_vtx][0],
-            vtx2xyz[i_vtx][1],
-            vtx2xyz[i_vtx][2]
-        )?;
+    for xyz in vtx2xyz.iter() {
+        writeln!(file, "v {} {} {}", xyz[0], xyz[1], xyz[2])?;
     }
-    for i_vtx in 0..vtx2uv.len() {
-        writeln!(file, "vt {} {}", vtx2uv[i_vtx][0], vtx2uv[i_vtx][1])?;
+    for uv in vtx2uv.iter() {
+        writeln!(file, "vt {} {}", uv[0], uv[1])?;
     }
     for i_tri in 0..tri2vtx_xyz.len() {
         writeln!(
@@ -467,7 +465,13 @@ where
     let mut file = std::io::BufWriter::new(file);
     write_vtx2vecn(&mut file, vtx2vecn)?;
     for node2vtx in tri2vtx.iter() {
-        writeln!(file, "f {} {} {}", node2vtx[0] + 1, node2vtx[1] + 1, node2vtx[2] + 1)?;
+        writeln!(
+            file,
+            "f {} {} {}",
+            node2vtx[0] + 1,
+            node2vtx[1] + 1,
+            node2vtx[2] + 1
+        )?;
     }
     Ok(())
 }
@@ -596,7 +600,14 @@ where
     let mut file = std::io::BufWriter::new(file);
     write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
     for node2vtx in quad2vtx.iter() {
-        writeln!(file, "f {} {} {} {}", node2vtx[0] + 1, node2vtx[1] + 1, node2vtx[2] + 1, node2vtx[3] + 1)?;
+        writeln!(
+            file,
+            "f {} {} {} {}",
+            node2vtx[0] + 1,
+            node2vtx[1] + 1,
+            node2vtx[2] + 1,
+            node2vtx[3] + 1
+        )?;
     }
     Ok(())
 }

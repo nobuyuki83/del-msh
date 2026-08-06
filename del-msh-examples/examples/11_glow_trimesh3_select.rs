@@ -50,8 +50,11 @@ impl MyApp {
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };
         let num_tri = tri2vtx.len() / 3;
-        let tri2node2xyz =
-            del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
+        let tri2node2xyz = del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(
+            &tri2vtx,
+            &vtx2xyz.as_flattened(),
+            3,
+        );
         let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
             &tri2vtx,
             3,

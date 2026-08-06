@@ -515,13 +515,8 @@ fn test_biypyramid_zup() {
     let (tri2vtx, vtx2xyz) = bypyramid_zup::<f64>(2.0, 0.2, 0.3);
     let path = std::path::Path::new("../target/out_del_msh_cpu/bipyramid_zup.obj");
 
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        path,
-        &tri2vtx,
-        &vtx2xyz.as_flattened(),
-        3,
-    )
-    .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, &tri2vtx, &vtx2xyz.as_flattened(), 3)
+        .unwrap();
 }
 
 // ------------------
@@ -578,13 +573,8 @@ fn test_arrow_zup() {
     let (tri2vtx, vtx2xyz) = arrow_yup::<f64>(16);
     let path = std::path::Path::new("../target/out_del_msh_cpu/arrow_zup.obj");
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        path,
-        &tri2vtx,
-        vtx2xyz.as_flattened(),
-        3,
-    )
-    .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, &tri2vtx, vtx2xyz.as_flattened(), 3)
+        .unwrap();
 }
 
 // --------------------------------
@@ -619,13 +609,8 @@ fn test_arrow_connecting_two_points() {
         arrow_connecting_two_points::<f64>(&[1.0, 1.0, 1.0], &[1.0, 1.0, 2.0], 16);
     let path = std::path::Path::new("../target/out_del_msh_cpu/arrow_connecting_two_points.obj");
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        path,
-        &tri2vtx,
-        vtx2xyz.as_flattened(),
-        3,
-    )
-    .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, &tri2vtx, vtx2xyz.as_flattened(), 3)
+        .unwrap();
 }
 
 // ------------------------------
@@ -698,11 +683,6 @@ fn test_annulus_yup() {
     let (tri2vtx, vtx2xyz) = annulus_yup(0.3, 0.8, 32, 64);
     let path = std::path::Path::new("../target/out_del_msh_cpu/annulus.obj");
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        path,
-        &tri2vtx,
-        vtx2xyz.as_flattened(),
-        3,
-    )
-    .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path, &tri2vtx, vtx2xyz.as_flattened(), 3)
+        .unwrap();
 }

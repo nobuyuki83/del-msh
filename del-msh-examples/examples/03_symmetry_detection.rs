@@ -245,8 +245,11 @@ fn main() -> anyhow::Result<()> {
             let triq2vtxq = [[0usize, 1, 2], [0, 2, 3]].flat().to_vec();
             (triq2vtxq, vtxq2xyz)
         };
-        let tris2vtx =
-            del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(tri2vtx.as_flattened(), 3, &sym.tris);
+        let tris2vtx = del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(
+            tri2vtx.as_flattened(),
+            3,
+            &sym.tris,
+        );
         let mut trio2vtxo = vec![];
         let mut vtxo2xyz = vec![];
         del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);

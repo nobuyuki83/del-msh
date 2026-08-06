@@ -19,11 +19,8 @@ impl Content {
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             obj.unified_xyz_uv_as_trimesh()
         };
-        let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-            &tri2vtx,
-            vtx2xyz.as_flattened(),
-            3,
-        );
+        let bvhnodes =
+            del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, vtx2xyz.as_flattened(), 3);
         let aabbs = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,

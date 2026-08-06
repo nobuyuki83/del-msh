@@ -31,8 +31,13 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             &vtx2xyz1.as_flattened(),
             3,
         );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_start, tri2vtx0.as_chunks::<3>().0, &vtx2xyz0, 3)
-            .unwrap()
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+            fpath_start,
+            tri2vtx0.as_chunks::<3>().0,
+            &vtx2xyz0,
+            3,
+        )
+        .unwrap()
     }
     {
         let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.0, 0.0);
@@ -52,8 +57,13 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
             &vtx2xyz1.as_flattened(),
             3,
         );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_goal, tri2vtx0.as_chunks::<3>().0, &vtx2xyz0, 3)
-            .unwrap()
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+            fpath_goal,
+            tri2vtx0.as_chunks::<3>().0,
+            &vtx2xyz0,
+            3,
+        )
+        .unwrap()
     }
 }
 

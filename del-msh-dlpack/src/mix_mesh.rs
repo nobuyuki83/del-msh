@@ -50,10 +50,10 @@ fn mix_mesh_to_polyhedron_mesh(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::mixed_mesh::to_polyhedron_mesh(
-                slice!(tet2vtx, u32).unwrap(),
-                slice!(pyrmd2vtx, u32).unwrap(),
-                slice!(prism2vtx, u32).unwrap(),
-                slice!(hex2vtx, u32).unwrap(),
+                slice!(tet2vtx, u32).unwrap().as_chunks::<4>().0,
+                slice!(pyrmd2vtx, u32).unwrap().as_chunks::<5>().0,
+                slice!(prism2vtx, u32).unwrap().as_chunks::<6>().0,
+                slice!(hex2vtx, u32).unwrap().as_chunks::<8>().0,
                 slice_mut!(elem2idx_offset, u32).unwrap(),
                 slice_mut!(idx2vtx, u32).unwrap(),
             );

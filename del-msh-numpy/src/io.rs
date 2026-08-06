@@ -42,20 +42,20 @@ pub fn load_wavefront_obj(
             (obj.vtx2xyz.len(), 3),
             obj.vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
         )
-            .unwrap()
-            .into_pyarray(py),
+        .unwrap()
+        .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec(
             (obj.vtx2uv.len(), 2),
             obj.vtx2uv.into_iter().flatten().collect::<Vec<_>>(),
         )
-            .unwrap()
-            .into_pyarray(py),
+        .unwrap()
+        .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec(
             (obj.vtx2nrm.len(), 3),
             obj.vtx2nrm.into_iter().flatten().collect::<Vec<_>>(),
         )
-            .unwrap()
-            .into_pyarray(py),
+        .unwrap()
+        .into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.elem2idx).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.idx2vtx_xyz).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(obj.idx2vtx_uv).into_pyarray(py),
@@ -82,8 +82,8 @@ pub fn load_wavefront_obj_as_triangle_mesh(
             (tri2vtx.len(), 3),
             tri2vtx.into_iter().flatten().collect::<Vec<_>>(),
         )
-            .unwrap()
-            .into_pyarray(py),
+        .unwrap()
+        .into_pyarray(py),
         numpy::ndarray::Array2::from_shape_vec(
             (vtx2xyz.len(), 3),
             vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
@@ -100,12 +100,18 @@ pub fn load_nastran_as_triangle_mesh(
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
     let (tri2vtx, vtx2xyz) = del_msh_cpu::io_nastran::load_tri_mesh(path_file);
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
-            .unwrap()
-            .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
-            .unwrap()
-            .into_pyarray(py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (tri2vtx.len(), 3),
+            tri2vtx.into_iter().flatten().collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_pyarray(py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (vtx2xyz.len(), 3),
+            vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_pyarray(py),
     )
 }
 
@@ -118,12 +124,18 @@ pub fn load_off_as_triangle_mesh(
         todo!()
     };
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
-            .unwrap()
-            .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
-            .unwrap()
-            .into_pyarray(py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (tri2vtx.len(), 3),
+            tri2vtx.into_iter().flatten().collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_pyarray(py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (vtx2xyz.len(), 3),
+            vtx2xyz.into_iter().flatten().collect::<Vec<_>>(),
+        )
+        .unwrap()
+        .into_pyarray(py),
     )
 }
 
@@ -137,6 +149,10 @@ pub fn save_wavefront_obj_for_uniform_mesh<'a>(
     let num_dim = vtx2xyz.shape()[1];
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let _ =
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_file, tri2vtx.as_chunks::<3>().0, vtx2xyz, num_dim);
+    let _ = del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        path_file,
+        tri2vtx.as_chunks::<3>().0,
+        vtx2xyz,
+        num_dim,
+    );
 }

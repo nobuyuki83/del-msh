@@ -34,15 +34,9 @@ fn main() -> anyhow::Result<()> {
         del_geo_core::mat4_col_major::mult_mat_col_major(&cam_projection, &cam_modelview);
     dbg!(&transform_world2ndc);
     let edge2vtx_silhouette = {
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
-            &tri2vtx,
-            vtx2xyz.len(),
-        );
-        let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
-            &edge2vtx,
-            &tri2vtx,
-            vtx2xyz.len(),
-        );
+        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
+        let edge2tri =
+            del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len());
         del_msh_cpu::edge2vtx::silhouette_for_triangle_mesh(
             //del_msh_cpu::edge2vtx::occluding_contour_for_triangle_mesh(
             &tri2vtx,
@@ -85,10 +79,16 @@ fn main() -> anyhow::Result<()> {
     }
     for node2edge in &edge2vtx_silhouette {
         let (i0_vtx, i1_vtx) = (node2edge[0], node2edge[1]);
-        let r0 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &vtx2xyz[i0_vtx])
-            .unwrap();
-        let r1 = del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &vtx2xyz[i1_vtx])
-            .unwrap();
+        let r0 = del_geo_core::mat4_col_major::transform_homogeneous(
+            &transform_world2ndc,
+            &vtx2xyz[i0_vtx],
+        )
+        .unwrap();
+        let r1 = del_geo_core::mat4_col_major::transform_homogeneous(
+            &transform_world2ndc,
+            &vtx2xyz[i1_vtx],
+        )
+        .unwrap();
         del_canvas::rasterize::line2::draw_dda(
             &mut img_data,
             img_shape.0,

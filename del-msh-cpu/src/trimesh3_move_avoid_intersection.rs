@@ -207,8 +207,16 @@ pub fn match_vtx2xyz_while_avoid_collision(
                 println!("# of intersecting tripairs  {:}", tripairs.len());
                 if !tripairs.is_empty() {
                     dbg!("something is wrong");
-                    crate::io_off::save_tri_mesh("target/cand0.off", tri2vtx, &vtx2xyz);
-                    crate::io_off::save_tri_mesh("target/cand1.off", tri2vtx, &vtx2xyz_cand);
+                    crate::io_off::save_tri_mesh(
+                        "target/cand0.off",
+                        tri2vtx.as_chunks::<3>().0,
+                        vtx2xyz.as_chunks::<3>().0,
+                    );
+                    crate::io_off::save_tri_mesh(
+                        "target/cand1.off",
+                        tri2vtx.as_chunks::<3>().0,
+                        vtx2xyz_cand.as_chunks::<3>().0,
+                    );
                     //panic!();
                 }
                 // assert_eq!(tripairs.len(),0);
