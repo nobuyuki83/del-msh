@@ -78,7 +78,7 @@ where
     aabb
 }
 
-pub fn normalize<Real>(vtx2xy: &[[Real; 2]], center_pos: &[Real; 2], size: Real) -> Vec<Real>
+pub fn normalize<Real>(vtx2xy: &[[Real; 2]], center_pos: &[Real; 2], size: Real) -> Vec<[Real; 2]>
 where
     Real: num_traits::Float,
 {
@@ -88,7 +88,7 @@ where
     let tmp = size / max_edge_size;
     vtx2xy
         .iter()
-        .flat_map(|v| {
+        .map(|v| {
             [
                 (v[0] - cnt[0]) * tmp + center_pos[0],
                 (v[1] - cnt[1]) * tmp + center_pos[1],

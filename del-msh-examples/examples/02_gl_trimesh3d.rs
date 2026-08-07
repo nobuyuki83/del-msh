@@ -16,10 +16,8 @@ impl del_gl_winit_glutin::viewer3d_for_gl_renderer::GlRenderer for MyViewTrg {
             obj.load("asset/spot/spot_triangulated.obj").unwrap();
             (obj.idx2vtx_xyz, obj.vtx2xyz)
         };
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
-            tri2vtx.as_chunks::<3>().0,
-            vtx2xyz.len() / 3,
-        );
+        let edge2vtx =
+            del_msh_cpu::edge2vtx::from_triangle_mesh(tri2vtx.as_chunks::<3>().0, vtx2xyz.len());
         self.drawer
             .update_vertex(gl, &vtx2xyz.as_flattened().to_vec(), 3);
         self.drawer

@@ -108,13 +108,17 @@ fn wdw(
 ) -> (f64, Vec<f64>) {
     let mut sum_eng = 0f64;
     let mut res = vec![0f64; vtx2xyz.len()];
-    let (prox_idx, prox_param) =
-        crate::trimesh3_proximity::contacting_pair(tri2vtx, vtx2xyz, edge2vtx, dist0);
+    let (prox_idx, prox_param) = crate::trimesh3_proximity::contacting_pair(
+        tri2vtx.as_chunks::<3>().0,
+        vtx2xyz.as_chunks::<3>().0,
+        edge2vtx.as_chunks::<2>().0,
+        dist0,
+    );
     wdw_proximity(
         &mut sum_eng,
         &mut res,
-        &prox_idx,
-        &prox_param,
+        prox_idx.as_flattened(),
+        prox_param.as_flattened(),
         Mesh {
             tri2vtx,
             edge2vtx,
@@ -147,7 +151,10 @@ pub fn match_vtx2xyz_while_avoid_collision(
 ) -> Vec<f64> {
     {
         // there should be no self-intersection in the vtx2xyz_start mesh
-        let tripairs = crate::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz_start);
+        let tripairs = crate::trimesh3_intersection::search_brute_force(
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz_start.as_chunks::<3>().0,
+        );
         for pair in tripairs.iter() {
             dbg!(pair.i_tri, pair.j_tri);
         }
@@ -180,13 +187,13 @@ pub fn match_vtx2xyz_while_avoid_collision(
         let time_max = {
             let (intersection_pair, intersection_time) =
                 crate::trimesh3_intersection_time::search_brute_force(
-                    &edge2vtx,
-                    tri2vtx,
-                    &vtx2xyz,
-                    &vtx2xyz_dist,
+                    edge2vtx.as_chunks::<2>().0,
+                    tri2vtx.as_chunks::<3>().0,
+                    vtx2xyz.as_chunks::<3>().0,
+                    vtx2xyz_dist.as_chunks::<3>().0,
                     f64::EPSILON,
                 );
-            assert_eq!(intersection_pair.len(), intersection_time.len() * 3);
+            assert_eq!(intersection_pair.len(), intersection_time.len());
             dbg!(intersection_pair.len(), intersection_time.len());
             let time_max = intersection_time
                 .iter()
@@ -202,8 +209,10 @@ pub fn match_vtx2xyz_while_avoid_collision(
                 .map(|(v, r)| v + r * time_max * coeff)
                 .collect();
             {
-                let tripairs =
-                    crate::trimesh3_intersection::search_brute_force(tri2vtx, &vtx2xyz_cand);
+                let tripairs = crate::trimesh3_intersection::search_brute_force(
+                    tri2vtx.as_chunks::<3>().0,
+                    vtx2xyz_cand.as_chunks::<3>().0,
+                );
                 println!("# of intersecting tripairs  {:}", tripairs.len());
                 if !tripairs.is_empty() {
                     dbg!("something is wrong");

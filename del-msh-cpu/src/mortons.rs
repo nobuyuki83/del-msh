@@ -162,18 +162,17 @@ fn test_sorted_morten_code() {
 
 // ---------------
 
-pub fn vtx2morton_from_vtx2co(
-    num_dim: usize,
-    vtx2co: &[f32],
+pub fn vtx2morton_from_vtx2co<const NDIM: usize>(
+    vtx2co: &[[f32; NDIM]],
     transform_co2unit: &[f32],
     vtx2morton: &mut [u32],
 ) {
-    match num_dim {
+    match NDIM {
         2 => {
             assert_eq!(transform_co2unit.len(), 9);
             let transform_co2unit: &[f32; 9] = arrayref::array_ref![transform_co2unit, 0, 9];
             vtx2co
-                .chunks(2)
+                .iter()
                 .zip(vtx2morton.iter_mut())
                 .for_each(|(xy, m)| {
                     let xy = del_geo_core::mat3_col_major::transform_homogeneous(
@@ -188,7 +187,7 @@ pub fn vtx2morton_from_vtx2co(
             assert_eq!(transform_co2unit.len(), 16);
             let transform_co2unit: &[f32; 16] = arrayref::array_ref![transform_co2unit, 0, 16];
             vtx2co
-                .chunks(3)
+                .iter()
                 .zip(vtx2morton.iter_mut())
                 .for_each(|(xyz, m)| {
                     let xyz = del_geo_core::mat4_col_major::transform_homogeneous(
@@ -345,69 +344,66 @@ pub fn check_morton_code_range_split(idx2morton: &[u32]) {
     }
 }
 
-pub fn update_sorted_morton_code<Index>(
+pub fn update_sorted_morton_code<Index, const NDIM: usize>(
     idx2tri: &mut [Index],
     idx2morton: &mut [u32],
     tri2morton: &mut [u32],
-    vtx2xyz: &[f32],
-    num_dim: usize,
+    vtx2xyz: &[[f32; NDIM]],
 ) where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    match num_dim {
+    let flat = vtx2xyz.as_flattened();
+    match NDIM {
         2 => {
-            let aabb = crate::vtx2xy::aabb2(vtx2xyz.as_chunks::<2>().0);
+            let aabb = crate::vtx2xy::aabb2(flat.as_chunks::<2>().0);
             let transform_xy2uni =
                 del_geo_core::aabb2::to_transformation_world2unit_ortho_preserve_asp(&aabb);
             sorted_morten_code2(
                 idx2tri,
                 idx2morton,
                 tri2morton,
-                vtx2xyz.as_chunks::<2>().0,
+                flat.as_chunks::<2>().0,
                 &transform_xy2uni,
             );
         }
         3 => {
-            let aabb = crate::vtx2xyz::aabb3(vtx2xyz.as_chunks::<3>().0, 0f32);
+            let aabb = crate::vtx2xyz::aabb3(flat.as_chunks::<3>().0, 0f32);
             let transform_xy2uni =
                 del_geo_core::mat4_col_major::from_aabb3_fit_into_unit_preserve_asp(&aabb);
-            // del_geo_core::mat4_col_major::from_aabb3_fit_into_unit(&aabb);
             sorted_morten_code3(
                 idx2tri,
                 idx2morton,
                 tri2morton,
-                vtx2xyz.as_chunks::<3>().0,
+                flat.as_chunks::<3>().0,
                 &transform_xy2uni,
             );
         }
-        _ => {
-            panic!();
-        }
+        _ => panic!("unsupported NDIM: {NDIM}"),
     }
 }
 
-pub fn check_binary_radix_tree(bnodes: &[u32], idx2morton: &[u32]) {
+pub fn check_binary_radix_tree(bnodes: &[[u32; 3]], idx2morton: &[u32]) {
     let num_vtx = idx2morton.len();
-    assert_eq!(bnodes.len(), (num_vtx - 1) * 3);
+    assert_eq!(bnodes.len(), num_vtx - 1);
     pub fn increment_leaf_binary_radix_tree<INDEX>(
-        bvhnodes: &[INDEX],
+        bvhnodes: &[[INDEX; 3]],
         i_node: usize,
         idx2flag: &mut [usize],
     ) where
         INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     {
         let num_idx = idx2flag.len();
-        assert_eq!(bvhnodes.len(), (num_idx - 1) * 3);
+        assert_eq!(bvhnodes.len(), num_idx - 1);
         assert!(i_node < num_idx - 1);
-        let i0_node = bvhnodes[i_node * 3 + 1].as_();
+        let i0_node = bvhnodes[i_node][1].as_();
         if i0_node >= num_idx - 1 {
             let idx = i0_node - (num_idx - 1);
             idx2flag[idx] += 1;
         } else {
             increment_leaf_binary_radix_tree(bvhnodes, i0_node, idx2flag);
         }
-        let i1_node = bvhnodes[i_node * 3 + 2].as_();
+        let i1_node = bvhnodes[i_node][2].as_();
         if i1_node >= num_idx - 1 {
             let idx = i1_node - (num_idx - 1);
             idx2flag[idx] += 1;
@@ -420,8 +416,9 @@ pub fn check_binary_radix_tree(bnodes: &[u32], idx2morton: &[u32]) {
     let mut idx2flag = vec![0usize; num_vtx];
     increment_leaf_binary_radix_tree(bnodes, 0, &mut idx2flag);
     assert_eq!(idx2flag, vec!(1; num_vtx));
+    #[allow(clippy::needless_range_loop)]
     for i_branch in 0..num_vtx - 1 {
-        let i_left = bnodes[i_branch * 3 + 1] as usize;
+        let i_left = bnodes[i_branch][1] as usize;
         let i_split = if i_left >= num_vtx - 1 {
             i_left - (num_vtx - 1)
         } else {
@@ -431,9 +428,4 @@ pub fn check_binary_radix_tree(bnodes: &[u32], idx2morton: &[u32]) {
         let i_split0 = split_of_binary_radix_tree_node(idx2morton, range.0, range.1);
         assert_eq!(i_split0, i_split);
     }
-    /*
-    for i_branch in 0..num_vtx - 1 {
-        println!("{} --> {} {} {}", i_branch, bnodes[i_branch*3], bnodes[i_branch*3+1], bnodes[i_branch*3+2]);
-    }
-     */
 }

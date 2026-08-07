@@ -39,13 +39,23 @@ pub fn vtx2vtx(
     num_vtx: usize,
     is_self: bool,
 ) -> (Vec<usize>, Vec<usize>) {
-    crate::vtx2vtx::from_uniform_mesh(elem2vtx, num_node, num_vtx, is_self)
+    match num_node {
+        2 => crate::vtx2vtx::from_uniform_mesh(elem2vtx.as_chunks::<2>().0, num_vtx, is_self),
+        3 => crate::vtx2vtx::from_uniform_mesh(elem2vtx.as_chunks::<3>().0, num_vtx, is_self),
+        4 => crate::vtx2vtx::from_uniform_mesh(elem2vtx.as_chunks::<4>().0, num_vtx, is_self),
+        _ => panic!("unsupported num_node: {num_node}"),
+    }
 }
 
 /// Compute vertex-to-element adjacency.
 /// Returns (vtx2idx, idx2elem) where vtx2idx gives index ranges for each vertex's adjacent elements.
 pub fn vtx2elem(elem2vtx: &[usize], num_node: usize, num_vtx: usize) -> (Vec<usize>, Vec<usize>) {
-    crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx)
+    match num_node {
+        2 => crate::vtx2elem::from_uniform_mesh(elem2vtx.as_chunks::<2>().0, num_vtx),
+        3 => crate::vtx2elem::from_uniform_mesh(elem2vtx.as_chunks::<3>().0, num_vtx),
+        4 => crate::vtx2elem::from_uniform_mesh(elem2vtx.as_chunks::<4>().0, num_vtx),
+        _ => panic!("unsupported num_node: {num_node}"),
+    }
 }
 
 /// Compute element-to-element adjacency through shared faces.
@@ -57,5 +67,25 @@ pub fn elem2elem(
     idx2node: &[usize],
     num_vtx: usize,
 ) -> Vec<usize> {
-    crate::elem2elem::from_uniform_mesh(elem2vtx, num_node, face2idx_offset, idx2node, num_vtx)
+    match num_node {
+        2 => crate::elem2elem::from_uniform_mesh(
+            elem2vtx.as_chunks::<2>().0,
+            face2idx_offset,
+            idx2node,
+            num_vtx,
+        ),
+        3 => crate::elem2elem::from_uniform_mesh(
+            elem2vtx.as_chunks::<3>().0,
+            face2idx_offset,
+            idx2node,
+            num_vtx,
+        ),
+        4 => crate::elem2elem::from_uniform_mesh(
+            elem2vtx.as_chunks::<4>().0,
+            face2idx_offset,
+            idx2node,
+            num_vtx,
+        ),
+        _ => panic!("unsupported num_node: {num_node}"),
+    }
 }

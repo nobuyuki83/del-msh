@@ -3,7 +3,7 @@ pub fn binary_radix_tree_and_depth<Index>(
     idx2morton: &[u32],
     num_dim: usize,
     max_depth: usize,
-    bnodes: &mut [Index],
+    bnode2idx_tree: &mut [[Index; 3]],
     bnode2depth: &mut [Index],
 ) where
     Index: num_traits::PrimInt + 'static + Copy,
@@ -14,8 +14,8 @@ pub fn binary_radix_tree_and_depth<Index>(
     let num_idx = idx2morton.len();
     assert!(!idx2morton.is_empty());
     assert!(u32::BITS >= (num_dim * max_depth) as u32);
-    assert_eq!(bnodes.len(), (num_idx - 1) * 3);
-    bnodes[0] = Index::max_value();
+    assert_eq!(bnode2idx_tree.len(), num_idx - 1);
+    bnode2idx_tree[0][0] = Index::max_value();
 
     let num_bnode = idx2morton.len() - 1; // number of branch
     for i_bnode in 0..num_bnode {
@@ -24,21 +24,21 @@ pub fn binary_radix_tree_and_depth<Index>(
         assert_ne!(i_split, usize::MAX);
         if range.0 == i_split {
             let i_bvhnode_a = num_bnode + i_split; // leaf node
-            bnodes[i_bnode * 3 + 1] = i_bvhnode_a.as_();
+            bnode2idx_tree[i_bnode][1] = i_bvhnode_a.as_();
         } else {
             let i_bvhnode_a = i_split;
-            bnodes[i_bnode * 3 + 1] = i_bvhnode_a.as_();
-            bnodes[i_bvhnode_a * 3] = i_bnode.as_();
+            bnode2idx_tree[i_bnode][1] = i_bvhnode_a.as_();
+            bnode2idx_tree[i_bvhnode_a][0] = i_bnode.as_();
         }
         // ----
         if range.1 == i_split + 1 {
             // leaf node
             let i_bvhnode_b = num_bnode + i_split + 1;
-            bnodes[i_bnode * 3 + 2] = i_bvhnode_b.as_();
+            bnode2idx_tree[i_bnode][2] = i_bvhnode_b.as_();
         } else {
             let i_bvhnode_b = i_split + 1;
-            bnodes[i_bnode * 3 + 2] = i_bvhnode_b.as_();
-            bnodes[i_bvhnode_b * 3] = i_bnode.as_();
+            bnode2idx_tree[i_bnode][2] = i_bvhnode_b.as_();
+            bnode2idx_tree[i_bvhnode_b][0] = i_bnode.as_();
         }
         // ---
         let delta_split = (idx2morton[i_split] ^ idx2morton[i_split + 1]).leading_zeros();
@@ -86,31 +86,30 @@ fn test_morton2center() {
 }
 
 pub fn bnode2onode_and_idx2bnode(
-    bnodes: &[u32],
+    bnode2idx_tree: &[[u32; 3]],
     bnode2depth: &[u32],
     bnode2onode: &mut [u32],
     idx2bnode: &mut [u32],
 ) {
-    let num_bnode = bnodes.len() / 3;
+    let num_bnode = bnode2idx_tree.len();
     let num_vtx = num_bnode + 1;
-    assert_eq!(bnodes.len(), num_bnode * 3);
     assert_eq!(bnode2onode.len(), num_vtx - 1);
     let mut bnode2isonode = vec![0; num_bnode];
     for i_bnode in 0..num_bnode {
         {
-            if bnodes[i_bnode * 3 + 1] as usize >= num_bnode {
-                let idx = bnodes[i_bnode * 3 + 1] as usize - num_bnode;
+            if bnode2idx_tree[i_bnode][1] as usize >= num_bnode {
+                let idx = bnode2idx_tree[i_bnode][1] as usize - num_bnode;
                 idx2bnode[idx] = i_bnode as u32;
             }
-            if bnodes[i_bnode * 3 + 2] as usize >= num_bnode {
-                let idx = bnodes[i_bnode * 3 + 2] as usize - num_bnode;
+            if bnode2idx_tree[i_bnode][2] as usize >= num_bnode {
+                let idx = bnode2idx_tree[i_bnode][2] as usize - num_bnode;
                 idx2bnode[idx] = i_bnode as u32;
             }
         }
         if i_bnode == 0 {
             continue;
         }
-        let i_bnode_parent = bnodes[i_bnode * 3] as usize;
+        let i_bnode_parent = bnode2idx_tree[i_bnode][0] as usize;
         if bnode2depth[i_bnode] != bnode2depth[i_bnode_parent] {
             bnode2isonode[i_bnode - 1] = 1; // shift for exclusive scan
         }
@@ -124,31 +123,30 @@ pub fn bnode2onode_and_idx2bnode(
 
 #[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_arguments)]
-pub fn make_tree_from_binary_radix_tree(
-    bnodes: &[u32],
+pub fn make_tree_from_binary_radix_tree<const NDIM: usize, const NLINK: usize>(
+    bnode2idx_tree: &[[u32; 3]],
     bnode2onode: &[u32],
     bnode2depth: &[u32],
     idx2bnode: &[u32],
     idx2morton: &[u32],
     num_onode: usize,
     max_depth: usize,
-    num_dim: usize,
-    onodes: &mut [u32],
+    onode2idx_tree: &mut [[u32; NLINK]],
     onode2depth: &mut [u32],
-    onode2center: &mut [f32],
+    onode2center: &mut [[f32; NDIM]],
     idx2onode: &mut [u32],
-    idx2center: &mut [f32],
+    idx2center: &mut [[f32; NDIM]],
 ) {
-    let num_child = 1 << num_dim; // 8 for 3D
-    let nlink = (num_child + 1) as usize; // 9 for 3D, 5 for 2D
-    let num_vtx = bnodes.len() / 3 + 1;
+    let num_child = 1 << NDIM; // 8 for 3D
+    assert_eq!(NLINK, 1 + num_child);
+    let num_vtx = bnode2idx_tree.len() + 1;
     assert_eq!(idx2bnode.len(), num_vtx);
     assert_eq!(idx2morton.len(), num_vtx);
-    assert_eq!(onodes.len(), num_onode * nlink);
+    assert_eq!(onode2idx_tree.len(), num_onode);
     assert_eq!(onode2depth.len(), num_onode);
-    assert_eq!(onode2center.len(), num_onode * num_dim);
+    assert_eq!(onode2center.len(), num_onode);
     assert_eq!(idx2onode.len(), num_vtx);
-    assert_eq!(idx2center.len(), num_vtx * num_dim);
+    assert_eq!(idx2center.len(), num_vtx);
     for i in 0..num_vtx {
         {
             // set leaf
@@ -160,40 +158,38 @@ pub fn make_tree_from_binary_radix_tree(
                     {
                         break (bnode2onode[i_bnode_cur] as usize, bnode2depth[i_bnode_cur]);
                     }
-                    i_bnode_cur = bnodes[i_bnode_cur * 3] as usize;
+                    i_bnode_cur = bnode2idx_tree[i_bnode_cur][0] as usize;
                 }
             };
             assert!(depth_parent < max_depth as u32);
             let key = idx2morton[idx];
             let i_child =
-                (key >> ((max_depth - 1 - depth_parent as usize) * num_dim)) & (num_child - 1);
+                (key >> ((max_depth - 1 - depth_parent as usize) * NDIM)) & (num_child as u32 - 1);
             // println!("leaf: {} {} {}", i_onode_parent, i_child, depth_parent);
             assert_eq!(
-                onodes[i_onode_parent * nlink + 1 + i_child as usize],
+                onode2idx_tree[i_onode_parent][1 + i_child as usize],
                 u32::MAX,
                 "duplicated child -- idx {}",
                 idx
             );
             //
-            onodes[i_onode_parent * nlink + 1 + i_child as usize] = (idx + num_onode) as u32;
+            onode2idx_tree[i_onode_parent][1 + i_child as usize] = (idx + num_onode) as u32;
             idx2onode[idx] = i_onode_parent as u32;
-            let mut center = [0f32; 3];
-            morton2center(idx2morton[idx], num_dim, max_depth, max_depth, &mut center);
-            for i_dim in 0..num_dim {
-                idx2center[idx * num_dim + i_dim] = center[i_dim];
-            }
+            let mut center = [0f32; NDIM];
+            morton2center(idx2morton[idx], NDIM, max_depth, max_depth, &mut center);
+            idx2center[idx] = center;
         }
         if i < num_vtx - 1 {
             let i_bnode = i;
             if i_bnode == 0 {
-                onode2center[0..num_dim].iter_mut().for_each(|v| *v = 0.5);
+                onode2center[0] = [0.5f32; NDIM];
                 continue;
             }
             if bnode2onode[i_bnode - 1] == bnode2onode[i_bnode] {
                 continue;
             }
             let (i_onode_parent, depth_parent) = {
-                let mut i_bnode_parent = bnodes[i_bnode * 3] as usize;
+                let mut i_bnode_parent = bnode2idx_tree[i_bnode][0] as usize;
                 loop {
                     if i_bnode_parent == 0
                         || bnode2onode[i_bnode_parent] != bnode2onode[i_bnode_parent - 1]
@@ -203,60 +199,56 @@ pub fn make_tree_from_binary_radix_tree(
                             bnode2depth[i_bnode_parent] as usize,
                         );
                     }
-                    i_bnode_parent = bnodes[i_bnode_parent * 3] as usize;
+                    i_bnode_parent = bnode2idx_tree[i_bnode_parent][0] as usize;
                 }
             };
             assert!(depth_parent < max_depth);
             let morton = idx2morton[i_bnode];
-            let i_child = (morton >> ((max_depth - 1 - depth_parent) * num_dim)) & (num_child - 1);
+            let i_child =
+                (morton >> ((max_depth - 1 - depth_parent) * NDIM)) & (num_child as u32 - 1);
             // println!("branch: {} {} {}", i_onode_parent, i_child, depth_parent);
             assert_eq!(
-                onodes[i_onode_parent * nlink + 1 + i_child as usize],
+                onode2idx_tree[i_onode_parent][1 + i_child as usize],
                 u32::MAX,
                 "duplicated child -- branch {}",
                 i_bnode
             );
             //
             let i_onode = bnode2onode[i_bnode] as usize;
-            onodes[i_onode_parent * nlink + 1 + i_child as usize] = i_onode as u32;
-            onodes[i_onode * nlink] = i_onode_parent as u32;
+            onode2idx_tree[i_onode_parent][1 + i_child as usize] = i_onode as u32;
+            onode2idx_tree[i_onode][0] = i_onode_parent as u32;
             //
             let depth = bnode2depth[i_bnode] as usize;
-            let mut center = [0f32; 3];
-            morton2center(morton, num_dim, depth, max_depth, &mut center);
-            for i_dim in 0..num_dim {
-                onode2center[i_onode * num_dim + i_dim] = center[i_dim];
-            }
+            let mut center = [0f32; NDIM];
+            morton2center(morton, NDIM, depth, max_depth, &mut center);
+            onode2center[i_onode] = center;
             onode2depth[i_onode] = depth as u32;
         }
     }
 }
 
-pub fn check_octree<const NDIM: usize>(
+pub fn check_octree<const NDIM: usize, const NLINK: usize>(
     idx2onode: &[u32],
-    idx2center: &[f32],
-    onodes: &[u32],
+    idx2center: &[[f32; NDIM]],
+    onode2idx_tree: &[[u32; NLINK]],
     onode2depth: &[u32],
-    onode2center: &[f32],
+    onode2center: &[[f32; NDIM]],
     max_depth: usize,
 ) {
     let nchild = (1 << NDIM) as usize;
-    let nlink = nchild + 1;
-    let num_onode = onodes.len() / nlink;
-    assert_eq!(onodes.len(), num_onode * nlink);
+    let num_onode = onode2idx_tree.len();
     let num_vtx = idx2onode.len();
     {
         // check if octree visits all the objects
-        fn increment_leaf_octree(
+        fn increment_leaf_octree<const NLINK: usize>(
             i_node: usize,
-            nlink: usize,
-            onodes: &[u32],
+            onodes: &[[u32; NLINK]],
             idx2isvisited: &mut [u32],
             num_onode: usize,
             nchild: usize,
         ) {
             for i_child in 0..nchild {
-                let i_node_child = onodes[i_node * nlink + 1 + i_child];
+                let i_node_child = onodes[i_node][1 + i_child];
                 if i_node_child == u32::MAX {
                     continue;
                 }
@@ -266,7 +258,6 @@ pub fn check_octree<const NDIM: usize>(
                 } else {
                     increment_leaf_octree(
                         i_node_child as usize,
-                        nlink,
                         onodes,
                         idx2isvisited,
                         num_onode,
@@ -276,7 +267,7 @@ pub fn check_octree<const NDIM: usize>(
             }
         }
         let mut vtx2isvisited = vec![0u32; num_vtx];
-        increment_leaf_octree(0, nlink, onodes, &mut vtx2isvisited, num_onode, nchild);
+        increment_leaf_octree(0, onode2idx_tree, &mut vtx2isvisited, num_onode, nchild);
         assert_eq!(vtx2isvisited, vec!(1; num_vtx));
     }
     {
@@ -289,15 +280,13 @@ pub fn check_octree<const NDIM: usize>(
             };
             let h = 0.5 / (1 << depth) as f32;
             let center: [f32; NDIM] = if i_onode < num_onode {
-                onode2center[i_onode * NDIM..(i_onode + 1) * NDIM]
-                    .try_into()
-                    .unwrap()
+                onode2center[i_onode]
             } else {
                 let idx = i_onode - num_onode;
-                idx2center[idx * NDIM..(idx + 1) * NDIM].try_into().unwrap()
+                idx2center[idx]
             };
             let i_onode_parent = if i_onode < num_onode {
-                onodes[i_onode * nlink]
+                onode2idx_tree[i_onode][0]
             } else {
                 let idx = i_onode - num_onode;
                 idx2onode[idx]
@@ -315,10 +304,7 @@ pub fn check_octree<const NDIM: usize>(
                 depth_parent
             );
             let h_parent = 0.5 / (1 << depth_parent) as f32;
-            let center_parent: [f32; NDIM] = onode2center
-                [i_onode_parent as usize * NDIM..(i_onode_parent as usize + 1) * NDIM]
-                .try_into()
-                .unwrap();
+            let center_parent: [f32; NDIM] = onode2center[i_onode_parent as usize];
             for i_dim in 0..NDIM {
                 let d = (center[i_dim] - center_parent[i_dim]).abs();
                 assert!(
@@ -338,36 +324,34 @@ pub fn check_octree<const NDIM: usize>(
 
 #[allow(clippy::too_many_arguments)]
 pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; NDIM]],
     transform_world2unit: &[f32; NAFFINE],
     idx2jdx_offset: &[u32],
     jdx2vtx: &[u32],
     idx2onode: &[u32],
-    idx2center: &[f32],
+    idx2center: &[[f32; NDIM]],
     max_depth: usize,
-    onode2center: &[f32],
+    onode2center: &[[f32; NDIM]],
     onode2depth: &[u32],
 ) {
     assert_eq!(NAFFINE, (NDIM + 1) * (NDIM + 1));
     let num_idx = idx2jdx_offset.len() - 1;
-    let num_vtx = vtx2xyz.len() / NDIM;
-    assert_eq!(vtx2xyz.len(), num_vtx * NDIM);
+    let num_vtx = vtx2xyz.len();
     assert_eq!(jdx2vtx.len(), num_vtx);
     assert_eq!(idx2onode.len(), num_idx);
-    assert_eq!(idx2center.len(), num_idx * NDIM);
-    let num_onode = onode2center.len() / NDIM;
-    assert_eq!(onode2center.len(), num_onode * NDIM);
+    assert_eq!(idx2center.len(), num_idx);
+    let num_onode = onode2center.len();
     assert_eq!(onode2depth.len(), num_onode);
     for idx in 0..num_idx {
         let i_onode = idx2onode[idx] as usize;
         assert!(i_onode < num_onode);
-        let center_cell_unit = &idx2center[idx * NDIM..(idx + 1) * NDIM];
+        let center_cell_unit = &idx2center[idx];
         let h_cell_vtx = 0.5 / (1 << max_depth) as f32;
         for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx + 1] {
             let i_vtx = jdx2vtx[jdx as usize] as usize;
             let pos_vtx_unit = match NDIM {
                 2 => {
-                    let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * NDIM, 2];
+                    let pos_vtx_world = arrayref::array_ref![vtx2xyz.as_flattened(), i_vtx * 2, 2];
                     let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 9];
                     del_geo_core::mat3_col_major::transform_homogeneous(
                         transform_world2unit,
@@ -377,7 +361,7 @@ pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
                     .to_vec()
                 }
                 3 => {
-                    let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * NDIM, 3];
+                    let pos_vtx_world = arrayref::array_ref![vtx2xyz.as_flattened(), i_vtx * 3, 3];
                     let transform_world2unit = arrayref::array_ref![transform_world2unit, 0, 16];
                     del_geo_core::mat4_col_major::transform_homogeneous(
                         transform_world2unit,
@@ -396,7 +380,7 @@ pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
                 assert!(d <= h_cell_vtx * 1.0001, "{} {}", d, h_cell_vtx);
             }
         }
-        let center_cell_parent = &onode2center[i_onode * NDIM..(i_onode + 1) * NDIM];
+        let center_cell_parent = &onode2center[i_onode];
         let h_cell_parent = 0.5 / (1 << onode2depth[i_onode]) as f32;
         /*
         println!(
@@ -422,14 +406,14 @@ pub fn aggregate(
     idx2val: &[f32],
     idx2onode: &[u32],
     num_link: usize,
-    onodes: &[u32],
+    onode2idx_tree: &[u32],
     onode2aggval: &mut [f32],
 ) {
     onode2aggval.fill(0.0);
-    let num_onode = onodes.len() / num_link;
+    let num_onode = onode2idx_tree.len() / num_link;
     let num_idx = idx2val.len() / num_vdim;
     //
-    assert_eq!(onodes.len(), num_onode * num_link);
+    assert_eq!(onode2idx_tree.len(), num_onode * num_link);
     assert_eq!(idx2val.len(), num_idx * num_vdim);
     assert_eq!(onode2aggval.len(), num_onode * num_vdim);
     //
@@ -440,51 +424,49 @@ pub fn aggregate(
             for i_vdim in 0..num_vdim {
                 onode2aggval[i_onode * num_vdim + i_vdim] += idx2val[idx * num_vdim + i_vdim];
             }
-            if onodes[i_onode * 9] == u32::MAX {
+            if onode2idx_tree[i_onode * 9] == u32::MAX {
                 break;
             }
-            i_onode = onodes[i_onode * 9] as usize;
+            i_onode = onode2idx_tree[i_onode * 9] as usize;
             assert!(i_onode < num_onode);
         }
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn aggregate_with_map(
+pub fn aggregate_with_map<const NLINK: usize>(
     idx2jdx_offset: &[u32],
     num_vdim: usize,
     jdx2vtx: &[u32],
-    vtx2val: &[f32],
+    vtx2val: &[[f32; 3]],
     idx2onode: &[u32],
-    num_link: usize,
-    onode2idx_tree: &[u32],
-    onode2aggval: &mut [f32],
+    onode2idx_tree: &[[u32; NLINK]],
+    onode2aggval: &mut [[f32; 3]],
 ) {
-    let num_onode = onode2idx_tree.len() / num_link;
+    let num_onode = onode2idx_tree.len();
     let num_idx = idx2jdx_offset.len() - 1;
     let num_vtx = jdx2vtx.len();
     //
     assert_eq!(idx2onode.len(), num_idx);
-    assert_eq!(vtx2val.len(), num_vtx * num_vdim);
-    assert_eq!(onode2idx_tree.len(), num_onode * num_link);
-    assert_eq!(onode2aggval.len(), num_onode * num_vdim);
+    assert_eq!(vtx2val.len(), num_vtx);
+    assert_eq!(onode2aggval.len(), num_onode);
     //
-    onode2aggval.fill(0.0);
+    onode2aggval.fill([0f32; 3]);
     for idx in 0..num_idx {
         let mut i_onode = idx2onode[idx] as usize;
         assert!(i_onode < num_onode);
         for jdx in idx2jdx_offset[idx]..idx2jdx_offset[idx + 1] {
             let i_vtx = jdx2vtx[jdx as usize] as usize;
             assert!(i_vtx < num_vtx);
-            let val = &vtx2val[i_vtx * num_vdim..(i_vtx + 1) * num_vdim];
+            let val = &vtx2val[i_vtx];
             loop {
                 for i_vdim in 0..num_vdim {
-                    onode2aggval[i_onode * num_vdim + i_vdim] += val[i_vdim];
+                    onode2aggval[i_onode][i_vdim] += val[i_vdim];
                 }
-                if onode2idx_tree[i_onode * 9] == u32::MAX {
+                if onode2idx_tree[i_onode][0] == u32::MAX {
                     break;
                 }
-                i_onode = onode2idx_tree[i_onode * 9] as usize;
+                i_onode = onode2idx_tree[i_onode][0] as usize;
                 assert!(i_onode < num_onode);
             }
         }
@@ -495,15 +477,14 @@ pub fn onode2gcuint_for_octree(
     idx2jdx_offset: &[u32],
     jdx2vtx: &[u32],
     idx2onode: &[u32],
-    vtx2xyz: &[f32],
+    vtx2xyz: &[[f32; 3]],
     transform_world2unit: &[f32; 16],
     onode2idx_otree: &[u32],
     onode2gcunit: &mut [[f32; 3]],
 ) {
     let num_idx = idx2jdx_offset.len() - 1;
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     assert_eq!(jdx2vtx.len(), num_vtx);
-    assert_eq!(vtx2xyz.len(), num_vtx * 3);
     let num_onode = onode2idx_otree.len() / 9;
     assert_eq!(onode2gcunit.len(), num_onode);
     let mut onode2nvtx = vec![0f32; num_onode];
@@ -513,7 +494,7 @@ pub fn onode2gcuint_for_octree(
             let i_vtx = jdx2vtx[jdx as usize] as usize;
             let mut i_onode = idx2onode[idx] as usize;
             assert!(i_onode < num_onode);
-            let pos_vtx_world = arrayref::array_ref![vtx2xyz, i_vtx * 3, 3];
+            let pos_vtx_world = &vtx2xyz[i_vtx];
             loop {
                 onode2gcunit[i_onode][0] += pos_vtx_world[0];
                 onode2gcunit[i_onode][1] += pos_vtx_world[1];
@@ -549,12 +530,12 @@ fn test_octree_2d() {
     let num_vtx = 10usize;
     const NDIM: usize = 2;
     let max_depth = 16;
-    let vtx2xyz: Vec<f32> = {
+    let vtx2xyz: Vec<[f32; 2]> = {
         use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(3);
-        (0..num_vtx * NDIM)
-            .map(|_| rng.random::<f32>() * 3. - 1.)
+        (0..num_vtx)
+            .map(|_| [rng.random::<f32>() * 3. - 1., rng.random::<f32>() * 3. - 1.])
             .collect()
     };
     let transform_world2unit = {
@@ -570,7 +551,7 @@ fn test_octree_2d() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            vtx2xyz.as_chunks::<2>().0,
+            &vtx2xyz,
             &transform_world2unit,
         );
         crate::mortons::check_morton_code_range_split(&jdx2morton);
@@ -593,7 +574,7 @@ fn test_octree_2d() {
     };
     {
         // bvh creation
-        let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
+        let mut bnodes = vec![[0u32; 3]; num_vtx - 1];
         let mut bnode2depth = vec![0u32; num_vtx - 1];
         binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
         crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
@@ -602,12 +583,12 @@ fn test_octree_2d() {
         bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
         let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
         // println!("num octree node branch:{}", num_onode);
-        let mut onodes = vec![u32::MAX; num_onode * 5];
+        let mut onodes = vec![[u32::MAX; 5]; num_onode];
         let mut idx2onode = vec![0u32; num_vtx];
         let mut onode2depth = vec![0u32; num_onode];
-        let mut onode2center = vec![0f32; num_onode * NDIM];
-        let mut idx2center = vec![0f32; num_vtx * NDIM];
-        make_tree_from_binary_radix_tree(
+        let mut onode2center = vec![[0f32; NDIM]; num_onode];
+        let mut idx2center = vec![[0f32; NDIM]; num_vtx];
+        make_tree_from_binary_radix_tree::<NDIM, 5>(
             &bnodes,
             &bnode2onode,
             &bnode2depth,
@@ -615,14 +596,13 @@ fn test_octree_2d() {
             &idx2morton,
             num_onode,
             max_depth,
-            NDIM,
             &mut onodes,
             &mut onode2depth,
             &mut onode2center,
             &mut idx2onode,
             &mut idx2center,
         );
-        check_octree::<NDIM>(
+        check_octree::<NDIM, 5>(
             &idx2onode,
             &idx2center,
             &onodes,
@@ -649,12 +629,18 @@ fn test_octree_3d() {
     let num_vtx = 3000usize;
     const NDIM: usize = 3;
     let max_depth = 10;
-    let vtx2xyz: Vec<f32> = {
+    let vtx2xyz: Vec<[f32; 3]> = {
         use rand::RngExt;
         use rand::SeedableRng;
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
-        (0..num_vtx * NDIM)
-            .map(|_| rng.random::<f32>() * 3. - 1.)
+        (0..num_vtx)
+            .map(|_| {
+                [
+                    rng.random::<f32>() * 3. - 1.,
+                    rng.random::<f32>() * 3. - 1.,
+                    rng.random::<f32>() * 3. - 1.,
+                ]
+            })
             .collect()
     };
     let transform_world2unit = {
@@ -670,7 +656,7 @@ fn test_octree_3d() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &transform_world2unit,
         );
         crate::mortons::check_morton_code_range_split(&jdx2morton);
@@ -693,7 +679,7 @@ fn test_octree_3d() {
     };
     let (idx2onode, idx2center, onodes, onode2depth, onode2center) = {
         // bvh creation
-        let mut bnodes = vec![0u32; (num_vtx - 1) * 3];
+        let mut bnodes = vec![[0u32; 3]; num_vtx - 1];
         let mut bnode2depth = vec![0u32; num_vtx - 1];
         binary_radix_tree_and_depth(&idx2morton, NDIM, max_depth, &mut bnodes, &mut bnode2depth);
         crate::mortons::check_binary_radix_tree(&bnodes, &idx2morton);
@@ -702,12 +688,12 @@ fn test_octree_3d() {
         bnode2onode_and_idx2bnode(&bnodes, &bnode2depth, &mut bnode2onode, &mut idx2bnode);
         let num_onode = bnode2onode[num_vtx - 2] as usize + 1;
         // println!("num octree node branch:{}", num_onode);
-        let mut onodes = vec![u32::MAX; num_onode * 9];
+        let mut onodes = vec![[u32::MAX; 9]; num_onode];
         let mut idx2onode = vec![0u32; num_vtx];
         let mut onode2depth = vec![0u32; num_onode];
-        let mut onode2center = vec![0f32; num_onode * NDIM];
-        let mut idx2center = vec![0f32; num_vtx * NDIM];
-        make_tree_from_binary_radix_tree(
+        let mut onode2center = vec![[0f32; NDIM]; num_onode];
+        let mut idx2center = vec![[0f32; NDIM]; num_vtx];
+        make_tree_from_binary_radix_tree::<NDIM, 9>(
             &bnodes,
             &bnode2onode,
             &bnode2depth,
@@ -715,7 +701,6 @@ fn test_octree_3d() {
             &idx2morton,
             num_onode,
             max_depth,
-            NDIM,
             &mut onodes,
             &mut onode2depth,
             &mut onode2center,
@@ -724,7 +709,7 @@ fn test_octree_3d() {
         );
         (idx2onode, idx2center, onodes, onode2depth, onode2center)
     };
-    check_octree::<NDIM>(
+    check_octree::<NDIM, 9>(
         &idx2onode,
         &idx2center,
         &onodes,
@@ -749,7 +734,13 @@ fn test_octree_3d() {
 pub fn construct_octree(
     idx2morton: &[u32],
     max_depth: usize,
-) -> (Vec<u32>, Vec<f32>, Vec<u32>, Vec<u32>, Vec<f32>) {
+) -> (
+    Vec<[u32; 9]>,
+    Vec<[f32; 3]>,
+    Vec<u32>,
+    Vec<u32>,
+    Vec<[f32; 3]>,
+) {
     let num_idx = idx2morton.len();
     let mut bnodes = vec![0u32; (num_idx - 1) * 3];
     let mut bnode2depth = vec![0u32; (num_idx - 1) * 3];
@@ -757,39 +748,38 @@ pub fn construct_octree(
         idx2morton,
         3,
         max_depth,
-        &mut bnodes,
+        bnodes.as_chunks_mut::<3>().0,
         &mut bnode2depth,
     );
     let mut bnode2onode = vec![0u32; num_idx - 1];
     let mut idx2bnode = vec![0u32; num_idx];
     crate::quad_oct_tree::bnode2onode_and_idx2bnode(
-        &bnodes,
+        bnodes.as_chunks::<3>().0,
         &bnode2depth,
         &mut bnode2onode,
         &mut idx2bnode,
     );
     let num_onode = bnode2onode[num_idx - 2] as usize + 1;
-    let mut onodes = vec![u32::MAX; num_onode * 9];
+    let mut onodes = vec![[u32::MAX; 9]; num_onode];
     let mut onode2depth = vec![0u32; num_onode];
-    let mut onode2center = vec![0f32; num_onode * 3];
-    let mut idx2center = vec![0f32; num_idx * 3];
+    let mut onode2center = vec![[0f32; 3]; num_onode];
+    let mut idx2center = vec![[0f32; 3]; num_idx];
     let mut idx2onode = vec![0u32; num_idx];
-    make_tree_from_binary_radix_tree(
-        &bnodes,
+    make_tree_from_binary_radix_tree::<3, 9>(
+        bnodes.as_chunks::<3>().0,
         &bnode2onode,
         &bnode2depth,
         &idx2bnode,
         idx2morton,
         num_onode,
         max_depth,
-        3,
         &mut onodes,
         &mut onode2depth,
         &mut onode2center,
         &mut idx2onode,
         &mut idx2center,
     );
-    check_octree::<3>(
+    check_octree::<3, 9>(
         &idx2onode,
         &idx2center,
         &onodes,

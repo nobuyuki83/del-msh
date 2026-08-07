@@ -90,7 +90,7 @@ where
 {
     let two_pi = T::PI() * (T::one() + T::one());
     let num_vtx = vtx2xyz.len();
-    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx.as_flattened(), 3, num_vtx);
+    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, num_vtx);
     let mut vtx2curv = vec![T::zero(); num_vtx];
     let mut total_area = T::zero();
     for i_vtx in 0..num_vtx {

@@ -54,7 +54,7 @@ fn polyhedron_mesh_elem2volume(
             del_msh_cpu::polyhedron_mesh::elem2volume(
                 slice!(elem2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 1,
                 slice_mut!(elem2volume, f32).unwrap(),
             );
@@ -93,15 +93,26 @@ fn polyhedron_mesh_elem2center(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let result = del_msh_cpu::elem2center::from_polygon_mesh_as_points(
-                slice!(elem2idx_offset, u32).unwrap(),
-                slice!(idx2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
-                num_dim.try_into().unwrap(),
-            );
-            slice_mut!(elem2center, f32)
-                .unwrap()
-                .copy_from_slice(&result);
+            let flat = slice_mut!(elem2center, f32).unwrap();
+            match num_dim {
+                2 => flat.copy_from_slice(
+                    del_msh_cpu::elem2center::from_polygon_mesh_as_points::<_, _, 2>(
+                        slice!(elem2idx_offset, u32).unwrap(),
+                        slice!(idx2vtx, u32).unwrap(),
+                        slice!(vtx2xyz, f32).unwrap().as_chunks::<2>().0,
+                    )
+                    .as_flattened(),
+                ),
+                3 => flat.copy_from_slice(
+                    del_msh_cpu::elem2center::from_polygon_mesh_as_points::<_, _, 3>(
+                        slice!(elem2idx_offset, u32).unwrap(),
+                        slice!(idx2vtx, u32).unwrap(),
+                        slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+                    )
+                    .as_flattened(),
+                ),
+                _ => panic!("unsupported num_dim: {num_dim}"),
+            }
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

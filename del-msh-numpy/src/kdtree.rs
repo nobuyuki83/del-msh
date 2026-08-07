@@ -23,9 +23,10 @@ pub fn kdtree_build_2d<'a>(
     for (i_vtx, xy) in vtx2xy.chunks(2).enumerate() {
         pairs_xy_idx.push(([xy[0], xy[1]], i_vtx));
     }
-    let mut tree = Vec::<usize>::new();
+    let mut tree = Vec::<[usize; 3]>::new();
     del_msh_cpu::kdtree2::construct_kdtree(&mut tree, 0, &mut pairs_xy_idx, 0, num_vtx, 0);
-    numpy::ndarray::Array2::from_shape_vec((tree.len() / 3, 3), tree)
+    let flat = tree.into_flattened();
+    numpy::ndarray::Array2::from_shape_vec((flat.len() / 3, 3), flat)
         .unwrap()
         .into_pyarray(_py)
 }
@@ -41,7 +42,7 @@ fn kdtree_edge_2d<'a>(
     let min = [vmin[0], vmin[1]];
     let max = [vmax[0], vmax[1]];
     let vtx2xy = vtx2xy.as_slice().unwrap();
-    let tree = tree.as_slice().unwrap();
+    let tree = tree.as_slice().unwrap().as_chunks::<3>().0;
     let mut edge2xy = Vec::<f64>::new();
     del_msh_cpu::kdtree2::find_edges(&mut edge2xy, vtx2xy, tree, 0, min, max, 0);
     edge2xy.push(min[0]);

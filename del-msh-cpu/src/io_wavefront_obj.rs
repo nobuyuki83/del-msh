@@ -200,15 +200,15 @@ where
     pub fn unified_xyz_uv_as_trimesh(&self) -> (Vec<[Index; 3]>, Vec<[Real; 3]>, Vec<[Real; 2]>) {
         let (tri2uni, uni2vtx_xyz, uni2vtx_uv) =
             crate::unify_index::unify_two_indices_of_triangle_mesh(
-                &self.idx2vtx_xyz,
-                &self.idx2vtx_uv,
+                self.idx2vtx_xyz.as_chunks::<3>().0,
+                self.idx2vtx_uv.as_chunks::<3>().0,
             );
         assert_eq!(uni2vtx_xyz.len(), uni2vtx_uv.len());
         let uni2xyz =
             crate::map_idx::map_vertex_attibute_from(self.vtx2xyz.as_flattened(), 3, &uni2vtx_xyz);
         let uni2uv =
             crate::map_idx::map_vertex_attibute_from(self.vtx2uv.as_flattened(), 2, &uni2vtx_uv);
-        let tri2uni: Vec<[Index; 3]> = tri2uni.as_chunks::<3>().0.to_vec();
+        let tri2uni: Vec<[Index; 3]> = tri2uni;
         let uni2xyz: Vec<[Real; 3]> = uni2xyz.as_chunks::<3>().0.to_vec();
         let uni2uv: Vec<[Real; 2]> = uni2uv.as_chunks::<2>().0.to_vec();
         (tri2uni, uni2xyz, uni2uv)

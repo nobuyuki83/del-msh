@@ -1,6 +1,6 @@
 use num_traits::AsPrimitive;
 
-fn dominant_direction_pca<T>(remaining_elems: &[usize], elem2center: &[T]) -> ([T; 3], [T; 3])
+fn dominant_direction_pca<T>(remaining_elems: &[usize], elem2center: &[[T; 3]]) -> ([T; 3], [T; 3])
 where
     T: num_traits::Float + 'static + Copy,
     usize: AsPrimitive<T>,
@@ -9,13 +9,12 @@ where
     let mut org = [T::zero(); 3];
     for &i_tri in remaining_elems {
         // center of the gravity of list
-        let pc = crate::vtx2xyz::to_vec3(elem2center, i_tri);
-        org.add_in_place(pc);
+        org.add_in_place(&elem2center[i_tri]);
     }
     org.scale_in_place(T::one() / remaining_elems.len().as_());
     let mut cov = [T::zero(); 9];
     for &i_tri in remaining_elems {
-        let v = crate::vtx2xyz::to_vec3(elem2center, i_tri).sub(&org);
+        let v = elem2center[i_tri].sub(&org);
         let cov0 = &del_geo_core::mat3_col_major::from_scaled_outer_product(T::one(), &v, &v);
         cov = del_geo_core::mat3_col_major::add(&cov, cov0);
     }
@@ -55,31 +54,31 @@ fn dominant_direction_aabb(remaining_elems: &[usize], elem2center: &[f32]) -> ([
 
 fn divide_list_of_elements<T>(
     i_node_root: usize,
-    elem2node: &mut [usize],
-    nodes: &mut Vec<[usize; 3]>,
+    elem2bvhnode: &mut [usize],
+    bvhnodes: &mut Vec<[usize; 3]>,
     remaining_elems: &[usize],
     num_adjacent_elems: usize,
     elem2elem: &[usize],
-    elem2center: &[T],
+    elem2center: &[[T; 3]],
 ) where
     T: num_traits::Float + Copy + 'static,
     usize: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
-    let inode_ch0 = nodes.len();
+    let inode_ch0 = bvhnodes.len();
     let inode_ch1 = inode_ch0 + 1;
-    nodes.resize(nodes.len() + 2, [usize::MAX; 3]);
-    nodes[inode_ch0][0] = i_node_root;
-    nodes[inode_ch1][0] = i_node_root;
-    nodes[i_node_root][1] = inode_ch0;
-    nodes[i_node_root][2] = inode_ch1;
+    bvhnodes.resize(bvhnodes.len() + 2, [usize::MAX; 3]);
+    bvhnodes[inode_ch0][0] = i_node_root;
+    bvhnodes[inode_ch1][0] = i_node_root;
+    bvhnodes[i_node_root][1] = inode_ch0;
+    bvhnodes[i_node_root][2] = inode_ch1;
     let list_ch0 = {
         let mut list_ch0 = vec![0_usize; 0];
         if remaining_elems.len() == 2 {
             let i_tri0 = remaining_elems[0];
             list_ch0.push(i_tri0);
-            elem2node[i_tri0] = inode_ch0;
+            elem2bvhnode[i_tri0] = inode_ch0;
         } else {
             // extract the triangles in the child node 0
             assert!(remaining_elems.len() > 1);
@@ -88,7 +87,7 @@ fn divide_list_of_elements<T>(
                 // pick one element
                 let mut i_elem_ker = usize::MAX;
                 for &i_elem in remaining_elems {
-                    let cntr = crate::vtx2xyz::to_vec3(elem2center, i_elem);
+                    let cntr = &elem2center[i_elem];
                     let det0 = cntr.sub(&org).dot(&dir);
                     if det0.abs() < 1.0e-10f64.as_() {
                         continue;
@@ -102,7 +101,7 @@ fn divide_list_of_elements<T>(
                 i_elem_ker
             };
             // triangles connected to `itri_ker` and in the direction of `dir`
-            elem2node[i_elem_ker] = inode_ch0;
+            elem2bvhnode[i_elem_ker] = inode_ch0;
             list_ch0.push(i_elem_ker);
             let mut elem_stack = vec![0_usize; 0];
             elem_stack.push(i_elem_ker);
@@ -112,15 +111,15 @@ fn divide_list_of_elements<T>(
                     if j_elem == usize::MAX {
                         continue;
                     }
-                    if elem2node[j_elem] != i_node_root {
+                    if elem2bvhnode[j_elem] != i_node_root {
                         continue;
                     }
-                    let cntr = crate::vtx2xyz::to_vec3(elem2center, j_elem);
+                    let cntr = &elem2center[j_elem];
                     if cntr.sub(&org).dot(&dir) < T::zero() {
                         continue;
                     }
                     elem_stack.push(j_elem);
-                    elem2node[j_elem] = inode_ch0;
+                    elem2bvhnode[j_elem] = inode_ch0;
                     list_ch0.push(j_elem);
                 }
             }
@@ -132,24 +131,24 @@ fn divide_list_of_elements<T>(
     // exclude the triangles that is included in the child node 0
     let mut list_ch1 = vec![0_usize; 0];
     for &i_tri in remaining_elems {
-        if elem2node[i_tri] == inode_ch0 {
+        if elem2bvhnode[i_tri] == inode_ch0 {
             continue;
         }
-        assert_eq!(elem2node[i_tri], i_node_root);
-        elem2node[i_tri] = inode_ch1;
+        assert_eq!(elem2bvhnode[i_tri], i_node_root);
+        elem2bvhnode[i_tri] = inode_ch1;
         list_ch1.push(i_tri);
     }
     assert!(!list_ch1.is_empty());
     // ---------------------------
     if list_ch0.len() == 1 {
-        nodes[inode_ch0][1] = list_ch0[0];
-        nodes[inode_ch0][2] = usize::MAX;
+        bvhnodes[inode_ch0][1] = list_ch0[0];
+        bvhnodes[inode_ch0][2] = usize::MAX;
     } else {
         // subdivide child node 0
         divide_list_of_elements(
             inode_ch0,
-            elem2node,
-            nodes,
+            elem2bvhnode,
+            bvhnodes,
             &list_ch0,
             num_adjacent_elems,
             elem2elem,
@@ -158,14 +157,14 @@ fn divide_list_of_elements<T>(
     }
     // -----------------------------
     if list_ch1.len() == 1 {
-        nodes[inode_ch1][1] = list_ch1[0];
-        nodes[inode_ch1][2] = usize::MAX;
+        bvhnodes[inode_ch1][1] = list_ch1[0];
+        bvhnodes[inode_ch1][2] = usize::MAX;
     } else {
         // subdivide the child node 1
         divide_list_of_elements(
             inode_ch1,
-            elem2node,
-            nodes,
+            elem2bvhnode,
+            bvhnodes,
             &list_ch1,
             num_adjacent_elems,
             elem2elem,
@@ -177,14 +176,14 @@ fn divide_list_of_elements<T>(
 pub fn from_uniform_mesh_with_elem2elem_elem2center<T>(
     elem2elem: &[usize],
     num_adjacent_elems: usize,
-    elem2center: &[T],
+    elem2center: &[[T; 3]],
 ) -> Vec<[usize; 3]>
 where
     T: num_traits::Float + Copy + 'static,
     usize: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
-    let nelem = elem2center.len() / 3;
+    let nelem = elem2center.len();
     let remaining_elems: Vec<usize> = (0..nelem).collect();
     let mut elem2node = vec![0; nelem];
     let mut nodes = vec![[usize::MAX; 3]; 1];
@@ -206,18 +205,13 @@ where
     f64: AsPrimitive<T>,
     usize: AsPrimitive<T>,
 {
-    let tri2tri = crate::elem2elem::from_uniform_mesh::<usize>(
-        tri2vtx.as_flattened(),
-        3,
+    let tri2tri = crate::elem2elem::from_uniform_mesh::<usize, 3>(
+        tri2vtx,
         &del_geo_core::tri::FACE2IDX,
         &del_geo_core::tri::IDX2NODE,
         vtx2xyz.len(),
     );
-    let tri2center = crate::elem2center::from_uniform_mesh_as_points(
-        tri2vtx.as_flattened(),
-        3,
-        vtx2xyz.as_flattened(),
-        3,
-    );
+    let tri2center =
+        crate::elem2center::from_uniform_mesh_as_points::<_, _, 3, 3>(tri2vtx, vtx2xyz);
     from_uniform_mesh_with_elem2elem_elem2center(&tri2tri, 3, &tri2center)
 }

@@ -57,16 +57,37 @@ where
     usize: AsPrimitive<Index>,
 {
     // Build vertex-to-element adjacency lookup
-    let vtx2elem = crate::vtx2elem::from_uniform_mesh::<Index>(elem2vtx, num_node, num_vtx);
+    let vtx2elem = match num_node {
+        2 => crate::vtx2elem::from_uniform_mesh::<Index, 2>(elem2vtx.as_chunks::<2>().0, num_vtx),
+        3 => crate::vtx2elem::from_uniform_mesh::<Index, 3>(elem2vtx.as_chunks::<3>().0, num_vtx),
+        4 => crate::vtx2elem::from_uniform_mesh::<Index, 4>(elem2vtx.as_chunks::<4>().0, num_vtx),
+        _ => panic!("unsupported num_node: {num_node}"),
+    };
     // Extract vertex-to-vertex connectivity for specified edge patterns
-    let vtx2vtx = crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index>(
-        elem2vtx,
-        num_node,
-        edge2node,
-        &vtx2elem.0,
-        &vtx2elem.1,
-        false, // Don't include duplicate edges
-    );
+    let vtx2vtx = match num_node {
+        2 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 2>(
+            elem2vtx.as_chunks::<2>().0,
+            edge2node.as_chunks::<2>().0,
+            &vtx2elem.0,
+            &vtx2elem.1,
+            false,
+        ),
+        3 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 3>(
+            elem2vtx.as_chunks::<3>().0,
+            edge2node.as_chunks::<2>().0,
+            &vtx2elem.0,
+            &vtx2elem.1,
+            false,
+        ),
+        4 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 4>(
+            elem2vtx.as_chunks::<4>().0,
+            edge2node.as_chunks::<2>().0,
+            &vtx2elem.0,
+            &vtx2elem.1,
+            false,
+        ),
+        _ => panic!("unsupported num_node: {num_node}"),
+    };
     // Convert vertex adjacency to edge list
     let mut edge2vtx = vec![[Index::zero(); 2]; vtx2vtx.1.len()];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
@@ -415,7 +436,7 @@ pub fn test_contour() {
         del_geo_core::mat4_col_major::transpose(&t)
     };
     //
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
     let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,

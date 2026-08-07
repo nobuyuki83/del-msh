@@ -125,5 +125,5 @@ pub fn vtx2vtx_rods(hair2rootvtx: &[usize]) -> (Vec<usize>, Vec<usize>) {
             elem2vtx.push(i_vtx_root + i_elem + 2);
         }
     }
-    crate::vtx2vtx::from_uniform_mesh(&elem2vtx, 3, num_vtx, false)
+    crate::vtx2vtx::from_uniform_mesh(elem2vtx.as_chunks::<3>().0, num_vtx, false)
 }

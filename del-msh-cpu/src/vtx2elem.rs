@@ -55,21 +55,18 @@ fn test_polygon_mesh() {
 }
 
 /// element surrounding vertex
-pub fn from_uniform_mesh<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     num_vtx: usize,
 ) -> (Vec<Index>, Vec<Index>)
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_elem = elem2vtx.len() / num_node;
-    assert_eq!(elem2vtx.len(), num_elem * num_node);
     let mut vtx2idx = vec![Index::zero(); num_vtx + 1];
-    for i_elem in 0..num_elem {
-        for i_node in 0..num_node {
-            let i_vtx: usize = elem2vtx[i_elem * num_node + i_node].as_();
+    for node2vtx in elem2vtx.iter() {
+        for i_vtx in node2vtx.iter() {
+            let i_vtx: usize = i_vtx.as_();
             assert!(i_vtx < num_vtx);
             vtx2idx[i_vtx + 1] = vtx2idx[i_vtx + 1] + Index::one();
         }
@@ -80,9 +77,9 @@ where
     }
     let num_vtx2elem: usize = vtx2idx[num_vtx].as_();
     let mut idx2elem = vec![Index::zero(); num_vtx2elem];
-    for i_elem in 0..num_elem {
-        for i_node in 0..num_node {
-            let i_vtx0: usize = elem2vtx[i_elem * num_node + i_node].as_();
+    for (i_elem, node2vtx) in elem2vtx.iter().enumerate() {
+        for i_vtx0 in node2vtx.iter() {
+            let i_vtx0: usize = i_vtx0.as_();
             let iv2e: usize = vtx2idx[i_vtx0].as_();
             idx2elem[iv2e] = i_elem.as_();
             vtx2idx[i_vtx0] = vtx2idx[i_vtx0] + Index::one();

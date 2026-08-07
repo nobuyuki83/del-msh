@@ -51,18 +51,16 @@ impl MyApp {
         };
         let num_tri = tri2vtx.len() / 3;
         let tri2node2xyz = del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(
-            &tri2vtx,
-            &vtx2xyz.as_flattened(),
-            3,
+            tri2vtx.as_chunks::<3>().0,
+            &vtx2xyz,
         );
         let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
-            &tri2vtx,
-            3,
+            tri2vtx.as_chunks::<3>().0,
             &[0, 2, 4, 6],
             &[1, 2, 2, 0, 0, 1],
-            vtx2xyz.len() / 3,
+            vtx2xyz.len(),
         );
-        assert_eq!(tri2node2xyz.len(), num_tri * 9);
+        assert_eq!(tri2node2xyz.len(), num_tri * 3);
         // ---------
         let gl = cc
             .gl
@@ -73,7 +71,7 @@ impl MyApp {
             drawer_mesh.compile_shader(gl);
             let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(
                 tri2vtx.as_chunks::<3>().0,
-                vtx2xyz.len() / 3,
+                vtx2xyz.len(),
             );
             drawer_mesh.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
             drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
@@ -83,7 +81,7 @@ impl MyApp {
         let drawer_tri = {
             let mut drawer_tri = del_glow::drawer_tri2node2xyz_tri2node2rgb::Drawer::new();
             drawer_tri.compile_shader(gl);
-            drawer_tri.update_tri2node2xyz(gl, &tri2node2xyz);
+            drawer_tri.update_tri2node2xyz(gl, tri2node2xyz.as_flattened());
             let tri2node2rgb = vec![0.9; num_tri * 9];
             drawer_tri.update_tri2node2rgb(gl, &tri2node2rgb);
             drawer_tri

@@ -451,8 +451,8 @@ fn test_voronoi_sites_on_edge() {
         crate::trimesh_topology::boundaryedge2vtx(&tri2vtx, vtx2xy.len());
     //
     let bedge2xymp = {
-        let mut bedge2xymp = vec![0f32; bedge2vtx.len()];
-        for (i_bedge, node2vtx) in bedge2vtx.chunks(2).enumerate() {
+        let mut bedge2xymp = vec![0f32; bedge2vtx.len() * 2];
+        for (i_bedge, node2vtx) in bedge2vtx.iter().enumerate() {
             let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
             bedge2xymp[i_bedge * 2] = (vtx2xy[i0_vtx][0] + vtx2xy[i1_vtx][0]) * 0.5;
             bedge2xymp[i_bedge * 2 + 1] = (vtx2xy[i0_vtx][1] + vtx2xy[i1_vtx][1]) * 0.5;
@@ -466,7 +466,7 @@ fn test_voronoi_sites_on_edge() {
     };
     let vedge2pnt = {
         let mut vedge2pnt = vec![0usize; 0];
-        for (i_tri, node2triedge) in tri2triedge.chunks(3).enumerate() {
+        for (i_tri, node2triedge) in tri2triedge.iter().enumerate() {
             for i_node in 0..3 {
                 let i_triedge = node2triedge[i_node];
                 if i_triedge <= i_tri {
@@ -477,7 +477,6 @@ fn test_voronoi_sites_on_edge() {
         }
         let bedge2bedge = crate::elem2elem::from_uniform_mesh(
             &bedge2vtx,
-            2,
             &del_geo_core::edge::EDGE_FACE2IDX,
             &del_geo_core::edge::EDGE_IDX2NODE,
             vtx2xy.len(),

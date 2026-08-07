@@ -5,78 +5,67 @@ use num_traits::AsPrimitive;
 // TODO: implement from_polygon_mesh_as_edges
 // TODO: implement from_polygon_mesh_as_faces
 
-pub fn update_from_uniform_mesh_as_points<Index, T>(
-    elem2center: &mut [T],
-    elem2vtx: &[Index],
-    num_node: usize,
-    vtx2xyz: &[T],
-    num_dim: usize,
+pub fn update_from_uniform_mesh_as_points<Index, T, const NNODE: usize, const NDIM: usize>(
+    elem2center: &mut [[T; NDIM]],
+    elem2vtx: &[[Index; NNODE]],
+    vtx2xyz: &[[T; NDIM]],
 ) where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     usize: AsPrimitive<T>,
     Index: AsPrimitive<usize>,
 {
-    let num_elem = elem2vtx.len() / num_node;
-    assert_eq!(elem2center.len(), num_elem * num_dim);
-    assert_eq!(vtx2xyz.len() % num_dim, 0);
-    assert_eq!(elem2vtx.len(), num_elem * num_node);
-    let ratio: T = T::one() / num_node.as_();
-    let mut cog = vec![T::zero(); num_dim];
-    for (i_elem, node2vtx) in elem2vtx.chunks(num_node).enumerate() {
+    assert_eq!(elem2center.len(), elem2vtx.len());
+    let ratio: T = T::one() / NNODE.as_();
+    let mut cog = [T::zero(); NDIM];
+    for (i_elem, node2vtx) in elem2vtx.iter().enumerate() {
         cog.fill(T::zero());
-        for i_vtx in &node2vtx[0..num_node] {
+        for i_vtx in node2vtx.iter() {
             let i_vtx: usize = i_vtx.as_();
-            for idim in 0..num_dim {
-                cog[idim] += vtx2xyz[i_vtx * num_dim + idim];
+            for idim in 0..NDIM {
+                cog[idim] += vtx2xyz[i_vtx][idim];
             }
         }
-        for idim in 0..num_dim {
-            elem2center[i_elem * num_dim + idim] = cog[idim] * ratio;
+        for idim in 0..NDIM {
+            elem2center[i_elem][idim] = cog[idim] * ratio;
         }
     }
 }
 
-pub fn from_uniform_mesh_as_points<Index, T>(
-    elem2vtx: &[Index],
-    num_node: usize,
-    vtx2xyz: &[T],
-    num_dim: usize,
-) -> Vec<T>
+pub fn from_uniform_mesh_as_points<Index, T, const NNODE: usize, const NDIM: usize>(
+    elem2vtx: &[[Index; NNODE]],
+    vtx2xyz: &[[T; NDIM]],
+) -> Vec<[T; NDIM]>
 where
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     usize: AsPrimitive<T>,
     Index: AsPrimitive<usize>,
 {
-    assert_eq!(vtx2xyz.len() % num_dim, 0);
-    let num_elem = elem2vtx.len() / num_node;
-    assert_eq!(elem2vtx.len(), num_elem * num_node);
-    let mut elem2center = vec![T::zero(); num_elem * num_dim];
-    update_from_uniform_mesh_as_points(&mut elem2center, elem2vtx, num_node, vtx2xyz, num_dim);
+    let mut elem2center = vec![[T::zero(); NDIM]; elem2vtx.len()];
+    update_from_uniform_mesh_as_points(&mut elem2center, elem2vtx, vtx2xyz);
     elem2center
 }
 
 /// the center of gravity of each element where mass is lumped at the vertices
-pub fn from_polygon_mesh_as_points<T, IDX>(
+pub fn from_polygon_mesh_as_points<T, IDX, const NDIM: usize>(
     elem2idx_offset: &[IDX],
     idx2vtx: &[IDX],
-    vtx2xyz: &[T],
-    num_dim: usize,
-) -> Vec<T>
+    vtx2xyz: &[[T; NDIM]],
+) -> Vec<[T; NDIM]>
 where
     IDX: num_traits::PrimInt + AsPrimitive<usize>,
     T: num_traits::Float + 'static + Copy + std::ops::AddAssign,
     usize: AsPrimitive<T>,
 {
-    let mut cog = vec![T::zero(); num_dim];
+    let mut cog = [T::zero(); NDIM];
     let num_elem = elem2idx_offset.len() - 1;
-    let mut elem2cog = Vec::<T>::with_capacity(num_elem * num_dim);
+    let mut elem2cog = Vec::<[T; NDIM]>::with_capacity(num_elem);
     for i_elem in 0..num_elem {
         cog.fill(T::zero());
         let num_vtx_in_elem = (elem2idx_offset[i_elem + 1] - elem2idx_offset[i_elem]).as_();
         for &i_vtx0 in &idx2vtx[elem2idx_offset[i_elem].as_()..elem2idx_offset[i_elem + 1].as_()] {
             let i_vtx0: usize = i_vtx0.as_();
-            for idim in 0..num_dim {
-                cog[idim] += vtx2xyz[i_vtx0 * num_dim + idim];
+            for idim in 0..NDIM {
+                cog[idim] += vtx2xyz[i_vtx0][idim];
             }
         }
         let ratio = if num_vtx_in_elem == 0 {
@@ -84,7 +73,7 @@ where
         } else {
             T::one() / num_vtx_in_elem.as_()
         };
-        cog.iter().for_each(|&v| elem2cog.push(v * ratio));
+        elem2cog.push(cog.map(|v| v * ratio));
     }
     elem2cog
 }

@@ -22,11 +22,11 @@ fn unify_two_indices_of_triangle_mesh<'a>(
 ) {
     let (tri2uni, uni2vtxxyz, uni2vtxuv) =
         del_msh_cpu::unify_index::unify_two_indices_of_triangle_mesh(
-            tri2vtxa.as_slice().unwrap(),
-            tri2vtxb.as_slice().unwrap(),
+            tri2vtxa.as_slice().unwrap().as_chunks::<3>().0,
+            tri2vtxb.as_slice().unwrap().as_chunks::<3>().0,
         );
     (
-        numpy::ndarray::Array2::from_shape_vec((tri2uni.len() / 3, 3), tri2uni)
+        numpy::ndarray::Array2::from_shape_vec((tri2uni.len(), 3), tri2uni.into_flattened())
             .unwrap()
             .into_pyarray(py),
         numpy::ndarray::Array1::from_vec(uni2vtxxyz).into_pyarray(py),

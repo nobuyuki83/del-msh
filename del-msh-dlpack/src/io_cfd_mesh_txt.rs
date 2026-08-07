@@ -25,33 +25,33 @@ fn io_cfd_mesh_txt_load(
         .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
     let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.vtx2xyz.len() as i64) / 3, 3],
-        data.vtx2xyz,
+        vec![data.vtx2xyz.len() as i64, 3],
+        data.vtx2xyz.into_flattened(),
     );
     let tet2vtx_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.tet2vtx.len() as i64) / 4, 4],
-        data.tet2vtx,
+        vec![data.tet2vtx.len() as i64, 4],
+        data.tet2vtx.into_flattened(),
     );
     let pyrmd2vtx_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.pyrmd2vtx.len() as i64) / 5, 5],
-        data.pyrmd2vtx,
+        vec![data.pyrmd2vtx.len() as i64, 5],
+        data.pyrmd2vtx.into_flattened(),
     );
     let prism2vtx_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.prism2vtx.len() as i64) / 6, 6],
-        data.prism2vtx,
+        vec![data.prism2vtx.len() as i64, 6],
+        data.prism2vtx.into_flattened(),
     );
     let hex2vtx_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.hex2vtx.len() as i64) / 8, 8],
-        data.hex2vtx,
+        vec![data.hex2vtx.len() as i64, 8],
+        data.hex2vtx.into_flattened(),
     );
     let vtx2velo_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![(data.vtx2velo.len() as i64) / 3, 3],
-        data.vtx2velo,
+        vec![data.vtx2velo.len() as i64, 3],
+        data.vtx2velo.into_flattened(),
     );
     let vtx2press_cap = del_dlpack::make_capsule_from_vec(
         py,

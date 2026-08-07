@@ -135,12 +135,12 @@ pub fn read_value<T: BufRead>(reader: &mut T, num_vtx: usize) -> Option<(usize, 
 }
 
 pub struct DataFromCfdMeshTxt<IDX> {
-    pub vtx2xyz: Vec<f32>,
-    pub tet2vtx: Vec<IDX>,
-    pub pyrmd2vtx: Vec<IDX>,
-    pub prism2vtx: Vec<IDX>,
-    pub hex2vtx: Vec<IDX>,
-    pub vtx2velo: Vec<f32>,
+    pub vtx2xyz: Vec<[f32; 3]>,
+    pub tet2vtx: Vec<[IDX; 4]>,
+    pub pyrmd2vtx: Vec<[IDX; 5]>,
+    pub prism2vtx: Vec<[IDX; 6]>,
+    pub hex2vtx: Vec<[IDX; 8]>,
+    pub vtx2velo: Vec<[f32; 3]>,
     pub vtx2pressure: Vec<f32>,
 }
 
@@ -168,8 +168,8 @@ where
             .context("failed to parse number of nodes")?
     };
     let vtx2xyz = {
-        let mut node2xyz = vec![0f32; num_vtx * 3];
-        for i_node in 0..num_vtx {
+        let mut node2xyz = vec![[0f32; 3]; num_vtx];
+        for (i_node, xyz) in node2xyz.iter_mut().enumerate() {
             buff.clear();
             reader
                 .read_line(&mut buff)
@@ -184,9 +184,9 @@ where
                 idx,
                 i_node + 1
             );
-            node2xyz[i_node * 3] = a[1].parse::<f32>().context("failed to parse x")?;
-            node2xyz[i_node * 3 + 1] = a[2].parse::<f32>().context("failed to parse y")?;
-            node2xyz[i_node * 3 + 2] = a[3].parse::<f32>().context("failed to parse z")?;
+            xyz[0] = a[1].parse::<f32>().context("failed to parse x")?;
+            xyz[1] = a[2].parse::<f32>().context("failed to parse y")?;
+            xyz[2] = a[3].parse::<f32>().context("failed to parse z")?;
         }
         node2xyz
     };
@@ -213,23 +213,23 @@ where
         num_elem_cum += elem2vtx.len() / num_node;
         match num_node {
             4 => {
-                tet2vtx = elem2vtx;
+                tet2vtx = elem2vtx.as_chunks::<4>().0.to_vec();
             }
             5 => {
-                pyrmd2vtx = elem2vtx;
+                pyrmd2vtx = elem2vtx.as_chunks::<5>().0.to_vec();
             }
             6 => {
-                prism2vtx = elem2vtx;
+                prism2vtx = elem2vtx.as_chunks::<6>().0.to_vec();
             }
             8 => {
-                hex2vtx = elem2vtx;
+                hex2vtx = elem2vtx.as_chunks::<8>().0.to_vec();
             }
             _ => {
                 unreachable!();
             }
         }
     }
-    let mut vtx2velo: Vec<f32> = vec![];
+    let mut vtx2velo: Vec<[f32; 3]> = vec![];
     let mut vtx2pressure: Vec<f32> = vec![];
     while let Some((num_vdim, vtx2value)) = read_value::<_>(&mut reader, num_vtx) {
         match num_vdim {
@@ -237,7 +237,7 @@ where
                 vtx2pressure = vtx2value;
             }
             3 => {
-                vtx2velo = vtx2value;
+                vtx2velo = vtx2value.as_chunks::<3>().0.to_vec();
             }
             _ => {
                 unreachable!();
@@ -262,39 +262,38 @@ mod tests {
         {
             let mut file =
                 std::fs::File::create(format!("../target/{}.vtk", name)).expect("file not found.");
-            crate::io_vtk::write_vtk_points(&mut file, "hoge", data.vtx2xyz.as_chunks::<3>().0)
-                .unwrap();
+            crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz).unwrap();
             crate::io_vtk::write_vtk_cells_mix(
                 &mut file,
-                data.tet2vtx.as_chunks::<4>().0,
-                data.pyrmd2vtx.as_chunks::<5>().0,
-                data.prism2vtx.as_chunks::<6>().0,
-                data.hex2vtx.as_chunks::<8>().0,
+                &data.tet2vtx,
+                &data.pyrmd2vtx,
+                &data.prism2vtx,
+                &data.hex2vtx,
             )
             .unwrap();
         }
         let (elem2idx_offset, idx2vtx) = {
-            let num_tet = data.tet2vtx.len() / 4;
-            let num_pyrmd = data.pyrmd2vtx.len() / 5;
-            let num_prism = data.prism2vtx.len() / 6;
-            let num_hex = data.hex2vtx.len() / 8;
+            let num_tet = data.tet2vtx.len();
+            let num_pyrmd = data.pyrmd2vtx.len();
+            let num_prism = data.prism2vtx.len();
+            let num_hex = data.hex2vtx.len();
             let mut elem2idx_offset = vec![0u32; num_tet + num_pyrmd + num_prism + num_hex + 1];
             let mut idx2vtx = vec![0u32; num_tet * 4 + num_pyrmd * 5 + num_prism * 6 + num_hex * 8];
             crate::mixed_mesh::to_polyhedron_mesh(
-                data.tet2vtx.as_chunks::<4>().0,
-                data.pyrmd2vtx.as_chunks::<5>().0,
-                data.prism2vtx.as_chunks::<6>().0,
-                data.hex2vtx.as_chunks::<8>().0,
+                &data.tet2vtx,
+                &data.pyrmd2vtx,
+                &data.prism2vtx,
+                &data.hex2vtx,
                 &mut elem2idx_offset,
                 &mut idx2vtx,
             );
             (elem2idx_offset, idx2vtx)
         };
         {
-            let num_elem = data.tet2vtx.len() / 4
-                + data.pyrmd2vtx.len() / 5
-                + data.prism2vtx.len() / 6
-                + data.hex2vtx.len() / 8;
+            let num_elem = data.tet2vtx.len()
+                + data.pyrmd2vtx.len()
+                + data.prism2vtx.len()
+                + data.hex2vtx.len();
             let mut elem2volume = vec![0f32; num_elem];
             crate::polyhedron_mesh::elem2volume(
                 &elem2idx_offset,
@@ -307,20 +306,19 @@ mod tests {
             assert!((elem2volume[1] - 1. / 6.0).abs() < 1.0e-7);
             assert!((elem2volume[2] - 1. / 2.0).abs() < 1.0e-7);
         }
-        let elem2cog = crate::elem2center::from_polygon_mesh_as_points(
+        let elem2cog = crate::elem2center::from_polygon_mesh_as_points::<_, _, 3>(
             &elem2idx_offset,
             &idx2vtx,
             &data.vtx2xyz,
-            3,
         );
-        let bvhnodes = crate::bvhnodes_morton::from_vtx2xyz::<u32>(&elem2cog, 3);
+        let bvhnodes = crate::bvhnodes_morton::from_vtx2xyz::<u32, 3>(&elem2cog);
         crate::bvhnodes::check_bvh_topology(&bvhnodes, elem2idx_offset.len() - 1);
         let _bvhnode2aabb = crate::bvhnode2aabb3::from_polygon_polyhedron_mesh_with_bvh(
             0,
             &bvhnodes,
             &elem2idx_offset,
             &idx2vtx,
-            data.vtx2xyz.as_chunks::<3>().0,
+            &data.vtx2xyz,
         );
     }
 
@@ -330,21 +328,21 @@ mod tests {
             let name = "cfd_mesh";
             let data =
                 crate::io_cfd_mesh_txt::read::<_, u32>(format!("../asset/{}.txt", name)).unwrap();
-            assert_eq!(data.tet2vtx.len(), 4);
-            assert_eq!(data.pyrmd2vtx.len(), 5);
-            assert_eq!(data.prism2vtx.len(), 6);
-            assert_eq!(data.hex2vtx.len(), 8);
+            assert_eq!(data.tet2vtx.len(), 1);
+            assert_eq!(data.pyrmd2vtx.len(), 1);
+            assert_eq!(data.prism2vtx.len(), 1);
+            assert_eq!(data.hex2vtx.len(), 1);
             check(&data, name);
         }
         {
             let name = "cfd_mesh1";
             let data =
                 crate::io_cfd_mesh_txt::read::<_, u32>(format!("../asset/{}.txt", name)).unwrap();
-            assert_eq!(data.tet2vtx.len(), 4);
-            assert_eq!(data.pyrmd2vtx.len(), 5);
-            assert_eq!(data.prism2vtx.len(), 6);
-            let num_vtx = data.vtx2xyz.len() / 3;
-            assert_eq!(data.vtx2velo.len(), num_vtx * 3);
+            assert_eq!(data.tet2vtx.len(), 1);
+            assert_eq!(data.pyrmd2vtx.len(), 1);
+            assert_eq!(data.prism2vtx.len(), 1);
+            let num_vtx = data.vtx2xyz.len();
+            assert_eq!(data.vtx2velo.len(), num_vtx);
             assert_eq!(data.vtx2pressure.len(), num_vtx);
             check(&data, name);
         }

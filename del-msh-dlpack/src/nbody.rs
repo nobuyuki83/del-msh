@@ -48,10 +48,10 @@ fn filter_brute_force(
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::nbody::filter_brute_force(
                 &model,
-                slice!(wtx2co, f32).unwrap(),
-                slice_mut!(wtx2lhs, f32).unwrap(),
-                slice!(vtx2co, f32).unwrap(),
-                slice!(vtx2rhs, f32).unwrap(),
+                slice!(wtx2co, f32).unwrap().as_chunks::<3>().0,
+                slice_mut!(wtx2lhs, f32).unwrap().as_chunks_mut::<3>().0,
+                slice!(vtx2co, f32).unwrap().as_chunks::<3>().0,
+                slice!(vtx2rhs, f32).unwrap().as_chunks::<3>().0,
             );
         }
         #[cfg(feature = "cuda")]
@@ -221,20 +221,20 @@ fn filter_with_acceleration(
             use slice_of_array::SliceNestExt;
             del_msh_cpu::nbody::barnes_hut(
                 &model,
-                slice!(vtx2co, f32).unwrap(),
-                slice!(vtx2rhs, f32).unwrap(),
-                slice!(wtx2co, f32).unwrap(),
-                slice_mut!(wtx2lhs, f32).unwrap(),
+                slice!(vtx2co, f32).unwrap().as_chunks::<3>().0,
+                slice!(vtx2rhs, f32).unwrap().as_chunks::<3>().0,
+                slice!(wtx2co, f32).unwrap().as_chunks::<3>().0,
+                slice_mut!(wtx2lhs, f32).unwrap().as_chunks_mut::<3>().0,
                 arrayref::array_ref![slice!(transform_world2unit, f32).unwrap(), 0, 16],
                 del_msh_cpu::nbody::Octree {
-                    onodes: slice!(onode2idx_tree, u32).unwrap(),
-                    onode2center: slice!(onode2center, f32).unwrap(),
+                    onodes: slice!(onode2idx_tree, u32).unwrap().as_chunks::<9>().0,
+                    onode2center: slice!(onode2center, f32).unwrap().as_chunks::<3>().0,
                     onode2depth: slice!(onode2depth, u32).unwrap(),
                 },
                 slice!(idx2jdx_offset, u32).unwrap(),
                 slice!(jdx2vtx, u32).unwrap(),
                 slice!(onode2gcunit, f32).unwrap().nest(),
-                slice!(onode2rhs, f32).unwrap(),
+                slice!(onode2rhs, f32).unwrap().as_chunks::<3>().0,
                 theta,
             );
         }

@@ -8,9 +8,8 @@ use num_traits::{AsPrimitive, PrimInt};
 /// * `num_vtx` - number of vertex
 /// * `vtx2idx` - map vertex to element index: cumulative sum
 /// * `idx2elem` - map vertex to element value: list of value
-pub fn from_uniform_mesh_with_vtx2elem<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh_with_vtx2elem<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     num_vtx: usize,
     vtx2idx: &[Index],
     idx2elem: &[Index],
@@ -21,7 +20,6 @@ where
     usize: AsPrimitive<Index>,
 {
     assert_eq!(vtx2idx.len(), num_vtx + 1);
-    assert_eq!(elem2vtx.len() % num_node, 0);
     let mut vtx2flg = vec![usize::MAX; num_vtx];
     let mut vtx2jdx = vec![Index::zero(); num_vtx + 1];
     for i_vtx in 0..num_vtx {
@@ -32,8 +30,8 @@ where
         let idx1: usize = vtx2idx[i_vtx + 1].as_();
         for j_elem in &idx2elem[idx0..idx1] {
             let j_elem: usize = j_elem.as_();
-            for j_node in 0..num_node {
-                let j_vtx: usize = elem2vtx[j_elem * num_node + j_node].as_();
+            for j_vtx in elem2vtx[j_elem].iter() {
+                let j_vtx: usize = j_vtx.as_();
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
                     vtx2jdx[i_vtx + 1] += Index::one();
@@ -56,8 +54,8 @@ where
         let idx1: usize = vtx2idx[i_vtx + 1].as_();
         for j_elem in &idx2elem[idx0..idx1] {
             let j_elem: usize = j_elem.as_();
-            for j_node in 0..num_node {
-                let j_vtx: usize = elem2vtx[j_elem * num_node + j_node].as_();
+            for j_vtx in elem2vtx[j_elem].iter() {
+                let j_vtx: usize = j_vtx.as_();
                 if vtx2flg[j_vtx] != i_vtx {
                     vtx2flg[j_vtx] = i_vtx;
                     let iv2v: usize = vtx2jdx[i_vtx].as_();
@@ -75,9 +73,8 @@ where
 }
 
 /// compute index of vertices adjacent to vertices for uniform mesh.
-pub fn from_uniform_mesh<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     num_vtx: usize,
     is_self: bool,
 ) -> (Vec<Index>, Vec<Index>)
@@ -85,26 +82,16 @@ where
     Index: num_traits::PrimInt + std::ops::AddAssign + num_traits::AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    // set pattern to sparse matrix
-    assert_eq!(elem2vtx.len() % num_node, 0);
-    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
-    assert_eq!(vtx2elem.0.len(), num_vtx + 1);
-    let vtx2vtx = from_uniform_mesh_with_vtx2elem(
-        elem2vtx,
-        num_node,
-        num_vtx,
-        &vtx2elem.0,
-        &vtx2elem.1,
-        is_self,
-    );
+    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_vtx);
+    let vtx2vtx =
+        from_uniform_mesh_with_vtx2elem(elem2vtx, num_vtx, &vtx2elem.0, &vtx2elem.1, is_self);
     assert_eq!(vtx2vtx.0.len(), num_vtx + 1);
     vtx2vtx
 }
 
-pub fn from_specific_edges_of_uniform_mesh<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
-    edge2node: &[usize],
+pub fn from_specific_edges_of_uniform_mesh<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
+    edge2node: &[[usize; 2]],
     vtx2idx: &[Index],
     idx2elem: &[Index],
     is_bidirectional: bool,
@@ -113,9 +100,6 @@ where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_edge = edge2node.len() / 2;
-    assert_eq!(edge2node.len(), num_edge * 2);
-
     let num_vtx = vtx2idx.len() - 1;
     let mut vtx2jdx = vec![Index::zero(); num_vtx + 1];
     vtx2jdx[0] = Index::zero();
@@ -128,11 +112,9 @@ where
         for &ielem0 in &idx2elem[idx0..idx1] {
             let i_vtx: Index = i_vtx.as_();
             let ielem0 = ielem0.as_();
-            for iedge in 0..num_edge {
-                let inode0 = edge2node[iedge * 2];
-                let inode1 = edge2node[iedge * 2 + 1];
-                let ivtx0 = elem2vtx[ielem0 * num_node + inode0];
-                let ivtx1 = elem2vtx[ielem0 * num_node + inode1];
+            for &[inode0, inode1] in edge2node {
+                let ivtx0 = elem2vtx[ielem0][inode0];
+                let ivtx1 = elem2vtx[ielem0][inode1];
                 if ivtx0 != i_vtx && ivtx1 != i_vtx {
                     continue;
                 }
@@ -324,8 +306,7 @@ pub fn multiply_graph_laplacian<IDX>(
 #[test]
 fn test_laplacian_smoothing() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup::<usize, f32>(1.0, 0.3, 32, 32);
-    let (vtx2idx, idx2vtx) =
-        crate::vtx2vtx::from_uniform_mesh(&tri2vtx.as_flattened(), 3, vtx2xyz.len(), false);
+    let (vtx2idx, idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, vtx2xyz.len(), false);
     let num_vdim = 3;
     let vtx2rhs = {
         use rand::RngExt;

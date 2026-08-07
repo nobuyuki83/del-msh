@@ -133,8 +133,7 @@ fn test_pix2tri() {
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(&transform_world2ndc).unwrap();
     let pix2tri_raycast = {
-        let bvhnodes =
-            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,
@@ -330,8 +329,7 @@ fn test_interpolate() {
             .iter()
             .map(|v| [v[0] as f32, v[1] as f32, v[2] as f32])
             .collect();
-        let bvhnodes =
-            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz0.as_flattened(), 3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz0);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,

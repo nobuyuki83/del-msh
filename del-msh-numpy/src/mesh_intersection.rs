@@ -30,16 +30,19 @@ fn intersection_trimesh3<'a>(
     let aabbs = aabbs.as_slice().unwrap();
     type TriPair = del_msh_cpu::trimesh3_intersection::IntersectingPair<f32>;
     let pairs = if bvhnodes.is_empty() {
-        del_msh_cpu::trimesh3_intersection::search_brute_force(tri2vtx, vtx2xyz)
+        del_msh_cpu::trimesh3_intersection::search_brute_force(
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz.as_chunks::<3>().0,
+        )
     } else {
         let mut pairs = Vec::<TriPair>::new();
         del_msh_cpu::trimesh3_intersection::search_with_bvh_inside_branch(
             &mut pairs,
-            tri2vtx,
-            vtx2xyz,
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz.as_chunks::<3>().0,
             i_bvhnode_root,
-            bvhnodes,
-            aabbs,
+            bvhnodes.as_chunks::<3>().0,
+            aabbs.as_chunks::<6>().0,
         );
         pairs
     };
@@ -84,19 +87,31 @@ fn ccd_intersection_time<'a>(
     let aabbs = aabbs.as_slice().unwrap();
     let (intersecting_pair, intersecting_time) = if bvhnodes.is_empty() {
         del_msh_cpu::trimesh3_intersection_time::search_brute_force(
-            edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1, 1.0e-8f32,
+            edge2vtx.as_chunks::<2>().0,
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz0.as_chunks::<3>().0,
+            vtx2xyz1.as_chunks::<3>().0,
+            1.0e-8f32,
         )
     } else {
         assert_eq!(bvhnodes.len() * 2, aabbs.len());
         assert_eq!(roots.len(), 3);
         del_msh_cpu::trimesh3_intersection_time::search_with_bvh(
-            edge2vtx, tri2vtx, vtx2xyz0, vtx2xyz1, bvhnodes, aabbs,
+            edge2vtx.as_chunks::<2>().0,
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz0.as_chunks::<3>().0,
+            vtx2xyz1.as_chunks::<3>().0,
+            bvhnodes.as_chunks::<3>().0,
+            aabbs.as_chunks::<6>().0,
         )
     };
     (
-        numpy::ndarray::Array2::from_shape_vec((intersecting_pair.len() / 3, 3), intersecting_pair)
-            .unwrap()
-            .to_pyarray(_py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (intersecting_pair.len(), 3),
+            intersecting_pair.into_flattened(),
+        )
+        .unwrap()
+        .to_pyarray(_py),
         numpy::ndarray::Array1::from_vec(intersecting_time).to_pyarray(_py),
     )
 }
@@ -115,14 +130,24 @@ fn contacting_pair<'a>(
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     let edge2vtx = edge2vtx.as_slice().unwrap();
-    let (contacting_pair, contacting_coord) =
-        del_msh_cpu::trimesh3_proximity::contacting_pair(tri2vtx, vtx2xyz, edge2vtx, threshold);
+    let (contacting_pair, contacting_coord) = del_msh_cpu::trimesh3_proximity::contacting_pair(
+        tri2vtx.as_chunks::<3>().0,
+        vtx2xyz.as_chunks::<3>().0,
+        edge2vtx.as_chunks::<2>().0,
+        threshold,
+    );
     (
-        numpy::ndarray::Array2::from_shape_vec((contacting_pair.len() / 3, 3), contacting_pair)
-            .unwrap()
-            .to_pyarray(_py),
-        numpy::ndarray::Array2::from_shape_vec((contacting_coord.len() / 4, 4), contacting_coord)
-            .unwrap()
-            .to_pyarray(_py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (contacting_pair.len(), 3),
+            contacting_pair.into_flattened(),
+        )
+        .unwrap()
+        .to_pyarray(_py),
+        numpy::ndarray::Array2::from_shape_vec(
+            (contacting_coord.len(), 4),
+            contacting_coord.into_flattened(),
+        )
+        .unwrap()
+        .to_pyarray(_py),
     )
 }

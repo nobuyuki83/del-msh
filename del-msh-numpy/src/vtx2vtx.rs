@@ -17,8 +17,11 @@ fn vtx2vtx_trimesh<'a>(
     is_self: bool,
 ) -> (Bound<'a, PyArray1<usize>>, Bound<'a, PyArray1<usize>>) {
     assert_eq!(tri2vtx.shape()[1], 3);
-    let (vtx2idx, idx2vtx) =
-        del_msh_cpu::vtx2vtx::from_uniform_mesh(tri2vtx.as_slice().unwrap(), 3, num_vtx, is_self);
+    let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+        num_vtx,
+        is_self,
+    );
     (
         numpy::ndarray::Array1::from_vec(vtx2idx).into_pyarray(py),
         numpy::ndarray::Array1::from_vec(idx2vtx).into_pyarray(py),

@@ -72,9 +72,9 @@ fn test_3d() {
         assert!(idx2morton[idx] <= idx2morton[jdx]);
     }
     crate::mortons::check_morton_code_range_split(&idx2morton);
-    let mut bvhnodes = vec![0usize; (num_vtx * 2 - 1) * 3];
-    update_bvhnodes(bvhnodes.as_chunks_mut::<3>().0, &idx2vtx, &idx2morton);
-    crate::bvhnodes::check_bvh_topology(bvhnodes.as_chunks::<3>().0, num_vtx);
+    let mut bvhnodes = vec![[0usize; 3]; num_vtx * 2 - 1];
+    update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
+    crate::bvhnodes::check_bvh_topology(&bvhnodes, num_vtx);
 }
 
 #[test]
@@ -127,43 +127,37 @@ where
 }
  */
 
-pub fn from_vtx2xyz<Index>(vtx2xyz: &[f32], num_dim: usize) -> Vec<[Index; 3]>
+pub fn from_vtx2xyz<Index, const NDIM: usize>(vtx2xyz: &[[f32; NDIM]]) -> Vec<[Index; 3]>
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_vtx = vtx2xyz.len() / num_dim;
+    let num_vtx = vtx2xyz.len();
     let mut idx2vtx = vec![Index::one(); num_vtx];
     let mut idx2morton = vec![0u32; num_vtx];
     let mut vtx2morton = vec![0u32; num_vtx];
-    crate::mortons::update_sorted_morton_code(
+    crate::mortons::update_sorted_morton_code::<_, NDIM>(
         &mut idx2vtx,
         &mut idx2morton,
         &mut vtx2morton,
         vtx2xyz,
-        num_dim,
     );
     let mut bvhnodes = vec![[Index::zero(); 3]; num_vtx * 2 - 1];
     update_bvhnodes(&mut bvhnodes, &idx2vtx, &idx2morton);
     bvhnodes
 }
 
-pub fn from_triangle_mesh<Index>(
+pub fn from_triangle_mesh<Index, const NDIM: usize>(
     tri2vtx: &[[Index; 3]],
-    vtx2xy: &[f32],
-    num_dim: usize,
+    vtx2xy: &[[f32; NDIM]],
 ) -> Vec<[Index; 3]>
 where
     Index: num_traits::PrimInt + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(
-        tri2vtx.as_flattened(),
-        3,
-        vtx2xy,
-        num_dim,
-    );
-    from_vtx2xyz(&tri2cntr, num_dim)
+    let tri2cntr =
+        crate::elem2center::from_uniform_mesh_as_points::<Index, f32, 3, NDIM>(tri2vtx, vtx2xy);
+    from_vtx2xyz::<_, NDIM>(&tri2cntr)
 }
 
 pub fn update_for_triangle_mesh<Index>(
@@ -177,21 +171,35 @@ pub fn update_for_triangle_mesh<Index>(
 {
     let num_tri = tri2vtx.len();
     assert_eq!(bvhnodes.len(), num_tri * 2 - 1);
-    let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32>(
-        tri2vtx.as_flattened(),
-        3,
-        vtx2xy,
-        num_dim,
-    );
     let mut idx2tri = vec![Index::one(); num_tri];
     let mut idx2morton = vec![0u32; num_tri];
     let mut tri2morton = vec![0u32; num_tri];
-    crate::mortons::update_sorted_morton_code(
-        &mut idx2tri,
-        &mut idx2morton,
-        &mut tri2morton,
-        &tri2cntr,
-        num_dim,
-    );
+    match num_dim {
+        2 => {
+            let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32, 3, 2>(
+                tri2vtx,
+                vtx2xy.as_chunks::<2>().0,
+            );
+            crate::mortons::update_sorted_morton_code::<_, 2>(
+                &mut idx2tri,
+                &mut idx2morton,
+                &mut tri2morton,
+                &tri2cntr,
+            );
+        }
+        3 => {
+            let tri2cntr = crate::elem2center::from_uniform_mesh_as_points::<Index, f32, 3, 3>(
+                tri2vtx,
+                vtx2xy.as_chunks::<3>().0,
+            );
+            crate::mortons::update_sorted_morton_code::<_, 3>(
+                &mut idx2tri,
+                &mut idx2morton,
+                &mut tri2morton,
+                &tri2cntr,
+            );
+        }
+        _ => panic!("unsupported num_dim: {num_dim}"),
+    };
     update_bvhnodes(bvhnodes, &idx2tri, &idx2morton);
 }

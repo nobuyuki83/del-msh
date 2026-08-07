@@ -77,7 +77,7 @@ where
         + std::fmt::Debug,
     usize: num_traits::AsPrimitive<INDEX>,
 {
-    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx.as_flattened(), 3, num_vtx);
+    let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, num_vtx);
     let num_edge = edge2vtx.len();
     let mut edge2tri = vec![INDEX::zero(); num_edge * 2];
     from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri, &mut edge2tri);

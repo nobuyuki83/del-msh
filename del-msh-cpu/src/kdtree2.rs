@@ -13,7 +13,7 @@ use num_traits::AsPrimitive;
 /// * `i_depth`
 #[allow(clippy::identity_op)]
 pub fn construct_kdtree<Real>(
-    tree: &mut Vec<usize>,
+    tree: &mut Vec<[usize; 3]>,
     idx_node: usize,
     points: &mut Vec<([Real; 2], usize)>,
     idx_point_begin: usize,
@@ -27,12 +27,12 @@ pub fn construct_kdtree<Real>(
         return;
     }
     if idx_node == 0 {
-        tree.resize(3, usize::MAX);
+        tree.resize(1, [usize::MAX; 3]);
     }
 
     if idx_point_end - idx_point_begin == 1 {
         // leaf node
-        tree[idx_node * 3 + 0] = points[idx_point_begin].1;
+        tree[idx_node][0] = points[idx_point_begin].1;
         return;
     }
 
@@ -46,13 +46,13 @@ pub fn construct_kdtree<Real>(
     }
 
     let idx_point_mid = (idx_point_end - idx_point_begin) / 2 + idx_point_begin; // median point
-    tree[idx_node * 3 + 0] = points[idx_point_mid].1;
+    tree[idx_node][0] = points[idx_point_mid].1;
 
     if idx_point_begin != idx_point_mid {
         // there is at least one point smaller than median
-        let idx_node_left = tree.len() / 3;
-        tree.resize(tree.len() + 3, usize::MAX);
-        tree[idx_node * 3 + 1] = idx_node_left;
+        let idx_node_left = tree.len();
+        tree.resize(tree.len() + 1, [usize::MAX; 3]);
+        tree[idx_node][1] = idx_node_left;
         construct_kdtree(
             tree,
             idx_node_left,
@@ -64,9 +64,9 @@ pub fn construct_kdtree<Real>(
     }
     if idx_point_mid + 1 != idx_point_end {
         // there is at least one point larger than median
-        let idx_node_right = tree.len() / 3;
-        tree.resize(tree.len() + 3, usize::MAX);
-        tree[idx_node * 3 + 2] = idx_node_right;
+        let idx_node_right = tree.len();
+        tree.resize(tree.len() + 1, [usize::MAX; 3]);
+        tree[idx_node][2] = idx_node_right;
         construct_kdtree(
             tree,
             idx_node_right,
@@ -82,7 +82,7 @@ pub fn construct_kdtree<Real>(
 pub fn find_edges<Real>(
     edge2xy: &mut Vec<Real>,
     vtx2xy: &[Real],
-    nodes: &[usize],
+    nodes: &[[usize; 3]],
     idx_node: usize,
     min: [Real; 2],
     max: [Real; 2],
@@ -93,7 +93,7 @@ pub fn find_edges<Real>(
     if idx_node >= nodes.len() {
         return;
     }
-    let ivtx = nodes[idx_node * 3 + 0];
+    let ivtx = nodes[idx_node][0];
     let pos = &vtx2xy[ivtx * 2..(ivtx + 1) * 2];
     #[allow(clippy::manual_is_multiple_of)]
     if i_depth % 2 == 0 {
@@ -105,7 +105,7 @@ pub fn find_edges<Real>(
             edge2xy,
             vtx2xy,
             nodes,
-            nodes[idx_node * 3 + 1],
+            nodes[idx_node][1],
             min,
             [pos[0], max[1]],
             i_depth + 1,
@@ -114,7 +114,7 @@ pub fn find_edges<Real>(
             edge2xy,
             vtx2xy,
             nodes,
-            nodes[idx_node * 3 + 2],
+            nodes[idx_node][2],
             [pos[0], min[1]],
             max,
             i_depth + 1,
@@ -128,7 +128,7 @@ pub fn find_edges<Real>(
             edge2xy,
             vtx2xy,
             nodes,
-            nodes[idx_node * 3 + 1],
+            nodes[idx_node][1],
             min,
             [max[0], pos[1]],
             i_depth + 1,
@@ -137,7 +137,7 @@ pub fn find_edges<Real>(
             edge2xy,
             vtx2xy,
             nodes,
-            nodes[idx_node * 3 + 2],
+            nodes[idx_node][2],
             [min[0], pos[1]],
             max,
             i_depth + 1,
@@ -146,8 +146,8 @@ pub fn find_edges<Real>(
 }
 
 pub struct TreeBranch<'a, Real> {
-    pub vtx2xy: &'a [Real],
-    pub nodes: &'a Vec<usize>,
+    pub vtx2xy: &'a [[Real; 2]],
+    pub nodes: &'a Vec<[usize; 3]>,
     pub idx_node: usize,
     pub min: [Real; 2],
     pub max: [Real; 2],
@@ -175,8 +175,8 @@ where
         return;
     }
 
-    let ivtx = branch.nodes[branch.idx_node * 3 + 0];
-    let pos = [branch.vtx2xy[ivtx * 2], branch.vtx2xy[ivtx * 2 + 1]];
+    let ivtx = branch.nodes[branch.idx_node][0];
+    let pos = branch.vtx2xy[ivtx];
     if pos.sub(&pos_in).norm() < cur_dist {
         *pos_near = (pos, ivtx); // update the nearest position
     }
@@ -191,7 +191,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                    idx_node: branch.nodes[branch.idx_node][1],
                     min: branch.min,
                     max: [pos[0], branch.max[1]],
                     i_depth: branch.i_depth + 1,
@@ -203,7 +203,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                    idx_node: branch.nodes[branch.idx_node][2],
                     min: [pos[0], branch.min[1]],
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
@@ -216,7 +216,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                    idx_node: branch.nodes[branch.idx_node][2],
                     min: [pos[0], branch.min[1]],
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
@@ -228,7 +228,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                    idx_node: branch.nodes[branch.idx_node][1],
                     min: branch.min,
                     max: [pos[0], branch.max[1]],
                     i_depth: branch.i_depth + 1,
@@ -244,7 +244,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                    idx_node: branch.nodes[branch.idx_node][1],
                     min: branch.min,
                     max: [branch.max[0], pos[1]],
                     i_depth: branch.i_depth + 1,
@@ -256,7 +256,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                    idx_node: branch.nodes[branch.idx_node][2],
                     min: [branch.min[0], pos[1]],
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
@@ -269,7 +269,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                    idx_node: branch.nodes[branch.idx_node][2],
                     min: [branch.min[0], pos[1]],
                     max: branch.max,
                     i_depth: branch.i_depth + 1,
@@ -281,7 +281,7 @@ where
                 TreeBranch {
                     vtx2xy: branch.vtx2xy,
                     nodes: branch.nodes,
-                    idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                    idx_node: branch.nodes[branch.idx_node][1],
                     min: branch.min,
                     max: [branch.max[0], pos[1]],
                     i_depth: branch.i_depth + 1,
@@ -313,8 +313,8 @@ pub fn inside_square<Real>(
         return;
     }
 
-    let ivtx = branch.nodes[branch.idx_node * 3 + 0];
-    let pos = [branch.vtx2xy[ivtx * 2 + 0], branch.vtx2xy[ivtx * 2 + 1]];
+    let ivtx = branch.nodes[branch.idx_node][0];
+    let pos = branch.vtx2xy[ivtx];
     if (pos[0] - pos_in[0]).abs() < rad && (pos[1] - pos_in[1]).abs() < rad {
         pos_near.push(ivtx); // update the nearest position
     }
@@ -328,7 +328,7 @@ pub fn inside_square<Real>(
             TreeBranch {
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
-                idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                idx_node: branch.nodes[branch.idx_node][2],
                 min: [pos[0], branch.min[1]],
                 max: branch.max,
                 i_depth: branch.i_depth + 1,
@@ -341,7 +341,7 @@ pub fn inside_square<Real>(
             TreeBranch {
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
-                idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                idx_node: branch.nodes[branch.idx_node][1],
                 min: branch.min,
                 max: [pos[0], branch.max[1]],
                 i_depth: branch.i_depth + 1,
@@ -356,7 +356,7 @@ pub fn inside_square<Real>(
             TreeBranch {
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
-                idx_node: branch.nodes[branch.idx_node * 3 + 1],
+                idx_node: branch.nodes[branch.idx_node][1],
                 min: branch.min,
                 max: [branch.max[0], pos[1]],
                 i_depth: branch.i_depth + 1,
@@ -369,7 +369,7 @@ pub fn inside_square<Real>(
             TreeBranch {
                 vtx2xy: branch.vtx2xy,
                 nodes: branch.nodes,
-                idx_node: branch.nodes[branch.idx_node * 3 + 2],
+                idx_node: branch.nodes[branch.idx_node][2],
                 min: [branch.min[0], pos[1]],
                 max: branch.max,
                 i_depth: branch.i_depth + 1,
@@ -383,7 +383,7 @@ mod tests {
     use crate::kdtree2::TreeBranch;
     use num_traits::AsPrimitive;
 
-    fn test_data<Real>(num_xy: usize) -> (Vec<Real>, Vec<usize>)
+    fn test_data<Real>(num_xy: usize) -> (Vec<[Real; 2]>, Vec<[usize; 3]>)
     where
         Real: num_traits::Float + 'static + Copy,
         f64: AsPrimitive<Real>,
@@ -393,24 +393,23 @@ mod tests {
             let mut rng: rand::rngs::StdRng = rand::SeedableRng::from_seed([13_u8; 32]);
             let rad: Real = 0.4_f64.as_();
             let half: Real = 0.4_f64.as_();
-            let mut ps = Vec::<Real>::with_capacity(num_xy * 2);
+            let mut ps = Vec::<[Real; 2]>::with_capacity(num_xy);
             for _i in 0..num_xy {
                 use rand::RngExt;
                 let x: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
                 let y: Real = (rng.random::<Real>() * 2_f64.as_() - Real::one()) * rad + half;
-                ps.push(x);
-                ps.push(y);
+                ps.push([x, y]);
             }
             ps
         };
         let tree = {
             let mut pairs_xy_idx = xys
-                .chunks(2)
+                .iter()
                 .enumerate()
-                .map(|(ivtx, xy)| ([xy[0], xy[1]], ivtx))
+                .map(|(ivtx, &xy)| (xy, ivtx))
                 .collect();
-            let mut tree = Vec::<usize>::new();
-            crate::kdtree2::construct_kdtree(&mut tree, 0, &mut pairs_xy_idx, 0, xys.len() / 2, 0);
+            let mut tree = Vec::<[usize; 3]>::new();
+            crate::kdtree2::construct_kdtree(&mut tree, 0, &mut pairs_xy_idx, 0, xys.len(), 0);
             tree
         };
         (xys, tree)
@@ -460,8 +459,7 @@ mod tests {
                 },
             );
             let dist_min = pos_near.0.sub(&p0).norm();
-            for xy in vtx2xy.chunks(2) {
-                let xy = arrayref::array_ref![xy, 0, 2];
+            for xy in vtx2xy.iter() {
                 assert!(xy.sub(&p0).norm() >= dist_min);
             }
         }
@@ -513,7 +511,7 @@ mod tests {
                 },
             );
             let idxs1: Vec<usize> = vtx2xy
-                .chunks(2)
+                .iter()
                 .enumerate()
                 .filter(|(_, xy)| (xy[0] - p0[0]).abs() < rad && (xy[1] - p0[1]).abs() < rad)
                 .map(|v| v.0)

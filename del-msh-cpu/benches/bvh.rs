@@ -9,7 +9,7 @@ fn bvh_morton(c: &mut Criterion) {
         (0..num_vtx * 2).map(|_| rng.random::<f32>()).collect()
     };
     c.bench_function("sorted_morton_code2", |b| {
-        b.iter(|| from_vtx2xyz::<usize>(&vtx2xy, 2))
+        b.iter(|| from_vtx2xyz::<usize, 2>(vtx2xy.as_chunks::<2>().0))
     });
 }
 

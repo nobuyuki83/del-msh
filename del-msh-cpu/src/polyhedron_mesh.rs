@@ -30,7 +30,7 @@ where
 pub fn elem2volume<IDX, Real>(
     elem2idx_offset: &[IDX],
     idx2vtx: &[IDX],
-    vtx2xyz: &[Real],
+    vtx2xyz: &[[Real; 3]],
     i_gauss_degree: usize,
     elem2volume: &mut [Real],
 ) where
@@ -43,7 +43,7 @@ pub fn elem2volume<IDX, Real>(
     assert_eq!(elem2volume.len(), num_elem);
     for i_elem in 0..elem2idx_offset.len() - 1 {
         let node2vtx = &idx2vtx[elem2idx_offset[i_elem].as_()..elem2idx_offset[i_elem + 1].as_()];
-        let p = |i: usize| arrayref::array_ref![vtx2xyz, node2vtx[i].as_() * 3, 3];
+        let p = |i: usize| &vtx2xyz[node2vtx[i].as_()];
         match node2vtx.len() {
             4 => {
                 elem2volume[i_elem] = del_geo_core::tet::volume(p(0), p(1), p(2), p(3));
@@ -398,19 +398,19 @@ pub fn subdivide(
 pub fn test_elem2volume() {
     let (elem2idx_offset, idx2vtx, vtx2xyz) = {
         let data = crate::io_cfd_mesh_txt::read::<_, u32>("../asset/cfd_mesh.txt").unwrap();
-        let num_elem = data.tet2vtx.len() / 4
-            + data.pyrmd2vtx.len() / 5
-            + data.prism2vtx.len() / 6
-            + data.hex2vtx.len() / 8;
-        let num_idx =
+        let num_elem =
             data.tet2vtx.len() + data.pyrmd2vtx.len() + data.prism2vtx.len() + data.hex2vtx.len();
+        let num_idx = data.tet2vtx.len() * 4
+            + data.pyrmd2vtx.len() * 5
+            + data.prism2vtx.len() * 6
+            + data.hex2vtx.len() * 8;
         let mut elem2idx_offset = vec![0u32; num_elem + 1];
         let mut idx2vtx = vec![0u32; num_idx];
         crate::mixed_mesh::to_polyhedron_mesh(
-            data.tet2vtx.as_chunks::<4>().0,
-            data.pyrmd2vtx.as_chunks::<5>().0,
-            data.prism2vtx.as_chunks::<6>().0,
-            data.hex2vtx.as_chunks::<8>().0,
+            &data.tet2vtx,
+            &data.pyrmd2vtx,
+            &data.prism2vtx,
+            &data.hex2vtx,
             &mut elem2idx_offset,
             &mut idx2vtx,
         );
@@ -437,9 +437,12 @@ pub fn test_elem2volume() {
             (elem2idx_offset.clone(), idx2vtx.clone(), vtx2xyz.clone());
         for _itr in 0..4 {
             let (elem2idx1_offset, idx2vtx1, vtx2xyz1) =
-                subdivide(&elem2idx0_offset, &idx2vtx0, vtx2xyz0.as_chunks::<3>().0);
-            (elem2idx0_offset, idx2vtx0, vtx2xyz0) =
-                (elem2idx1_offset.clone(), idx2vtx1.clone(), vtx2xyz1.clone());
+                subdivide(&elem2idx0_offset, &idx2vtx0, &vtx2xyz0);
+            (elem2idx0_offset, idx2vtx0, vtx2xyz0) = (
+                elem2idx1_offset,
+                idx2vtx1,
+                vtx2xyz1.as_chunks::<3>().0.to_vec(),
+            );
         }
         let mut elem2volume0 = vec![0f32; elem2idx0_offset.len() - 1];
         elem2volume(
@@ -453,8 +456,7 @@ pub fn test_elem2volume() {
         dbg!(volume_total1);
         {
             let mut file = std::fs::File::create("../target/subdiv.vtk").expect("file not found.");
-            crate::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz0.as_chunks::<3>().0)
-                .unwrap();
+            crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz0).unwrap();
             crate::io_vtk::write_vtk_cells_polyhedron(&mut file, &elem2idx0_offset, &idx2vtx0)
                 .unwrap();
         }
@@ -465,7 +467,7 @@ pub fn test_elem2volume() {
         for i_elem in 0..elem2idx_offset.len() - 1 {
             let node2vtx =
                 &idx2vtx[elem2idx_offset[i_elem] as usize..elem2idx_offset[i_elem + 1] as usize];
-            let _bc = parametric_coord(&query, node2vtx, &vtx2xyz);
+            let _bc = parametric_coord(&query, node2vtx, vtx2xyz.as_flattened());
         }
     }
 }

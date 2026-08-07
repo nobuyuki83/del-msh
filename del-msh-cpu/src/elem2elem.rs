@@ -39,9 +39,8 @@ pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 /// * `vtx2elem` - jagged array value of  element surrounding point
 ///
 ///  triangle: `face2jdx` = \[0,2,4,6]; `jdx2node` = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh_with_vtx2elem<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh_with_vtx2elem<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     vtx2idx: &[Index],
     idx2elem: &[Index],
     face2jdx: &[usize],
@@ -63,7 +62,7 @@ where
         n0
     };
 
-    let num_elem = elem2vtx.len() / num_node;
+    let num_elem = elem2vtx.len();
     let mut elem2elem = vec![Index::max_value(); num_elem * num_face_par_elem];
 
     let mut vtx2flag = vec![0; num_vtx]; // vertex index -> flag
@@ -72,8 +71,8 @@ where
         for i_face in 0..num_face_par_elem {
             for jdx0 in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
                 let i_node0 = jdx2node[jdx0 + face2jdx[i_face]];
-                assert!(i_node0 < num_node);
-                let i_vtx: usize = elem2vtx[i_elem * num_node + i_node0].as_();
+                assert!(i_node0 < NNODE);
+                let i_vtx: usize = elem2vtx[i_elem][i_node0].as_();
                 assert!(i_vtx < num_vtx);
                 jdx2vtx[jdx0] = i_vtx;
                 vtx2flag[i_vtx] = 1;
@@ -88,7 +87,7 @@ where
                 for j_face in 0..num_face_par_elem {
                     flag0 = true;
                     for &j_node0 in &jdx2node[face2jdx[j_face]..face2jdx[j_face + 1]] {
-                        let j_vtx0: usize = elem2vtx[j_elem0 * num_node + j_node0].as_();
+                        let j_vtx0: usize = elem2vtx[j_elem0][j_node0].as_();
                         if vtx2flag[j_vtx0] == 0 {
                             flag0 = false;
                             break;
@@ -120,9 +119,8 @@ where
 /// * `num_vtx` - number of vertices
 ///
 ///  triangle: face2idx = \[0,2,4,6]; idx2node = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     face2idx: &[usize],
     idx2node: &[usize],
     num_vtx: usize,
@@ -131,15 +129,8 @@ where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<Index>,
 {
-    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_node, num_vtx);
-    from_uniform_mesh_with_vtx2elem(
-        elem2vtx,
-        num_node,
-        &vtx2elem.0,
-        &vtx2elem.1,
-        face2idx,
-        idx2node,
-    )
+    let vtx2elem = crate::vtx2elem::from_uniform_mesh(elem2vtx, num_vtx);
+    from_uniform_mesh_with_vtx2elem(elem2vtx, &vtx2elem.0, &vtx2elem.1, face2idx, idx2node)
 }
 
 pub fn from_polygon_mesh_with_vtx2elem(
@@ -202,9 +193,8 @@ pub fn from_polygon_mesh(elem2idx: &[usize], idx2vtx: &[usize], num_vtx: usize) 
 ///   boundary faces have value `Index::max_value()`
 /// * `face2idx` - CSR offsets into `idx2node` for each face of an element
 /// * `idx2node` - local node indices on each face
-pub fn extract_boundary_mesh_for_uniform_mesh<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn extract_boundary_mesh_for_uniform_mesh<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     elem2elem: &[Index],
     face2idx: &[usize],
     idx2node: &[usize],
@@ -214,7 +204,7 @@ where
     usize: num_traits::AsPrimitive<Index>,
 {
     let num_face_per_elem = face2idx.len() - 1;
-    let num_elem = elem2vtx.len() / num_node;
+    let num_elem = elem2vtx.len();
     let mut bnd_face2vtx = Vec::<Index>::new();
     for i_elem in 0..num_elem {
         for i_face in 0..num_face_per_elem {
@@ -224,7 +214,7 @@ where
             #[allow(clippy::needless_range_loop)]
             for jdx in face2idx[i_face]..face2idx[i_face + 1] {
                 let i_node = idx2node[jdx];
-                bnd_face2vtx.push(elem2vtx[i_elem * num_node + i_node]);
+                bnd_face2vtx.push(elem2vtx[i_elem][i_node]);
             }
         }
     }

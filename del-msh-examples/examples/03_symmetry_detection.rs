@@ -83,8 +83,7 @@ pub fn sym_detector(
     num_sample: usize,
 ) -> Vec<DetectedSymmetry> {
     let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
-        tri2vtx,
-        3,
+        tri2vtx.as_chunks::<3>().0,
         &[0, 2, 4, 6],
         &[1, 2, 2, 0, 0, 1],
         vtx2xyz.len(),
@@ -93,7 +92,8 @@ pub fn sym_detector(
     use rand::RngExt;
     use rand::SeedableRng;
     let mut rng = rand_chacha::ChaChaRng::seed_from_u64(i_seed);
-    let tri2cumsumarea = del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx, vtx2xyz.as_flattened(), 3);
+    let tri2cumsumarea =
+        del_msh_cpu::trimesh::tri2cumsumarea(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_flattened(), 3);
     let mut samples = vec![
         Sample {
             xyz: [0f32; 3],
@@ -107,7 +107,11 @@ pub fn sym_detector(
         let r1 = rng.random::<f32>();
         let (i_tri, r0, r1) = del_msh_cpu::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
         let p0 = del_msh_cpu::trimesh::position_from_barycentric_coordinate::<_, 3>(
-            tri2vtx, vtx2xyz, i_tri, r0, r1,
+            tri2vtx.as_chunks::<3>().0,
+            vtx2xyz,
+            i_tri,
+            r0,
+            r1,
         );
         let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri)
             .unit_normal();

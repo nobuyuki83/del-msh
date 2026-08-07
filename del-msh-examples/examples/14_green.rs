@@ -1,18 +1,18 @@
-fn hoge(path: String, vtx2xyz: &[f32], vt2lhs0: &[f32]) {
-    let num_vtx = vtx2xyz.len() / 3;
-    assert_eq!(vt2lhs0.len(), num_vtx * 3);
+fn hoge(path: String, vtx2xyz: &[[f32; 3]], vt2lhs0: &[[f32; 3]]) {
+    let num_vtx = vtx2xyz.len();
+    assert_eq!(vt2lhs0.len(), num_vtx);
     // draw edges
     let edge2vtxe = (0..num_vtx)
         .flat_map(|i| [i * 2, i * 2 + 1])
         .collect::<Vec<usize>>();
-    let mut vtxe2xyz = vec![0f32; vtx2xyz.len() * 2];
+    let mut vtxe2xyz = vec![0f32; vtx2xyz.len() * 6];
     for i_vtx in 0..num_vtx {
-        vtxe2xyz[i_vtx * 6 + 0] = vtx2xyz[i_vtx * 3 + 0];
-        vtxe2xyz[i_vtx * 6 + 1] = vtx2xyz[i_vtx * 3 + 1];
-        vtxe2xyz[i_vtx * 6 + 2] = vtx2xyz[i_vtx * 3 + 2];
-        vtxe2xyz[i_vtx * 6 + 3] = vtx2xyz[i_vtx * 3 + 0] + vt2lhs0[i_vtx * 3 + 0];
-        vtxe2xyz[i_vtx * 6 + 4] = vtx2xyz[i_vtx * 3 + 1] + vt2lhs0[i_vtx * 3 + 1];
-        vtxe2xyz[i_vtx * 6 + 5] = vtx2xyz[i_vtx * 3 + 2] + vt2lhs0[i_vtx * 3 + 2];
+        vtxe2xyz[i_vtx * 6 + 0] = vtx2xyz[i_vtx][0];
+        vtxe2xyz[i_vtx * 6 + 1] = vtx2xyz[i_vtx][1];
+        vtxe2xyz[i_vtx * 6 + 2] = vtx2xyz[i_vtx][2];
+        vtxe2xyz[i_vtx * 6 + 3] = vtx2xyz[i_vtx][0] + vt2lhs0[i_vtx][0];
+        vtxe2xyz[i_vtx * 6 + 4] = vtx2xyz[i_vtx][1] + vt2lhs0[i_vtx][1];
+        vtxe2xyz[i_vtx * 6 + 5] = vtx2xyz[i_vtx][2] + vt2lhs0[i_vtx][2];
     }
     del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(
         path,
@@ -27,8 +27,8 @@ fn main() {
     let vtx2xyz = {
         use rand::{RngExt, SeedableRng};
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
-        let mut vtx2xyz: Vec<f32> = (0..1000)
-            .flat_map(|_i| {
+        let mut vtx2xyz: Vec<[f32; 3]> = (0..1000)
+            .map(|_i| {
                 [
                     3.0 * rng.random::<f32>() - 1.0,
                     5.0 * rng.random::<f32>() - 2.0,
@@ -44,24 +44,21 @@ fn main() {
         }
         vtx2xyz
     };
-    let num_vtx = vtx2xyz.len() / 3;
+    let num_vtx = vtx2xyz.len();
     let vtx2rhs = {
-        let mut grad0 = vec![0f32; vtx2xyz.len()];
-        /*
-        grad0[0] = 1.0;
-        grad0[1] = 0.0;
-        grad0[2] = 0.0;
-         */
+        let mut grad0 = vec![[0f32; 3]; vtx2xyz.len()];
         use rand::{RngExt, SeedableRng};
         let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0);
-        grad0
-            .iter_mut()
-            .for_each(|v| *v = rng.random::<f32>() * 2.0 - 1.0);
+        grad0.iter_mut().for_each(|v| {
+            v[0] = rng.random::<f32>() * 2.0 - 1.0;
+            v[1] = rng.random::<f32>() * 2.0 - 1.0;
+            v[2] = rng.random::<f32>() * 2.0 - 1.0;
+        });
         grad0
     };
     let spoisson = del_msh_cpu::nbody::NBodyModel::screened_poisson(10.0, 1.0e-3);
     let vtx2lhs0 = {
-        let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
+        let mut vtx2lhs = vec![[0f32; 3]; vtx2xyz.len()];
         del_msh_cpu::nbody::filter_brute_force(
             &spoisson,
             &vtx2xyz,
@@ -74,7 +71,7 @@ fn main() {
     let vtx2lhs1 = {
         let max_depth = 10;
         let transform_world2unit = {
-            let aabb3 = del_msh_cpu::vtx2xyz::aabb3(vtx2xyz.as_chunks::<3>().0, 0.);
+            let aabb3 = del_msh_cpu::vtx2xyz::aabb3(&vtx2xyz, 0.);
             let scale_unit2world = del_geo_core::aabb3::max_edge_size(&aabb3);
             let scale_world2unit = 1.0 / scale_unit2world;
             let center = del_geo_core::aabb3::center(&aabb3);
@@ -91,7 +88,7 @@ fn main() {
             &mut jdx2vtx,
             &mut jdx2morton,
             &mut vtx2morton,
-            vtx2xyz.as_chunks::<3>().0,
+            &vtx2xyz,
             &transform_world2unit,
         );
         let (idx2morton, idx2jdx_offset) = {
@@ -127,7 +124,7 @@ fn main() {
             );
             (onode2idx_tree, idx2onode, onode2center, onode2depth)
         };
-        let num_onode = onode2idx_tree.len() / 9;
+        let num_onode = onode2idx_tree.len();
         let mut onode2gcunit = vec![[0f32; 3]; num_onode];
         del_msh_cpu::quad_oct_tree::onode2gcuint_for_octree(
             &idx2jdx_offset,
@@ -135,13 +132,13 @@ fn main() {
             &idx2onode,
             &vtx2xyz,
             &transform_world2unit,
-            &onode2idx_tree,
+            onode2idx_tree.as_flattened(),
             &mut onode2gcunit,
         );
         {
             // assertion
             let mut gc_world = [0f32; 3];
-            vtx2xyz.chunks(3).for_each(|v| {
+            vtx2xyz.iter().for_each(|v| {
                 gc_world[0] += v[0];
                 gc_world[1] += v[1];
                 gc_world[2] += v[2];
@@ -156,18 +153,17 @@ fn main() {
             use del_geo_core::vec3::Vec3;
             assert!(gc_unit.sub(&onode2gcunit[0]).norm() < 1.0e-6);
         }
-        let mut onode2rhs = vec![0f32; num_onode * 3];
+        let mut onode2rhs = vec![[0f32; 3]; num_onode];
         del_msh_cpu::quad_oct_tree::aggregate_with_map(
             &idx2jdx_offset,
             3,
             &jdx2vtx,
             &vtx2rhs,
             &idx2onode,
-            9,
             &onode2idx_tree,
             &mut onode2rhs,
         );
-        let mut vtx2lhs = vec![0f32; vtx2xyz.len()];
+        let mut vtx2lhs = vec![[0f32; 3]; vtx2xyz.len()];
         del_msh_cpu::nbody::barnes_hut(
             &spoisson,
             &vtx2xyz,
@@ -192,10 +188,19 @@ fn main() {
         let diff = vtx2lhs0
             .iter()
             .zip(vtx2lhs1.iter())
-            .map(|(a, b)| (a - b).abs())
+            .map(|(a, b)| {
+                let d0 = (a[0] - b[0]).abs();
+                let d1 = (a[1] - b[1]).abs();
+                let d2 = (a[2] - b[2]).abs();
+                d0.max(d1).max(d2)
+            })
             .reduce(f32::max)
             .unwrap_or(0.0);
-        let scale = vtx2lhs0.iter().map(|a| a.abs()).sum::<f32>() / vtx2lhs0.len() as f32;
+        let scale = vtx2lhs0
+            .iter()
+            .map(|a| a[0].abs() + a[1].abs() + a[2].abs())
+            .sum::<f32>()
+            / vtx2lhs0.len() as f32;
         dbg!(diff, scale);
     }
     hoge("target/green1b.obj".to_string(), &vtx2xyz, &vtx2lhs0);

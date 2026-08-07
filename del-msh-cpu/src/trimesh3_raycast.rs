@@ -121,7 +121,7 @@ where
     // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2ndc).unwrap();
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz.as_flattened(), 3);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz);
     let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,

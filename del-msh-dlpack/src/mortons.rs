@@ -35,14 +35,19 @@ fn mortons_vtx2morton_from_vtx2co(
     chk1::<u32>(vtx2morton, num_vtx, device).unwrap();
     //
     match device {
-        dlpack::device_type_codes::CPU => {
-            del_msh_cpu::mortons::vtx2morton_from_vtx2co(
-                num_dim as usize,
-                slice!(vtx2co, f32).unwrap(),
+        dlpack::device_type_codes::CPU => match num_dim {
+            2 => del_msh_cpu::mortons::vtx2morton_from_vtx2co::<2>(
+                slice!(vtx2co, f32).unwrap().as_chunks::<2>().0,
                 slice!(transform_co2unit, f32).unwrap(),
                 slice_mut!(vtx2morton, u32).unwrap(),
-            );
-        }
+            ),
+            3 => del_msh_cpu::mortons::vtx2morton_from_vtx2co::<3>(
+                slice!(vtx2co, f32).unwrap().as_chunks::<3>().0,
+                slice!(transform_co2unit, f32).unwrap(),
+                slice_mut!(vtx2morton, u32).unwrap(),
+            ),
+            _ => panic!("unsupported num_dim: {num_dim}"),
+        },
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};

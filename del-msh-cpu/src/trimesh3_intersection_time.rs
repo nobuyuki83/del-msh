@@ -2,31 +2,28 @@ use num_traits::AsPrimitive;
 
 #[allow(clippy::identity_op)]
 pub fn edge_edge_between_bvh_branches<T>(
-    edge2vtx: &[usize],
-    vtx2xyz0: &[T],
-    vtx2xyz1: &[T],
+    edge2vtx: &[[usize; 2]],
+    vtx2xyz0: &[[T; 3]],
+    vtx2xyz1: &[[T; 3]],
     ibvh0: usize,
     ibvh1: usize,
-    bvhnodes: &[usize],
-    aabbs: &[T],
+    bvhnodes: &[[usize; 3]],
+    aabbs: &[[T; 6]],
 ) where
     T: Copy + num_traits::Float + 'static + std::fmt::Debug + std::fmt::Display,
     i64: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
-    assert!(ibvh0 < aabbs.len() / 6);
-    assert!(ibvh1 < aabbs.len() / 6);
+    assert!(ibvh0 < aabbs.len());
+    assert!(ibvh1 < aabbs.len());
     // trim branch
-    if !del_geo_core::aabb3::is_intersect(
-        arrayref::array_ref![aabbs, ibvh0 * 6, 6],
-        arrayref::array_ref![aabbs, ibvh1 * 6, 6],
-    ) {
+    if !del_geo_core::aabb3::is_intersect(&aabbs[ibvh0], &aabbs[ibvh1]) {
         return;
     }
-    let ichild0_left = bvhnodes[ibvh0 * 3 + 1];
-    let ichild0_right = bvhnodes[ibvh0 * 3 + 2];
-    let ichild1_left = bvhnodes[ibvh1 * 3 + 1];
-    let ichild1_right = bvhnodes[ibvh1 * 3 + 2];
+    let ichild0_left = bvhnodes[ibvh0][1];
+    let ichild0_right = bvhnodes[ibvh0][2];
+    let ichild1_left = bvhnodes[ibvh1][1];
+    let ichild1_right = bvhnodes[ibvh1][2];
     let is_leaf0 = ichild0_right == usize::MAX;
     let is_leaf1 = ichild1_right == usize::MAX;
     if !is_leaf0 && !is_leaf1 {
@@ -108,25 +105,24 @@ pub fn edge_edge_between_bvh_branches<T>(
         // check the primitive ccd
         let i_edge = ichild0_left;
         let j_edge = ichild1_left;
-        let i0 = edge2vtx[i_edge * 2 + 0];
-        let i1 = edge2vtx[i_edge * 2 + 1];
-        let j0 = edge2vtx[j_edge * 2 + 0];
-        let j1 = edge2vtx[j_edge * 2 + 1];
+        let i0 = edge2vtx[i_edge][0];
+        let i1 = edge2vtx[i_edge][1];
+        let j0 = edge2vtx[j_edge][0];
+        let j1 = edge2vtx[j_edge][1];
         if i0 == j0 || i0 == j1 {
             return;
         };
         if i1 == j0 || i1 == j1 {
             return;
         };
-        use crate::vtx2xyz::to_vec3;
-        let a0s = to_vec3(vtx2xyz0, i0);
-        let a1s = to_vec3(vtx2xyz0, i1);
-        let b0s = to_vec3(vtx2xyz0, j0);
-        let b1s = to_vec3(vtx2xyz0, j1);
-        let a0e = to_vec3(vtx2xyz1, i0);
-        let a1e = to_vec3(vtx2xyz1, i1);
-        let b0e = to_vec3(vtx2xyz1, j0);
-        let b1e = to_vec3(vtx2xyz1, j1);
+        let a0s = &vtx2xyz0[i0];
+        let a1s = &vtx2xyz0[i1];
+        let b0s = &vtx2xyz0[j0];
+        let b1s = &vtx2xyz0[j1];
+        let a0e = &vtx2xyz1[i0];
+        let a1e = &vtx2xyz1[i1];
+        let b0e = &vtx2xyz1[j0];
+        let b1e = &vtx2xyz1[j1];
         let t = del_geo_core::ccd3::intersecting_time_ee(
             del_geo_core::ccd3::EdgeEdge {
                 a0: a0s,
@@ -149,19 +145,19 @@ pub fn edge_edge_between_bvh_branches<T>(
 }
 
 pub fn edge_edge_inside_branch<T>(
-    edge2vtx: &[usize],
-    vtx2xyz0: &[T],
-    vtx2xyz1: &[T],
+    edge2vtx: &[[usize; 2]],
+    vtx2xyz0: &[[T; 3]],
+    vtx2xyz1: &[[T; 3]],
     ibvh: usize,
-    bvhnodes: &[usize],
-    aabbs: &[T],
+    bvhnodes: &[[usize; 3]],
+    aabbs: &[[T; 6]],
 ) where
     T: Copy + num_traits::Float + 'static + std::fmt::Display + std::fmt::Debug,
     i64: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
-    let ichild_left = bvhnodes[ibvh * 3 + 1];
-    let ichild_right = bvhnodes[ibvh * 3 + 2];
+    let ichild_left = bvhnodes[ibvh][1];
+    let ichild_right = bvhnodes[ibvh][2];
     if ichild_right == usize::MAX {
         return;
     } // ibvh is a leaf node
@@ -179,13 +175,13 @@ pub fn edge_edge_inside_branch<T>(
 }
 
 pub fn search_with_bvh<T>(
-    edge2vtx: &[usize],
-    tri2vtx: &[usize],
-    vtx2xyz0: &[T],
-    vtx2xyz1: &[T],
-    _bvhnodes: &[usize],
-    _aabbs: &[T],
-) -> (Vec<usize>, Vec<T>)
+    edge2vtx: &[[usize; 2]],
+    tri2vtx: &[[usize; 3]],
+    vtx2xyz0: &[[T; 3]],
+    vtx2xyz1: &[[T; 3]],
+    _bvhnodes: &[[usize; 3]],
+    _aabbs: &[[T; 6]],
+) -> (Vec<[usize; 3]>, Vec<T>)
 where
     T: num_traits::Float + 'static + std::fmt::Debug + std::fmt::Display,
     i64: AsPrimitive<T>,
@@ -205,43 +201,42 @@ where
 
 #[allow(clippy::identity_op)]
 pub fn search_brute_force<T>(
-    edge2vtx: &[usize],
-    tri2vtx: &[usize],
-    vtx2xyz0: &[T],
-    vtx2xyz1: &[T],
+    edge2vtx: &[[usize; 2]],
+    tri2vtx: &[[usize; 3]],
+    vtx2xyz0: &[[T; 3]],
+    vtx2xyz1: &[[T; 3]],
     epsilon: T,
-) -> (Vec<usize>, Vec<T>)
+) -> (Vec<[usize; 3]>, Vec<T>)
 where
     T: num_traits::Float + 'static + std::fmt::Display + std::fmt::Debug,
     i64: AsPrimitive<T>,
     f64: AsPrimitive<T>,
 {
-    let mut intersection_pair = vec![0usize; 0];
+    let mut intersection_pair = vec![[0usize; 3]; 0];
     let mut intersection_times: Vec<T> = vec![];
     assert_eq!(vtx2xyz0.len(), vtx2xyz1.len());
     intersection_pair.clear();
     intersection_times.clear();
     // edge_edge_inside_branch(edge2vtx, vtx2xyz0, vtx2xyz1, roots[1], bvhnodes, aabbs);
     //
-    let num_edge = edge2vtx.len() / 2;
+    let num_edge = edge2vtx.len();
     for i_edge in 0..num_edge {
         for j_edge in i_edge + 1..num_edge {
-            let i0 = edge2vtx[i_edge * 2 + 0];
-            let i1 = edge2vtx[i_edge * 2 + 1];
-            let j0 = edge2vtx[j_edge * 2 + 0];
-            let j1 = edge2vtx[j_edge * 2 + 1];
+            let i0 = edge2vtx[i_edge][0];
+            let i1 = edge2vtx[i_edge][1];
+            let j0 = edge2vtx[j_edge][0];
+            let j1 = edge2vtx[j_edge][1];
             if i0 == j0 || i0 == j1 || i1 == j0 || i1 == j1 {
                 continue;
             };
-            use crate::vtx2xyz::to_vec3;
-            let a0s = to_vec3(vtx2xyz0, i0);
-            let a1s = to_vec3(vtx2xyz0, i1);
-            let b0s = to_vec3(vtx2xyz0, j0);
-            let b1s = to_vec3(vtx2xyz0, j1);
-            let a0e = to_vec3(vtx2xyz1, i0);
-            let a1e = to_vec3(vtx2xyz1, i1);
-            let b0e = to_vec3(vtx2xyz1, j0);
-            let b1e = to_vec3(vtx2xyz1, j1);
+            let a0s = &vtx2xyz0[i0];
+            let a1s = &vtx2xyz0[i1];
+            let b0s = &vtx2xyz0[j0];
+            let b1s = &vtx2xyz0[j1];
+            let a0e = &vtx2xyz1[i0];
+            let a1e = &vtx2xyz1[i1];
+            let b0e = &vtx2xyz1[j0];
+            let b1e = &vtx2xyz1[j1];
             let t = del_geo_core::ccd3::intersecting_time_ee(
                 del_geo_core::ccd3::EdgeEdge {
                     a0: a0s,
@@ -259,31 +254,29 @@ where
             );
             if let Some(t) = t {
                 // println!("ee {} {} {}", t, i_edge, j_edge);
-                intersection_pair.extend([i_edge, j_edge, 0]);
+                intersection_pair.push([i_edge, j_edge, 0]);
                 intersection_times.push(t);
             }
         }
     }
     //
-    let num_tri = tri2vtx.len() / 3;
-    let num_vtx = vtx2xyz0.len() / 3;
-    for i_tri in 0..num_tri {
+    let num_vtx = vtx2xyz0.len();
+    for (i_tri, node2vtx) in tri2vtx.iter().enumerate() {
         for j_vtx in 0..num_vtx {
-            let i0 = tri2vtx[i_tri * 3 + 0];
-            let i1 = tri2vtx[i_tri * 3 + 1];
-            let i2 = tri2vtx[i_tri * 3 + 2];
+            let i0 = node2vtx[0];
+            let i1 = node2vtx[1];
+            let i2 = node2vtx[2];
             if i0 == j_vtx || i1 == j_vtx || i2 == j_vtx {
                 continue;
             };
-            use crate::vtx2xyz::to_vec3;
-            let f0s = to_vec3(vtx2xyz0, i0);
-            let f1s = to_vec3(vtx2xyz0, i1);
-            let f2s = to_vec3(vtx2xyz0, i2);
-            let v0s = to_vec3(vtx2xyz0, j_vtx);
-            let f0e = to_vec3(vtx2xyz1, i0);
-            let f1e = to_vec3(vtx2xyz1, i1);
-            let f2e = to_vec3(vtx2xyz1, i2);
-            let v0e = to_vec3(vtx2xyz1, j_vtx);
+            let f0s = &vtx2xyz0[i0];
+            let f1s = &vtx2xyz0[i1];
+            let f2s = &vtx2xyz0[i2];
+            let v0s = &vtx2xyz0[j_vtx];
+            let f0e = &vtx2xyz1[i0];
+            let f1e = &vtx2xyz1[i1];
+            let f2e = &vtx2xyz1[i2];
+            let v0e = &vtx2xyz1[j_vtx];
             let t = del_geo_core::ccd3::intersecting_time_fv(
                 del_geo_core::ccd3::FaceVertex {
                     f0: f0s,
@@ -301,7 +294,7 @@ where
             );
             if let Some(t) = t {
                 // println!("fv {} {} {}", t, i_tri, j_vtx);
-                intersection_pair.extend([i_tri, j_vtx, 1]);
+                intersection_pair.push([i_tri, j_vtx, 1]);
                 intersection_times.push(t);
             }
         }

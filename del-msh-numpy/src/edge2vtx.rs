@@ -63,10 +63,10 @@ fn boundaryedge2vtx_triangle_mesh<'a>(
     let (bedge2vtx, tri2tri) =
         del_msh_cpu::trimesh_topology::boundaryedge2vtx(tri2vtx.as_chunks::<3>().0, num_vtx);
     (
-        numpy::ndarray::Array2::from_shape_vec((bedge2vtx.len() / 2, 2), bedge2vtx)
+        numpy::ndarray::Array2::from_shape_vec((bedge2vtx.len(), 2), bedge2vtx.into_flattened())
             .unwrap()
             .into_pyarray(py),
-        numpy::ndarray::Array2::from_shape_vec((tri2tri.len() / 3, 3), tri2tri)
+        numpy::ndarray::Array2::from_shape_vec((tri2tri.len(), 3), tri2tri.into_flattened())
             .unwrap()
             .into_pyarray(py),
     )

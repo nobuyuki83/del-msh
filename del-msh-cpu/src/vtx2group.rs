@@ -30,8 +30,7 @@ pub fn from_vtx2vtx(vtx2idx: &[usize], idx2vtx: &[usize], num_cluster: usize) ->
 #[test]
 fn test_vtx2dist_for_vtx2vtx() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 64, 64);
-    let (vtx2idx, idx2vtx) =
-        crate::vtx2vtx::from_uniform_mesh(&tri2vtx.as_flattened(), 3, vtx2xyz.len(), false);
+    let (vtx2idx, idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, vtx2xyz.len(), false);
     let num_group = 30;
     let vtx2group = from_vtx2vtx(&vtx2idx, &idx2vtx, num_group);
     use rand::RngExt;

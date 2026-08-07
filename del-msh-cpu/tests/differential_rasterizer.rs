@@ -141,11 +141,7 @@ mod tests {
             &edge2tri,
         );
         let pix2tri = {
-            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx,
-                &vtx2xyz.as_flattened(),
-                3,
-            );
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0,
                 &bvhnodes,
@@ -335,11 +331,7 @@ mod tests {
             &transform_world2ndc,
         );
         let pix2tri = {
-            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(
-                &tri2vtx,
-                &vtx2xyz.as_flattened(),
-                3,
-            );
+            let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
             let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
                 0,
                 &bvhnodes,

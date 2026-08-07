@@ -60,8 +60,7 @@ pub fn from_uniform_mesh_with_elem2elem(
 
 pub fn from_triangle_mesh(tri2vtx: &[usize], num_vtx: usize) -> (usize, Vec<usize>) {
     let tri2tri = crate::elem2elem::from_uniform_mesh(
-        tri2vtx,
-        3,
+        tri2vtx.as_chunks::<3>().0,
         &del_geo_core::tri::FACE2IDX,
         &del_geo_core::tri::IDX2NODE,
         num_vtx,

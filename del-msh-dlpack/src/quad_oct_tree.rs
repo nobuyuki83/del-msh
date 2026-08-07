@@ -56,11 +56,11 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 slice!(idx2morton, u32).unwrap(),
                 num_dim,
                 max_depth,
-                bnodes,
+                bnodes.as_chunks_mut::<3>().0,
                 bnode2depth,
             );
             del_msh_cpu::quad_oct_tree::bnode2onode_and_idx2bnode(
-                bnodes,
+                bnodes.as_chunks::<3>().0,
                 bnode2depth,
                 slice_mut!(bnode2onode, u32).unwrap(),
                 slice_mut!(idx2bnode, u32).unwrap(),
@@ -171,21 +171,35 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree(
-                slice!(bnodes, u32).unwrap(),
-                slice!(bnode2onode, u32).unwrap(),
-                slice!(bnode2depth, u32).unwrap(),
-                slice!(idx2bnode, u32).unwrap(),
-                slice!(idx2morton, u32).unwrap(),
-                num_onode as usize,
-                max_depth,
-                num_dim,
-                slice_mut!(onodes, u32).unwrap(),
-                slice_mut!(onode2depth, u32).unwrap(),
-                slice_mut!(onode2center, f32).unwrap(),
-                slice_mut!(idx2onode, u32).unwrap(),
-                slice_mut!(idx2center, f32).unwrap(),
-            );
+            macro_rules! call_cpu {
+                ($ndim:expr, $nlink:expr) => {
+                    del_msh_cpu::quad_oct_tree::make_tree_from_binary_radix_tree::<$ndim, $nlink>(
+                        slice!(bnodes, u32).unwrap().as_chunks::<3>().0,
+                        slice!(bnode2onode, u32).unwrap(),
+                        slice!(bnode2depth, u32).unwrap(),
+                        slice!(idx2bnode, u32).unwrap(),
+                        slice!(idx2morton, u32).unwrap(),
+                        num_onode as usize,
+                        max_depth,
+                        slice_mut!(onodes, u32).unwrap().as_chunks_mut::<$nlink>().0,
+                        slice_mut!(onode2depth, u32).unwrap(),
+                        slice_mut!(onode2center, f32)
+                            .unwrap()
+                            .as_chunks_mut::<$ndim>()
+                            .0,
+                        slice_mut!(idx2onode, u32).unwrap(),
+                        slice_mut!(idx2center, f32)
+                            .unwrap()
+                            .as_chunks_mut::<$ndim>()
+                            .0,
+                    )
+                };
+            }
+            match num_dim {
+                2 => call_cpu!(2, 5),
+                3 => call_cpu!(3, 9),
+                _ => panic!("unsupported num_dim: {}", num_dim),
+            }
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {

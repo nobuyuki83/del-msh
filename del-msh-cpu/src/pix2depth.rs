@@ -236,8 +236,7 @@ fn test_depthmap() {
         .unwrap();
         let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
         dbg!(aabb3);
-        let bvhnodes =
-            crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz.as_flattened(), 3);
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
             0,
             &bvhnodes,

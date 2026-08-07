@@ -5,30 +5,30 @@ use num_traits::AsPrimitive;
 /// * Returns
 ///   - (tri2uni, uni2vtxa, uni2vtxb)
 pub fn unify_two_indices_of_triangle_mesh<Index>(
-    tri2vtxa: &[Index],
-    tri2vtxb: &[Index],
-) -> (Vec<Index>, Vec<Index>, Vec<Index>)
+    tri2vtxa: &[[Index; 3]],
+    tri2vtxb: &[[Index; 3]],
+) -> (Vec<[Index; 3]>, Vec<Index>, Vec<Index>)
 where
     Index: num_traits::PrimInt + std::ops::AddAssign + 'static + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    let num_vtxa = *tri2vtxa.iter().max().unwrap() + Index::one();
-    let num_vtxb = *tri2vtxb.iter().max().unwrap() + Index::one();
+    let num_vtxa = *tri2vtxa.as_flattened().iter().max().unwrap() + Index::one();
+    let num_vtxb = *tri2vtxb.as_flattened().iter().max().unwrap() + Index::one();
     assert_eq!(tri2vtxa.len(), tri2vtxb.len());
-    let vtxa2tri = crate::vtx2elem::from_uniform_mesh(tri2vtxa, 3, num_vtxa.as_());
-    let vtxb2tri = crate::vtx2elem::from_uniform_mesh(tri2vtxb, 3, num_vtxb.as_());
-    let num_tri = tri2vtxa.len() / 3;
-    let mut tri2uni = vec![Index::max_value(); num_tri * 3];
+    let vtxa2tri = crate::vtx2elem::from_uniform_mesh(tri2vtxa, num_vtxa.as_());
+    let vtxb2tri = crate::vtx2elem::from_uniform_mesh(tri2vtxb, num_vtxb.as_());
+    let num_tri = tri2vtxa.len();
+    let mut tri2uni = vec![[Index::max_value(); 3]; num_tri];
     let mut uni2vtxa = Vec::<Index>::new();
     let mut uni2vtxb = Vec::<Index>::new();
 
     for i_tri in 0..num_tri {
         for i_node in 0..3 {
-            if tri2uni[i_tri * 3 + i_node] != Index::max_value() {
+            if tri2uni[i_tri][i_node] != Index::max_value() {
                 continue;
             }
-            let i_vtxa = tri2vtxa[i_tri * 3 + i_node];
-            let i_vtxb = tri2vtxb[i_tri * 3 + i_node];
+            let i_vtxa = tri2vtxa[i_tri][i_node];
+            let i_vtxb = tri2vtxb[i_tri][i_node];
             let s0 =
                 &vtxa2tri.1[vtxa2tri.0[i_vtxa.as_()].as_()..vtxa2tri.0[i_vtxa.as_() + 1].as_()];
             let s1 =
@@ -46,10 +46,8 @@ where
             for j_tri in intersection.into_iter().cloned() {
                 let j_tri: usize = j_tri.as_();
                 for j_node in 0..3 {
-                    if tri2vtxa[j_tri * 3 + j_node] == i_vtxa
-                        && tri2vtxb[j_tri * 3 + j_node] == i_vtxb
-                    {
-                        tri2uni[j_tri * 3 + j_node] = i_uni.as_();
+                    if tri2vtxa[j_tri][j_node] == i_vtxa && tri2vtxb[j_tri][j_node] == i_vtxb {
+                        tri2uni[j_tri][j_node] = i_uni.as_();
                     }
                 }
             }

@@ -43,8 +43,7 @@ mod tests {
         );
 
         let tri2vtx = del_msh_cpu::elem2elem::extract_boundary_mesh_for_uniform_mesh(
-            &tet2vtx,
-            4,
+            tet2vtx.as_chunks::<4>().0,
             &tet2tet,
             &del_geo_core::tet::FACE2IDX,
             &del_geo_core::tet::IDX2NODE,
@@ -104,7 +103,7 @@ mod tests {
                 del_msh_cpu::polyhedron_mesh::elem2volume(
                     &elem2idx_offset,
                     &idx2vtx,
-                    &vtx2xyz,
+                    vtx2xyz.as_chunks::<3>().0,
                     0,
                     &mut elem2volume,
                 );

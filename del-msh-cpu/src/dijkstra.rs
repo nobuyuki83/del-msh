@@ -131,8 +131,7 @@ pub fn vtx2dist_for_vtx2vtx(
 #[test]
 fn test_vtx2dist_for_vtx2vtx() {
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 32, 32);
-    let (vtx2idx, idx2vtx) =
-        crate::vtx2vtx::from_uniform_mesh(&tri2vtx.as_flattened(), 3, vtx2xyz.len(), false);
+    let (vtx2idx, idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, vtx2xyz.len(), false);
     let (vtx2dist, _) = vtx2dist_for_vtx2vtx(0, &vtx2idx, &idx2vtx, None);
     let &dist_max = vtx2dist.iter().max().unwrap();
     let vtx2rgb: Vec<[f32; 3]> = vtx2dist

@@ -17,13 +17,12 @@ pub fn unidex_vertex_attribute_for_triangle_mesh<'a>(
     tri2vtx: PyReadonlyArray2<'a, usize>,
     vtx2xyz: PyReadonlyArray2<'a, f32>,
 ) -> Bound<'a, PyArray3<f32>> {
-    let num_val = vtx2xyz.shape()[1];
     let tri2xyz = del_msh_cpu::unindex::unidex_vertex_attribute_for_triangle_mesh(
-        tri2vtx.as_slice().unwrap(),
-        vtx2xyz.as_slice().unwrap(),
-        num_val,
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
+        vtx2xyz.as_slice().unwrap().as_chunks::<3>().0,
     );
-    numpy::ndarray::Array3::from_shape_vec((tri2xyz.len() / (3 * num_val), 3, num_val), tri2xyz)
+    let num_tri = tri2vtx.shape()[0];
+    numpy::ndarray::Array3::from_shape_vec((num_tri, 3, 3), tri2xyz.into_flattened())
         .unwrap()
         .into_pyarray(py)
 }

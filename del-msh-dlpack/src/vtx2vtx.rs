@@ -281,12 +281,19 @@ fn vtx2vtx_from_uniform_mesh(
     //
     match device {
         dlpack::device_type_codes::CPU => {
-            let (vtx2idx, idx2vtx) = del_msh_cpu::vtx2vtx::from_uniform_mesh(
-                slice!(elem2vtx, u32).unwrap(),
-                num_node as usize,
-                num_vtx,
-                is_self,
-            );
+            let s = slice!(elem2vtx, u32).unwrap();
+            let (vtx2idx, idx2vtx) = match num_node as usize {
+                2 => {
+                    del_msh_cpu::vtx2vtx::from_uniform_mesh(s.as_chunks::<2>().0, num_vtx, is_self)
+                }
+                3 => {
+                    del_msh_cpu::vtx2vtx::from_uniform_mesh(s.as_chunks::<3>().0, num_vtx, is_self)
+                }
+                4 => {
+                    del_msh_cpu::vtx2vtx::from_uniform_mesh(s.as_chunks::<4>().0, num_vtx, is_self)
+                }
+                _ => panic!("unsupported num_node: {num_node}"),
+            };
             Ok((
                 capsule(py, vec![vtx2idx.len() as i64], vtx2idx),
                 capsule(py, vec![idx2vtx.len() as i64], idx2vtx),
