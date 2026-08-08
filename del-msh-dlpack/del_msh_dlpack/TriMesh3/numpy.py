@@ -21,17 +21,15 @@ def tri2normal(tri2vtx: np.ndarray, vtx2xyz: np.ndarray):
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
     #
-    util_numpy.assert_shape_dtype(tri2vtx, (num_tri,3), np.uint32)
-    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx,3), np.float32)
+    util_numpy.assert_shape_dtype(tri2vtx, (num_tri, 3), np.uint32)
+    util_numpy.assert_shape_dtype(vtx2xyz, (num_vtx, 3), np.float32)
     #
     tri2nrm = np.zeros(shape=(num_tri, 3), dtype=np.float32)
     #
     from .. import TriMesh3
 
     TriMesh3.tri2normal(
-        tri2vtx.__dlpack__(),
-        vtx2xyz.__dlpack__(),
-        tri2nrm.__dlpack__()
+        tri2vtx.__dlpack__(), vtx2xyz.__dlpack__(), tri2nrm.__dlpack__()
     )
     return tri2nrm
 
