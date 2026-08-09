@@ -3,6 +3,8 @@
 // use del_geo_core::vec3;
 use num_traits::AsPrimitive;
 
+pub type TriMesh3<Index, Real> = (Vec<[Index; 3]>, Vec<[Real; 3]>);
+
 pub fn vtx2normal<Real>(tri2vtx: &[[usize; 3]], vtx2xyz: &[[Real; 3]]) -> Vec<[Real; 3]>
 where
     Real: num_traits::Float,

@@ -14,7 +14,7 @@ where
     let num_vtx = vtx2xyz.len();
 
     // Compute center of geometry weighted by edge lengths
-    let cog: [T; N] = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz.as_flattened());
+    let cog: [T; N] = crate::polyloop::cog_as_edges::<T, N>(vtx2xyz);
     let mut cov = [[T::zero(); N]; N];
 
     // Integrate covariance contributions from each edge

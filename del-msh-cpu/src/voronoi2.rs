@@ -2,46 +2,46 @@
 
 #[derive(Clone)]
 pub struct Cell {
-    pub vtx2xy: Vec<f32>,
+    pub vtx2xy: Vec<[f32; 2]>,
     pub vtx2info: Vec<[usize; 4]>,
 }
 
 impl Cell {
     fn is_inside(&self, p: &[f32; 2]) -> bool {
-        let wn = crate::polyloop2::winding_number(self.vtx2xy.as_chunks::<2>().0, p);
+        let wn = crate::polyloop2::winding_number(&self.vtx2xy, p);
         (wn - 1.0).abs() < 0.1
     }
 
     fn area(&self) -> f32 {
-        crate::polyloop2::area(self.vtx2xy.as_chunks::<2>().0)
+        crate::polyloop2::area(&self.vtx2xy)
     }
 
-    fn new_from_polyloop2(vtx2xy_in: &[f32]) -> Self {
-        let vtx2info = (0..vtx2xy_in.len() / 2)
+    fn new_from_polyloop2(vtx2xy_in: &[[f32; 2]]) -> Self {
+        let vtx2info = (0..vtx2xy_in.len())
             .map(|v| [v, usize::MAX, usize::MAX, usize::MAX])
             .collect();
         Cell {
-            vtx2xy: vtx2xy_in.to_owned(),
+            vtx2xy: vtx2xy_in.to_vec(),
             vtx2info,
         }
     }
 
     fn new_empty() -> Self {
-        let vtx2xy: Vec<f32> = vec![];
+        let vtx2xy: Vec<[f32; 2]> = vec![];
         let vtx2info: Vec<[usize; 4]> = vec![];
         Cell { vtx2xy, vtx2info }
     }
 }
 
 fn hoge(
-    vtx2xy: &[f32],
+    vtx2xy: &[[f32; 2]],
     vtx2info: &[[usize; 4]],
     vtxnews: &[(f32, usize, [f32; 2], [usize; 4])],
     vtx2vtxnew: &[usize],
     vtxnew2isvisisted: &mut [bool],
 ) -> Option<Cell> {
-    let num_vtx = vtx2xy.len() / 2;
-    let mut vtx2xy_new: Vec<f32> = vec![];
+    let num_vtx = vtx2xy.len();
+    let mut vtx2xy_new: Vec<[f32; 2]> = vec![];
     let mut vtx2info_new: Vec<[usize; 4]> = vec![];
     let (i_vtx0, is_new0) = {
         let i_vtxnew_start = vtxnew2isvisisted
@@ -54,8 +54,7 @@ fn hoge(
     loop {
         // dbg!(i_vtx, is_new, is_entry, i_vtx0, is_new0);
         if is_new {
-            vtx2xy_new.push(vtxnews[i_vtx].2[0]);
-            vtx2xy_new.push(vtxnews[i_vtx].2[1]);
+            vtx2xy_new.push(vtxnews[i_vtx].2);
             vtx2info_new.push(vtxnews[i_vtx].3);
             vtxnew2isvisisted[i_vtx] = true;
             if is_entry {
@@ -70,8 +69,7 @@ fn hoge(
                 is_entry = true;
             }
         } else {
-            vtx2xy_new.push(vtx2xy[i_vtx * 2]);
-            vtx2xy_new.push(vtx2xy[i_vtx * 2 + 1]);
+            vtx2xy_new.push(vtx2xy[i_vtx]);
             vtx2info_new.push(vtx2info[i_vtx]);
             if vtx2vtxnew[i_vtx] == usize::MAX {
                 i_vtx = (i_vtx + 1) % num_vtx;
@@ -103,15 +101,15 @@ pub fn cut_polygon_by_line(
     use del_geo_core::vec2::Vec2;
     // negative->inside
     let depth = |p: &[f32; 2]| p.sub(line_s).dot(line_n);
-    let num_vtx = cell.vtx2xy.len() / 2;
+    let num_vtx = cell.vtx2xy.len();
     let (vtxnews, is_inside) = {
         let line_t = del_geo_core::vec2::rotate90(line_n);
         let mut is_inside = false;
         let mut vtxnews: Vec<(f32, usize, [f32; 2], [usize; 4])> = vec![];
         for i0_vtx in 0..num_vtx {
             let i1_vtx = (i0_vtx + 1) % num_vtx;
-            let p0 = crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, i0_vtx);
-            let p1 = crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, i1_vtx);
+            let p0 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i0_vtx);
+            let p1 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i1_vtx);
             let d0 = depth(p0);
             if d0 < 0. {
                 is_inside = true;
@@ -189,7 +187,7 @@ where
         if !site2isalive(i_site) {
             continue;
         }
-        let mut cell_stack = vec![Cell::new_from_polyloop2(vtxl2xy.as_flattened())];
+        let mut cell_stack = vec![Cell::new_from_polyloop2(vtxl2xy)];
         for (j_site, pos_j) in site2xy.iter().enumerate() {
             if !site2isalive(j_site) {
                 continue;
@@ -265,7 +263,7 @@ pub fn indexing(site2cell: &[Cell]) -> VoronoiMesh {
             let info0 = sort_info(info);
             let i_vtxv = info2vtxv.get(&info0).unwrap();
             idx2vtxc.push(*i_vtxv);
-            vtxv2xy[*i_vtxv] = *crate::vtx2xy::to_vec2(cell.vtx2xy.as_chunks::<2>().0, ind);
+            vtxv2xy[*i_vtxv] = *crate::vtx2xy::to_vec2(&cell.vtx2xy, ind);
         }
         site2idx.push(idx2vtxc.len());
     }
@@ -331,34 +329,33 @@ fn test_voronoi_concave() {
         let mut flat = vtxl2xy.as_flattened().to_vec();
         flat.extend(site2xy.as_flattened());
         let edge2vtx_l = crate::edge2vtx::from_polyloop(num_vtxl);
+        let flat3: Vec<[f32; 3]> = flat
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[x, y]| [x, y, 0.])
+            .collect();
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_input.obj",
             &edge2vtx_l,
-            &flat,
-            2,
+            &flat3,
         );
     }
     let site2cell = voronoi_cells(&vtxl2xy, &site2xy, |_isite| true);
     {
         // write each cell
-        let mut edge2vtxo = vec![0usize; 0];
-        let mut vtxo2xy = vec![0f32; 0];
+        let mut edge2vtxo: Vec<[usize; 2]> = vec![];
+        let mut vtxo2xy: Vec<[f32; 2]> = vec![];
         for i_site in 0..num_site {
             let vtxc2xy = &site2cell[i_site].vtx2xy;
-            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(
-                &mut edge2vtxo,
-                &mut vtxo2xy,
-                edge2vtxc.as_flattened(),
-                vtxc2xy,
-                2,
-            );
+            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len());
+            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy);
         }
+        let vtxo2xyz: Vec<[f32; 3]> = vtxo2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_concave_cells.obj",
-            edge2vtxo.as_chunks::<2>().0,
-            &vtxo2xy,
-            2,
+            &edge2vtxo,
+            &vtxo2xyz,
         )
         .unwrap();
     }
@@ -374,11 +371,16 @@ fn test_voronoi_convex() {
     {
         let mut flat = vtxl2xy.as_flattened().to_vec();
         flat.extend(site2xy.as_flattened());
+        let flat3: Vec<[f32; 3]> = flat
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[x, y]| [x, y, 0.])
+            .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_input.obj",
             &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
-            &flat,
-            2,
+            &flat3,
         )
         .unwrap();
     }
@@ -386,24 +388,18 @@ fn test_voronoi_convex() {
     assert_eq!(site2cell.len(), num_site);
     {
         // write each cell
-        let mut edge2vtxo = vec![0usize; 0];
-        let mut vtxo2xy = vec![0f32; 0];
+        let mut edge2vtxo: Vec<[usize; 2]> = vec![];
+        let mut vtxo2xy: Vec<[f32; 2]> = vec![];
         for i_site in 0..num_site {
             let vtxc2xy = &site2cell[i_site].vtx2xy;
-            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len() / 2);
-            crate::uniform_mesh::merge(
-                &mut edge2vtxo,
-                &mut vtxo2xy,
-                edge2vtxc.as_flattened(),
-                vtxc2xy,
-                2,
-            );
+            let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len());
+            crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy);
         }
+        let vtxo2xyz: Vec<[f32; 3]> = vtxo2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_cells.obj",
-            edge2vtxo.as_chunks::<2>().0,
-            &vtxo2xy,
-            2,
+            &edge2vtxo,
+            &vtxo2xyz,
         );
     }
     // check if the info and the coordinates of vtxc is OK
@@ -412,7 +408,7 @@ fn test_voronoi_convex() {
         let vtxc2info = &site2cell[i_site].vtx2info;
         for (i_vtxc, info) in vtxc2info.iter().enumerate() {
             let cc0 = position_of_voronoi_vertex(info, &vtxl2xy, &site2xy);
-            let cc1 = crate::vtx2xy::to_vec2(vtxc2xy.as_chunks::<2>().0, i_vtxc);
+            let cc1 = crate::vtx2xy::to_vec2(vtxc2xy, i_vtxc);
             assert!(cc0.sub(cc1).norm() < 1.0e-5);
         }
     }
@@ -431,11 +427,16 @@ fn test_voronoi_convex() {
         );
         use slice_of_array::SliceFlatExt;
         let vtxc2xy = voronoi_mesh.vtxv2xy.flat();
+        let vtxc2xyz: Vec<[f32; 3]> = vtxc2xy
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[x, y]| [x, y, 0.])
+            .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/voronoi_convex_indexed.obj",
             &edge2vtxc,
-            vtxc2xy,
-            2,
+            &vtxc2xyz,
         )
         .unwrap();
     }
@@ -493,11 +494,16 @@ fn test_voronoi_sites_on_edge() {
         }
         vedge2pnt
     };
+    let pnt2xyz: Vec<[f32; 3]> = pnt2xy
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&[x, y]| [x, y, 0.])
+        .collect();
     crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
         "../target/voronoi_sites_on_edge.obj",
         vedge2pnt.as_chunks::<2>().0,
-        &pnt2xy,
-        2,
+        &pnt2xyz,
     )
     .unwrap();
 }

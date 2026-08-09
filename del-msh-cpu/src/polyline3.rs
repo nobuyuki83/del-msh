@@ -493,8 +493,7 @@ fn test_reduce() -> anyhow::Result<()> {
     let vtx2xyz_reduced = reduce(vtx2xyz.as_chunks::<3>().0, 0.01);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
         "../target/reduce_polyline.obj",
-        vtx2xyz_reduced.as_flattened(),
-        3,
+        &vtx2xyz_reduced,
     )?;
     Ok(())
 }
@@ -547,8 +546,7 @@ fn test_generate_trimesh() {
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_helix.obj",
         &tri2vtx,
-        &vtx2xyz.as_flattened(),
-        3,
+        &vtx2xyz,
     )
     .unwrap();
     //
@@ -565,8 +563,7 @@ fn test_generate_trimesh() {
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "../target/polyline3_bezier.obj",
         &tri2vtx,
-        &vtx2xyz.as_flattened(),
-        3,
+        &vtx2xyz,
     )
     .unwrap();
 }

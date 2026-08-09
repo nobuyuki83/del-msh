@@ -355,11 +355,11 @@ fn test_circle() {
     //
     {
         let ndiv1 = 330;
-        let vtx2xy1 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_flattened(), ndiv1);
-        assert_eq!(vtx2xy1.len(), ndiv1 * 2);
-        let arclen1 = crate::polyloop::arclength::<f32, 2>(vtx2xy1.as_chunks::<2>().0);
+        let vtx2xy1 = crate::polyloop::resample::<f32, 2>(&vtx2xy0, ndiv1);
+        assert_eq!(vtx2xy1.len(), ndiv1);
+        let arclen1 = crate::polyloop::arclength::<f32, 2>(&vtx2xy1);
         assert!((arclen0 - arclen1).abs() < 1.0e-3);
-        let edge2length1 = crate::polyloop::edge2length::<f32, 2>(vtx2xy1.as_slice());
+        let edge2length1 = crate::polyloop::edge2length::<f32, 2>(&vtx2xy1);
         let min_edge_len1 = edge2length1
             .iter()
             .min_by(|a, b| a.partial_cmp(b).unwrap())
@@ -368,11 +368,11 @@ fn test_circle() {
     }
     {
         let ndiv2 = 156;
-        let vtx2xy2 = crate::polyloop::resample::<f32, 2>(vtx2xy0.as_flattened(), ndiv2);
-        assert_eq!(vtx2xy2.len(), ndiv2 * 2);
-        let arclen2 = crate::polyloop::arclength::<f32, 2>(vtx2xy2.as_chunks::<2>().0);
+        let vtx2xy2 = crate::polyloop::resample::<f32, 2>(&vtx2xy0, ndiv2);
+        assert_eq!(vtx2xy2.len(), ndiv2);
+        let arclen2 = crate::polyloop::arclength::<f32, 2>(&vtx2xy2);
         assert!((arclen0 - arclen2).abs() < 1.0e-3);
-        let edge2length2 = crate::polyloop::edge2length::<f32, 2>(vtx2xy2.as_slice());
+        let edge2length2 = crate::polyloop::edge2length::<f32, 2>(&vtx2xy2);
         let min_edge_len2 = edge2length2
             .iter()
             .min_by(|a, b| a.partial_cmp(b).unwrap())
@@ -451,11 +451,16 @@ fn test_poisson_disk_sampling() {
         // write boundary and
         let mut flat = vtxl2xy.as_flattened().to_vec();
         flat.extend(vtx2xy.as_flattened());
+        let flat3: Vec<[f32; 3]> = flat
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|&[x, y]| [x, y, 0.])
+            .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/poisson_disk.obj",
             &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
-            &flat,
-            2,
+            &flat3,
         )
         .unwrap();
     }

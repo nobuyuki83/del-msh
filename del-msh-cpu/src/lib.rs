@@ -94,5 +94,6 @@ pub mod mortons;
 
 // spatial volumetric
 pub mod adaptive_distance_field3;
+pub mod io_ply;
 pub mod nbody;
 pub mod quad_oct_tree;

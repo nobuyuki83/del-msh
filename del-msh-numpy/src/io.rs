@@ -1,4 +1,3 @@
-use numpy::PyUntypedArrayMethods;
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
 use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, Bound, Py, PyAny, PyResult, Python};
 
@@ -146,13 +145,11 @@ pub fn save_wavefront_obj_for_uniform_mesh<'a>(
     tri2vtx: PyReadonlyArray2<'a, usize>,
     vtx2xyz: PyReadonlyArray2<'a, f32>,
 ) {
-    let num_dim = vtx2xyz.shape()[1];
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
     let _ = del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path_file,
         tri2vtx.as_chunks::<3>().0,
-        vtx2xyz,
-        num_dim,
+        vtx2xyz.as_chunks::<3>().0,
     );
 }

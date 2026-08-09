@@ -17,8 +17,7 @@ fn hoge(path: String, vtx2xyz: &[[f32; 3]], vt2lhs0: &[[f32; 3]]) {
     del_msh_cpu::io_wavefront_obj::save_edge2vtx_vtx2xyz(
         path,
         edge2vtxe.as_chunks::<2>().0,
-        &vtxe2xyz,
-        3,
+        vtxe2xyz.as_chunks::<3>().0,
     )
     .unwrap();
 }

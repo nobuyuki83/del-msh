@@ -17,53 +17,31 @@ fn make_toy_problem(fpath_start: &str, fpath_goal: &str) {
         let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.1, 0.1);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[1.0, 0.1, 0.1]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
-        let mut vtx2xyz0 = vtx2xyz.as_flattened().to_vec();
+        let mut vtx2xyz0 = vtx2xyz.to_vec();
         let vtx2xyz1: Vec<[f64; 3]> = del_msh_cpu::vtx2xyz::transform_homogeneous(
             &vtx2xyz,
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );
-        let mut tri2vtx0 = tri2vtx.as_flattened().to_vec();
-        let tri2vtx1 = tri2vtx.as_flattened().to_vec();
-        del_msh_cpu::uniform_mesh::merge(
-            &mut tri2vtx0,
-            &mut vtx2xyz0,
-            &tri2vtx1,
-            &vtx2xyz1.as_flattened(),
-            3,
-        );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            fpath_start,
-            tri2vtx0.as_chunks::<3>().0,
-            &vtx2xyz0,
-            3,
-        )
-        .unwrap()
+        let mut tri2vtx0 = tri2vtx.to_vec();
+        let tri2vtx1 = tri2vtx.to_vec();
+        del_msh_cpu::uniform_mesh::merge(&mut tri2vtx0, &mut vtx2xyz0, &tri2vtx1, &vtx2xyz1);
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_start, &tri2vtx0, &vtx2xyz0)
+            .unwrap()
     }
     {
         let rot_x_90 = del_geo_core::mat4_col_major::from_bryant_angles::<f64>(1.5, 0.0, 0.0);
         let transl_x = del_geo_core::mat4_col_major::from_translate::<f64>(&[0.5, 0.0, 0.0]);
         let transf = del_geo_core::mat4_col_major::mult_mat_col_major(&rot_x_90, &transl_x);
-        let mut vtx2xyz0 = vtx2xyz.as_flattened().to_vec();
+        let mut vtx2xyz0 = vtx2xyz.to_vec();
         let vtx2xyz1: Vec<[f64; 3]> = del_msh_cpu::vtx2xyz::transform_homogeneous(
             &vtx2xyz,
             arrayref::array_ref![transf.as_slice(), 0, 16],
         );
-        let mut tri2vtx0 = tri2vtx.as_flattened().to_vec();
-        let tri2vtx1 = tri2vtx.as_flattened().to_vec();
-        del_msh_cpu::uniform_mesh::merge(
-            &mut tri2vtx0,
-            &mut vtx2xyz0,
-            &tri2vtx1,
-            &vtx2xyz1.as_flattened(),
-            3,
-        );
-        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            fpath_goal,
-            tri2vtx0.as_chunks::<3>().0,
-            &vtx2xyz0,
-            3,
-        )
-        .unwrap()
+        let mut tri2vtx0 = tri2vtx.to_vec();
+        let tri2vtx1 = tri2vtx.to_vec();
+        del_msh_cpu::uniform_mesh::merge(&mut tri2vtx0, &mut vtx2xyz0, &tri2vtx1, &vtx2xyz1);
+        del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(fpath_goal, &tri2vtx0, &vtx2xyz0)
+            .unwrap()
     }
 }
 
@@ -106,8 +84,7 @@ fn main() -> anyhow::Result<()> {
     del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "target/del_msh_0__out.obj",
         &tri2vtx,
-        &vtx2xyz_out,
-        3,
+        &vtx2xyz_out.as_chunks::<3>().0,
     )?;
     Ok(())
 }

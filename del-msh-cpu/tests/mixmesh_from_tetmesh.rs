@@ -35,8 +35,7 @@ mod tests {
         }
 
         let mut tet2tet = del_msh_cpu::uniform_mesh::elem2elem(
-            &tet2vtx,
-            4,
+            tet2vtx.as_chunks::<4>().0,
             &del_geo_core::tet::FACE2IDX,
             &del_geo_core::tet::IDX2NODE,
             vtx2xyz.len(),
@@ -51,8 +50,7 @@ mod tests {
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             "../target/tetmesh_boundary.obj",
             tri2vtx.as_chunks::<3>().0,
-            &vtx2xyz,
-            3,
+            vtx2xyz.as_chunks::<3>().0,
         )
         .unwrap();
         //
@@ -144,8 +142,7 @@ mod tests {
             "../target/tetmesh_to_polyhedron_surf.obj",
             &oelem2ldx_offset,
             &ldx2vtx,
-            &vtx2xyz,
-            3,
+            vtx2xyz.as_chunks::<3>().0,
         )
         .unwrap();
 

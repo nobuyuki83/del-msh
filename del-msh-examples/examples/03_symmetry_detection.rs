@@ -246,7 +246,7 @@ fn main() -> anyhow::Result<()> {
             ]
             .flat()
             .to_vec();
-            let triq2vtxq = [[0usize, 1, 2], [0, 2, 3]].flat().to_vec();
+            let triq2vtxq = vec![[0usize, 1, 2], [0, 2, 3]];
             (triq2vtxq, vtxq2xyz)
         };
         let tris2vtx = del_msh_cpu::extract::from_uniform_mesh_from_list_of_elements(
@@ -256,19 +256,22 @@ fn main() -> anyhow::Result<()> {
         );
         let mut trio2vtxo = vec![];
         let mut vtxo2xyz = vec![];
-        del_msh_cpu::uniform_mesh::merge(&mut trio2vtxo, &mut vtxo2xyz, &triq2vtxq, &vtxq2xyz, 3);
         del_msh_cpu::uniform_mesh::merge(
             &mut trio2vtxo,
             &mut vtxo2xyz,
-            &tris2vtx,
-            &vtx2xyz.as_flattened(),
-            3,
+            &triq2vtxq,
+            vtxq2xyz.as_chunks::<3>().0,
+        ); // vtxq2xyz is flat
+        del_msh_cpu::uniform_mesh::merge(
+            &mut trio2vtxo,
+            &mut vtxo2xyz,
+            tris2vtx.as_chunks::<3>().0,
+            &vtx2xyz,
         );
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("target/sym_{i_sym}.obj"),
-            trio2vtxo.as_chunks::<3>().0,
+            &trio2vtxo,
             &vtxo2xyz,
-            3,
         )?;
     }
     Ok(())

@@ -280,54 +280,26 @@ pub fn save_tri_mesh_texture(
 
 fn write_vtx2xyz<Real>(
     file: &mut std::io::BufWriter<File>,
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Real: std::fmt::Display,
 {
-    match num_dim {
-        3_usize => {
-            for i_vtx in 0..vtx2xyz.len() / 3 {
-                writeln!(
-                    file,
-                    "v {} {} {}",
-                    vtx2xyz[i_vtx * 3],
-                    vtx2xyz[i_vtx * 3 + 1],
-                    vtx2xyz[i_vtx * 3 + 2]
-                )?;
-            }
-        }
-        2_usize => {
-            for i_vtx in 0..vtx2xyz.len() / 2 {
-                writeln!(
-                    file,
-                    "v {} {} {}",
-                    vtx2xyz[i_vtx * 2],
-                    vtx2xyz[i_vtx * 2 + 1],
-                    0.
-                )?;
-            }
-        }
-        _ => {
-            panic!("dimension should be either 2 or 3");
-        }
+    for v in vtx2xyz {
+        writeln!(file, "v {} {} {}", v[0], v[1], v[2])?;
     }
     Ok(())
 }
 
-fn write_vtx2nrm<Real>(file: &mut std::io::BufWriter<File>, vtx2nrm: &[Real]) -> anyhow::Result<()>
+fn write_vtx2nrm<Real>(
+    file: &mut std::io::BufWriter<File>,
+    vtx2nrm: &[[Real; 3]],
+) -> anyhow::Result<()>
 where
     Real: std::fmt::Display,
 {
-    for i_vtx in 0..vtx2nrm.len() / 3 {
-        writeln!(
-            file,
-            "vn {} {} {}",
-            vtx2nrm[i_vtx * 3],
-            vtx2nrm[i_vtx * 3 + 1],
-            vtx2nrm[i_vtx * 3 + 2]
-        )?;
+    for v in vtx2nrm {
+        writeln!(file, "vn {} {} {}", v[0], v[1], v[2])?;
     }
     Ok(())
 }
@@ -350,36 +322,10 @@ where
     Ok(())
 }
 
-fn write_vtx2vecn<Real, const N: usize>(
-    file: &mut std::io::BufWriter<File>,
-    vtx2vecn: &[[Real; N]],
-) -> anyhow::Result<()>
-where
-    Real: num_traits::Float + std::fmt::Display,
-{
-    match N {
-        3_usize => {
-            for vtx in vtx2vecn {
-                writeln!(file, "v {} {} {}", vtx[0], vtx[1], vtx[2])?;
-            }
-        }
-        2_usize => {
-            for vtx in vtx2vecn {
-                writeln!(file, "v {} {} {}", vtx[0], vtx[1], 0.)?;
-            }
-        }
-        _ => {
-            panic!();
-        }
-    }
-    Ok(())
-}
-
 pub fn save_tri2vtx_vtx2xyz<Path, Index, Real>(
     filepath: Path,
     tri2vtx: &[[Index; 3]],
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -389,7 +335,7 @@ where
     let file = File::create(&filepath)
         .context(format!("file not found. {}", filepath.as_ref().display()))?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
     for node2vtx in tri2vtx.iter() {
         writeln!(
             file,
@@ -441,8 +387,8 @@ where
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz.as_flattened(), 3)?;
-    write_vtx2nrm(&mut file, vtx2nrm.as_flattened())?;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
+    write_vtx2nrm(&mut file, vtx2nrm)?;
     for node2vtx in tri2vtx.iter() {
         let i0 = node2vtx[0] + Index::one();
         let i1 = node2vtx[1] + Index::one();
@@ -452,34 +398,9 @@ where
     Ok(())
 }
 
-pub fn save_tri2vtx_vtx2vecn<Path, Real, const N: usize>(
-    filepath: Path,
-    tri2vtx: &[[usize; 3]],
-    vtx2vecn: &[[Real; N]],
-) -> anyhow::Result<()>
-where
-    Path: AsRef<std::path::Path>,
-    Real: num_traits::Float + std::fmt::Display,
-{
-    let file = File::create(filepath).context("file not found.")?;
-    let mut file = std::io::BufWriter::new(file);
-    write_vtx2vecn(&mut file, vtx2vecn)?;
-    for node2vtx in tri2vtx.iter() {
-        writeln!(
-            file,
-            "f {} {} {}",
-            node2vtx[0] + 1,
-            node2vtx[1] + 1,
-            node2vtx[2] + 1
-        )?;
-    }
-    Ok(())
-}
-
 pub fn save_vtx2xyz_as_polyloop<Path, Real>(
     filepath: Path,
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -487,28 +408,8 @@ where
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    let num_vtx = vtx2xyz.len() / num_dim;
-    for i_vtx in 0..num_vtx {
-        let i0 = i_vtx;
-        let i1 = (i_vtx + 1) % num_vtx;
-        writeln!(file, "l {} {}", i0 + 1, i1 + 1)?;
-    }
-    Ok(())
-}
-
-pub fn save_vtx2vecn_as_polyloop<Path, Real, const N: usize>(
-    filepath: Path,
-    vtx2vecn: &[[Real; N]],
-) -> anyhow::Result<()>
-where
-    Path: AsRef<std::path::Path>,
-    Real: num_traits::Float + std::fmt::Display,
-{
-    let file = File::create(filepath).context("file not found.")?;
-    let mut file = std::io::BufWriter::new(file);
-    write_vtx2vecn(&mut file, vtx2vecn)?;
-    let num_vtx = vtx2vecn.len();
+    write_vtx2xyz(&mut file, vtx2xyz)?;
+    let num_vtx = vtx2xyz.len();
     for i_vtx in 0..num_vtx {
         let i0 = i_vtx;
         let i1 = (i_vtx + 1) % num_vtx;
@@ -521,8 +422,7 @@ where
 
 pub fn save_vtx2xyz_as_polyline<Path, Real>(
     filepath: Path,
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -530,8 +430,8 @@ where
 {
     let file = File::create(filepath).context("file not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    let num_vtx = vtx2xyz.len() / num_dim;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
+    let num_vtx = vtx2xyz.len();
     for i_vtx in 0..num_vtx - 1 {
         let i0 = i_vtx;
         let i1 = i_vtx + 1;
@@ -545,8 +445,7 @@ where
 pub fn save_edge2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     edge2vtx: &[[usize; 2]],
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -554,7 +453,7 @@ where
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
     for node2vtx in edge2vtx.iter() {
         writeln!(file, "l {} {}", node2vtx[0] + 1, node2vtx[1] + 1)?;
     }
@@ -564,8 +463,7 @@ where
 pub fn save_polyline2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     polyline2vtx: &[usize],
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -573,8 +471,7 @@ where
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    // let num_vtx = vtx2xyz.len() / num_dim;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
     for i_poly in 0..polyline2vtx.len() - 1 {
         let num_vtx_in_polyline = polyline2vtx[i_poly + 1] - polyline2vtx[i_poly];
         for i_vtx in 0..num_vtx_in_polyline - 1 {
@@ -589,8 +486,7 @@ where
 pub fn save_quad2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     quad2vtx: &[[usize; 4]],
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -598,7 +494,7 @@ where
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
     for node2vtx in quad2vtx.iter() {
         writeln!(
             file,
@@ -616,8 +512,7 @@ pub fn save_elem2idx_idx2vtx_vtx2xyz<Path, Real>(
     filepath: Path,
     elem2idx: &[usize],
     idx2vtx: &[usize],
-    vtx2xyz: &[Real],
-    num_dim: usize,
+    vtx2xyz: &[[Real; 3]],
 ) -> anyhow::Result<()>
 where
     Path: AsRef<std::path::Path>,
@@ -625,8 +520,7 @@ where
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, vtx2xyz, num_dim)?;
-    // let num_vtx = vtx2xyz.len() / num_dim;
+    write_vtx2xyz(&mut file, vtx2xyz)?;
     for i_elem in 0..elem2idx.len() - 1 {
         let noel = &idx2vtx[elem2idx[i_elem]..elem2idx[i_elem + 1]];
         match noel.len() {
@@ -656,7 +550,7 @@ where
 {
     let file = File::create(filepath).context("file  not found.")?;
     let mut file = std::io::BufWriter::new(file);
-    write_vtx2xyz(&mut file, tri2xyz.as_flattened(), 3)?;
+    write_vtx2xyz(&mut file, tri2xyz.as_flattened().as_chunks::<3>().0)?;
     for (i_tri, _) in tri2xyz.iter().enumerate() {
         writeln!(
             file,

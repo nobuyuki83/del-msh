@@ -316,10 +316,9 @@ fn hoge2() {
     let loops = svg_loops_from_outline_path(&strs);
     assert_eq!(loops.len(), 1);
     let polyline = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 10.0);
-    use slice_of_array::SliceFlatExt;
-    let polyline = polyline.flat().to_vec();
     let polyline = crate::polyloop::resample::<_, 2>(&polyline, 100);
-    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/svg.obj", &polyline, 2).unwrap();
+    let polyline3: Vec<[f32; 3]> = polyline.iter().map(|&[x, y]| [x, y, 0.0]).collect();
+    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/svg.obj", &polyline3).unwrap();
 }
 
 #[test]
@@ -343,10 +342,7 @@ fn hoge3() {
     let loops = svg_loops_from_outline_path(&outline_path);
     let vtxl2xy = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
     let vtxl2xy = crate::vtx2xy::normalize(&vtxl2xy, &[0.5, 0.5], 1.0);
-    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
-        "../target/duck_curve.obj",
-        vtxl2xy.as_flattened(),
-        2,
-    )
-    .unwrap();
+    let vtxl2xyz: Vec<[f32; 3]> = vtxl2xy.iter().map(|&[x, y]| [x, y, 0.0]).collect();
+    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/duck_curve.obj", &vtxl2xyz)
+        .unwrap();
 }

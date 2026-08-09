@@ -30,8 +30,7 @@ pub fn io_wavefront_obj_save_tri_mesh(
     del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         path,
         tri2vtx.as_chunks::<3>().0,
-        vtx2xyz,
-        3,
+        vtx2xyz.as_chunks::<3>().0,
     )
     .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
     Ok(())

@@ -230,8 +230,7 @@ fn test_depthmap() {
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
             format!("../target/trimesh3_raycast_mesh{i_case}.obj"),
             &tri2vtx,
-            &vtx2xyz.as_flattened(),
-            3,
+            &vtx2xyz,
         )
         .unwrap();
         let aabb3 = crate::vtx2xyz::aabb3(&vtx2xyz, 0.);
@@ -271,8 +270,7 @@ fn test_depthmap() {
         crate::io_wavefront_obj::save_quad2vtx_vtx2xyz(
             format!("../target/trimesh3_raycast_hightmap_{i_case}.obj"),
             &quad2vtx,
-            &vtx2xyz,
-            3,
+            vtx2xyz.as_chunks::<3>().0,
         )
         .unwrap();
     }
