@@ -130,8 +130,9 @@ pub fn vtx2dist_for_vtx2vtx(
 
 #[test]
 fn test_vtx2dist_for_vtx2vtx() {
-    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 32, 32);
-    let (vtx2idx, idx2vtx) = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, vtx2xyz.len(), false);
+    let trimesh3 = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 32, 32);
+    let (vtx2idx, idx2vtx) =
+        crate::vtx2vtx::from_uniform_mesh(&trimesh3.tri2vtx, trimesh3.vtx2xyz.len(), false);
     let (vtx2dist, _) = vtx2dist_for_vtx2vtx(0, &vtx2idx, &idx2vtx, None);
     let &dist_max = vtx2dist.iter().max().unwrap();
     let vtx2rgb: Vec<[f32; 3]> = vtx2dist
@@ -144,8 +145,8 @@ fn test_vtx2dist_for_vtx2vtx() {
         .collect();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
         "../target/test_vtx2dist_for_vtx2vtx.obj",
-        &tri2vtx,
-        &vtx2xyz,
+        &trimesh3.tri2vtx,
+        &trimesh3.vtx2xyz,
         &vtx2rgb,
     )
     .unwrap();

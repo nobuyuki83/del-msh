@@ -1,5 +1,5 @@
+use crate::trimesh3::TriMesh3Owned;
 use anyhow::Context;
-
 // ---- private PLY header types ----
 
 #[derive(Clone)]
@@ -95,7 +95,7 @@ struct PlyElem {
 
 pub fn load_as_tri_mesh<P: AsRef<std::path::Path>, Index, Real>(
     file_path: P,
-) -> anyhow::Result<crate::trimesh3::TriMesh3<Index, Real>>
+) -> anyhow::Result<crate::trimesh3::TriMesh3Owned<Index, Real>>
 where
     Index: num_traits::PrimInt + 'static,
     usize: num_traits::AsPrimitive<Index>,
@@ -363,17 +363,18 @@ where
         }
     }
 
-    Ok((tri2vtx, vtx2xyz))
+    Ok(TriMesh3Owned { tri2vtx, vtx2xyz })
 }
 
 #[test]
 fn test0() {
     let path_src = std::path::Path::new("../asset/angel.ply");
-    let (tri2vtx, vtx2xyz) = load_as_tri_mesh::<_, u32, f32>(path_src).unwrap();
-    assert_eq!(vtx2xyz.len(), 128970);
-    assert_eq!(tri2vtx.len(), 257936);
+    let trimesh3 = load_as_tri_mesh::<_, u32, f32>(path_src).unwrap();
+    assert_eq!(trimesh3.vtx2xyz.len(), 128970);
+    assert_eq!(trimesh3.tri2vtx.len(), 257936);
     //
     let path_out = std::path::Path::new("../target/out_del_msh_cpu/angel.obj");
     std::fs::create_dir_all(path_out.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_out, &tri2vtx, &vtx2xyz).unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_out, &trimesh3.tri2vtx, &trimesh3.vtx2xyz)
+        .unwrap();
 }

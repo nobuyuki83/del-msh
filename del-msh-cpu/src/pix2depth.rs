@@ -170,10 +170,10 @@ pub fn render_depth_bvh(
                 &mut hits,
                 &ray_org,
                 &ray_dir,
-                &crate::search_bvh3::TriMeshWithBvh {
+                &crate::search_bvh3::TriMesh3WithBvhRef {
                     tri2vtx,
                     vtx2xyz,
-                    bvhnodes,
+                    bvhnode2tri_btree: bvhnodes,
                     bvhnode2aabb,
                 },
                 0,
@@ -237,12 +237,7 @@ fn test_depthmap() {
         dbg!(aabb3);
         let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            &tri2vtx.as_flattened(),
-            3,
-            &vtx2xyz,
-            None,
+            0, &bvhnodes, &tri2vtx, &vtx2xyz, None,
         );
         let img_shape = (300, 300);
         let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];

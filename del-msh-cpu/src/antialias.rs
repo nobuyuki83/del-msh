@@ -52,22 +52,22 @@ impl Iterator for Neighbour {
     }
 }
 pub fn antialias(
-    cedge2vtx: &[u32],
-    vtx2xyz: &[f32],
+    cedge2vtx: &[[u32; 2]],
+    vtx2xyz: &[[f32; 3]],
     transform_world2pix: &[f32; 16],
     img_shape: (usize, usize),
     pix2tri: &[u32],
     pix2vin: &[f32],
     pix2vout: &mut [f32],
 ) {
-    for node2vtx in cedge2vtx.chunks(2) {
+    for node2vtx in cedge2vtx {
         use del_geo_core::vec3::Vec3;
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
-        let q0 = crate::vtx2xyz::to_vec3(vtx2xyz, i0_vtx as usize)
+        let q0 = vtx2xyz[i0_vtx as usize]
             .transform_homogeneous(transform_world2pix)
             .unwrap()
             .xy();
-        let q1 = crate::vtx2xyz::to_vec3(vtx2xyz, i1_vtx as usize)
+        let q1 = vtx2xyz[i1_vtx as usize]
             .transform_homogeneous(transform_world2pix)
             .unwrap()
             .xy();
@@ -100,7 +100,7 @@ pub fn antialias(
 
 #[allow(clippy::too_many_arguments)]
 pub fn bwd_antialias(
-    cedge2vtx: &[u32],
+    cedge2vtx: &[[u32; 2]],
     vtx2xyz: &[[f32; 3]],
     dldw_vtx2xyz: &mut [[f32; 3]],
     transform_world2pix: &[f32; 16],
@@ -112,7 +112,7 @@ pub fn bwd_antialias(
     use del_geo_core::mat2x3_col_major;
     use del_geo_core::mat3_col_major;
     use del_geo_core::mat4_col_major;
-    for node2vtx in cedge2vtx.chunks(2) {
+    for node2vtx in cedge2vtx {
         use del_geo_core::vec3::Vec3;
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let p0 = &vtx2xyz[i0_vtx as usize];

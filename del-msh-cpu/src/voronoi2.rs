@@ -108,8 +108,8 @@ pub fn cut_polygon_by_line(
         let mut vtxnews: Vec<(f32, usize, [f32; 2], [usize; 4])> = vec![];
         for i0_vtx in 0..num_vtx {
             let i1_vtx = (i0_vtx + 1) % num_vtx;
-            let p0 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i0_vtx);
-            let p1 = crate::vtx2xy::to_vec2(&cell.vtx2xy, i1_vtx);
+            let p0 = &cell.vtx2xy[i0_vtx];
+            let p1 = &cell.vtx2xy[i1_vtx];
             let d0 = depth(p0);
             if d0 < 0. {
                 is_inside = true;
@@ -263,7 +263,7 @@ pub fn indexing(site2cell: &[Cell]) -> VoronoiMesh {
             let info0 = sort_info(info);
             let i_vtxv = info2vtxv.get(&info0).unwrap();
             idx2vtxc.push(*i_vtxv);
-            vtxv2xy[*i_vtxv] = *crate::vtx2xy::to_vec2(&cell.vtx2xy, ind);
+            vtxv2xy[*i_vtxv] = cell.vtx2xy[ind];
         }
         site2idx.push(idx2vtxc.len());
     }
@@ -363,6 +363,9 @@ fn test_voronoi_concave() {
 
 #[test]
 fn test_voronoi_convex() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
+    //
     use del_geo_core::vec2::Vec2;
     let mut reng = rand::rng();
     let vtxl2xy: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
@@ -378,7 +381,7 @@ fn test_voronoi_convex() {
             .map(|&[x, y]| [x, y, 0.])
             .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/voronoi_convex_input.obj",
+            path_dir.join("voronoi_convex_input.obj"),
             &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
             &flat3,
         )
@@ -397,7 +400,7 @@ fn test_voronoi_convex() {
         }
         let vtxo2xyz: Vec<[f32; 3]> = vtxo2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/voronoi_convex_cells.obj",
+            path_dir.join("voronoi_convex_cells.obj"),
             &edge2vtxo,
             &vtxo2xyz,
         );
@@ -408,7 +411,7 @@ fn test_voronoi_convex() {
         let vtxc2info = &site2cell[i_site].vtx2info;
         for (i_vtxc, info) in vtxc2info.iter().enumerate() {
             let cc0 = position_of_voronoi_vertex(info, &vtxl2xy, &site2xy);
-            let cc1 = crate::vtx2xy::to_vec2(vtxc2xy, i_vtxc);
+            let cc1 = &vtxc2xy[i_vtxc];
             assert!(cc0.sub(cc1).norm() < 1.0e-5);
         }
     }
@@ -434,7 +437,7 @@ fn test_voronoi_convex() {
             .map(|&[x, y]| [x, y, 0.])
             .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/voronoi_convex_indexed.obj",
+            path_dir.join("voronoi_convex_indexed.obj"),
             &edge2vtxc,
             &vtxc2xyz,
         )
@@ -444,6 +447,9 @@ fn test_voronoi_convex() {
 
 #[test]
 fn test_voronoi_sites_on_edge() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
+    //
     let vtxl2xy: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
     let (tri2vtx, vtx2xy) =
         crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f32>(&vtxl2xy, 0.08, 0.08);
@@ -501,7 +507,7 @@ fn test_voronoi_sites_on_edge() {
         .map(|&[x, y]| [x, y, 0.])
         .collect();
     crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-        "../target/voronoi_sites_on_edge.obj",
+        path_dir.join("voronoi_sites_on_edge.obj"),
         vedge2pnt.as_chunks::<2>().0,
         &pnt2xyz,
     )

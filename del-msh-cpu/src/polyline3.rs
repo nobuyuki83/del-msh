@@ -24,20 +24,20 @@ where
 }
 
 /// bi-normal vector on each vertex
-pub fn vtx2framex<T>(vtx2xyz: &[[T; 3]]) -> Vec<T>
+pub fn vtx2framex<T>(vtx2xyz: &[[T; 3]]) -> Vec<[T; 3]>
 where
     T: num_traits::Float,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
-    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
+    let mut vtx2bin = vec![[T::zero(); 3]; num_vtx];
     {
         // first segment
         let p1 = &vtx2xyz[1];
         let p0 = &vtx2xyz[0];
         let v01 = p1.sub(p0);
         let (x, _) = del_geo_core::vec3::basis_xy_from_basis_z(&v01);
-        vtx2bin[0..3].copy_from_slice(&x);
+        vtx2bin[0] = x;
     }
     for i_seg1 in 1..num_vtx - 1 {
         let iv0 = i_seg1 - 1;
@@ -50,14 +50,10 @@ where
         let v01 = p1.sub(p0);
         let v12 = p2.sub(p1);
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
-        let b01: &[T; 3] = arrayref::array_ref![vtx2bin, i_seg0 * 3, 3];
-        let b12: [T; 3] = del_geo_core::mat3_col_major::mult_vec(&rot, b01);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, i_seg1).copy_from_slice(&b12);
+        let b12: [T; 3] = del_geo_core::mat3_col_major::mult_vec(&rot, &vtx2bin[i_seg0]);
+        vtx2bin[i_seg1] = b12;
     }
-    {
-        let a: [T; 3] = crate::vtx2xyz::to_vec3(&vtx2bin, num_vtx - 2).to_owned();
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(&a);
-    }
+    vtx2bin[num_vtx - 1] = vtx2bin[num_vtx - 2];
     vtx2bin
 }
 
@@ -69,9 +65,8 @@ fn test_vtx2framex() {
         .map(|i_vtx| [0., i_vtx as f64 / num_vtx as f64 * length, 0.])
         .collect();
     let vtx2framex = vtx2framex(&vtx2xyz);
-    vtx2framex.chunks(3).for_each(|v| {
-        let v = [v[0], v[1], v[2]];
-        let len = del_geo_core::vec3::norm(&v);
+    vtx2framex.iter().for_each(|v| {
+        let len = del_geo_core::vec3::norm(v);
         assert!((len - 1.0).abs() < 1.0e-8);
     });
 }
@@ -117,14 +112,14 @@ where
     vtx2framey
 }
 
-pub fn normal_binormal<T>(vtx2xyz: &[[T; 3]]) -> (Vec<T>, Vec<T>)
+pub fn normal_binormal<T>(vtx2xyz: &[[T; 3]]) -> (Vec<[T; 3]>, Vec<[T; 3]>)
 where
     T: num_traits::Float + Copy,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
-    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
-    let mut vtx2nrm = vec![T::zero(); num_vtx * 3];
+    let mut vtx2bin = vec![[T::zero(); 3]; num_vtx];
+    let mut vtx2nrm = vec![[T::zero(); 3]; num_vtx];
     for ivtx1 in 1..num_vtx - 1 {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
@@ -134,26 +129,14 @@ where
         let v01 = v1.sub(v0);
         let v12 = v2.sub(v1);
         let binormal = v12.cross(&v01);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, ivtx1).copy_from_slice(&binormal.normalize());
+        vtx2bin[ivtx1] = binormal.normalize();
         let norm = v01.add(&v12).cross(&binormal);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, ivtx1).copy_from_slice(&norm.normalize());
+        vtx2nrm[ivtx1] = norm.normalize();
     }
-    {
-        let c1 = *crate::vtx2xyz::to_vec3(&vtx2nrm, 1);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, 0).copy_from_slice(&c1);
-    }
-    {
-        let c1 = *crate::vtx2xyz::to_vec3(&vtx2nrm, num_vtx - 2);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, num_vtx - 1).copy_from_slice(&c1);
-    }
-    {
-        let c1 = *crate::vtx2xyz::to_vec3(&vtx2bin, 1);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, 0).copy_from_slice(&c1);
-    }
-    {
-        let c1 = *crate::vtx2xyz::to_vec3(&vtx2bin, num_vtx - 2);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, num_vtx - 1).copy_from_slice(&c1);
-    }
+    vtx2nrm[0] = vtx2nrm[1];
+    vtx2nrm[num_vtx - 1] = vtx2nrm[num_vtx - 2];
+    vtx2bin[0] = vtx2bin[1];
+    vtx2bin[num_vtx - 1] = vtx2bin[num_vtx - 2];
     (vtx2nrm, vtx2bin)
 }
 
@@ -174,10 +157,10 @@ pub fn set_vtx2xyz_for_generalized_cylinder_open_end<Index, T>(
     let num_vtx = vtx2xyz.len();
     let ndiv_circum = num_vtx / num_vtxl;
     let vtxl2framex = vtx2framex(vtxl2xyz);
-    let vtxl2framey = vtx2framey(vtxl2xyz, vtxl2framex.as_chunks::<3>().0);
+    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
     for i_vtxl in 0..num_vtxl {
         let p0 = &vtxl2xyz[i_vtxl];
-        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, i_vtxl);
+        let ex = &vtxl2framex[i_vtxl];
         let ey = &vtxl2framey[i_vtxl];
         for ic in 0..ndiv_circum {
             let theta = two * pi * ic.as_() / ndiv_circum.as_();
@@ -204,7 +187,7 @@ where
     assert!(ndiv_circum > 2);
     let num_vtxl = vtxl2xyz.len();
     let vtxl2framex = vtx2framex(vtxl2xyz);
-    let vtxl2framey = vtx2framey(vtxl2xyz, vtxl2framex.as_chunks::<3>().0);
+    let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
     //
     let ndiv_length = num_vtxl - 1;
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
@@ -234,7 +217,7 @@ where
     }
     for ir in 0..ndiv_longtitude {
         let p0 = vtxl2xyz[0];
-        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, 0);
+        let ex = &vtxl2framex[0];
         let ey = &vtxl2framey[0];
         let ez = framez(vtxl2xyz, 0);
         let t0 = pi * half * (ndiv_longtitude - 1 - ir).as_() / ndiv_longtitude.as_();
@@ -252,7 +235,7 @@ where
     }
     for il in 0..ndiv_length - 1 {
         let p0 = vtxl2xyz[il + 1];
-        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, il + 1);
+        let ex = &vtxl2framex[il + 1];
         let ey = &vtxl2framey[il + 1];
         for ic in 0..ndiv_circum {
             let theta = 2.as_() * pi * ic.as_() / ndiv_circum.as_();
@@ -266,7 +249,7 @@ where
     }
     for ir in 0..ndiv_longtitude {
         let p0 = vtxl2xyz[num_vtxl - 1];
-        let ex = crate::vtx2xyz::to_vec3(&vtxl2framex, num_vtxl - 1);
+        let ex = &vtxl2framex[num_vtxl - 1];
         let ey = &vtxl2framey[num_vtxl - 1];
         let ez = framez(vtxl2xyz, num_vtxl - 1);
         let t0 = pi * half * ir.as_() / ndiv_longtitude.as_();
@@ -489,8 +472,8 @@ pub fn reduce(vtx2xyz: &[[f32; 3]], threshold: f32) -> Vec<[f32; 3]> {
 #[test]
 fn test_reduce() -> anyhow::Result<()> {
     let vtx2xy = crate::polyloop2::from_circle(1.0, 100);
-    let vtx2xyz = crate::vtx2xy::to_vtx2xyz(&vtx2xy);
-    let vtx2xyz_reduced = reduce(vtx2xyz.as_chunks::<3>().0, 0.01);
+    let vtx2xyz: Vec<[_; 3]> = vtx2xy.iter().map(|v| [v[0], v[1], 0.0]).collect();
+    let vtx2xyz_reduced = reduce(&vtx2xyz, 0.01);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
         "../target/reduce_polyline.obj",
         &vtx2xyz_reduced,

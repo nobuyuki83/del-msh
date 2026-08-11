@@ -47,7 +47,7 @@ pub fn differentiable_antialias_bwd(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::antialias::bwd_antialias(
-                slice!(cedge2vtx, u32).unwrap(),
+                slice!(cedge2vtx, u32).unwrap().as_chunks::<2>().0,
                 slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 slice_mut!(dldw_vtx2xyz, f32)
                     .unwrap()
@@ -135,8 +135,8 @@ pub fn differentiable_antialias_fwd(
     match device {
         dlpack::device_type_codes::CPU => {
             del_msh_cpu::antialias::antialias(
-                slice!(cedge2vtx, u32).unwrap(),
-                slice!(vtx2xyz, f32).unwrap(),
+                slice!(cedge2vtx, u32).unwrap().as_chunks::<2>().0,
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
                 arrayref::array_ref![slice!(transform_world2pix, f32).unwrap(), 0, 16],
                 (img_w as usize, img_h as usize),
                 slice!(pix2tri, u32).unwrap(),

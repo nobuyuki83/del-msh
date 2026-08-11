@@ -62,13 +62,12 @@ impl MyApp {
         let drawer_sphere = {
             let mut drawer_sphere = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
             drawer_sphere.compile_shader(gl);
-            let (tri2vtx, vtx2xyz) =
-                del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.1, 32, 32);
-            drawer_sphere.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
+            let trimesh3 = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.1, 32, 32);
+            drawer_sphere.set_vtx2xyz(gl, &trimesh3.vtx2xyz.as_flattened(), 3);
             drawer_sphere.add_elem2vtx(
                 gl,
                 glow::TRIANGLES,
-                &tri2vtx.as_flattened(),
+                &trimesh3.tri2vtx.as_flattened(),
                 [1.0, 0.5, 0.5],
             );
             drawer_sphere

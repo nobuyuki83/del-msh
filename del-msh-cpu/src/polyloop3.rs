@@ -2,21 +2,21 @@
 
 use num_traits::AsPrimitive;
 
-pub fn vtx2framex<T>(vtx2xyz: &[[T; 3]]) -> Vec<T>
+pub fn vtx2framex<T>(vtx2xyz: &[[T; 3]]) -> Vec<[T; 3]>
 where
     T: num_traits::Float + 'static + Copy,
     f64: AsPrimitive<T>,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
-    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
+    let mut vtx2bin = vec![[T::zero(); 3]; num_vtx];
     {
         // first segment
         let p0 = &vtx2xyz[0];
         let p1 = &vtx2xyz[1];
         let v01 = p1.sub(p0);
         let (x, _) = del_geo_core::vec3::basis_xy_from_basis_z(&v01);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, 0).copy_from_slice(&x);
+        vtx2bin[0] = x;
     }
     for iseg1 in 1..num_vtx {
         // parallel transport
@@ -30,9 +30,8 @@ where
         let v01 = p1.sub(p0);
         let v12 = p2.sub(p1);
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&v01, &v12);
-        let b01 = crate::vtx2xyz::to_vec3(&vtx2bin, iseg0);
-        let b12 = del_geo_core::mat3_col_major::mult_vec(&rot, b01);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, iseg1).copy_from_slice(&b12);
+        let b12 = del_geo_core::mat3_col_major::mult_vec(&rot, &vtx2bin[iseg0]);
+        vtx2bin[iseg1] = b12;
     }
     vtx2bin
 }
@@ -51,7 +50,7 @@ where
     p2.sub(p0).normalize()
 }
 
-fn match_frames_of_two_ends<T>(vtx2xyz: &[[T; 3]], vtx2bin0: &[T]) -> Vec<T>
+fn match_frames_of_two_ends<T>(vtx2xyz: &[[T; 3]], vtx2bin0: &[[T; 3]]) -> Vec<[T; 3]>
 where
     T: num_traits::Float + Copy + 'static + std::fmt::Display,
     f64: AsPrimitive<T>,
@@ -60,12 +59,12 @@ where
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
     let theta = {
-        let x0 = crate::vtx2xyz::to_vec3(vtx2bin0, 0);
+        let x0 = &vtx2bin0[0];
         let p0 = &vtx2xyz[0];
         let p1 = &vtx2xyz[1];
         let v01 = p1.sub(p0).normalize();
         assert!(x0.dot(&v01).abs() < 1.0e-6_f64.as_());
-        let xn = crate::vtx2xyz::to_vec3(vtx2bin0, num_vtx - 1);
+        let xn = &vtx2bin0[num_vtx - 1];
         let pn = &vtx2xyz[num_vtx - 1];
         let vn0 = p0.sub(pn).normalize();
         let rot = del_geo_core::mat3_col_major::minimum_rotation_matrix(&vn0, &v01);
@@ -82,10 +81,10 @@ where
         T::atan2(s0, c0)
     };
     let theta_step = theta / num_vtx.as_();
-    let mut vtx2bin1 = vec![T::zero(); num_vtx * 3];
+    let mut vtx2bin1 = vec![[T::zero(); 3]; num_vtx];
     for iseg in 0..num_vtx {
         let dtheta = theta_step * iseg.as_();
-        let x0 = crate::vtx2xyz::to_vec3(vtx2bin0, iseg);
+        let x0 = &vtx2bin0[iseg];
         let ivtx0 = iseg;
         let ivtx1 = (iseg + 1) % num_vtx;
         let p1 = &vtx2xyz[ivtx1];
@@ -99,13 +98,12 @@ where
         );
         let x0 = x0.scale(dtheta.sin());
         let y0 = y0.scale(dtheta.cos());
-        let x1 = x0.add(&y0);
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin1, iseg).copy_from_slice(&x1);
+        vtx2bin1[iseg] = x0.add(&y0);
     }
     vtx2bin1
 }
 
-pub fn smooth_frame<T>(vtx2xyz: &[[T; 3]]) -> Vec<T>
+pub fn smooth_frame<T>(vtx2xyz: &[[T; 3]]) -> Vec<[T; 3]>
 where
     T: num_traits::Float + 'static + Copy + std::fmt::Display,
     f64: AsPrimitive<T>,
@@ -115,14 +113,14 @@ where
     match_frames_of_two_ends(vtx2xyz, &vtx2bin0)
 }
 
-pub fn normal_binormal<T>(vtx2xyz: &[[T; 3]]) -> (Vec<T>, Vec<T>)
+pub fn normal_binormal<T>(vtx2xyz: &[[T; 3]]) -> (Vec<[T; 3]>, Vec<[T; 3]>)
 where
     T: num_traits::Float + Copy,
 {
     use del_geo_core::vec3::Vec3;
     let num_vtx = vtx2xyz.len();
-    let mut vtx2bin = vec![T::zero(); num_vtx * 3];
-    let mut vtx2nrm = vec![T::zero(); num_vtx * 3];
+    let mut vtx2bin = vec![[T::zero(); 3]; num_vtx];
+    let mut vtx2nrm = vec![[T::zero(); 3]; num_vtx];
     for ivtx1 in 0..num_vtx {
         let ivtx0 = (ivtx1 + num_vtx - 1) % num_vtx;
         let ivtx2 = (ivtx1 + 1) % num_vtx;
@@ -131,10 +129,9 @@ where
         let v2 = &vtx2xyz[ivtx2];
         let v01 = v1.sub(v0);
         let v12 = v2.sub(v1);
-        let binormal = v12.cross(&v01).normalize();
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2bin, ivtx1).copy_from_slice(&binormal);
-        let norm = v01.add(&v12).cross(&binormal).normalize();
-        crate::vtx2xyz::to_vec3_mut(&mut vtx2nrm, ivtx1).copy_from_slice(&norm);
+        vtx2bin[ivtx1] = v12.cross(&v01).normalize();
+        let norm = v01.add(&v12).cross(&vtx2bin[ivtx1]).normalize();
+        vtx2nrm[ivtx1] = norm;
     }
     (vtx2nrm, vtx2bin)
 }
@@ -176,43 +173,41 @@ pub fn extend_avoid_intersection(
 
 pub fn tube_mesh_avoid_intersection(
     vtx2xyz: &[[f64; 3]],
-    vtx2bin: &[f64],
+    vtx2bin: &[[f64; 3]],
     eps: f64,
     niter: usize,
-) -> (Vec<usize>, Vec<f64>) {
+) -> (Vec<[usize; 3]>, Vec<[f64; 3]>) {
     use del_geo_core::vec3::Vec3;
     let n = 8;
     let dtheta = std::f64::consts::PI * 2. / n as f64;
     let num_vtx = vtx2xyz.len();
-    let mut pnt2xyz = Vec::<f64>::new();
+    let mut pnt2xyz = Vec::<[f64; 3]>::new();
     for ipnt in 0..num_vtx {
         let p0 = &vtx2xyz[ipnt];
         let p1 = &vtx2xyz[(ipnt + 1) % num_vtx];
         let z0 = p1.sub(p0).normalize();
-        let x0 = crate::vtx2xyz::to_vec3(vtx2bin, ipnt);
+        let x0 = &vtx2bin[ipnt];
         let y0 = z0.cross(x0);
         for i in 0..n {
             let theta = dtheta * i as f64;
             let x0 = x0.scale(theta.cos());
             let y0 = y0.scale(theta.sin());
             let v0 = x0.add(&y0);
-            let q0 = extend_avoid_intersection(p0, &v0, vtx2xyz, eps, niter);
-            q0.iter().for_each(|&v| pnt2xyz.push(v));
+            pnt2xyz.push(extend_avoid_intersection(p0, &v0, vtx2xyz, eps, niter));
         }
     }
 
-    let mut tri2pnt = Vec::<usize>::new();
+    let mut tri2pnt = Vec::<[usize; 3]>::new();
     for iseg in 0..num_vtx {
         let ipnt0 = iseg;
         let ipnt1 = (ipnt0 + 1) % num_vtx;
         for i in 0..n {
-            tri2pnt.push(ipnt0 * n + i);
-            tri2pnt.push(ipnt0 * n + (i + 1) % n);
-            tri2pnt.push(ipnt1 * n + i);
-            //
-            tri2pnt.push(ipnt1 * n + (i + 1) % n);
-            tri2pnt.push(ipnt1 * n + i);
-            tri2pnt.push(ipnt0 * n + (i + 1) % n);
+            tri2pnt.push([ipnt0 * n + i, ipnt0 * n + (i + 1) % n, ipnt1 * n + i]);
+            tri2pnt.push([
+                ipnt1 * n + (i + 1) % n,
+                ipnt1 * n + i,
+                ipnt0 * n + (i + 1) % n,
+            ]);
         }
     }
     (tri2pnt, pnt2xyz)
@@ -343,41 +338,39 @@ where
 
 pub fn to_trimesh3_torus(
     vtx2xyz: &[[f32; 3]],
-    vtx2bin: &[f32],
+    vtx2bin: &[[f32; 3]],
     rad: f32,
     ndiv_circum: usize,
-) -> (Vec<usize>, Vec<f32>) {
+) -> (Vec<[usize; 3]>, Vec<[f32; 3]>) {
     use del_geo_core::vec3::Vec3;
     let n = ndiv_circum;
     let dtheta = std::f32::consts::PI * 2. / n as f32;
     let num_vtx = vtx2xyz.len();
-    let mut pnt2xyz = Vec::<f32>::new();
+    let mut pnt2xyz = Vec::<[f32; 3]>::new();
     for ipnt in 0..num_vtx {
         let p0 = &vtx2xyz[ipnt];
         let p1 = &vtx2xyz[(ipnt + 1) % num_vtx];
         let z0 = p1.sub(p0).normalize();
-        let x0 = crate::vtx2xyz::to_vec3(vtx2bin, ipnt);
+        let x0 = &vtx2bin[ipnt];
         let y0 = z0.cross(x0);
         for i in 0..n {
             let theta = dtheta * i as f32;
             let v0 = x0.scale(theta.cos()).add(&y0.scale(theta.sin()));
-            let q0 = p0.add(&v0.scale(rad));
-            q0.iter().for_each(|&v| pnt2xyz.push(v));
+            pnt2xyz.push(p0.add(&v0.scale(rad)));
         }
     }
 
-    let mut tri2pnt = Vec::<usize>::new();
+    let mut tri2pnt = Vec::<[usize; 3]>::new();
     for iseg in 0..num_vtx {
         let ipnt0 = iseg;
         let ipnt1 = (ipnt0 + 1) % num_vtx;
         for i in 0..n {
-            tri2pnt.push(ipnt0 * n + i);
-            tri2pnt.push(ipnt0 * n + (i + 1) % n);
-            tri2pnt.push(ipnt1 * n + i);
-            //
-            tri2pnt.push(ipnt1 * n + (i + 1) % n);
-            tri2pnt.push(ipnt1 * n + i);
-            tri2pnt.push(ipnt0 * n + (i + 1) % n);
+            tri2pnt.push([ipnt0 * n + i, ipnt0 * n + (i + 1) % n, ipnt1 * n + i]);
+            tri2pnt.push([
+                ipnt1 * n + (i + 1) % n,
+                ipnt1 * n + i,
+                ipnt0 * n + (i + 1) % n,
+            ]);
         }
     }
     (tri2pnt, pnt2xyz)

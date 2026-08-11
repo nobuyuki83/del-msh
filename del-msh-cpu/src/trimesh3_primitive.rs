@@ -1,5 +1,6 @@
 //! methods that generate meshes of primitive shapes (e.g., cylinder, torus)
 
+use crate::trimesh3::TriMesh3Owned;
 use num_traits::AsPrimitive;
 
 /// this function is for external allocation of memory
@@ -373,7 +374,7 @@ pub fn sphere_yup<Index, Real>(
     radius: Real,
     n_longitude: usize,
     n_latitude: usize,
-) -> (Vec<[Index; 3]>, Vec<[Real; 3]>)
+) -> crate::trimesh3::TriMesh3Owned<Index, Real>
 where
     Real: num_traits::Float + 'static,
     Index: num_traits::PrimInt + 'static,
@@ -384,7 +385,7 @@ where
     let mut tri2vtx = Vec::<[Index; 3]>::new();
     vtx2xyz.clear();
     if n_longitude <= 1 || n_latitude <= 2 {
-        return (tri2vtx, vtx2xyz);
+        return TriMesh3Owned { tri2vtx, vtx2xyz };
     }
     let pi: Real = std::f32::consts::PI.as_();
     let dl: Real = pi / n_longitude.as_();
@@ -408,16 +409,17 @@ where
     tri2vtx.reserve(ntri * 3);
 
     let tri2vtx = cylinder_closed_end_topology::<Index>(n_longitude - 2, n_latitude);
-    (tri2vtx, vtx2xyz)
+    TriMesh3Owned { tri2vtx, vtx2xyz }
 }
 
 #[test]
 fn test_sphere_yup() {
-    let (tri2vtx, vtx2xyz) = sphere_yup::<usize, f64>(1.0, 16, 8);
+    let trimesh3 = sphere_yup::<usize, f64>(1.0, 16, 8);
     let path_out =
         std::path::Path::new("../target/out_del_msh_cpu/trimesh3_primitive_sphere_yup.obj");
     std::fs::create_dir_all(path_out.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_out, &tri2vtx, &vtx2xyz).unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_out, &trimesh3.tri2vtx, &trimesh3.vtx2xyz)
+        .unwrap();
 }
 
 // ----------------------------------------

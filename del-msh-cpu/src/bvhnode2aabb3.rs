@@ -65,12 +65,11 @@ pub fn update_for_points_with_bvh<Index, Real>(
 /// build aabb for uniform mesh
 /// if 'elem2vtx' is None, bvh stores the vertex index directly
 /// if 'vtx2xyz1' is Some, compute AABB for Continuous-Collision Detection (CCD)
-pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
+pub fn update_for_uniform_mesh_with_bvh<Index, Real, const NNOEL: usize>(
     bvhnode2aabb: &mut [[Real; 6]],
     i_bvhnode: usize,
     bvhnodes: &[[Index; 3]],
-    elem2vtx: &[Index],
-    num_noel: usize,
+    elem2vtx: &[[Index; NNOEL]],
     vtx2xyz0: &[[Real; 3]],
     vtx2xyz1: Option<&[[Real; 3]]>,
 ) where
@@ -90,14 +89,11 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
         let i_elem: usize = bvhnodes[i_bvhnode][1].as_();
         let aabb = {
             // element index is provided
-            let aabb0 = crate::vtx2xyz::aabb3_indexed(
-                &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
-                vtx2xyz0,
-                Real::zero(),
-            );
+            let aabb0 =
+                crate::vtx2xyz::aabb3_indexed(elem2vtx[i_elem].as_slice(), vtx2xyz0, Real::zero());
             if let Some(vtx2xyz1) = vtx2xyz1 {
                 let aabb1 = crate::vtx2xyz::aabb3_indexed(
-                    &elem2vtx[i_elem * num_noel..(i_elem + 1) * num_noel],
+                    elem2vtx[i_elem].as_slice(),
                     vtx2xyz1,
                     Real::zero(),
                 );
@@ -114,22 +110,20 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
         assert_eq!(bvhnodes[i_bvhnode_child0][0].as_(), i_bvhnode);
         assert_eq!(bvhnodes[i_bvhnode_child1][0].as_(), i_bvhnode);
         // build right tree
-        update_for_uniform_mesh_with_bvh::<Index, Real>(
+        update_for_uniform_mesh_with_bvh::<Index, Real, NNOEL>(
             bvhnode2aabb,
             i_bvhnode_child0,
             bvhnodes,
             elem2vtx,
-            num_noel,
             vtx2xyz0,
             vtx2xyz1,
         );
         // build left tree
-        update_for_uniform_mesh_with_bvh::<Index, Real>(
+        update_for_uniform_mesh_with_bvh::<Index, Real, NNOEL>(
             bvhnode2aabb,
             i_bvhnode_child1,
             bvhnodes,
             elem2vtx,
-            num_noel,
             vtx2xyz0,
             vtx2xyz1,
         );
@@ -165,11 +159,10 @@ pub fn update_for_uniform_mesh_with_bvh<Index, Real>(
 /// * For CCD, the AABB represents the union of 3D geometry at both start and end positions
 /// * All nodes are processed, even if not reachable from i_bvhnode (complete tree coverage)
 /// * This is the 3D variant; see `bvhnode2aabb2.rs` for 2D AABBs
-pub fn from_uniform_mesh_with_bvh<Index, Real>(
+pub fn from_uniform_mesh_with_bvh<Index, Real, const NNOEL: usize>(
     i_bvhnode: usize,
     bvhnodes: &[[Index; 3]],
-    elem2vtx: &[Index],
-    num_noel: usize,
+    elem2vtx: &[[Index; NNOEL]],
     vtx2xyz0: &[[Real; 3]],
     vtx2xyz1: Option<&[[Real; 3]]>,
 ) -> Vec<[Real; 6]>
@@ -182,12 +175,11 @@ where
     // Allocate 3D AABB storage: 6 values per node (x_min, y_min, z_min, x_max, y_max, z_max)
     let mut bvhnode2aabb = vec![[Real::zero(); 6]; num_bvhnode];
     // Recursively compute AABBs for entire tree from root node
-    update_for_uniform_mesh_with_bvh::<Index, Real>(
+    update_for_uniform_mesh_with_bvh::<Index, Real, NNOEL>(
         &mut bvhnode2aabb,
         i_bvhnode,
         bvhnodes,
         elem2vtx,
-        num_noel,
         vtx2xyz0,
         vtx2xyz1,
     );

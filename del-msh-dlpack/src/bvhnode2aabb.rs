@@ -51,17 +51,16 @@ pub fn bvhnode2aabb_update_aabb(
             } else {
                 None
             };
-            match num_dim {
-                3 => {
-                    del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<u32, f32>(
+            match (num_dim, num_noel) {
+                (3, 3) => {
+                    del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<u32, f32, 3>(
                         slice_mut!(bvhnode2aabb, f32)
                             .unwrap()
                             .as_chunks_mut::<6>()
                             .0,
                         i_bvhnode,
                         slice!(bvhnodes, u32).unwrap().as_chunks::<3>().0,
-                        slice!(elem2vtx, u32).unwrap(),
-                        num_noel as usize,
+                        slice!(elem2vtx, u32).unwrap().as_chunks::<3>().0,
                         vtx2xyz0,
                         vtx2xyz1,
                     );

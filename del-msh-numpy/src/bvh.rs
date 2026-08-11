@@ -142,15 +142,17 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
         None
     };
     let vtx2xyz0 = vtx2xyz0.as_slice().unwrap().as_chunks::<3>().0;
-    del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh(
-        aabbs.as_chunks_mut::<6>().0,
-        i_bvhnode_root,
-        bvhnodes.as_chunks::<3>().0,
-        elem2vtx,
-        num_noel,
-        vtx2xyz0,
-        vtx2xyz1,
-    );
+    match num_noel {
+        3 => del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<_, _, 3>(
+            aabbs.as_chunks_mut::<6>().0,
+            i_bvhnode_root,
+            bvhnodes.as_chunks::<3>().0,
+            elem2vtx.as_chunks::<3>().0,
+            vtx2xyz0,
+            vtx2xyz1,
+        ),
+        _ => todo!("unsupported num_noel: {}", num_noel),
+    }
 }
 
 // 2D and 3D

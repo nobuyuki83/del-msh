@@ -325,8 +325,8 @@ pub fn occluding_contour_for_triangle_mesh(
         let res = crate::search_bvh3::first_intersection_ray(
             &ray_org,
             &ray_dir,
-            &crate::search_bvh3::TriMeshWithBvh {
-                bvhnodes,
+            &crate::search_bvh3::TriMesh3WithBvhRef {
+                bvhnode2tri_btree: bvhnodes,
                 bvhnode2aabb,
                 tri2vtx,
                 vtx2xyz,
@@ -406,8 +406,8 @@ pub fn silhouette_for_triangle_mesh(
             &mut res,
             &ray_org,
             &ray_dir,
-            &crate::search_bvh3::TriMeshWithBvh {
-                bvhnodes,
+            &crate::search_bvh3::TriMesh3WithBvhRef {
+                bvhnode2tri_btree: bvhnodes,
                 bvhnode2aabb,
                 tri2vtx,
                 vtx2xyz,
@@ -437,14 +437,8 @@ pub fn test_contour() {
     };
     //
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
-    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0,
-        &bvhnodes,
-        &tri2vtx.as_flattened(),
-        3,
-        &vtx2xyz,
-        None,
-    );
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, &vtx2xyz, None);
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
     let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len());
 

@@ -2,10 +2,10 @@
 
 use num_traits::{AsPrimitive, PrimInt};
 
-pub struct TriMeshWithBvh<'a, Index> {
+pub struct TriMesh3WithBvhRef<'a, Index> {
     pub tri2vtx: &'a [[Index; 3]],
     pub vtx2xyz: &'a [[f32; 3]],
-    pub bvhnodes: &'a [[Index; 3]],
+    pub bvhnode2tri_btree: &'a [[Index; 3]],
     pub bvhnode2aabb: &'a [[f32; 6]],
 }
 
@@ -13,7 +13,7 @@ pub fn intersections_ray<Index>(
     hits: &mut Vec<(f32, usize)>,
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
-    trimesh3: &TriMeshWithBvh<Index>,
+    trimesh3: &TriMesh3WithBvhRef<Index>,
     i_bvhnode: usize,
 ) where
     Index: PrimInt + AsPrimitive<usize>,
@@ -24,10 +24,13 @@ pub fn intersections_ray<Index>(
     {
         return;
     }
-    assert_eq!(trimesh3.bvhnodes.len(), trimesh3.bvhnode2aabb.len());
-    if trimesh3.bvhnodes[i_bvhnode][2] == Index::max_value() {
+    assert_eq!(
+        trimesh3.bvhnode2tri_btree.len(),
+        trimesh3.bvhnode2aabb.len()
+    );
+    if trimesh3.bvhnode2tri_btree[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_tri: usize = trimesh3.bvhnodes[i_bvhnode][1].as_();
+        let i_tri: usize = trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_();
         let Some((t, _bc)) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
         else {
@@ -41,14 +44,14 @@ pub fn intersections_ray<Index>(
         ray_org,
         ray_dir,
         trimesh3,
-        trimesh3.bvhnodes[i_bvhnode][1].as_(),
+        trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_(),
     );
     intersections_ray(
         hits,
         ray_org,
         ray_dir,
         trimesh3,
-        trimesh3.bvhnodes[i_bvhnode][2].as_(),
+        trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_(),
     );
 }
 
@@ -56,7 +59,7 @@ pub fn intersections_line<Index>(
     hits: &mut Vec<(f32, usize)>,
     line_org: &[f32; 3],
     line_dir: &[f32; 3],
-    trimesh3: &TriMeshWithBvh<Index>,
+    trimesh3: &TriMesh3WithBvhRef<Index>,
     i_bvhnode: usize,
 ) where
     Index: PrimInt + AsPrimitive<usize>,
@@ -67,10 +70,13 @@ pub fn intersections_line<Index>(
     {
         return;
     }
-    assert_eq!(trimesh3.bvhnodes.len(), trimesh3.bvhnode2aabb.len());
-    if trimesh3.bvhnodes[i_bvhnode][2] == Index::max_value() {
+    assert_eq!(
+        trimesh3.bvhnode2tri_btree.len(),
+        trimesh3.bvhnode2aabb.len()
+    );
+    if trimesh3.bvhnode2tri_btree[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_tri: usize = trimesh3.bvhnodes[i_bvhnode][1].as_();
+        let i_tri: usize = trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_();
         let Some((t, _bc)) = crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_line(line_org, line_dir)
         else {
@@ -84,14 +90,14 @@ pub fn intersections_line<Index>(
         line_org,
         line_dir,
         trimesh3,
-        trimesh3.bvhnodes[i_bvhnode][1].as_(),
+        trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_(),
     );
     crate::search_bvh3::intersections_line(
         hits,
         line_org,
         line_dir,
         trimesh3,
-        trimesh3.bvhnodes[i_bvhnode][2].as_(),
+        trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_(),
     );
 }
 
@@ -103,21 +109,27 @@ pub fn intersections_line<Index>(
 pub fn first_intersection_ray<Index>(
     ray_org: &[f32; 3],
     ray_dir: &[f32; 3],
-    trimesh3: &TriMeshWithBvh<Index>,
+    trimesh3: &TriMesh3WithBvhRef<Index>,
     i_bvhnode: usize,
     dis: f32,
 ) -> Option<(f32, usize, [f32; 3])>
 where
     Index: PrimInt + AsPrimitive<usize>,
 {
-    assert_eq!(trimesh3.bvhnodes.len(), trimesh3.tri2vtx.len() * 2 - 1);
-    assert_eq!(trimesh3.bvhnodes.len(), trimesh3.bvhnode2aabb.len());
+    assert_eq!(
+        trimesh3.bvhnode2tri_btree.len(),
+        trimesh3.tri2vtx.len() * 2 - 1
+    );
+    assert_eq!(
+        trimesh3.bvhnode2tri_btree.len(),
+        trimesh3.bvhnode2aabb.len()
+    );
     // culling the branch
     del_geo_core::aabb3::from_aabbs(trimesh3.bvhnode2aabb.as_flattened(), i_bvhnode)
         .intersections_against_ray(ray_org, ray_dir)?;
-    if trimesh3.bvhnodes[i_bvhnode][2] == Index::max_value() {
+    if trimesh3.bvhnode2tri_btree[i_bvhnode][2] == Index::max_value() {
         // leaf node
-        let i_tri: usize = trimesh3.bvhnodes[i_bvhnode][1].as_();
+        let i_tri: usize = trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_();
         return crate::trimesh3::to_tri3(trimesh3.tri2vtx, trimesh3.vtx2xyz, i_tri)
             .intersection_against_ray(ray_org, ray_dir)
             .filter(|(t, _bc)| *t < dis)
@@ -128,12 +140,12 @@ where
     let near_is_left = {
         let t_aabb_left = del_geo_core::aabb3::from_aabbs(
             trimesh3.bvhnode2aabb.as_flattened(),
-            trimesh3.bvhnodes[i_bvhnode][1].as_(),
+            trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_(),
         )
         .intersections_against_ray(ray_org, ray_dir);
         let t_aabb_right = del_geo_core::aabb3::from_aabbs(
             trimesh3.bvhnode2aabb.as_flattened(),
-            trimesh3.bvhnodes[i_bvhnode][2].as_(),
+            trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_(),
         )
         .intersections_against_ray(ray_org, ray_dir);
         match (t_aabb_left, t_aabb_right) {
@@ -149,9 +161,9 @@ where
     // check near branch
     let res_near = {
         let i_child_near: usize = if near_is_left {
-            trimesh3.bvhnodes[i_bvhnode][1].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_()
         } else {
-            trimesh3.bvhnodes[i_bvhnode][2].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_()
         };
         first_intersection_ray(ray_org, ray_dir, trimesh3, i_child_near, dis)
     };
@@ -159,9 +171,9 @@ where
     if let Some((t_near, _i_tri_near, _bc_near)) = res_near {
         // if there is a hit branch in the left
         let i_bvhnode_far: usize = if near_is_left {
-            trimesh3.bvhnodes[i_bvhnode][2].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_()
         } else {
-            trimesh3.bvhnodes[i_bvhnode][1].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_()
         };
         let aabb_far = &trimesh3.bvhnode2aabb[i_bvhnode_far];
         // the intersection point is closer than another bvhnode
@@ -180,9 +192,9 @@ where
 
     let res_far = {
         let i_child_far: usize = if near_is_left {
-            trimesh3.bvhnodes[i_bvhnode][2].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][2].as_()
         } else {
-            trimesh3.bvhnodes[i_bvhnode][1].as_()
+            trimesh3.bvhnode2tri_btree[i_bvhnode][1].as_()
         };
         first_intersection_ray(ray_org, ray_dir, trimesh3, i_child_far, dis)
     };
@@ -230,14 +242,13 @@ fn is_point_closer(aabb: &[f32; 6], ray_dir: &[f32; 3], t: f32) -> bool {
 
 #[test]
 fn test_first_intersection_ray() {
-    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
+    let trimesh3 = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1.0, 128, 128);
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&trimesh3.tri2vtx, &trimesh3.vtx2xyz);
     let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
-        &tri2vtx.as_flattened(),
-        3,
-        &vtx2xyz,
+        &trimesh3.tri2vtx,
+        &trimesh3.vtx2xyz,
         None,
     );
     use rand::RngExt;
@@ -251,10 +262,10 @@ fn test_first_intersection_ray() {
         let res_first = first_intersection_ray(
             &ray_org,
             &ray_dir,
-            &TriMeshWithBvh {
-                tri2vtx: &tri2vtx,
-                vtx2xyz: &vtx2xyz,
-                bvhnodes: &bvhnodes,
+            &TriMesh3WithBvhRef {
+                tri2vtx: &trimesh3.tri2vtx,
+                vtx2xyz: &trimesh3.vtx2xyz,
+                bvhnode2tri_btree: &bvhnodes,
                 bvhnode2aabb: &bvhnode2aabb,
             },
             0,
@@ -275,10 +286,10 @@ fn test_first_intersection_ray() {
                 &mut hits,
                 &ray_org,
                 &ray_dir,
-                &TriMeshWithBvh {
-                    tri2vtx: &tri2vtx,
-                    vtx2xyz: &vtx2xyz,
-                    bvhnodes: &bvhnodes,
+                &TriMesh3WithBvhRef {
+                    tri2vtx: &trimesh3.tri2vtx,
+                    vtx2xyz: &trimesh3.vtx2xyz,
+                    bvhnode2tri_btree: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },
                 0,

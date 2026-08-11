@@ -35,8 +35,8 @@ fn polyline_vtx2framex_from_vtx2xyz<'a>(
     let vtx2xyz = vtx2xyz.as_slice().unwrap().as_chunks::<3>().0;
     let vtx2framex = del_msh_cpu::polyline3::vtx2framex(vtx2xyz);
     let vtx2framex = numpy::ndarray::Array2::from_shape_vec(
-        (vtx2framex.len() / 3, 3),
-        Vec::from(vtx2framex.as_slice()),
+        (vtx2framex.len(), 3),
+        vtx2framex.as_flattened().to_vec(),
     )
     .unwrap();
     use numpy::IntoPyArray;

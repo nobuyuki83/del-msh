@@ -3,6 +3,7 @@
 use numpy::PyUntypedArrayMethods;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray2};
 //
+use del_msh_cpu::trimesh3::TriMesh3Ref;
 use pyo3::prelude::PyModule;
 use pyo3::{pyfunction, Bound, PyResult, Python};
 
@@ -30,7 +31,10 @@ fn vtx2area_from_uniformmesh<'a>(
         if num_dim == 2 {
             del_msh_cpu::trimesh2::vtx2area(elem2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<2>().0)
         } else if num_dim == 3 {
-            del_msh_cpu::trimesh3::vtx2area(elem2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0)
+            del_msh_cpu::trimesh3::vtx2area(TriMesh3Ref {
+                tri2vtx: elem2vtx.as_chunks::<3>().0,
+                vtx2xyz: vtx2xyz.as_chunks::<3>().0,
+            })
         } else {
             panic!();
         }

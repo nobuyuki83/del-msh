@@ -2,24 +2,6 @@
 
 use num_traits::AsPrimitive;
 
-pub fn to_vec2<T, Index>(vtx2xyz: &[[T; 2]], i_vtx: Index) -> &[T; 2]
-where
-    T: Copy,
-    Index: AsPrimitive<usize>,
-{
-    &vtx2xyz[i_vtx.as_()]
-}
-
-pub fn to_vtx2xyz<Real>(vtx2xy: &[[Real; 2]]) -> Vec<Real>
-where
-    Real: num_traits::Zero + Copy,
-{
-    vtx2xy
-        .iter()
-        .flat_map(|v| [v[0], v[1], Real::zero()])
-        .collect()
-}
-
 pub fn aabb2<Real>(vtx2xy: &[[Real; 2]]) -> [Real; 4]
 where
     Real: num_traits::Float,

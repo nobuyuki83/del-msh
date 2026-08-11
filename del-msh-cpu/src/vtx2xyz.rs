@@ -2,13 +2,6 @@
 
 use num_traits::AsPrimitive;
 
-pub fn to_array3<T>(vtx2xyz: &[[T; 3]], i_vtx: usize) -> [T; 3]
-where
-    T: Copy,
-{
-    vtx2xyz[i_vtx]
-}
-
 /// 3D Axis-aligned bonding box for 3D points
 /// # Arguments
 /// * eps: T - margin
@@ -272,12 +265,4 @@ pub fn to_xyz<Real>(vtx2xyz: &[Real], i_vtx: usize) -> del_geo_core::vec3::XYZ<'
     del_geo_core::vec3::XYZ {
         p: arrayref::array_ref![vtx2xyz, i_vtx * 3, 3],
     }
-}
-
-pub fn to_vec3<Real>(vtx2xyz: &[Real], i_vtx: usize) -> &[Real; 3] {
-    arrayref::array_ref![vtx2xyz, i_vtx * 3, 3]
-}
-
-pub fn to_vec3_mut<Real>(vtx2xyz: &mut [Real], i_vtx: usize) -> &mut [Real; 3] {
-    arrayref::array_mut_ref![vtx2xyz, i_vtx * 3, 3]
 }

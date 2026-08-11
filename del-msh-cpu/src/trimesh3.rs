@@ -3,20 +3,49 @@
 // use del_geo_core::vec3;
 use num_traits::AsPrimitive;
 
-pub type TriMesh3<Index, Real> = (Vec<[Index; 3]>, Vec<[Real; 3]>);
+pub struct TriMesh3Owned<Index, Real> {
+    pub tri2vtx: Vec<[Index; 3]>,
+    pub vtx2xyz: Vec<[Real; 3]>,
+}
 
-pub fn vtx2normal<Real>(tri2vtx: &[[usize; 3]], vtx2xyz: &[[Real; 3]]) -> Vec<[Real; 3]>
+impl<Index, Real> TriMesh3Owned<Index, Real> {
+    pub fn as_ref(&self) -> TriMesh3Ref<'_, Index, Real> {
+        TriMesh3Ref {
+            tri2vtx: &self.tri2vtx,
+            vtx2xyz: &self.vtx2xyz,
+        }
+    }
+}
+
+pub struct TriMesh3Ref<'a, Index, Real> {
+    pub tri2vtx: &'a [[Index; 3]],
+    pub vtx2xyz: &'a [[Real; 3]],
+}
+
+impl<'a, Index, Real> TriMesh3Ref<'a, Index, Real>
+where
+    Index: AsPrimitive<usize>,
+{
+    pub fn node2xyz(&self, node2vtx: &[Index; 3]) -> [&[Real; 3]; 3] {
+        let [i0, i1, i2]: [usize; 3] = [node2vtx[0].as_(), node2vtx[1].as_(), node2vtx[2].as_()];
+        let p0 = &self.vtx2xyz[i0];
+        let p1 = &self.vtx2xyz[i1];
+        let p2 = &self.vtx2xyz[i2];
+        [p0, p1, p2]
+    }
+}
+
+pub fn vtx2normal<Index, Real>(trimesh3: TriMesh3Ref<Index, Real>) -> Vec<[Real; 3]>
 where
     Real: num_traits::Float,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
 {
-    let mut vtx2nrm = vec![[Real::zero(); 3]; vtx2xyz.len()];
-    for node2vtx in tri2vtx.iter() {
-        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xyz[i0];
-        let p1 = &vtx2xyz[i1];
-        let p2 = &vtx2xyz[i2];
+    let mut vtx2nrm = vec![[Real::zero(); 3]; trimesh3.vtx2xyz.len()];
+    for node2vtx in trimesh3.tri2vtx.iter() {
+        let [p0, p1, p2] = trimesh3.node2xyz(node2vtx);
         let (un, _area) = del_geo_core::tri3::unit_normal_area(p0, p1, p2);
-        for &i_vtx in node2vtx {
+        for i_vtx in node2vtx {
+            let i_vtx: usize = (*i_vtx).as_();
             vtx2nrm[i_vtx][0] = vtx2nrm[i_vtx][0] + un[0];
             vtx2nrm[i_vtx][1] = vtx2nrm[i_vtx][1] + un[1];
             vtx2nrm[i_vtx][2] = vtx2nrm[i_vtx][2] + un[2];
@@ -58,30 +87,28 @@ pub fn vtx2normal_with_mapping<Real>(
     }
 }
 
-pub fn vtx2area<T>(tri2vtx: &[[usize; 3]], vtx2xyz: &[[T; 3]]) -> Vec<T>
+pub fn vtx2area<Index, Real>(trimesh3: TriMesh3Ref<Index, Real>) -> Vec<Real>
 where
-    T: num_traits::Float + std::ops::AddAssign + std::ops::MulAssign,
+    Index: num_traits::PrimInt + AsPrimitive<usize>,
+    Real: num_traits::Float + std::ops::AddAssign + std::ops::MulAssign,
 {
-    let num_vtx = vtx2xyz.len();
-    let mut areas = vec![T::zero(); num_vtx];
-    let one_third = T::one() / (T::one() + T::one() + T::one());
-    for node2vtx in tri2vtx.iter() {
-        let (i0, i1, i2) = (node2vtx[0], node2vtx[1], node2vtx[2]);
-        let p0 = &vtx2xyz[i0];
-        let p1 = &vtx2xyz[i1];
-        let p2 = &vtx2xyz[i2];
+    let num_vtx = trimesh3.vtx2xyz.len();
+    let mut areas = vec![Real::zero(); num_vtx];
+    let one_third = Real::one() / (Real::one() + Real::one() + Real::one());
+    for node2vtx in trimesh3.tri2vtx.iter() {
+        let [p0, p1, p2] = trimesh3.node2xyz(node2vtx);
         let a0 = del_geo_core::tri3::area(p0, p1, p2) * one_third;
-        areas[i0] += a0;
-        areas[i1] += a0;
-        areas[i2] += a0;
+        areas[node2vtx[0].as_()] += a0;
+        areas[node2vtx[1].as_()] += a0;
+        areas[node2vtx[2].as_()] += a0;
     }
     areas
 }
 
 #[test]
 fn test_vtx2area() {
-    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1_f64, 128, 256);
-    let vtx2area = crate::trimesh3::vtx2area(&tri2vtx, &vtx2xyz);
+    let trimesh3 = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1_f64, 128, 256);
+    let vtx2area = vtx2area(trimesh3.as_ref());
     let total_area: f64 = vtx2area.iter().sum();
     assert!((total_area - std::f64::consts::PI * 4.0).abs() < 1.0e-2);
 }
@@ -115,7 +142,6 @@ where
         vtx2curv[i_vtx] = (two_pi - sum_angle) / sum_area;
         total_area = total_area + sum_area;
     }
-    dbg!(total_area);
     vtx2curv
 }
 

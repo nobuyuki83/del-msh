@@ -122,14 +122,8 @@ where
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2ndc).unwrap();
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz);
-    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-        0,
-        &bvhnodes,
-        tri2vtx.as_flattened(),
-        3,
-        vtx2xyz,
-        None,
-    );
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, tri2vtx, vtx2xyz, None);
     let fn_pix2val = |i_pix: usize| -> f32 {
         let mut rng = rng_factory(i_pix);
         let i_h = i_pix / img_shape.0;
@@ -148,10 +142,10 @@ where
             if let Some((_t, i_tri, bc)) = crate::search_bvh3::first_intersection_ray(
                 &ray_org,
                 &ray_dir,
-                &crate::search_bvh3::TriMeshWithBvh {
+                &crate::search_bvh3::TriMesh3WithBvhRef {
                     tri2vtx,
                     vtx2xyz,
-                    bvhnodes: &bvhnodes,
+                    bvhnode2tri_btree: &bvhnodes,
                     bvhnode2aabb: &bvhnode2aabb,
                 },
                 0,

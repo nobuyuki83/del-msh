@@ -23,8 +23,10 @@ pub fn extend_trimesh3<'a>(
 ) -> Bound<'a, PyArray2<f64>> {
     let tri2vtx = tri2vtx.as_slice().unwrap();
     let vtx2xyz = vtx2xyz.as_slice().unwrap();
-    let vtx2nrm =
-        del_msh_cpu::trimesh3::vtx2normal(tri2vtx.as_chunks::<3>().0, vtx2xyz.as_chunks::<3>().0);
+    let vtx2nrm = del_msh_cpu::trimesh3::vtx2normal(del_msh_cpu::trimesh3::TriMesh3Ref {
+        tri2vtx: tri2vtx.as_chunks::<3>().0,
+        vtx2xyz: vtx2xyz.as_chunks::<3>().0,
+    });
     let num_vtx = vtx2xyz.len() / 3;
     let mut a = vec![0_f64; num_vtx * 3];
     for i_vtx in 0..num_vtx {
@@ -62,10 +64,10 @@ pub fn extend_polyloop3<'a>(
     let lpvtx2bin = del_msh_cpu::polyloop3::smooth_frame(lpvtx2xyz);
     let (tri2vtx, vtx2xyz) =
         del_msh_cpu::polyloop3::tube_mesh_avoid_intersection(lpvtx2xyz, &lpvtx2bin, step, niter);
-    let v1 = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len() / 3, 3), tri2vtx)
+    let v1 = numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.into_flattened())
         .unwrap()
         .into_pyarray(py);
-    let v2 = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len() / 3, 3), vtx2xyz)
+    let v2 = numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.into_flattened())
         .unwrap()
         .into_pyarray(py);
     (v1, v2)

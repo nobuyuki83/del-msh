@@ -26,10 +26,10 @@ pub fn pix2tri_by_raycast<Index>(
         if let Some((_t, i_tri, _bc)) = crate::search_bvh3::first_intersection_ray(
             &ray_org,
             &ray_dir,
-            &crate::search_bvh3::TriMeshWithBvh {
+            &crate::search_bvh3::TriMesh3WithBvhRef {
                 tri2vtx,
                 vtx2xyz,
-                bvhnodes,
+                bvhnode2tri_btree: bvhnodes,
                 bvhnode2aabb,
             },
             0,
@@ -135,12 +135,7 @@ fn test_pix2tri() {
     let pix2tri_raycast = {
         let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            tri2vtx.as_flattened(),
-            3,
-            &vtx2xyz,
-            None,
+            0, &bvhnodes, &tri2vtx, &vtx2xyz, None,
         );
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
         pix2tri_by_raycast(
@@ -331,12 +326,7 @@ fn test_interpolate() {
             .collect();
         let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz0);
         let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
-            0,
-            &bvhnodes,
-            tri2vtx.as_flattened(),
-            3,
-            &vtx2xyz0,
-            None,
+            0, &bvhnodes, &tri2vtx, &vtx2xyz0, None,
         );
         let mut pix2tri = vec![u32::MAX; IMG_RES * IMG_RES];
         let transform_ndc2world: [f32; 16] = std::array::from_fn(|i| transform_ndc2world[i] as f32);

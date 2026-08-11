@@ -41,20 +41,20 @@ fn trimesh3_primitive_sphere_yup(
     ndiv_longtitude: usize,
     ndiv_latitude: usize,
 ) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(
+    let trimesh3 = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(
         radius,
         ndiv_longtitude,
         ndiv_latitude,
     );
     let tri2vtx_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![tri2vtx.len() as i64, 3],
-        tri2vtx.as_flattened().to_vec(),
+        vec![trimesh3.tri2vtx.len() as i64, 3],
+        trimesh3.tri2vtx.as_flattened().to_vec(),
     );
     let vtx2xyz_cap = del_dlpack::make_capsule_from_vec(
         py,
-        vec![vtx2xyz.len() as i64, 3],
-        vtx2xyz.as_flattened().to_vec(),
+        vec![trimesh3.vtx2xyz.len() as i64, 3],
+        trimesh3.vtx2xyz.as_flattened().to_vec(),
     );
     Ok((tri2vtx_cap, vtx2xyz_cap))
 }

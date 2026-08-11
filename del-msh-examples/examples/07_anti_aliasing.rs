@@ -57,7 +57,7 @@ fn write_silhouette_on_magnified_image(
 }
 
 fn main() -> anyhow::Result<()> {
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.8, 64, 64);
+    let trimesh3 = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.8, 64, 64);
 
     /*
     let (tri2vtx, vtx2xyz) = {
@@ -67,13 +67,13 @@ fn main() -> anyhow::Result<()> {
     };
      */
 
-    let bvhnodes = del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
+    let bvhnodes =
+        del_msh_cpu::bvhnodes_morton::from_triangle_mesh(&trimesh3.tri2vtx, &trimesh3.vtx2xyz);
     let bvhnode2aabb = del_msh_cpu::bvhnode2aabb3::from_uniform_mesh_with_bvh(
         0,
         &bvhnodes,
-        &tri2vtx.as_flattened(),
-        3,
-        &vtx2xyz,
+        &trimesh3.tri2vtx,
+        &trimesh3.vtx2xyz,
         None,
     );
     //
@@ -100,8 +100,8 @@ fn main() -> anyhow::Result<()> {
     let mut pix2tri = vec![0u32; img_shape.0 * img_shape.1];
     del_msh_cpu::pix2tri::pix2tri_by_raycast(
         &mut pix2tri,
-        &tri2vtx,
-        &vtx2xyz,
+        &trimesh3.tri2vtx,
+        &trimesh3.vtx2xyz,
         &bvhnodes,
         &bvhnode2aabb,
         img_shape,
@@ -112,8 +112,8 @@ fn main() -> anyhow::Result<()> {
         let img_out = del_msh_cpu::pix2nrm::render_normalmap_from_pix2tri(
             img_shape,
             &cam_modelview,
-            &tri2vtx,
-            &vtx2xyz,
+            &trimesh3.tri2vtx,
+            &trimesh3.vtx2xyz,
             &pix2tri,
         );
         del_canvas::write_png_from_float_image(
@@ -125,15 +125,16 @@ fn main() -> anyhow::Result<()> {
     }
 
     let cedge2vtx = {
-        let edge2vtx = del_msh_cpu::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len() / 3);
+        let edge2vtx =
+            del_msh_cpu::edge2vtx::from_triangle_mesh(&trimesh3.tri2vtx, trimesh3.vtx2xyz.len());
         let edge2tri = del_msh_cpu::edge2elem::from_edge2vtx_of_tri2vtx(
             &edge2vtx,
-            &tri2vtx,
-            vtx2xyz.len() / 3,
+            &trimesh3.tri2vtx,
+            trimesh3.vtx2xyz.len(),
         );
         del_msh_cpu::edge2vtx::contour_for_triangle_mesh(
-            &tri2vtx,
-            &vtx2xyz,
+            &trimesh3.tri2vtx,
+            &trimesh3.vtx2xyz,
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
@@ -156,8 +157,8 @@ fn main() -> anyhow::Result<()> {
         };
         let mut pix2vout = pix2vin.clone();
         del_msh_cpu::antialias::antialias(
-            cedge2vtx.as_flattened(),
-            &vtx2xyz.as_flattened(),
+            &cedge2vtx,
+            &trimesh3.vtx2xyz,
             &transform_world2pix,
             img_shape,
             &pix2tri,
@@ -177,7 +178,7 @@ fn main() -> anyhow::Result<()> {
         &img_data,
         &transform_world2ndc,
         cedge2vtx.as_flattened(),
-        &vtx2xyz.as_flattened(),
+        &trimesh3.vtx2xyz.as_flattened(),
     )?;
     {
         // compute loss for random target image
@@ -191,10 +192,10 @@ fn main() -> anyhow::Result<()> {
             .map(|(&a, &b)| a * b)
             .sum::<f32>();
         let dldw_vtx2xyz = {
-            let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
+            let mut dldw_vtx2xyz = vec![[0f32; 3]; trimesh3.vtx2xyz.len()];
             del_msh_cpu::antialias::bwd_antialias(
-                cedge2vtx.as_flattened(),
-                &vtx2xyz.as_flattened().as_chunks::<3>().0,
+                &cedge2vtx,
+                &trimesh3.vtx2xyz,
                 &mut dldw_vtx2xyz,
                 &transform_world2pix,
                 img_shape,
@@ -216,7 +217,7 @@ fn main() -> anyhow::Result<()> {
         for i_vtx in list_vtx_on_silhouette.iter().map(|&v| v as usize) {
             for i_dim in 0..3 {
                 let vtx2xyz1 = {
-                    let mut vtx2xyz1 = vtx2xyz.clone();
+                    let mut vtx2xyz1 = trimesh3.vtx2xyz.clone();
                     vtx2xyz1[i_vtx][i_dim] += eps;
                     vtx2xyz1
                 };
@@ -235,8 +236,8 @@ fn main() -> anyhow::Result<()> {
                 };
                 let mut pix2vout = pix2vin.clone();
                 del_msh_cpu::antialias::antialias(
-                    cedge2vtx.as_flattened(),
-                    &vtx2xyz1.as_flattened(),
+                    &cedge2vtx,
+                    &vtx2xyz1,
                     &transform_world2pix,
                     img_shape,
                     &pix2tri,

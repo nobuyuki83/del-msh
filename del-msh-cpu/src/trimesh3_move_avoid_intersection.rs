@@ -1,7 +1,7 @@
 struct Mesh<'a, T> {
-    tri2vtx: &'a [usize],
-    edge2vtx: &'a [usize],
-    vtx2xyz: &'a [T],
+    tri2vtx: &'a [[usize; 3]],
+    edge2vtx: &'a [[usize; 2]],
+    vtx2xyz: &'a [[T; 3]],
 }
 
 #[allow(clippy::identity_op)]
@@ -22,21 +22,20 @@ fn wdw_proximity<T>(
     let diff_barrier = |x: T| {
         -stiff * (x - dist0) * (x - dist0) / x - stiff * 2f64.as_() * (x - dist0) * (x / dist0).ln()
     };
-    use crate::vtx2xyz::to_vec3;
     use del_geo_core::vec3::Vec3;
     for (iprox, idxs) in prox_idx.chunks(3).enumerate() {
         if idxs[2] == 0 {
             // edge edge
             let ie0 = idxs[0];
             let ie1 = idxs[1];
-            let ip0 = mesh.edge2vtx[ie0 * 2 + 0];
-            let ip1 = mesh.edge2vtx[ie0 * 2 + 1];
-            let iq0 = mesh.edge2vtx[ie1 * 2 + 0];
-            let iq1 = mesh.edge2vtx[ie1 * 2 + 1];
-            let p0 = to_vec3(mesh.vtx2xyz, ip0);
-            let p1 = to_vec3(mesh.vtx2xyz, ip1);
-            let q0 = to_vec3(mesh.vtx2xyz, iq0);
-            let q1 = to_vec3(mesh.vtx2xyz, iq1);
+            let ip0 = mesh.edge2vtx[ie0][0];
+            let ip1 = mesh.edge2vtx[ie0][1];
+            let iq0 = mesh.edge2vtx[ie1][0];
+            let iq1 = mesh.edge2vtx[ie1][1];
+            let p0 = &mesh.vtx2xyz[ip0];
+            let p1 = &mesh.vtx2xyz[ip1];
+            let q0 = &mesh.vtx2xyz[iq0];
+            let q1 = &mesh.vtx2xyz[iq1];
             let pc = del_geo_core::vec3::add(
                 &p0.scale(prox_param[iprox * 4 + 0]),
                 &p1.scale(prox_param[iprox * 4 + 1]),
@@ -65,13 +64,13 @@ fn wdw_proximity<T>(
         } else {
             let it = idxs[0];
             let iv = idxs[1];
-            let ip0 = mesh.tri2vtx[it * 3 + 0];
-            let ip1 = mesh.tri2vtx[it * 3 + 1];
-            let ip2 = mesh.tri2vtx[it * 3 + 2];
-            let p0 = to_vec3(mesh.vtx2xyz, ip0);
-            let p1 = to_vec3(mesh.vtx2xyz, ip1);
-            let p2 = to_vec3(mesh.vtx2xyz, ip2);
-            let q0 = to_vec3(mesh.vtx2xyz, iv);
+            let ip0 = mesh.tri2vtx[it][0];
+            let ip1 = mesh.tri2vtx[it][1];
+            let ip2 = mesh.tri2vtx[it][2];
+            let p0 = &mesh.vtx2xyz[ip0];
+            let p1 = &mesh.vtx2xyz[ip1];
+            let p2 = &mesh.vtx2xyz[ip2];
+            let q0 = &mesh.vtx2xyz[iv];
             let pc = del_geo_core::vec3::add_three(
                 &p0.scale(prox_param[iprox * 4 + 0]),
                 &p1.scale(prox_param[iprox * 4 + 1]),
@@ -120,9 +119,9 @@ fn wdw(
         prox_idx.as_flattened(),
         prox_param.as_flattened(),
         Mesh {
-            tri2vtx,
-            edge2vtx,
-            vtx2xyz,
+            tri2vtx: tri2vtx.as_chunks::<3>().0,
+            edge2vtx: edge2vtx.as_chunks::<2>().0,
+            vtx2xyz: vtx2xyz.as_chunks::<3>().0,
         },
         dist0,
         k_contact,

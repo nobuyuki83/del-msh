@@ -100,13 +100,17 @@ fn trimesh3_primitive_sphere_yup(
     nr: usize,
     nl: usize,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f32>>) {
-    let (tri2vtx, vtx2xyz) = del_msh_cpu::trimesh3_primitive::sphere_yup(r, nr, nl);
-    let v =
-        numpy::ndarray::Array2::from_shape_vec((vtx2xyz.len(), 3), vtx2xyz.as_flattened().to_vec())
-            .unwrap();
-    let f =
-        numpy::ndarray::Array2::from_shape_vec((tri2vtx.len(), 3), tri2vtx.as_flattened().to_vec())
-            .unwrap();
+    let trimesh3 = del_msh_cpu::trimesh3_primitive::sphere_yup(r, nr, nl);
+    let v = numpy::ndarray::Array2::from_shape_vec(
+        (trimesh3.vtx2xyz.len(), 3),
+        trimesh3.vtx2xyz.as_flattened().to_vec(),
+    )
+    .unwrap();
+    let f = numpy::ndarray::Array2::from_shape_vec(
+        (trimesh3.tri2vtx.len(), 3),
+        trimesh3.tri2vtx.as_flattened().to_vec(),
+    )
+    .unwrap();
     (f.into_pyarray(py), v.into_pyarray(py))
 }
 

@@ -7,16 +7,18 @@ pub fn including_point<Real, Index>(
     point: &[Real; 2],
     i_bvhnode: usize,
     bvhnodes: &[[Index; 3]],
-    aabbs: &[[Real; 4]],
+    bvhnode2aabb: &[[Real; 4]],
 ) where
     Real: num_traits::Float,
     Index: AsPrimitive<usize> + num_traits::PrimInt,
     usize: AsPrimitive<Index>,
 {
-    if !del_geo_core::aabb2::from_aabbs(aabbs.as_flattened(), i_bvhnode).is_include_point(point) {
+    if !del_geo_core::aabb2::from_aabbs(bvhnode2aabb.as_flattened(), i_bvhnode)
+        .is_include_point(point)
+    {
         return;
     }
-    assert_eq!(bvhnodes.len(), aabbs.len());
+    assert_eq!(bvhnodes.len(), bvhnode2aabb.len());
     if bvhnodes[i_bvhnode][2] == Index::max_value() {
         // leaf node
         let i_tri: usize = bvhnodes[i_bvhnode][1].as_();
@@ -35,7 +37,7 @@ pub fn including_point<Real, Index>(
         point,
         bvhnodes[i_bvhnode][1].as_(),
         bvhnodes,
-        aabbs,
+        bvhnode2aabb,
     );
     including_point(
         hits,
@@ -44,6 +46,6 @@ pub fn including_point<Real, Index>(
         point,
         bvhnodes[i_bvhnode][2].as_(),
         bvhnodes,
-        aabbs,
+        bvhnode2aabb,
     );
 }

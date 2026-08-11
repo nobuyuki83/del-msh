@@ -196,12 +196,21 @@ mod tests {
 
     #[test]
     fn test0() {
-        let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::sphere_yup(1.0, 16, 32);
-        let pairs = crate::trimesh3_intersection::search_brute_force(&tri2vtx, &vtx2xyz);
+        let trimesh3 = crate::trimesh3_primitive::sphere_yup(1.0, 16, 32);
+        let pairs =
+            crate::trimesh3_intersection::search_brute_force(&trimesh3.tri2vtx, &trimesh3.vtx2xyz);
         assert_eq!(pairs.len(), 0);
         let (face2idx, idx2node) = elem2elem::face2node_of_polygon_element(3);
-        let tri2tri = elem2elem::from_uniform_mesh(&tri2vtx, &face2idx, &idx2node, vtx2xyz.len());
-        let tri2center = elem2center::from_uniform_mesh_as_points::<_, _, 3, 3>(&tri2vtx, &vtx2xyz);
+        let tri2tri = elem2elem::from_uniform_mesh(
+            &trimesh3.tri2vtx,
+            &face2idx,
+            &idx2node,
+            trimesh3.vtx2xyz.len(),
+        );
+        let tri2center = elem2center::from_uniform_mesh_as_points::<_, _, 3, 3>(
+            &trimesh3.tri2vtx,
+            &trimesh3.vtx2xyz,
+        );
         let bvhnodes =
             crate::bvhnodes_topdown_trimesh3::from_uniform_mesh_with_elem2elem_elem2center(
                 &tri2tri,
@@ -214,14 +223,18 @@ mod tests {
             &mut aabb,
             0,
             &bvhnodes,
-            &tri2vtx.as_flattened(),
-            3,
-            &vtx2xyz,
+            &trimesh3.tri2vtx,
+            &trimesh3.vtx2xyz,
             None,
         );
         let mut pairs = Vec::<IntersectingPair<f32>>::new();
         crate::trimesh3_intersection::search_with_bvh_inside_branch(
-            &mut pairs, &tri2vtx, &vtx2xyz, 0, &bvhnodes, &aabb,
+            &mut pairs,
+            &trimesh3.tri2vtx,
+            &trimesh3.vtx2xyz,
+            0,
+            &bvhnodes,
+            &aabb,
         );
         assert_eq!(pairs.len(), 0);
     }
