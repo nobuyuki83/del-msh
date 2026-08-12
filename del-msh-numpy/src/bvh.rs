@@ -115,8 +115,8 @@ fn shift_bvhnodes<'a>(
 
 fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     _py: pyo3::Python<'a>,
-    mut aabbs: numpy::PyReadwriteArray2<'a, T>,
-    bvhnodes: numpy::PyReadonlyArray2<'a, usize>,
+    mut bvhnode2aabb: numpy::PyReadwriteArray2<'a, T>,
+    bvhnode2elem_tree: numpy::PyReadonlyArray2<'a, usize>,
     elem2vtx: numpy::PyReadonlyArray2<'a, usize>,
     vtx2xyz0: numpy::PyReadonlyArray2<'a, T>,
     i_bvhnode_root: usize,
@@ -124,16 +124,16 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
 ) where
     T: numpy::Element + num_traits::Float,
 {
-    assert!(aabbs.is_c_contiguous());
-    assert!(bvhnodes.is_c_contiguous());
+    assert!(bvhnode2aabb.is_c_contiguous());
+    assert!(bvhnode2elem_tree.is_c_contiguous());
     assert!(elem2vtx.is_c_contiguous());
     assert!(vtx2xyz0.is_c_contiguous());
     assert!(vtx2xyz1.is_c_contiguous());
-    assert_eq!(bvhnodes.shape()[0], aabbs.shape()[0]);
-    assert_eq!(bvhnodes.shape()[1], 3);
-    assert_eq!(aabbs.shape()[1], 6);
-    let aabbs = aabbs.as_slice_mut().unwrap();
-    let bvhnodes = bvhnodes.as_slice().unwrap();
+    assert_eq!(bvhnode2elem_tree.shape()[0], bvhnode2aabb.shape()[0]);
+    assert_eq!(bvhnode2elem_tree.shape()[1], 3);
+    assert_eq!(bvhnode2aabb.shape()[1], 6);
+    let aabbs = bvhnode2aabb.as_slice_mut().unwrap();
+    let bvhnodes = bvhnode2elem_tree.as_slice().unwrap();
     let num_noel = elem2vtx.shape()[1];
     let elem2vtx = elem2vtx.as_slice().unwrap();
     let vtx2xyz1 = if vtx2xyz0.shape() == vtx2xyz1.shape() {
@@ -143,6 +143,14 @@ fn build_bvh_geometry_aabb_uniformmesh<'a, T>(
     };
     let vtx2xyz0 = vtx2xyz0.as_slice().unwrap().as_chunks::<3>().0;
     match num_noel {
+        2 => del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<_, _, 2>(
+            aabbs.as_chunks_mut::<6>().0,
+            i_bvhnode_root,
+            bvhnodes.as_chunks::<3>().0,
+            elem2vtx.as_chunks::<2>().0,
+            vtx2xyz0,
+            vtx2xyz1,
+        ),
         3 => del_msh_cpu::bvhnode2aabb3::update_for_uniform_mesh_with_bvh::<_, _, 3>(
             aabbs.as_chunks_mut::<6>().0,
             i_bvhnode_root,
