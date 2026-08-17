@@ -52,7 +52,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
                     .try_into()
                     .unwrap(),
                 slice!(edge2vtx, u32).unwrap().as_chunks::<2>().0,
-                slice!(edge2tri, u32).unwrap(),
+                slice!(edge2tri, u32).unwrap().as_chunks::<2>().0,
             );
             let num_contour = edge2vtx_contour.len() as i64;
             Ok(capsule(

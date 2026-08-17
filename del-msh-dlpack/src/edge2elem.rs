@@ -49,7 +49,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
                 slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
                 slice!(vtx2idx_offset, u32).unwrap(),
                 slice!(idx2vtx, u32).unwrap(),
-                slice_mut!(edge2tri, u32).unwrap(),
+                slice_mut!(edge2tri, u32).unwrap().as_chunks_mut::<2>().0,
             );
         }
         #[cfg(feature = "cuda")]

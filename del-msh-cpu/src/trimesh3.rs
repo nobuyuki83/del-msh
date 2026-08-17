@@ -147,6 +147,8 @@ where
 
 #[test]
 fn test_vtx2curvature_gaussian() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
     let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::torus_zup(1_f32, 0.3f32, 32, 32);
     let vtx2curv = vtx2curvature_gaussian(&tri2vtx, &vtx2xyz);
     let vtx2rgb = vtx2curv
@@ -154,7 +156,7 @@ fn test_vtx2curvature_gaussian() {
         .map(|&c| [1., (c * 0.2).clamp(-1., 1.) * 0.5 + 0.5, 0.])
         .collect::<Vec<[f32; 3]>>();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
-        "../target/curvature.obj",
+        path_dir.join("curvature.obj"),
         &tri2vtx,
         &vtx2xyz,
         &vtx2rgb,

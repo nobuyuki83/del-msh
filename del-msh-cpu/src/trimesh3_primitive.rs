@@ -414,12 +414,15 @@ where
 
 #[test]
 fn test_sphere_yup() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
     let trimesh3 = sphere_yup::<usize, f64>(1.0, 16, 8);
-    let path_out =
-        std::path::Path::new("../target/out_del_msh_cpu/trimesh3_primitive_sphere_yup.obj");
-    std::fs::create_dir_all(path_out.parent().unwrap()).unwrap();
-    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(path_out, &trimesh3.tri2vtx, &trimesh3.vtx2xyz)
-        .unwrap();
+    crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+        path_dir.join("trimesh3_primitive_sphere_yup.obj"),
+        &trimesh3.tri2vtx,
+        &trimesh3.vtx2xyz,
+    )
+    .unwrap();
 }
 
 // ----------------------------------------

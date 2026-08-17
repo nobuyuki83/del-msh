@@ -482,14 +482,14 @@ fn test_voronoi_sites_on_edge() {
                 vedge2pnt.extend(&[i_tri, i_triedge]);
             }
         }
-        let bedge2bedge = crate::elem2elem::from_uniform_mesh(
+        let bedge2bedge = crate::elem2elem::from_uniform_mesh::<_, 2, 2>(
             &bedge2vtx,
             &del_geo_core::edge::EDGE_FACE2IDX,
             &del_geo_core::edge::EDGE_IDX2NODE,
             vtx2xy.len(),
         );
         let num_tri = tri2vtx.len();
-        for (i_bedge, node2bedge) in bedge2bedge.chunks(2).enumerate() {
+        for (i_bedge, node2bedge) in bedge2bedge.iter().enumerate() {
             for i_node in 0..2 {
                 let j_bedge = node2bedge[i_node];
                 if i_bedge > j_bedge {

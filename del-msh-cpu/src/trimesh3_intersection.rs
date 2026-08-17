@@ -201,7 +201,7 @@ mod tests {
             crate::trimesh3_intersection::search_brute_force(&trimesh3.tri2vtx, &trimesh3.vtx2xyz);
         assert_eq!(pairs.len(), 0);
         let (face2idx, idx2node) = elem2elem::face2node_of_polygon_element(3);
-        let tri2tri = elem2elem::from_uniform_mesh(
+        let tri2tri = elem2elem::from_uniform_mesh::<_, 3, 3>(
             &trimesh3.tri2vtx,
             &face2idx,
             &idx2node,
@@ -214,7 +214,6 @@ mod tests {
         let bvhnodes =
             crate::bvhnodes_topdown_trimesh3::from_uniform_mesh_with_elem2elem_elem2center(
                 &tri2tri,
-                3,
                 &tri2center,
             );
         let mut aabb = Vec::<[f32; 6]>::new();

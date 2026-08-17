@@ -29,27 +29,31 @@ pub fn from_vtx2vtx(vtx2idx: &[usize], idx2vtx: &[usize], num_cluster: usize) ->
 
 #[test]
 fn test_vtx2dist_for_vtx2vtx() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
     let trimesh3 = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 64, 64);
     let (vtx2idx, idx2vtx) =
         crate::vtx2vtx::from_uniform_mesh(&trimesh3.tri2vtx, trimesh3.vtx2xyz.len(), false);
     let num_group = 30;
     let vtx2group = from_vtx2vtx(&vtx2idx, &idx2vtx, num_group);
-    use rand::RngExt;
-    use rand::SeedableRng;
-    let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
-    let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.random::<f32>()).collect();
-    let vtx2rgb: Vec<[f32; 3]> = vtx2group
-        .iter()
-        .map(|&i_group| {
-            [
-                group2rgb[i_group * 3],
-                group2rgb[i_group * 3 + 1],
-                group2rgb[i_group * 3 + 2],
-            ]
-        })
-        .collect();
+    let vtx2rgb: Vec<[f32; 3]> = {
+        use rand::RngExt;
+        use rand::SeedableRng;
+        let mut rng = rand_chacha::ChaChaRng::seed_from_u64(0u64);
+        let group2rgb: Vec<_> = (0..num_group * 3).map(|_| rng.random::<f32>()).collect();
+        vtx2group
+            .iter()
+            .map(|&i_group| {
+                [
+                    group2rgb[i_group * 3],
+                    group2rgb[i_group * 3 + 1],
+                    group2rgb[i_group * 3 + 2],
+                ]
+            })
+            .collect()
+    };
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
-        "../target/vtx2dist_from_vtx2vtx.obj",
+        path_dir.join("vtx2dist_from_vtx2vtx.obj"),
         &trimesh3.tri2vtx,
         &trimesh3.vtx2xyz,
         &vtx2rgb,

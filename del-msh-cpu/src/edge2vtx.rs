@@ -46,9 +46,8 @@ where
 ///
 /// # Returns
 /// * `Vec<Index>` - Flattened edge connectivity
-pub fn from_uniform_mesh_with_specific_edges<Index>(
-    elem2vtx: &[Index],
-    num_node: usize,
+pub fn from_uniform_mesh_with_specific_edges<Index, const NNODE: usize>(
+    elem2vtx: &[[Index; NNODE]],
     edge2node: &[usize],
     num_vtx: usize,
 ) -> Vec<[Index; 2]>
@@ -56,39 +55,14 @@ where
     Index: num_traits::PrimInt + std::ops::AddAssign + AsPrimitive<usize>,
     usize: AsPrimitive<Index>,
 {
-    // Build vertex-to-element adjacency lookup
-    let vtx2elem = match num_node {
-        2 => crate::vtx2elem::from_uniform_mesh::<Index, 2>(elem2vtx.as_chunks::<2>().0, num_vtx),
-        3 => crate::vtx2elem::from_uniform_mesh::<Index, 3>(elem2vtx.as_chunks::<3>().0, num_vtx),
-        4 => crate::vtx2elem::from_uniform_mesh::<Index, 4>(elem2vtx.as_chunks::<4>().0, num_vtx),
-        _ => panic!("unsupported num_node: {num_node}"),
-    };
-    // Extract vertex-to-vertex connectivity for specified edge patterns
-    let vtx2vtx = match num_node {
-        2 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 2>(
-            elem2vtx.as_chunks::<2>().0,
-            edge2node.as_chunks::<2>().0,
-            &vtx2elem.0,
-            &vtx2elem.1,
-            false,
-        ),
-        3 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 3>(
-            elem2vtx.as_chunks::<3>().0,
-            edge2node.as_chunks::<2>().0,
-            &vtx2elem.0,
-            &vtx2elem.1,
-            false,
-        ),
-        4 => crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, 4>(
-            elem2vtx.as_chunks::<4>().0,
-            edge2node.as_chunks::<2>().0,
-            &vtx2elem.0,
-            &vtx2elem.1,
-            false,
-        ),
-        _ => panic!("unsupported num_node: {num_node}"),
-    };
-    // Convert vertex adjacency to edge list
+    let vtx2elem = crate::vtx2elem::from_uniform_mesh::<Index, NNODE>(elem2vtx, num_vtx);
+    let vtx2vtx = crate::vtx2vtx::from_specific_edges_of_uniform_mesh::<Index, NNODE>(
+        elem2vtx,
+        edge2node.as_chunks::<2>().0,
+        &vtx2elem.0,
+        &vtx2elem.1,
+        false,
+    );
     let mut edge2vtx = vec![[Index::zero(); 2]; vtx2vtx.1.len()];
     from_vtx2vtx(&vtx2vtx.0, &vtx2vtx.1, &mut edge2vtx);
     edge2vtx
@@ -111,7 +85,7 @@ where
     usize: AsPrimitive<INDEX>,
 {
     // Extract triangle edges: vertex 0-1, 1-2, 2-0
-    from_uniform_mesh_with_specific_edges(tri2vtx.as_flattened(), 3, &[0, 1, 1, 2, 2, 0], num_vtx)
+    from_uniform_mesh_with_specific_edges::<_, 3>(tri2vtx, &[0, 1, 1, 2, 2, 0], num_vtx)
 }
 
 /// Extract edges from a mesh with mixed polygonal elements.
@@ -210,7 +184,7 @@ pub fn contour_for_triangle_mesh<INDEX>(
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[[INDEX; 2]],
-    edge2tri: &[INDEX],
+    edge2tri: &[[INDEX; 2]],
 ) -> Vec<[INDEX; 2]>
 where
     INDEX: num_traits::PrimInt + num_traits::AsPrimitive<usize> + std::fmt::Display,
@@ -235,8 +209,8 @@ where
         );
 
         // Get the two triangles adjacent to this edge
-        let i0_tri = edge2tri[i_edge * 2];
-        let i1_tri = edge2tri[i_edge * 2 + 1];
+        let i0_tri = edge2tri[i_edge][0];
+        let i1_tri = edge2tri[i_edge][1];
         assert!(i0_tri.as_() < num_tri, "{} {}", i0_tri, tri2vtx.len());
         assert!(i1_tri.as_() < num_tri, "{} {}", i1_tri, tri2vtx.len());
 
@@ -278,10 +252,10 @@ pub fn occluding_contour_for_triangle_mesh(
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[[usize; 2]],
-    edge2tri: &[usize],
-    bvhnodes: &[[usize; 3]],
+    edge2tri: &[[usize; 2]],
+    bvhnode2tri_tree: &[[usize; 3]],
     bvhnode2aabb: &[[f32; 6]],
-) -> Vec<usize> {
+) -> Vec<[usize; 2]> {
     use del_geo_core::{mat4_col_major, vec3};
     let transform_ndc2world = mat4_col_major::try_inverse(transform_world2ndc).unwrap();
     let mut edge2vtx_contour = vec![];
@@ -300,8 +274,8 @@ pub fn occluding_contour_for_triangle_mesh(
         );
 
         // Get adjacent triangles for this edge
-        let i0_tri = edge2tri[i_edge * 2];
-        let i1_tri = edge2tri[i_edge * 2 + 1];
+        let i0_tri = edge2tri[i_edge][0];
+        let i1_tri = edge2tri[i_edge][1];
         assert!(i0_tri < tri2vtx.len(), "{} {}", i0_tri, tri2vtx.len());
         assert!(i1_tri < tri2vtx.len(), "{} {}", i1_tri, tri2vtx.len());
         // Calculate triangle normals
@@ -326,7 +300,7 @@ pub fn occluding_contour_for_triangle_mesh(
             &ray_org,
             &ray_dir,
             &crate::search_bvh3::TriMesh3WithBvhRef {
-                bvhnode2tri_btree: bvhnodes,
+                bvhnode2tri_btree: bvhnode2tri_tree,
                 bvhnode2aabb,
                 tri2vtx,
                 vtx2xyz,
@@ -337,8 +311,7 @@ pub fn occluding_contour_for_triangle_mesh(
         if res.is_some() {
             continue; // Edge is occluded by another part of the mesh
         }
-        edge2vtx_contour.push(i0_vtx);
-        edge2vtx_contour.push(i1_vtx);
+        edge2vtx_contour.push([i0_vtx, i1_vtx]);
     }
     edge2vtx_contour
 }
@@ -364,8 +337,8 @@ pub fn silhouette_for_triangle_mesh(
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     edge2vtx: &[[usize; 2]],
-    edge2tri: &[usize],
-    bvhnodes: &[[usize; 3]],
+    edge2tri: &[[usize; 2]],
+    bvhnode2tri_tree: &[[usize; 3]],
     bvhnode2aabb: &[[f32; 6]],
 ) -> Vec<[usize; 2]> {
     use del_geo_core::{mat4_col_major, vec3};
@@ -381,8 +354,8 @@ pub fn silhouette_for_triangle_mesh(
             &transform_ndc2world,
         );
         // -------
-        let i0_tri = edge2tri[i_edge * 2];
-        let i1_tri = edge2tri[i_edge * 2 + 1];
+        let i0_tri = edge2tri[i_edge][0];
+        let i1_tri = edge2tri[i_edge][1];
         assert!(i0_tri < tri2vtx.len(), "{} {}", i0_tri, tri2vtx.len());
         assert!(i1_tri < tri2vtx.len(), "{} {}", i1_tri, tri2vtx.len());
         let nrm0_world = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i0_tri).unit_normal();
@@ -407,7 +380,7 @@ pub fn silhouette_for_triangle_mesh(
             &ray_org,
             &ray_dir,
             &crate::search_bvh3::TriMesh3WithBvhRef {
-                bvhnode2tri_btree: bvhnodes,
+                bvhnode2tri_btree: bvhnode2tri_tree,
                 bvhnode2aabb,
                 tri2vtx,
                 vtx2xyz,
@@ -424,6 +397,9 @@ pub fn silhouette_for_triangle_mesh(
 
 #[test]
 pub fn test_contour() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
+    //
     let (tri2vtx, vtx2xyz): (Vec<[usize; 3]>, Vec<[f32; 3]>)
         // = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1., 32, 32);
         = crate::trimesh3_primitive::torus_zup(2.0, 0.5, 32, 32);
@@ -436,9 +412,14 @@ pub fn test_contour() {
         del_geo_core::mat4_col_major::transpose(&t)
     };
     //
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
-    let bvhnode2aabb =
-        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, &vtx2xyz, None);
+    let bvhnode2tri_tree = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
+    let bvhnode2aabb = crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(
+        0,
+        &bvhnode2tri_tree,
+        &tri2vtx,
+        &vtx2xyz,
+        None,
+    );
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(&tri2vtx, vtx2xyz.len());
     let edge2tri = crate::edge2elem::from_edge2vtx_of_tri2vtx(&edge2vtx, &tri2vtx, vtx2xyz.len());
 
@@ -449,12 +430,12 @@ pub fn test_contour() {
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
-            &bvhnodes,
+            &bvhnode2tri_tree,
             &bvhnode2aabb,
         );
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
             "../target/edge2vtx_countour.obj",
-            edge2vtx_contour.as_chunks::<2>().0,
+            &edge2vtx_contour,
             &vtx2xyz,
         )
         .unwrap();
@@ -466,7 +447,7 @@ pub fn test_contour() {
             &transform_world2ndc,
             &edge2vtx,
             &edge2tri,
-            &bvhnodes,
+            &bvhnode2tri_tree,
             &bvhnode2aabb,
         );
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(

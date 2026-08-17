@@ -120,23 +120,23 @@ pub fn should_flip<T>(
     i_tri0: usize,
     i_node0: usize,
     tri2vtx: &[[usize; 3]],
-    tri2tri: &[usize],
+    tri2tri: &[[usize; 3]],
     vtx2xy: &[[T; 2]],
 ) -> bool
 where
     T: num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
-    if tri2tri[i_tri0 * 3 + i_node0] >= tri2vtx.len() {
+    if tri2tri[i_tri0][i_node0] >= tri2vtx.len() {
         return false;
     } // there is adjacent triangle
-    let j_tri0 = tri2tri[i_tri0 * 3 + i_node0];
+    let j_tri0 = tri2tri[i_tri0][i_node0];
     let j_node0 = crate::trimesh_topology::find_adjacent_edge_index(
         &tri2vtx[i_tri0],
-        arrayref::array_ref!(tri2tri, i_tri0 * 3, 3),
+        &tri2tri[i_tri0],
         i_node0,
         tri2vtx,
     );
-    assert_eq!(tri2tri[j_tri0 * 3 + j_node0], i_tri0);
+    assert_eq!(tri2tri[j_tri0][j_node0], i_tri0);
     let pj0 = vtx2xy[tri2vtx[j_tri0][j_node0]];
     let pi0 = vtx2xy[tri2vtx[i_tri0][i_node0]];
     let pi1 = vtx2xy[tri2vtx[i_tri0][(i_node0 + 1) % 3]];
@@ -166,7 +166,7 @@ where
 pub fn delaunay_around_point<T>(
     i_vtx0: usize,
     tri2vtx: &mut [[usize; 3]],
-    tri2tri: &mut [usize],
+    tri2tri: &mut [[usize; 3]],
     vtx2tri: &mut [usize],
     vtx2xy: &[[T; 2]],
 ) where
@@ -189,13 +189,7 @@ pub fn delaunay_around_point<T>(
         assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
         if should_flip(i_tri0, i_node0, tri2vtx, tri2tri, vtx2xy) {
             // there is adjacent triangle
-            crate::trimesh_topology::flip_edge(
-                i_tri0,
-                i_node0,
-                tri2vtx,
-                tri2tri.as_chunks_mut::<3>().0,
-                vtx2tri,
-            ); // this edge is not on the edge and should be successful
+            crate::trimesh_topology::flip_edge(i_tri0, i_node0, tri2vtx, tri2tri, vtx2tri); // this edge is not on the edge and should be successful
             i_node0 = 2;
             assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0); // this is the rule from FlipEdge function
             continue; // need to check the flipped element
@@ -205,7 +199,7 @@ pub fn delaunay_around_point<T>(
             &mut i_node0,
             usize::MAX,
             tri2vtx,
-            tri2tri.as_chunks::<3>().0,
+            tri2tri,
         ) {
             flag_is_wall = true;
             break;
@@ -223,14 +217,8 @@ pub fn delaunay_around_point<T>(
     loop {
         assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
         if should_flip(i_tri0, i_node0, tri2vtx, tri2tri, vtx2xy) {
-            let j_tri0 = tri2tri[i_tri0 * 3 + i_node0];
-            crate::trimesh_topology::flip_edge(
-                i_tri0,
-                i_node0,
-                tri2vtx,
-                tri2tri.as_chunks_mut::<3>().0,
-                vtx2tri,
-            );
+            let j_tri0 = tri2tri[i_tri0][i_node0];
+            crate::trimesh_topology::flip_edge(i_tri0, i_node0, tri2vtx, tri2tri, vtx2tri);
             i_tri0 = j_tri0;
             i_node0 = 1;
             assert_eq!(tri2vtx[i_tri0][i_node0], i_vtx0);
@@ -241,7 +229,7 @@ pub fn delaunay_around_point<T>(
             &mut i_node0,
             usize::MAX,
             tri2vtx,
-            tri2tri.as_chunks::<3>().0,
+            tri2tri,
         ) {
             return;
         }
@@ -517,13 +505,7 @@ where
     // crate::io_obj::save_tri_mesh("target/a.obj", &tri2vtx, vtx2xy);
     for i_vtx in 0..vtx2tri.len() - 3 {
         add_points_to_mesh(&mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy, i_vtx);
-        delaunay_around_point(
-            i_vtx,
-            &mut tri2vtx,
-            tri2tri.as_flattened_mut(),
-            &mut vtx2tri,
-            vtx2xy,
-        );
+        delaunay_around_point(i_vtx, &mut tri2vtx, &mut tri2tri, &mut vtx2tri, vtx2xy);
     }
     // crate::io_obj::save_tri_mesh("target/b.obj", &tri2vtx, vtx2xy);
     for i_loop in 0..loop2idx.len() - 1 {
@@ -567,7 +549,7 @@ pub fn laplacian_mesh_smoothing_around_point<T>(
     vtx2xy: &mut [[T; 2]],
     i_vtx0: usize,
     tri2vtx: &[[usize; 3]],
-    tri2tri: &[usize],
+    tri2tri: &[[usize; 3]],
     vtx2tri: &[usize],
 ) -> bool
 where
@@ -592,7 +574,7 @@ where
             &mut i_node0,
             usize::MAX,
             tri2vtx,
-            tri2tri.as_chunks::<3>().0,
+            tri2tri,
         ) {
             return false;
         }
@@ -619,7 +601,7 @@ where
             &mut i_node0,
             usize::MAX,
             tri2vtx,
-            tri2tri.as_chunks::<3>().0,
+            tri2tri,
         ) {
             return false;
         }
@@ -681,22 +663,12 @@ pub fn add_points_uniformly<T>(
             tri2flag.push(flag_i_tri);
             tri2flag.push(flag_i_tri);
             vtx2flag.push(flag_i_tri + nflgpnt_offset);
-            delaunay_around_point(
-                ipo0,
-                dm.tri2vtx,
-                dm.tri2tri.as_flattened_mut(),
-                dm.vtx2tri,
-                dm.vtx2xy,
-            );
+            delaunay_around_point(ipo0, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
             nadd += 1;
         }
         for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
             laplacian_mesh_smoothing_around_point(
-                dm.vtx2xy,
-                i_vtx,
-                dm.tri2vtx,
-                dm.tri2tri.as_flattened(),
-                dm.vtx2tri,
+                dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri,
             );
         }
         if nadd != 0 {
@@ -710,20 +682,8 @@ pub fn add_points_uniformly<T>(
     }
 
     for i_vtx in num_vtx_fix..dm.vtx2xy.len() {
-        laplacian_mesh_smoothing_around_point(
-            dm.vtx2xy,
-            i_vtx,
-            dm.tri2vtx,
-            dm.tri2tri.as_flattened(),
-            dm.vtx2tri,
-        );
-        delaunay_around_point(
-            i_vtx,
-            dm.tri2vtx,
-            dm.tri2tri.as_flattened_mut(),
-            dm.vtx2tri,
-            dm.vtx2xy,
-        );
+        laplacian_mesh_smoothing_around_point(dm.vtx2xy, i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri);
+        delaunay_around_point(i_vtx, dm.tri2vtx, dm.tri2tri, dm.vtx2tri, dm.vtx2xy);
     }
 }
 

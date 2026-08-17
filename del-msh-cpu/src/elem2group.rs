@@ -3,26 +3,23 @@
 /// mark elements with "idx_group" that is connected to "idx_elem_kernel"
 /// * `elem_group` - array of group index for element
 /// * `elem_adjelem` - array of adjacent element for element
-pub fn mark_connected_elements_for_uniform_mesh(
+pub fn mark_connected_elements_for_uniform_mesh<const NFACE: usize>(
     elem2group: &mut [usize],
     idx_elem_kernel: usize,
     idx_group: usize,
-    elem2adjelem: &[usize],
+    elem2elem_adj: &[[usize; NFACE]],
 ) {
-    let num_elem = elem2group.len();
-    assert_eq!(elem2adjelem.len() % num_elem, 0);
-    let num_face_par_elem = elem2adjelem.len() / num_elem;
+    assert_eq!(elem2group.len(), elem2elem_adj.len());
     elem2group[idx_elem_kernel] = idx_group;
     let mut next = vec![idx_elem_kernel];
     while let Some(i_elem0) = next.pop() {
-        for ie in 0..num_face_par_elem {
-            let ita = elem2adjelem[i_elem0 * num_face_par_elem + ie];
-            if ita == usize::MAX {
+        for &i_elem_adj in elem2elem_adj[i_elem0].iter() {
+            if i_elem_adj == usize::MAX {
                 continue;
             }
-            if elem2group[ita] != idx_group {
-                elem2group[ita] = idx_group;
-                next.push(ita);
+            if elem2group[i_elem_adj] != idx_group {
+                elem2group[i_elem_adj] = idx_group;
+                next.push(i_elem_adj);
             }
         }
     }
@@ -32,12 +29,12 @@ pub fn mark_connected_elements_for_uniform_mesh(
 /// * `elem2vtx` - the indices of vertex for each element
 /// * `num_node` - number of vertices par element
 /// * `elem2elem_adj` - the adjacent element index of an element
-pub fn from_uniform_mesh_with_elem2elem(
-    elem2vtx: &[usize],
-    num_node: usize,
-    elem2adjelem: &[usize],
+pub fn from_uniform_mesh_with_elem2elem<const NNODE: usize, const NFACE: usize>(
+    elem2vtx: &[[usize; NNODE]],
+    elem2adjelem: &[[usize; NFACE]],
 ) -> (usize, Vec<usize>) {
-    let nelem = elem2vtx.len() / num_node;
+    assert_eq!(elem2vtx.len(), elem2adjelem.len());
+    let nelem = elem2vtx.len();
     let mut elem2group = vec![usize::MAX; nelem];
     let mut i_group = 0;
     loop {
@@ -59,13 +56,13 @@ pub fn from_uniform_mesh_with_elem2elem(
 }
 
 pub fn from_triangle_mesh(tri2vtx: &[usize], num_vtx: usize) -> (usize, Vec<usize>) {
-    let tri2tri = crate::elem2elem::from_uniform_mesh(
+    let tri2tri = crate::elem2elem::from_uniform_mesh::<_, 3, 3>(
         tri2vtx.as_chunks::<3>().0,
         &del_geo_core::tri::FACE2IDX,
         &del_geo_core::tri::IDX2NODE,
         num_vtx,
     );
-    from_uniform_mesh_with_elem2elem(tri2vtx, 3, &tri2tri)
+    from_uniform_mesh_with_elem2elem(tri2vtx.as_chunks::<3>().0, &tri2tri)
 }
 
 /// mark elements with "idx_group" that is connected to "idx_elem_kernel"

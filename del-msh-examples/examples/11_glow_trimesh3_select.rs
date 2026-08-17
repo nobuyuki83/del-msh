@@ -36,7 +36,7 @@ struct MyApp {
     vtx2xyz: Vec<f32>,
     tri2dist: Vec<usize>,
     tri2flag: Vec<u8>,
-    tri2tri: Vec<u32>,
+    tri2tri: Vec<[u32; 3]>,
     is_updated_tri2flag: bool,
     gl: Option<Arc<glow::Context>>,
     cur_dist: Option<usize>,
@@ -157,7 +157,6 @@ impl MyApp {
             i0.pointer.button_pressed(egui::PointerButton::Primary) && i0.modifiers.is_none()
         }) {
             // mouse pressed
-            let num_tri = self.tri2dist.len();
             if let Some(pos) = ctx.pointer_interact_pos() {
                 let (ray_org, ray_dir) = self.picking_ray(pos, rect);
                 if let Some((_depth, i_tri)) =
@@ -173,7 +172,6 @@ impl MyApp {
                     self.tri2dist = del_msh_cpu::dijkstra::elem2dist_for_uniform_mesh(
                         i_tri as usize,
                         &self.tri2tri,
-                        num_tri,
                     );
                     self.cur_dist = Some(0);
                     self.is_updated_tri2flag = true;

@@ -20,9 +20,8 @@ fn edge2vtx_uniform_mesh<'a>(
     num_vtx: usize,
 ) -> Bound<'a, numpy::PyArray2<usize>> {
     // TODO: make this function general to uniform mesh (currently only triangle mesh)
-    let mshline = del_msh_cpu::edge2vtx::from_uniform_mesh_with_specific_edges(
-        elem2vtx.as_slice().unwrap(),
-        3,
+    let mshline = del_msh_cpu::edge2vtx::from_uniform_mesh_with_specific_edges::<_, 3>(
+        elem2vtx.as_slice().unwrap().as_chunks::<3>().0,
         &[0, 1, 1, 2, 2, 0],
         num_vtx,
     );

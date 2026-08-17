@@ -1,24 +1,27 @@
 use num_traits::AsPrimitive;
 
-fn dominant_direction_pca<T>(remaining_elems: &[usize], elem2center: &[[T; 3]]) -> ([T; 3], [T; 3])
+fn dominant_direction_pca<Real>(
+    remaining_elems: &[usize],
+    elem2center: &[[Real; 3]],
+) -> ([Real; 3], [Real; 3])
 where
-    T: num_traits::Float + 'static + Copy,
-    usize: AsPrimitive<T>,
+    Real: num_traits::Float + 'static + Copy,
+    usize: AsPrimitive<Real>,
 {
     use del_geo_core::vec3::Vec3;
-    let mut org = [T::zero(); 3];
+    let mut org = [Real::zero(); 3];
     for &i_tri in remaining_elems {
         // center of the gravity of list
         org.add_in_place(&elem2center[i_tri]);
     }
-    org.scale_in_place(T::one() / remaining_elems.len().as_());
-    let mut cov = [T::zero(); 9];
+    org.scale_in_place(Real::one() / remaining_elems.len().as_());
+    let mut cov = [Real::zero(); 9];
     for &i_tri in remaining_elems {
         let v = elem2center[i_tri].sub(&org);
-        let cov0 = &del_geo_core::mat3_col_major::from_scaled_outer_product(T::one(), &v, &v);
+        let cov0 = &del_geo_core::mat3_col_major::from_scaled_outer_product(Real::one(), &v, &v);
         cov = del_geo_core::mat3_col_major::add(&cov, cov0);
     }
-    let mut dir = [T::one(), T::one(), T::one()];
+    let mut dir = [Real::one(), Real::one(), Real::one()];
     for _ in 0..10 {
         // power method to find the max eigen value/vector
         dir = del_geo_core::mat3_col_major::mult_vec(&cov, &dir);
@@ -52,18 +55,17 @@ fn dominant_direction_aabb(remaining_elems: &[usize], elem2center: &[f32]) -> ([
     (org, dir)
 }
 
-fn divide_list_of_elements<T>(
+fn divide_list_of_elements<Real, const NFACE: usize>(
     i_node_root: usize,
     elem2bvhnode: &mut [usize],
     bvhnodes: &mut Vec<[usize; 3]>,
     remaining_elems: &[usize],
-    num_adjacent_elems: usize,
-    elem2elem: &[usize],
-    elem2center: &[[T; 3]],
+    elem2elem: &[[usize; NFACE]],
+    elem2center: &[[Real; 3]],
 ) where
-    T: num_traits::Float + Copy + 'static,
-    usize: AsPrimitive<T>,
-    f64: AsPrimitive<T>,
+    Real: num_traits::Float + Copy + 'static,
+    usize: AsPrimitive<Real>,
+    f64: AsPrimitive<Real>,
 {
     use del_geo_core::vec3::Vec3;
     let inode_ch0 = bvhnodes.len();
@@ -92,8 +94,8 @@ fn divide_list_of_elements<T>(
                     if det0.abs() < 1.0e-10f64.as_() {
                         continue;
                     }
-                    if det0 < T::zero() {
-                        dir = dir.scale(-T::one());
+                    if det0 < Real::zero() {
+                        dir = dir.scale(-Real::one());
                     }
                     i_elem_ker = i_elem;
                     break;
@@ -106,8 +108,7 @@ fn divide_list_of_elements<T>(
             let mut elem_stack = vec![0_usize; 0];
             elem_stack.push(i_elem_ker);
             while let Some(itri0) = elem_stack.pop() {
-                for i_face in 0..num_adjacent_elems {
-                    let j_elem = elem2elem[itri0 * num_adjacent_elems + i_face];
+                for &j_elem in elem2elem[itri0].iter() {
                     if j_elem == usize::MAX {
                         continue;
                     }
@@ -115,7 +116,7 @@ fn divide_list_of_elements<T>(
                         continue;
                     }
                     let cntr = &elem2center[j_elem];
-                    if cntr.sub(&org).dot(&dir) < T::zero() {
+                    if cntr.sub(&org).dot(&dir) < Real::zero() {
                         continue;
                     }
                     elem_stack.push(j_elem);
@@ -150,7 +151,6 @@ fn divide_list_of_elements<T>(
             elem2bvhnode,
             bvhnodes,
             &list_ch0,
-            num_adjacent_elems,
             elem2elem,
             elem2center,
         );
@@ -166,22 +166,20 @@ fn divide_list_of_elements<T>(
             elem2bvhnode,
             bvhnodes,
             &list_ch1,
-            num_adjacent_elems,
             elem2elem,
             elem2center,
         );
     }
 }
 
-pub fn from_uniform_mesh_with_elem2elem_elem2center<T>(
-    elem2elem: &[usize],
-    num_adjacent_elems: usize,
-    elem2center: &[[T; 3]],
+pub fn from_uniform_mesh_with_elem2elem_elem2center<Real, const NFACE: usize>(
+    elem2elem: &[[usize; NFACE]],
+    elem2center: &[[Real; 3]],
 ) -> Vec<[usize; 3]>
 where
-    T: num_traits::Float + Copy + 'static,
-    usize: AsPrimitive<T>,
-    f64: AsPrimitive<T>,
+    Real: num_traits::Float + Copy + 'static,
+    usize: AsPrimitive<Real>,
+    f64: AsPrimitive<Real>,
 {
     let nelem = elem2center.len();
     let remaining_elems: Vec<usize> = (0..nelem).collect();
@@ -192,20 +190,19 @@ where
         &mut elem2node,
         &mut nodes,
         &remaining_elems,
-        num_adjacent_elems,
         elem2elem,
         elem2center,
     );
     nodes
 }
 
-pub fn from_triangle_mesh<T>(tri2vtx: &[[usize; 3]], vtx2xyz: &[[T; 3]]) -> Vec<[usize; 3]>
+pub fn from_triangle_mesh<Real>(tri2vtx: &[[usize; 3]], vtx2xyz: &[[Real; 3]]) -> Vec<[usize; 3]>
 where
-    T: num_traits::Float + std::ops::AddAssign + 'static + Copy,
-    f64: AsPrimitive<T>,
-    usize: AsPrimitive<T>,
+    Real: num_traits::Float + std::ops::AddAssign + 'static + Copy,
+    f64: AsPrimitive<Real>,
+    usize: AsPrimitive<Real>,
 {
-    let tri2tri = crate::elem2elem::from_uniform_mesh::<usize, 3>(
+    let tri2tri = crate::elem2elem::from_uniform_mesh::<usize, 3, 3>(
         tri2vtx,
         &del_geo_core::tri::FACE2IDX,
         &del_geo_core::tri::IDX2NODE,
@@ -213,5 +210,5 @@ where
     );
     let tri2center =
         crate::elem2center::from_uniform_mesh_as_points::<_, _, 3, 3>(tri2vtx, vtx2xyz);
-    from_uniform_mesh_with_elem2elem_elem2center(&tri2tri, 3, &tri2center)
+    from_uniform_mesh_with_elem2elem_elem2center(&tri2tri, &tri2center)
 }

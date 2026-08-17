@@ -87,24 +87,27 @@ pub fn elem2elem(
         crate::elem2elem::face2node_of_polygon_element(num_node)
     };
     match num_node {
-        2 => crate::elem2elem::from_uniform_mesh(
+        2 => crate::elem2elem::from_uniform_mesh::<_, 2, 2>(
             elem2vtx.as_chunks::<2>().0,
             &face2idx,
             &idx2node,
             num_vtx,
-        ),
-        3 => crate::elem2elem::from_uniform_mesh(
+        )
+        .into_flattened(),
+        3 => crate::elem2elem::from_uniform_mesh::<_, 3, 3>(
             elem2vtx.as_chunks::<3>().0,
             &face2idx,
             &idx2node,
             num_vtx,
-        ),
-        4 => crate::elem2elem::from_uniform_mesh(
+        )
+        .into_flattened(),
+        4 => crate::elem2elem::from_uniform_mesh::<_, 4, 4>(
             elem2vtx.as_chunks::<4>().0,
             &face2idx,
             &idx2node,
             num_vtx,
-        ),
+        )
+        .into_flattened(),
         _ => panic!("unsupported num_node: {num_node}"),
     }
 }

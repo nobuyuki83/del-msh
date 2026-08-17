@@ -22,7 +22,7 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
     tri2vtx: &[[INDEX; 3]],
     vtx2idx: &[INDEX],
     idx2tri: &[INDEX],
-    edge2tri: &mut [INDEX],
+    edge2tri: &mut [[INDEX; 2]],
 ) where
     INDEX: num_traits::PrimInt + 'static + AsPrimitive<usize> + std::fmt::Debug,
     usize: num_traits::AsPrimitive<INDEX>,
@@ -30,7 +30,7 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
     use num_traits::AsPrimitive;
     // Initialize result array with max values (indicating no triangle found)
     let num_edge = edge2vtx.len();
-    assert_eq!(edge2tri.len(), num_edge * 2);
+    assert_eq!(edge2tri.len(), num_edge);
     // Process each edge
     for (i_edge, node2vtx) in edge2vtx.iter().enumerate() {
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
@@ -55,7 +55,7 @@ pub fn from_edge2vtx_of_tri2vtx_with_vtx2vtx<INDEX>(
                 continue;
             }
             // Store the triangle index for this edge
-            edge2tri[i_edge * 2 + i_cnt] = i_tri.as_();
+            edge2tri[i_edge][i_cnt] = i_tri.as_();
             i_cnt += 1;
             // Stop after finding 2 triangles (manifold edge assumption)
             if i_cnt == 2 {
@@ -69,7 +69,7 @@ pub fn from_edge2vtx_of_tri2vtx<INDEX>(
     edge2vtx: &[[INDEX; 2]],
     tri2vtx: &[[INDEX; 3]],
     num_vtx: usize,
-) -> Vec<INDEX>
+) -> Vec<[INDEX; 2]>
 where
     INDEX: num_traits::PrimInt
         + std::ops::AddAssign
@@ -79,7 +79,7 @@ where
 {
     let (vtx2idx, idx2tri) = crate::vtx2elem::from_uniform_mesh(tri2vtx, num_vtx);
     let num_edge = edge2vtx.len();
-    let mut edge2tri = vec![INDEX::zero(); num_edge * 2];
+    let mut edge2tri = vec![[INDEX::zero(); 2]; num_edge];
     from_edge2vtx_of_tri2vtx_with_vtx2vtx(edge2vtx, tri2vtx, &vtx2idx, &idx2tri, &mut edge2tri);
     edge2tri
 }
@@ -92,6 +92,7 @@ pub fn test_edge2tri() {
     let edge2vtx = crate::edge2vtx::from_triangle_mesh(&trimesh3.tri2vtx, trimesh3.vtx2xyz.len());
     let edge2tri = from_edge2vtx_of_tri2vtx(&edge2vtx, &trimesh3.tri2vtx, trimesh3.vtx2xyz.len());
     edge2tri
+        .as_flattened()
         .iter()
         .for_each(|&i_tri| assert_ne!(i_tri, usize::MAX));
 }

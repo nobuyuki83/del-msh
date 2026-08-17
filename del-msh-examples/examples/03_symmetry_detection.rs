@@ -82,7 +82,7 @@ pub fn sym_detector(
     i_seed: u64,
     num_sample: usize,
 ) -> Vec<DetectedSymmetry> {
-    let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh(
+    let tri2tri = del_msh_cpu::elem2elem::from_uniform_mesh::<_, 3, 3>(
         tri2vtx.as_chunks::<3>().0,
         &[0, 2, 4, 6],
         &[1, 2, 2, 0, 0, 1],
@@ -191,8 +191,22 @@ pub fn sym_detector(
         let j_tri = samples[max_weight_and_pair.2].i_tri;
         // region growing algorithm
         let mut tri2flg = vec![0; tri2vtx.len() / 3];
-        extract_triangles_in_symmetry(&mut tri2flg, i_tri, tri2vtx, vtx2xyz, &cur_trans, &tri2tri);
-        extract_triangles_in_symmetry(&mut tri2flg, j_tri, tri2vtx, vtx2xyz, &cur_trans, &tri2tri);
+        extract_triangles_in_symmetry(
+            &mut tri2flg,
+            i_tri,
+            tri2vtx,
+            vtx2xyz,
+            &cur_trans,
+            &tri2tri.as_flattened(),
+        );
+        extract_triangles_in_symmetry(
+            &mut tri2flg,
+            j_tri,
+            tri2vtx,
+            vtx2xyz,
+            &cur_trans,
+            &tri2tri.as_flattened(),
+        );
         // let num_tri = tri2flg.iter().filter(|&v| *v == 2 ).count();
         let tris: Vec<_> = tri2flg
             .iter()

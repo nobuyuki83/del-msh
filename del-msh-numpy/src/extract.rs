@@ -23,13 +23,13 @@ pub fn extract<'a>(
     Bound<'a, PyArray1<usize>>,
 ) {
     let (tri2vtx_new, num_vtx_new, vtx2vtx_new) = del_msh_cpu::extract::extract(
-        tri2vtx.as_slice().unwrap(),
+        tri2vtx.as_slice().unwrap().as_chunks::<3>().0,
         num_vtx,
         tri2tri_new.as_slice().unwrap(),
         num_tri_new,
     );
     (
-        numpy::ndarray::Array1::from_vec(tri2vtx_new).into_pyarray(py),
+        numpy::ndarray::Array1::from_vec(tri2vtx_new.into_flattened()).into_pyarray(py),
         num_vtx_new,
         numpy::ndarray::Array1::from_vec(vtx2vtx_new).into_pyarray(py),
     )

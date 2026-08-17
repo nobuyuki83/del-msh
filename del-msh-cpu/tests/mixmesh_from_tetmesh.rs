@@ -34,7 +34,7 @@ mod tests {
             .unwrap();
         }
 
-        let mut tet2tet = del_msh_cpu::uniform_mesh::elem2elem(
+        let mut tet2tet = del_msh_cpu::uniform_mesh::elem2elem::<4, 4>(
             tet2vtx.as_chunks::<4>().0,
             &del_geo_core::tet::FACE2IDX,
             &del_geo_core::tet::IDX2NODE,

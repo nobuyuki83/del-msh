@@ -447,10 +447,7 @@ pub fn boundaryedge2vtx(
         &del_geo_core::tri::FACE2IDX,
         &del_geo_core::tri::IDX2NODE,
         num_vtx,
-    )
-    .as_chunks::<3>()
-    .0
-    .to_vec();
+    );
     let mut bedge2vtx: Vec<[usize; 2]> = vec![];
     for (i_tri, node2tri) in tri2tri.iter_mut().enumerate() {
         for i_node in 0..3 {

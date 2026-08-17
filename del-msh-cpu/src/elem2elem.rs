@@ -39,13 +39,13 @@ pub fn face2node_of_simplex_element(num_node: usize) -> (Vec<usize>, Vec<usize>)
 /// * `vtx2elem` - jagged array value of  element surrounding point
 ///
 ///  triangle: `face2jdx` = \[0,2,4,6]; `jdx2node` = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh_with_vtx2elem<Index, const NNODE: usize>(
+pub fn from_uniform_mesh_with_vtx2elem<Index, const NNODE: usize, const NFACE: usize>(
     elem2vtx: &[[Index; NNODE]],
     vtx2idx: &[Index],
     idx2elem: &[Index],
     face2jdx: &[usize],
     jdx2node: &[usize],
-) -> Vec<Index>
+) -> Vec<[Index; NFACE]>
 where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<Index>,
@@ -63,7 +63,7 @@ where
     };
 
     let num_elem = elem2vtx.len();
-    let mut elem2elem = vec![Index::max_value(); num_elem * num_face_par_elem];
+    let mut elem2elem = vec![[Index::max_value(); NFACE]; num_elem];
 
     let mut vtx2flag = vec![0; num_vtx]; // vertex index -> flag
     let mut jdx2vtx = vec![0; num_max_node_on_face]; // face node index -> vertex index
@@ -94,7 +94,7 @@ where
                         }
                     }
                     if flag0 {
-                        elem2elem[i_elem * num_face_par_elem + i_face] = j_elem0.as_();
+                        elem2elem[i_elem][i_face] = j_elem0.as_();
                         break;
                     }
                 }
@@ -103,7 +103,7 @@ where
                 }
             }
             if !flag0 {
-                elem2elem[i_elem * num_face_par_elem + i_face] = Index::max_value();
+                elem2elem[i_elem][i_face] = Index::max_value();
             }
             for ifano in 0..face2jdx[i_face + 1] - face2jdx[i_face] {
                 vtx2flag[jdx2vtx[ifano]] = 0;
@@ -119,12 +119,12 @@ where
 /// * `num_vtx` - number of vertices
 ///
 ///  triangle: face2idx = \[0,2,4,6]; idx2node = \[1,2,2,0,0,1];
-pub fn from_uniform_mesh<Index, const NNODE: usize>(
+pub fn from_uniform_mesh<Index, const NNODE: usize, const NFACE: usize>(
     elem2vtx: &[[Index; NNODE]],
     face2idx: &[usize],
     idx2node: &[usize],
     num_vtx: usize,
-) -> Vec<Index>
+) -> Vec<[Index; NFACE]>
 where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
     usize: num_traits::AsPrimitive<Index>,

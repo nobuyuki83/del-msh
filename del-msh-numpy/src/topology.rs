@@ -37,32 +37,36 @@ fn group_connected_element_uniform_polygon_mesh<'a>(
     let num_node = elem2vtx.shape()[1];
     let (face2idx, idx2node) = del_msh_cpu::elem2elem::face2node_of_polygon_element(num_node);
     let s = elem2vtx.as_slice().unwrap();
-    let elem2adjelem = match num_node {
-        2 => del_msh_cpu::elem2elem::from_uniform_mesh(
-            s.as_chunks::<2>().0,
-            &face2idx,
-            &idx2node,
-            num_vtx,
-        ),
-        3 => del_msh_cpu::elem2elem::from_uniform_mesh(
-            s.as_chunks::<3>().0,
-            &face2idx,
-            &idx2node,
-            num_vtx,
-        ),
-        4 => del_msh_cpu::elem2elem::from_uniform_mesh(
-            s.as_chunks::<4>().0,
-            &face2idx,
-            &idx2node,
-            num_vtx,
-        ),
+    let (num_group, elem2group) = match num_node {
+        2 => {
+            let e = del_msh_cpu::elem2elem::from_uniform_mesh::<_, 2, 2>(
+                s.as_chunks::<2>().0,
+                &face2idx,
+                &idx2node,
+                num_vtx,
+            );
+            del_msh_cpu::elem2group::from_uniform_mesh_with_elem2elem(s.as_chunks::<2>().0, &e)
+        }
+        3 => {
+            let e = del_msh_cpu::elem2elem::from_uniform_mesh::<_, 3, 3>(
+                s.as_chunks::<3>().0,
+                &face2idx,
+                &idx2node,
+                num_vtx,
+            );
+            del_msh_cpu::elem2group::from_uniform_mesh_with_elem2elem(s.as_chunks::<3>().0, &e)
+        }
+        4 => {
+            let e = del_msh_cpu::elem2elem::from_uniform_mesh::<_, 4, 4>(
+                s.as_chunks::<4>().0,
+                &face2idx,
+                &idx2node,
+                num_vtx,
+            );
+            del_msh_cpu::elem2group::from_uniform_mesh_with_elem2elem(s.as_chunks::<4>().0, &e)
+        }
         _ => panic!("unsupported num_node: {num_node}"),
     };
-    let (num_group, elem2group) = del_msh_cpu::elem2group::from_uniform_mesh_with_elem2elem(
-        elem2vtx.as_slice().unwrap(),
-        num_node,
-        &elem2adjelem,
-    );
     (
         num_group,
         numpy::ndarray::Array1::from_vec(elem2group).into_pyarray(py),

@@ -50,11 +50,17 @@ pub fn vtx2elem<const NNODE: usize>(
 
 /// Compute element-to-element adjacency through shared faces.
 /// Returns flattened array where each element has one neighbor index per face.
-pub fn elem2elem<const NNODE: usize>(
+pub fn elem2elem<const NNODE: usize, const NFACE: usize>(
     elem2vtx: &[[usize; NNODE]],
     face2idx_offset: &[usize],
     idx2node: &[usize],
     num_vtx: usize,
 ) -> Vec<usize> {
-    crate::elem2elem::from_uniform_mesh(elem2vtx, face2idx_offset, idx2node, num_vtx)
+    crate::elem2elem::from_uniform_mesh::<_, NNODE, NFACE>(
+        elem2vtx,
+        face2idx_offset,
+        idx2node,
+        num_vtx,
+    )
+    .into_flattened()
 }

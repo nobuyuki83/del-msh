@@ -127,10 +127,7 @@ fn test_convex_hull2() {
                 if boundary_point_idx.get(&i_vtx).is_some() {
                     continue;
                 }
-                let p = &vtx2xy[i_vtx];
-                use slice_of_array::SliceFlatExt;
-                let polygon = polygon.flat();
-                let wn = crate::polyloop2::winding_number(polygon.as_chunks::<2>().0, p);
+                let wn = crate::polyloop2::winding_number(&polygon, &vtx2xy[i_vtx]);
                 assert!((wn - 1.0).abs() < 1.0e-5);
             }
         }

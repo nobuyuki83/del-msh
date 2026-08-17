@@ -29,16 +29,14 @@ impl PartialEq for Node {
 /// * `idx_elm_kernel` - index of element where distance is zero
 /// * `elem2elem_adj` - index of adjacent element for each element
 /// * `num_elem` - number of elements in the mesh
-pub fn elem2dist_for_uniform_mesh<Index>(
+pub fn elem2dist_for_uniform_mesh<Index, const NFACE: usize>(
     idx_elem_kernel: usize,
-    elem2elem_adj: &[Index],
-    num_elem: usize,
+    elem2elem_adj: &[[Index; NFACE]],
 ) -> Vec<usize>
 where
     Index: num_traits::PrimInt + num_traits::AsPrimitive<usize>,
 {
-    let num_edge = elem2elem_adj.len() / num_elem;
-    assert_eq!(elem2elem_adj.len(), num_edge * num_elem);
+    let num_elem = elem2elem_adj.len();
     let mut elem2order = vec![usize::MAX; num_elem];
     let mut elem2dist = vec![usize::MAX; num_elem];
     elem2dist[idx_elem_kernel] = 0;
@@ -57,8 +55,7 @@ where
         } // already fixed so this is not the shortest path
         elem2order[i_elm0] = count; // found shortest path
         count += 1;
-        for i_edge in 0..num_edge {
-            let i_elm1 = elem2elem_adj[i_elm0 * num_edge + i_edge];
+        for &i_elm1 in elem2elem_adj[i_elm0].iter() {
             if i_elm1 == Index::max_value() {
                 continue;
             }

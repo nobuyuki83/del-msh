@@ -1,35 +1,35 @@
 //! extract subset of elements as mesh
 
 pub fn extract(
-    tri2vtx: &[usize],
-    num_vtx: usize,
-    tri2tri_new: &[usize],
-    num_tri_new: usize,
-) -> (Vec<usize>, usize, Vec<usize>) {
-    assert_eq!(tri2vtx.len() / 3, tri2tri_new.len());
-    let num_tri = tri2vtx.len() / 3;
-    let mut vtx2vtx_new = vec![usize::MAX; num_vtx];
-    let mut tri2vtx_new = vec![usize::MAX; num_tri_new * 3];
-    let mut num_vtx_new = 0;
+    oldtri2oldvtx: &[[usize; 3]],
+    num_oldvtx: usize,
+    oldtri2newtri: &[usize],
+    num_newtri: usize,
+) -> (Vec<[usize; 3]>, usize, Vec<usize>) {
+    assert_eq!(oldtri2oldvtx.len(), oldtri2newtri.len());
+    let num_tri = oldtri2oldvtx.len();
+    let mut oldvtx2newvtx = vec![usize::MAX; num_oldvtx];
+    let mut newtri2newvtx = vec![[usize::MAX; 3]; num_newtri];
+    let mut num_newvtx = 0;
     for i_tri in 0..num_tri {
-        if tri2tri_new[i_tri] == usize::MAX {
+        if oldtri2newtri[i_tri] == usize::MAX {
             continue;
         }
-        let i_tri_new = tri2tri_new[i_tri];
+        let i_tri_new = oldtri2newtri[i_tri];
         for i_node in 0..3 {
-            let i_vtx_xyz = tri2vtx[i_tri * 3 + i_node];
-            if vtx2vtx_new[i_vtx_xyz] == usize::MAX {
-                let i_vtx_new = num_vtx_new;
-                num_vtx_new += 1;
-                vtx2vtx_new[i_vtx_xyz] = i_vtx_new;
-                tri2vtx_new[i_tri_new * 3 + i_node] = i_vtx_new;
+            let i_vtx_xyz = oldtri2oldvtx[i_tri][i_node];
+            if oldvtx2newvtx[i_vtx_xyz] == usize::MAX {
+                let i_vtx_new = num_newvtx;
+                num_newvtx += 1;
+                oldvtx2newvtx[i_vtx_xyz] = i_vtx_new;
+                newtri2newvtx[i_tri_new][i_node] = i_vtx_new;
             } else {
-                let i_vtx_new = vtx2vtx_new[i_vtx_xyz];
-                tri2vtx_new[i_tri_new * 3 + i_node] = i_vtx_new;
+                let i_vtx_new = oldvtx2newvtx[i_vtx_xyz];
+                newtri2newvtx[i_tri_new][i_node] = i_vtx_new;
             }
         }
     }
-    (tri2vtx_new, num_vtx_new, vtx2vtx_new)
+    (newtri2newvtx, num_newvtx, oldvtx2newvtx)
 }
 
 pub fn map_values_old2new<VALUE>(

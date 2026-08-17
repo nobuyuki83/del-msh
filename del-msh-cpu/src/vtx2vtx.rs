@@ -193,7 +193,7 @@ pub fn graph_screend_poisson<IDX>(
     vtx2idx_offset: &[IDX],
     idx2vtx: &[IDX],
     lambda: f32,
-    num_dim: usize,
+    num_vdim: usize,
     vtx2lhs: &mut [f32],
     vtx2rhs: &[f32],
     num_iter: usize,
@@ -202,32 +202,32 @@ pub fn graph_screend_poisson<IDX>(
     IDX: num_traits::PrimInt + AsPrimitive<usize> + AsPrimitive<f32> + std::marker::Sync,
 {
     let num_vtx = vtx2idx_offset.len() - 1;
-    assert_eq!(vtx2lhs.len(), num_vtx * num_dim);
-    assert_eq!(vtx2rhs.len(), num_vtx * num_dim);
-    assert_eq!(vtx2lhstmp.len(), num_vtx * num_dim);
+    assert_eq!(vtx2lhs.len(), num_vtx * num_vdim);
+    assert_eq!(vtx2rhs.len(), num_vtx * num_vdim);
+    assert_eq!(vtx2lhstmp.len(), num_vtx * num_vdim);
     let func_upd = |i_vtx: usize, lhs_next: &mut [f32], vtx2lhs_prev: &[f32]| {
-        let mut buff = vec![0f32; num_dim];
-        buff.copy_from_slice(&vtx2rhs[i_vtx * num_dim..(i_vtx + 1) * num_dim]);
+        let mut buff = vec![0f32; num_vdim];
+        buff.copy_from_slice(&vtx2rhs[i_vtx * num_vdim..(i_vtx + 1) * num_vdim]);
         for &j_vtx in &idx2vtx[vtx2idx_offset[i_vtx].as_()..vtx2idx_offset[i_vtx + 1].as_()] {
             let j_vtx: usize = j_vtx.as_();
-            for i in 0..num_dim {
-                buff[i] += lambda * vtx2lhs_prev[j_vtx * num_dim + i];
+            for i in 0..num_vdim {
+                buff[i] += lambda * vtx2lhs_prev[j_vtx * num_vdim + i];
             }
         }
         let valence: f32 = (vtx2idx_offset[i_vtx + 1] - vtx2idx_offset[i_vtx]).as_();
         let inv_dia = 1f32 / (1f32 + lambda * valence);
-        for i in 0..num_dim {
+        for i in 0..num_vdim {
             lhs_next[i] = buff[i] * inv_dia;
         }
     };
     use rayon::prelude::*;
     for _iter in 0..num_iter {
         vtx2lhstmp
-            .par_chunks_mut(num_dim)
+            .par_chunks_mut(num_vdim)
             .enumerate()
             .for_each(|(i_vtx, lhs1)| func_upd(i_vtx, lhs1, vtx2lhs));
         vtx2lhs
-            .par_chunks_mut(num_dim)
+            .par_chunks_mut(num_vdim)
             .enumerate()
             .for_each(|(i_vtx, lhs)| func_upd(i_vtx, lhs, vtx2lhstmp));
     }

@@ -17,11 +17,13 @@ pub fn topological_distance_on_uniform_mesh<'a>(
 ) -> Bound<'a, PyArray1<usize>> {
     assert!(elsuel.is_c_contiguous());
     let num_elem = elsuel.shape()[0];
-    let elem2dist = del_msh_cpu::dijkstra::elem2dist_for_uniform_mesh(
-        ielm_ker,
-        elsuel.as_slice().unwrap(),
-        num_elem,
-    );
+    let num_edge = elsuel.shape()[1];
+    let flat = elsuel.as_slice().unwrap();
+    let elem2dist = match num_edge {
+        3 => del_msh_cpu::dijkstra::elem2dist_for_uniform_mesh(ielm_ker, flat.as_chunks::<3>().0),
+        4 => del_msh_cpu::dijkstra::elem2dist_for_uniform_mesh(ielm_ker, flat.as_chunks::<4>().0),
+        _ => todo!("unsupported num_edge: {}", num_edge),
+    };
     assert_eq!(elem2dist.len(), num_elem);
     numpy::ndarray::Array1::from_shape_vec(num_elem, elem2dist)
         .unwrap()
