@@ -46,6 +46,7 @@ pub mod unindex;
 pub mod io_cfd_mesh_txt;
 pub mod io_nastran;
 pub mod io_off;
+pub mod io_ply;
 pub mod io_svg;
 pub mod io_vtk;
 pub mod io_wavefront_obj;
@@ -73,7 +74,9 @@ pub mod cumsum;
 pub mod polygon_polyhedron_mesh;
 pub mod trimesh;
 pub mod trimesh2_dynamic;
+pub mod trimesh2_fem_solid_linear;
 pub mod trimesh_topology;
+
 pub mod uniform_mesh;
 pub mod voronoi2;
 pub mod vtx2group;
@@ -94,6 +97,6 @@ pub mod mortons;
 
 // spatial volumetric
 pub mod adaptive_distance_field3;
-pub mod io_ply;
 pub mod nbody;
 pub mod quad_oct_tree;
+pub mod sparse_solver;
