@@ -614,15 +614,24 @@ fn test_arrow_connecting_two_points() {
 
 // ------------------------------
 
-pub fn obb3<Real>(obb: &[Real; 12]) -> (Vec<usize>, Vec<Real>)
+pub fn obb3<Real>(obb: &[Real; 12]) -> (Vec<[usize; 3]>, Vec<[Real; 3]>)
 where
     Real: num_traits::Float,
 {
-    let ps = del_geo_core::obb3::corner_points(obb);
-    let vtx2xyz: Vec<Real> = ps.iter().flat_map(|v| [v[0], v[1], v[2]]).collect();
-    let tri2vtx: Vec<usize> = vec![
-        0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6,
-        3, 0, 4, 3, 4, 7,
+    let vtx2xyz: Vec<[Real; 3]> = del_geo_core::obb3::corner_points(obb).to_vec();
+    let tri2vtx: Vec<[usize; 3]> = vec![
+        [0, 2, 1],
+        [0, 3, 2],
+        [4, 5, 6],
+        [4, 6, 7],
+        [0, 1, 5],
+        [0, 5, 4],
+        [1, 2, 6],
+        [1, 6, 5],
+        [2, 3, 7],
+        [2, 7, 6],
+        [3, 0, 4],
+        [3, 4, 7],
     ];
     (tri2vtx, vtx2xyz)
 }

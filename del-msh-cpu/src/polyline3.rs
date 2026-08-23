@@ -752,8 +752,12 @@ mod test_shorten {
                     break;
                 }
             }
-        }
-        crate::io_wavefront_obj::save_vtx2xyz_as_polyline(path_dir.join("ccd3.obj"), &vtx2xyz)
+            crate::vtx2xn::add_scaled_vector(&mut vtx2xyz, step_time, &vtx2sol);
+            crate::io_wavefront_obj::save_vtx2xyz_as_polyline(
+                path_dir.join(format!("ccd3_{iter}.obj")),
+                &vtx2xyz,
+            )
             .unwrap();
+        }
     }
 }
