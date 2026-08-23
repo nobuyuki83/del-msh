@@ -524,10 +524,13 @@ where
 
 #[test]
 fn test_generate_trimesh() {
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir).unwrap();
+    //
     let vtx2xyz_polyline = helix(100, 0.05, 0.7, 0.4);
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/polyline3_helix.obj",
+        path_dir.join("polyline3_helix.obj"),
         &tri2vtx,
         &vtx2xyz,
     )
@@ -544,9 +547,213 @@ fn test_generate_trimesh() {
     );
     let (tri2vtx, vtx2xyz) = to_trimesh3_capsule(&vtx2xyz_polyline, 32, 32, 0.05);
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/polyline3_bezier.obj",
+        path_dir.join("polyline3_bezier.obj"),
         &tri2vtx,
         &vtx2xyz,
     )
     .unwrap();
+}
+
+#[cfg(test)]
+mod test_shorten {
+
+    fn make_polyline(num_vtx: usize) -> Vec<[f32; 3]> {
+        use rand::RngExt;
+        use rand::SeedableRng;
+        let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
+        let vtx2xyz: Vec<[f32; 3]> = {
+            let mut vtx2xyz = (0..num_vtx)
+                .map(|_| {
+                    [
+                        reng.random_range(-1.0..1.0),
+                        reng.random_range(-1.0..1.0),
+                        reng.random_range(-1.0..1.0),
+                    ]
+                })
+                .collect::<Vec<_>>();
+            vtx2xyz[0] = [-1., -1., -1.];
+            vtx2xyz[num_vtx - 1] = [1., 1., 1.];
+            vtx2xyz
+        };
+        vtx2xyz
+    }
+
+    fn system_energy(vtx2xyz: &[[f32; 3]], dhat: f32, offset: f32, barrier_stiffness: f32) -> f32 {
+        let num_vtx = vtx2xyz.len();
+        let mut sum_w = 0.0;
+        for i_seg in 0..vtx2xyz.len() - 1 {
+            let i0_vtx = i_seg;
+            let i1_vtx = i_seg + 1;
+            let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
+            let (w, _dw, _ddw) =
+                del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, 0.0);
+            sum_w += w;
+        }
+        for i_seg in 0..num_vtx - 1 {
+            let i0_vtx = i_seg;
+            let i1_vtx = i_seg + 1;
+            for j_seg in i_seg + 2..num_vtx - 1 {
+                let j0_vtx = j_seg;
+                let j1_vtx = j_seg + 1;
+                let [sqdist, _s, _t] = del_geo_core::edge3::nearest_to_edge3_accurate(
+                    &vtx2xyz[i0_vtx],
+                    &vtx2xyz[i1_vtx],
+                    &vtx2xyz[j0_vtx],
+                    &vtx2xyz[j1_vtx],
+                );
+                let dist = sqdist.sqrt();
+                let w = barrier_stiffness * del_geo_core::barrier::w_energy(dist, dhat, offset);
+                sum_w += w;
+            }
+        }
+        sum_w
+    }
+
+    #[test]
+    fn test0() {
+        let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+        std::fs::create_dir_all(path_dir).unwrap();
+        //
+        let num_vtx = 10;
+        let mut vtx2xyz = make_polyline(num_vtx);
+
+        let vtx2vtx = crate::polyline::vtx2vtx_rods(&[0, num_vtx]);
+        let mut hess = crate::sparse_solver::sparse_square::MatrixOwned::<[f32; 9]>::from_vtx2vtx(
+            &vtx2vtx.0, &vtx2vtx.1,
+        );
+        let mut grad = vec![[0.; 3]; num_vtx];
+        let mut vtx2sol = grad.clone();
+        let mut vtx2ap = grad.clone();
+        let mut vtx2p = grad.clone();
+        let mut tmp = vec![usize::MAX; num_vtx];
+        let blk2isfix = {
+            let mut blk2isfix = vec![[0i32; 3]; num_vtx];
+            blk2isfix[0][0] = 1;
+            blk2isfix[0][1] = 1;
+            blk2isfix[0][2] = 1;
+            blk2isfix[num_vtx - 1][0] = 1;
+            blk2isfix[num_vtx - 1][1] = 1;
+            blk2isfix[num_vtx - 1][2] = 1;
+            blk2isfix
+        };
+        //
+        let offset = 1.0e-2;
+        let dhat = 1.0e-3;
+        let park_clearance = 1.0e-6;
+        let barrier_stiffness = 1.0e+6;
+        for iter in 0..1 {
+            hess.set_zero();
+            crate::vtx2xn::set_zero(&mut grad);
+            let mut system_energy0 = 0.0;
+            for i_seg in 0..vtx2xyz.len() - 1 {
+                let i0_vtx = i_seg;
+                let i1_vtx = i_seg + 1;
+                let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
+                let (w, dw, ddw) =
+                    del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, 0.0);
+                hess.merge(&ddw, &[i_seg, i_seg + 1], &mut tmp);
+                use del_geo_core::vecn::VecN;
+                grad[i0_vtx].add_in_place(&dw[0].scale(-1.));
+                grad[i1_vtx].add_in_place(&dw[1].scale(-1.));
+                system_energy0 += w;
+            }
+            for i_seg in 0..num_vtx - 1 {
+                let i0_vtx = i_seg;
+                let i1_vtx = i_seg + 1;
+                for j_seg in i_seg + 2..num_vtx - 1 {
+                    let j0_vtx = j_seg;
+                    let j1_vtx = j_seg + 1;
+                    let [sqdist, _s, _t] = del_geo_core::edge3::nearest_to_edge3_accurate(
+                        &vtx2xyz[i0_vtx],
+                        &vtx2xyz[i1_vtx],
+                        &vtx2xyz[j0_vtx],
+                        &vtx2xyz[j1_vtx],
+                    );
+                    let dist = sqdist.sqrt();
+                    let w = del_geo_core::barrier::w_energy(dist, dhat, offset);
+                    system_energy0 += barrier_stiffness * w;
+                }
+            }
+            println!("{iter} --> {system_energy0}");
+            {
+                let eps = 1.0e-5;
+                hess.row2val.iter_mut().for_each(|val| {
+                    val[0] += eps;
+                    val[1] += eps;
+                    val[2] += eps;
+                });
+            }
+            crate::vtx2xn::set_fixed(&mut grad, &blk2isfix);
+            hess.set_fixed(0., &blk2isfix);
+            crate::sparse_solver::cg::conjugate_gradient(
+                &mut grad,
+                &mut vtx2sol,
+                &mut vtx2ap,
+                &mut vtx2p,
+                1.0e-5,
+                100,
+                hess.as_ref(),
+            );
+            let max_safe_time_total = {
+                let mut t_max = 1f32;
+                for i_seg in 0..num_vtx - 1 {
+                    let i0_vtx = i_seg;
+                    let i1_vtx = i_seg + 1;
+                    for j_seg in i_seg + 2..num_vtx - 1 {
+                        let j0_vtx = j_seg;
+                        let j1_vtx = j_seg + 1;
+                        let mut x0 = [
+                            vtx2xyz[i0_vtx],
+                            vtx2xyz[i1_vtx],
+                            vtx2xyz[j0_vtx],
+                            vtx2xyz[j1_vtx],
+                        ];
+                        let mut dx = [
+                            vtx2sol[i0_vtx],
+                            vtx2sol[i1_vtx],
+                            vtx2sol[j0_vtx],
+                            vtx2sol[j1_vtx],
+                        ];
+                        del_geo_core::mat3x4_array_of_cols::centerize(&mut x0);
+                        del_geo_core::mat3x4_array_of_cols::centerize(&mut dx);
+                        let scale = del_geo_core::ccd3::normalize_centerized_configuration(
+                            &mut x0, &mut dx, t_max,
+                        )
+                        .unwrap();
+                        let max_relative_velocity =
+                            del_geo_core::ccd3::max_relative_norm::<_, 2>(&dx);
+                        let t_max_new = del_geo_core::ccd3::maximum_safe_time_accurate::<
+                            del_geo_core::ccd3::EdgeEdgeSquaredDist,
+                            2,
+                        >(
+                            &x0,
+                            &dx,
+                            max_relative_velocity,
+                            &del_geo_core::ccd3::EdgeEdgeSquaredDist,
+                            offset * scale,
+                            park_clearance * scale,
+                            t_max,
+                        );
+                        t_max = t_max.min(t_max_new);
+                    }
+                }
+                t_max
+            };
+            dbg!(max_safe_time_total);
+            let mut step_time = max_safe_time_total;
+            for _jter in 0..10 {
+                let mut vtx2xyz1 = vtx2xyz.clone();
+                crate::vtx2xn::add_scaled_vector(&mut vtx2xyz1, step_time, &vtx2sol);
+                let system_energy1 = system_energy(&vtx2xyz1, dhat, offset, barrier_stiffness);
+                dbg!(system_energy1, step_time);
+                if system_energy1 > system_energy0 {
+                    step_time *= 0.5;
+                } else {
+                    break;
+                }
+            }
+        }
+        crate::io_wavefront_obj::save_vtx2xyz_as_polyline(path_dir.join("ccd3.obj"), &vtx2xyz)
+            .unwrap();
+    }
 }

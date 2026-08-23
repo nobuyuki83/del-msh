@@ -129,14 +129,13 @@ where
     let three = one + one + one;
     let six = three + three;
     let num_vtx = vtx2xyz.len();
-    let flat = vtx2xyz.as_flattened();
     let cog = cog_as_edges::<T, NDIM>(vtx2xyz);
     let mut cov = [[T::zero(); NDIM]; NDIM];
     for i_edge in 0..num_vtx {
         let iv0 = i_edge;
         let iv1 = (i_edge + 1) % num_vtx;
-        let q0 = crate::vtx2xn::to_xn(flat, iv0).sub(&cog);
-        let q1 = crate::vtx2xn::to_xn(flat, iv1).sub(&cog);
+        let q0 = vtx2xyz[iv0].sub(&cog);
+        let q1 = vtx2xyz[iv1].sub(&cog);
         let l = q0.sub(&q1).norm();
         for i in 0..NDIM {
             for j in 0..NDIM {

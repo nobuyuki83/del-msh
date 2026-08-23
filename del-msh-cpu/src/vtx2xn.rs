@@ -11,44 +11,31 @@ where
     res
 }
 
-pub fn to_xn<T, const N: usize>(vtx2xyz: &[T], i_vtx: usize) -> &[T; N]
-where
-    T: num_traits::Float,
-{
-    vtx2xyz[i_vtx * N..i_vtx * N + N].try_into().unwrap()
-}
-
-pub fn cog<T, const N: usize>(vtx2xyz: &[T]) -> [T; N]
+pub fn cog<T, const N: usize>(vtx2xyz: &[[T; N]]) -> [T; N]
 where
     T: num_traits::Float + Copy + 'static + std::iter::Sum<T>,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vecn::VecN;
-    let num_vtx = vtx2xyz.len() / N;
-    assert_eq!(vtx2xyz.len(), num_vtx * N);
     let mut cog = [T::zero(); N];
-    for i_vtx in 0..num_vtx {
-        let q0 = crate::vtx2xn::to_xn::<T, N>(vtx2xyz, i_vtx);
-        cog.add_in_place(q0);
+    for xyz in vtx2xyz.iter() {
+        cog.add_in_place(xyz);
     }
-    let s = T::one() / num_vtx.as_();
+    let s = T::one() / vtx2xyz.len().as_();
     cog.scale_in_place(s);
     cog
 }
 
-pub fn cov_cog<T, const N: usize>(vtx2xyz: &[T]) -> ([[T; N]; N], [T; N])
+pub fn cov_cog<T, const N: usize>(vtx2xyz: &[[T; N]]) -> ([[T; N]; N], [T; N])
 where
     T: num_traits::Float + Copy + 'static + std::iter::Sum,
     usize: AsPrimitive<T>,
 {
     use del_geo_core::vecn::VecN;
-    let num_vtx = vtx2xyz.len() / N;
-    assert_eq!(vtx2xyz.len(), num_vtx * N);
     let cog = cog::<T, N>(vtx2xyz);
     let mut cov = [[T::zero(); N]; N];
-    for i_vtx in 0..num_vtx {
-        let q = crate::vtx2xn::to_xn::<T, N>(vtx2xyz, i_vtx);
-        let d = q.sub(&cog);
+    for xyz in vtx2xyz.iter() {
+        let d = xyz.sub(&cog);
         for i in 0..N {
             for j in 0..N {
                 cov[i][j] = cov[i][j] + d[i] * d[j];
@@ -56,4 +43,69 @@ where
         }
     }
     (cov, cog)
+}
+
+pub fn set_zero<T, const N: usize>(p: &mut [[T; N]])
+where
+    T: num_traits::Float,
+{
+    p.iter_mut().for_each(|v| *v = [T::zero(); N]);
+}
+
+pub fn dot<T, const N: usize>(v0: &[[T; N]], v1: &[[T; N]]) -> T
+where
+    T: num_traits::Float,
+{
+    assert_eq!(v0.len(), v1.len());
+    v0.iter().zip(v1.iter()).fold(T::zero(), |sum, (&x, &y)| {
+        sum + del_geo_core::vecn::dot(&x, &y)
+    })
+}
+
+pub fn copy<T, const N: usize>(p: &mut [[T; N]], u: &[[T; N]])
+where
+    T: Copy,
+{
+    assert_eq!(p.len(), u.len());
+    p.iter_mut().zip(u.iter()).for_each(|(a, &b)| *a = b);
+}
+
+pub fn add_scaled_vector<T, const N: usize>(u: &mut [[T; N]], alpha: T, p: &[[T; N]])
+where
+    T: num_traits::Float,
+{
+    use del_geo_core::vecn::VecN;
+    assert_eq!(u.len(), p.len());
+    u.iter_mut()
+        .zip(p.iter())
+        .for_each(|(a, &b)| (*a).add_in_place(&b.scale(alpha)));
+}
+
+/// {p} = {r} + beta*{p}
+pub fn scale_and_add_vec<T, const N: usize>(p: &mut [[T; N]], beta: T, r: &[[T; N]])
+where
+    T: num_traits::Float,
+{
+    use del_geo_core::vecn::VecN;
+    assert_eq!(r.len(), p.len());
+    for i in 0..p.len() {
+        p[i] = r[i].add(&p[i].scale(beta));
+    }
+}
+
+pub fn set_fixed<T, const NDIMVAL: usize>(
+    blk2val: &mut [[T; NDIMVAL]],
+    blk2isfix: &[[i32; NDIMVAL]],
+) where
+    T: num_traits::Float,
+{
+    assert_eq!(blk2val.len(), blk2isfix.len());
+    for i_blk in 0..blk2val.len() {
+        for i_dimval in 0..NDIMVAL {
+            if blk2isfix[i_blk][i_dimval] == 0 {
+                continue;
+            }
+            blk2val[i_blk][i_dimval] = T::zero();
+        }
+    }
 }

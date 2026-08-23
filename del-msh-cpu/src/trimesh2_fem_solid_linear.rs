@@ -163,7 +163,7 @@ mod tests {
                     r_vec[node2vtx[1]].sub_in_place(&er[1]);
                     r_vec[node2vtx[2]].sub_in_place(&er[2]);
                 }
-                bsm.merge_for_array_blk(&emat, node2vtx, &mut row2idx);
+                bsm.merge(&emat, node2vtx, &mut row2idx);
             }
             {
                 // check if energy value can be expressed as U^T A U
@@ -176,21 +176,13 @@ mod tests {
                 }
                 let mut au = vec![[0f64; 2]; num_vtx];
                 bsm.mult_vec::<2>(&mut au, 0.0, 1.0, &u); // {Ap_vec} = [mat]*{p_vec}
-                let pap = crate::sparse_solver::slice_of_array::dot(&u, &au) * 0.5;
+                let pap = crate::vtx2xn::dot(&u, &au) * 0.5;
                 assert!((pap - eng).abs() < 1.0e-10);
             }
         }
 
-        // set bc flag
-        for i_vtx in 0..num_vtx {
-            for i_dof in 0..2 {
-                if vtx2flg[i_vtx][i_dof] == 0 {
-                    continue;
-                }
-                r_vec[i_vtx][i_dof] = 0.0;
-            }
-        }
-        bsm.set_fixed_dof::<2>(1.0, &vtx2flg);
+        crate::vtx2xn::set_fixed(&mut r_vec, &vtx2flg);
+        bsm.set_fixed::<2>(1.0, &vtx2flg);
         Problem {
             tri2vtx,
             vtx2xy_ini,

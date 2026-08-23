@@ -138,11 +138,7 @@ where
         }
     }
 
-    pub fn set_fixed_dof<const NDIMVAL: usize>(
-        &mut self,
-        val_dia: T,
-        blk2isfix: &[[i32; NDIMVAL]],
-    ) {
+    pub fn set_fixed<const NDIMVAL: usize>(&mut self, val_dia: T, blk2isfix: &[[i32; NDIMVAL]]) {
         set_fixed_bc(
             val_dia,
             blk2isfix,
@@ -193,7 +189,7 @@ where
         self.idx2val.fill([T::zero(); BLKSIZE]);
     }
 
-    pub fn merge_for_array_blk<const NNODE: usize>(
+    pub fn merge<const NNODE: usize>(
         &mut self,
         emat: &[[[T; BLKSIZE]; NNODE]; NNODE],
         node2vtx: &[usize; NNODE],

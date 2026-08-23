@@ -110,7 +110,7 @@ pub fn copy_value<T, const BLKSIZE: usize>(
     assert_eq!(a.num_blk, num_row);
     let mut col2idx = vec![usize::MAX; num_row];
     // copy diagonal value
-    crate::sparse_solver::slice_of_array::copy(&mut ilu.row2val, &a.row2val);
+    crate::vtx2xn::copy(&mut ilu.row2val, &a.row2val);
     // copy off-diagonal values
     ilu.idx2val
         .iter_mut()

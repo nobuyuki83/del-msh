@@ -49,7 +49,7 @@ where
     usize: AsPrimitive<Real>,
 {
     use del_geo_core::vec3::Vec3;
-    let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz.as_flattened());
+    let (cov, cog) = crate::vtx2xn::cov_cog::<Real, 3>(vtx2xyz);
     use slice_of_array::SliceFlatExt;
     let cov = cov.flat();
     let cov = arrayref::array_ref![cov, 0, 9];

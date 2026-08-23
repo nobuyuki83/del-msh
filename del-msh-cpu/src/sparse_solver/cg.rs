@@ -13,26 +13,26 @@ pub fn conjugate_gradient<T, const NDIMVAL: usize, const BLKSIZE: usize>(
 where
     T: num_traits::Float + std::fmt::Display + std::fmt::Debug,
 {
-    use crate::sparse_solver::*;
+    use crate::vtx2xn;
     let _num_dim = r_vec.len() / mat.row2val.len();
     //
     let mut conv_hist = Vec::<T>::new();
-    slice_of_array::set_zero(u_vec);
-    let mut sqnorm_res = slice_of_array::dot(r_vec, r_vec);
+    vtx2xn::set_zero(u_vec);
+    let mut sqnorm_res = vtx2xn::dot(r_vec, r_vec);
     if sqnorm_res < T::epsilon() {
         return conv_hist;
     }
     let inv_sqnorm_res_ini = T::one() / sqnorm_res;
-    slice_of_array::copy(p_vec, r_vec); // {p} = {r}  (set initial serch direction, copy value not reference)
+    vtx2xn::copy(p_vec, r_vec); // {p} = {r}  (set initial serch direction, copy value not reference)
     for _iitr in 0..max_iteration {
         // alpha = (r,r) / (p,Ap)
         mat.mult_vec::<NDIMVAL>(ap_vec, T::zero(), T::one(), p_vec); // {Ap_vec} = [mat]*{p_vec}
-        let pap = slice_of_array::dot(p_vec, ap_vec);
+        let pap = vtx2xn::dot(p_vec, ap_vec);
         // assert!(pap >= T::zero(), "{pap}");
         let alpha = sqnorm_res / pap;
-        slice_of_array::add_scaled_vector(u_vec, alpha, p_vec); // {u} = +alpha*{p} + {u} (update x)
-        slice_of_array::add_scaled_vector(r_vec, -alpha, ap_vec); // {r} = -alpha*{Ap} + {r}
-        let sqnorm_res_new = slice_of_array::dot(r_vec, r_vec);
+        vtx2xn::add_scaled_vector(u_vec, alpha, p_vec); // {u} = +alpha*{p} + {u} (update x)
+        vtx2xn::add_scaled_vector(r_vec, -alpha, ap_vec); // {r} = -alpha*{Ap} + {r}
+        let sqnorm_res_new = vtx2xn::dot(r_vec, r_vec);
         let conv_ratio = (sqnorm_res_new * inv_sqnorm_res_ini).sqrt();
         conv_hist.push(conv_ratio);
         if conv_ratio < conv_ratio_tol {
@@ -41,7 +41,7 @@ where
         {
             let beta = sqnorm_res_new / sqnorm_res; // beta = (r1,r1) / (r0,r0)
             sqnorm_res = sqnorm_res_new;
-            slice_of_array::scale_and_add_vec(p_vec, beta, r_vec); // {p} = {r} + beta*{p}
+            vtx2xn::scale_and_add_vec(p_vec, beta, r_vec); // {p} = {r} + beta*{p}
         }
     }
     conv_hist
@@ -62,9 +62,7 @@ pub fn preconditioned_conjugate_gradient<T, const NDIMVAL: usize, const BLKSIZE:
 where
     T: num_traits::Float + std::fmt::Debug,
 {
-    use crate::sparse_solver::slice_of_array::{
-        add_scaled_vector, copy, dot, scale_and_add_vec, set_zero,
-    };
+    use crate::vtx2xn::{add_scaled_vector, copy, dot, scale_and_add_vec, set_zero};
     {
         let n = r_vec.len();
         x_vec.resize(n, [T::zero(); NDIMVAL]);
