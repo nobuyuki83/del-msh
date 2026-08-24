@@ -1,4 +1,5 @@
 import torch
+
 from .. import util_torch
 
 
@@ -59,7 +60,7 @@ def nearest_to_fixed_cell(
     return cell2nearest, cell2distance
 
 
-def smooth_gauss_seidel(
+def smooth_gauss_seidel_naive(
     cell2isfix: torch.Tensor, cell2val: torch.Tensor, num_iter: int
 ) -> None:
     """One Gauss-Seidel sweep over a 2-D grid, averaging free cells from their 4 neighbours.
@@ -92,6 +93,33 @@ def smooth_gauss_seidel(
         num_iter,
         stream_ptr,
     )
+
+
+def smooth_gauss_seidel_fast(
+    cell2isfixed: torch.Tensor, cell2val: torch.Tensor, n_iter=8
+):
+    img_w = cell2isfixed.shape[1]
+    img_h = cell2isfixed.shape[0]
+    num_vdim = cell2val.shape[2]
+    device = cell2isfixed.device
+    #
+    util_torch.assert_shape_dtype_device(
+        cell2isfixed, (img_h, img_w), torch.uint8, device
+    )
+    util_torch.assert_shape_dtype_device(
+        cell2val, (img_h, img_w, num_vdim), torch.float32, device
+    )
+
+    cell2nearest, cell2distance = nearest_to_fixed_cell(cell2isfixed)
+
+    # Paint each pixel with its nearest seed's colour
+    cell2val_nearest = cell2val.view(-1, num_vdim)[cell2nearest.view(-1).long()].view(
+        img_h, img_w, num_vdim
+    )
+    cell2val[:] = cell2val_nearest[:]
+    for i_iter in range(n_iter):
+        ratio = 1.0 - (i_iter + 1) / n_iter
+        smooth_gauss_seidel_with_radius(cell2isfixed, cell2distance, ratio, cell2val)
 
 
 def smooth_gauss_seidel_with_radius(

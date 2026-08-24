@@ -7,7 +7,7 @@ import del_msh_dlpack.IoVtk.torch as IoVtk
 
 
 def hoge():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     path = pathlib.Path(__file__).parent.parent.parent / "asset" / "cfd_mesh.txt"
@@ -37,7 +37,6 @@ def hoge():
     elem2idx_offset1, idx2vtx1, vtx2xyz1 = PolyhedronMesh.subdivide(
         elem2idx_offset, idx2vtx, vtx2xyz
     )
-
     elem2idx_offset1, idx2vtx1, vtx2xyz1 = PolyhedronMesh.subdivide(
         elem2idx_offset1, idx2vtx1, vtx2xyz1
     )
@@ -117,7 +116,7 @@ def test_01():
 
 
 def test_file_no_exist():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     path = pathlib.Path(__file__).parent.parent.parent / "asset" / "cfd_mesh.txt"

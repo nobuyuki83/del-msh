@@ -11,7 +11,7 @@ import render_util
 
 
 def test_lambertian_shading_phong():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     from test_pix2depth import example1

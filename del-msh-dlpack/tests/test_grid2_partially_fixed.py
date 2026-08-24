@@ -4,11 +4,10 @@ import torch
 from PIL import Image
 
 import del_msh_dlpack.Grid2PartiallyFixed.torch as Grid2
-from del_msh_numpy.Raycast import pix2tri, pix2depth
 
 
 def test_nearest_to_fixed_cell():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     img_h, img_w = 511, 512
@@ -29,7 +28,7 @@ def test_nearest_to_fixed_cell():
     for i_gs in range(8):
         img = (pix2rgb_gs.numpy() * 255).clip(0, 255).astype("uint8")
         Image.fromarray(img).save(path_dir / f"grid2_partially_fixed_gs{i_gs}_cpu.png")
-        Grid2.smooth_gauss_seidel(pix2isfix, pix2rgb_gs, 100)
+        Grid2.smooth_gauss_seidel_naive(pix2isfix, pix2rgb_gs, 100)
 
     # --- nearest_to_fixed_cell + smoothing with radius (CPU) ---
     pix2nearest, pix2distance = Grid2.nearest_to_fixed_cell(pix2isfix)
@@ -59,7 +58,7 @@ def test_nearest_to_fixed_cell():
             Image.fromarray(img).save(
                 path_dir / f"grid2_partially_fixed_gs{i_gs}_gpu.png"
             )
-            Grid2.smooth_gauss_seidel(d_pix2isfix, d_pix2rgb_gs, 100)
+            Grid2.smooth_gauss_seidel_naive(d_pix2isfix, d_pix2rgb_gs, 100)
 
         d_pix2nearest, d_pix2distance = Grid2.nearest_to_fixed_cell(d_pix2isfix)
 

@@ -27,7 +27,7 @@ def example1():
 
 
 def test_cpu_cuda_match_with_autograd():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape = example1()

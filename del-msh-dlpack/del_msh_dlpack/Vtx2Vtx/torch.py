@@ -173,3 +173,20 @@ class GraphLaplacian(torch.autograd.Function):
             vtx2idx.detach(), idx2vtx.detach(), dw_lx.detach()
         )
         return None, None, dw_vtx2xyz
+
+
+class SmoothGradient(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, vtx2idx, idx2vtx, x, num_iter: int):
+        ctx.save_for_backward(vtx2idx, idx2vtx)
+        ctx.num_iter = num_iter
+        return x
+
+    @staticmethod
+    def backward(ctx, dldw_x):
+        vtx2idx, idx2vtx = ctx.saved_tensors
+        tmp = dldw_x.detach().clone()
+        laplacian_smoothing(
+            vtx2idx.detach(), idx2vtx.detach(), 1.0, dldw_x.detach(), tmp, ctx.num_iter
+        )
+        return None, None, tmp, None

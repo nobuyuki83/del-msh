@@ -2,6 +2,7 @@ import torch
 
 from ..util_torch import assert_shape_dtype_device, to_dlpack_safe
 import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
+import del_msh_dlpack.Grid2PartiallyFixed.torch as Grid2PartiallyFixed
 
 
 def edge_gradient_and_type(
@@ -77,12 +78,12 @@ def edge_gradient_and_type(
     return hedge2type, hedge2dldr, vedge2type, vedge2dldr
 
 
-def smooth_gradient(
+def smooth_gradient_naive(
     hedge2type: torch.Tensor,
     vedge2type: torch.Tensor,
-    num_iter: int,
     hedge2dldr: torch.Tensor,
     vedge2dldr: torch.Tensor,
+    num_iter: int,
 ):
     """Smooth staggered-grid edge gradients in-place (100 iterations).
 
@@ -102,20 +103,44 @@ def smooth_gradient(
     assert_shape_dtype_device(vedge2type, (img_h, img_w - 1), torch.uint8, device)
     assert_shape_dtype_device(vedge2dldr, (img_h, img_w - 1), torch.float32, device)
     #
-    stream_ptr = 0
-    if device.type == "cuda":
-        torch.cuda.set_device(device)
-        stream_ptr = torch.cuda.current_stream(device).cuda_stream
-    #
-    from .. import EdgeGradSmooth
+    Grid2PartiallyFixed.smooth_gauss_seidel_naive(
+        hedge2type, hedge2dldr.unsqueeze(-1), num_iter
+    )
+    Grid2PartiallyFixed.smooth_gauss_seidel_naive(
+        vedge2type, vedge2dldr.unsqueeze(-1), num_iter
+    )
 
-    EdgeGradSmooth.smooth_gradient(
-        to_dlpack_safe(hedge2type, stream_ptr),
-        to_dlpack_safe(hedge2dldr, stream_ptr),
-        to_dlpack_safe(vedge2type, stream_ptr),
-        to_dlpack_safe(vedge2dldr, stream_ptr),
-        num_iter,
-        stream_ptr,
+
+def smooth_gradient_fast(
+    hedge2type: torch.Tensor,
+    vedge2type: torch.Tensor,
+    hedge2dldr: torch.Tensor,
+    vedge2dldr: torch.Tensor,
+    num_iter=8,
+):
+    """Smooth staggered-grid edge gradients in-place (100 iterations).
+
+    Args:
+        hedge2type: (H-1, W) uint8
+        hedge2dldr: (H-1, W) float32
+        vedge2type: (H, W-1) uint8
+        vedge2dldr: (H, W-1) float32
+        num_iter: number of iteration
+    """
+    img_h = hedge2type.shape[0] + 1
+    img_w = hedge2type.shape[1]
+    device = hedge2type.device
+    #
+    assert_shape_dtype_device(hedge2type, (img_h - 1, img_w), torch.uint8, device)
+    assert_shape_dtype_device(hedge2dldr, (img_h - 1, img_w), torch.float32, device)
+    assert_shape_dtype_device(vedge2type, (img_h, img_w - 1), torch.uint8, device)
+    assert_shape_dtype_device(vedge2dldr, (img_h, img_w - 1), torch.float32, device)
+    #
+    Grid2PartiallyFixed.smooth_gauss_seidel_fast(
+        hedge2type, hedge2dldr.unsqueeze(-1), num_iter
+    )
+    Grid2PartiallyFixed.smooth_gauss_seidel_fast(
+        vedge2type, vedge2dldr.unsqueeze(-1), num_iter
     )
 
 
@@ -151,6 +176,18 @@ def interpolate(hedge2vy: torch.Tensor, vedge2vx: torch.Tensor, vtx2xy: torch.Te
     return vtx2velo
 
 
+def grad_vtx2xyz_on_backward(vtx2xyz, transform_world2pix, hedge2dldr, vedge2dldr):
+    vtx2pixxyz = Vtx2Xyz.transform_homography(vtx2xyz, transform_world2pix)
+    dldw_vtx2pixxy = interpolate(
+        hedge2dldr, vedge2dldr, vtx2pixxyz[:, 0:2].clone()
+    )  # (N,2)
+    vtx2dpix2dxyz = Vtx2Xyz.transform_homography_jacobian(
+        vtx2xyz, transform_world2pix
+    )  # (N,3,3)
+    dldw_vtx2xyz = (dldw_vtx2pixxy.unsqueeze(1) @ vtx2dpix2dxyz[:, 0:2, :]).squeeze(1)
+    return dldw_vtx2xyz
+
+
 class Autograd(torch.autograd.Function):
     """rasterized edge gradient as a torch.autograd.Function."""
 
@@ -162,29 +199,34 @@ class Autograd(torch.autograd.Function):
         transform_world2pix,
         pix2tri,
         pix2val,
-        num_smoothing_iterations,
+        wtx2xyz=None,
     ):
-        ctx.save_for_backward(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val)
-        ctx.num_smoothing_iterations = num_smoothing_iterations
+        ctx.save_for_backward(
+            tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, wtx2xyz
+        )
         return pix2val
 
     @staticmethod
     def backward(ctx, dldw_pix2val):
-        tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val = ctx.saved_tensors
+        tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, wtx2xyz = (
+            ctx.saved_tensors
+        )
         hedge2type, hedge2dldr, vedge2type, vedge2dldr = edge_gradient_and_type(
             tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2val, dldw_pix2val
         )
-        smooth_gradient(
-            hedge2type, vedge2type, ctx.num_smoothing_iterations, hedge2dldr, vedge2dldr
+        """
+        smooth_gradient_naive(
+           hedge2type, vedge2type, hedge2dldr, vedge2dldr, 200
         )
-        vtx2pixxyz = Vtx2Xyz.transform_homography(vtx2xyz, transform_world2pix)
-        dldw_vtx2pixxy = interpolate(
-            hedge2dldr, vedge2dldr, vtx2pixxyz[:, 0:2].clone()
-        )  # (N,2)
-        vtx2dpix2dxyz = Vtx2Xyz.transform_homography_jacobian(
-            vtx2xyz, transform_world2pix
-        )  # (N,3,3)
-        dldw_vtx2xyz = (dldw_vtx2pixxy.unsqueeze(1) @ vtx2dpix2dxyz[:, 0:2, :]).squeeze(
-            1
+        """
+        smooth_gradient_fast(hedge2type, vedge2type, hedge2dldr, vedge2dldr, 8)
+        dldw_vtx2xyz = grad_vtx2xyz_on_backward(
+            vtx2xyz, transform_world2pix, hedge2dldr, vedge2dldr
         )
-        return None, dldw_vtx2xyz, None, None, dldw_pix2val, None
+        if wtx2xyz is None:
+            return None, dldw_vtx2xyz, None, None, dldw_pix2val, None
+        else:
+            dldw_wtx2xyz = grad_vtx2xyz_on_backward(
+                wtx2xyz, transform_world2pix, hedge2dldr, vedge2dldr
+            )
+            return None, dldw_vtx2xyz, None, None, dldw_pix2val, dldw_wtx2xyz

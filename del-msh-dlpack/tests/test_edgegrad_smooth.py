@@ -36,7 +36,7 @@ def example2(resolution: int):
 
 
 def test_smooth_gradient_staggered_grid():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2(128)
@@ -95,20 +95,27 @@ def test_smooth_gradient_staggered_grid():
         assert (d_hedge2dldr.cpu() - hedge2dldr).abs().max() < 1.0e-8
         assert torch.equal(d_vedge2type.cpu(), vedge2type)
         assert (d_vedge2dldr.cpu() - vedge2dldr).abs().max() < 1.0e-8
-
-    num_itr = 10000
-    EdgeGradSmooth.smooth_gradient(
+    """
+    num_iter_gs = 1000
+    EdgeGradSmooth.smooth_gradient_naive(
         hedge2type,
         vedge2type,
-        num_itr,
+        hedge2dldr,
+        vedge2dldr,
+        num_iter_gs,
+    )
+    """
+    EdgeGradSmooth.smooth_gradient_fast(
+        hedge2type,
+        vedge2type,
         hedge2dldr,
         vedge2dldr,
     )
     img = ((hedge2dldr.numpy() + 0.5) * 255.0).clip(0, 255).astype("uint8")
-    Image.fromarray(img).save(path_dir / "hedge1.png")
+    Image.fromarray(img).save(path_dir / "hedge1_naive.png")
 
     img = ((vedge2dldr.numpy() + 0.5) * 255.0).clip(0, 255).astype("uint8")
-    Image.fromarray(img).save(path_dir / "vedge1.png")
+    Image.fromarray(img).save(path_dir / "vedge1_naive.png")
 
     IoVtk.write_velocity_on_staggered_grid(
         str(path_dir / "velocity_on_staggered_grid.vtk"), hedge2dldr, vedge2dldr
@@ -143,8 +150,13 @@ def test_smooth_gradient_staggered_grid():
     )
 
     if torch.cuda.is_available():
-        EdgeGradSmooth.smooth_gradient(
-            d_hedge2type, d_vedge2type, num_itr, d_hedge2dldr, d_vedge2dldr
+        """
+        EdgeGradSmooth.smooth_gradient_naive(
+            d_hedge2type, d_vedge2type,d_hedge2dldr, d_vedge2dldr, num_iter_gs
+        )
+        """
+        EdgeGradSmooth.smooth_gradient_fast(
+            d_hedge2type, d_vedge2type, d_hedge2dldr, d_vedge2dldr
         )
         print((d_hedge2dldr.cpu() - hedge2dldr).abs().max())
         print((d_vedge2dldr.cpu() - vedge2dldr).abs().max())
@@ -157,7 +169,7 @@ def test_smooth_gradient_staggered_grid():
 
 
 def test_silhouette_optimization():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     nres = 128
@@ -189,7 +201,11 @@ def test_silhouette_optimization():
             .unsqueeze(-1)
         )
         pix2occ = EdgeGradSmooth.Autograd.apply(
-            tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2occ, num_screen_smooth
+            tri2vtx,
+            vtx2xyz,
+            transform_world2pix,
+            pix2tri,
+            pix2occ,
         )
         loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
         print("iter = :", iter, "  loss=", loss.item())
@@ -212,14 +228,14 @@ def test_silhouette_optimization():
 
         if iter == 0:
             IoVtk.write_points_with_velocity(
-                str(path_dir / "silhouette_opt_ini_cpu.vtk"),
+                str(path_dir / "silhouette_opt_one_view_ini_cpu.vtk"),
                 vtx2xyz.detach(),
                 dldw_vtx2xyz,
             )
         opt.step()
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path_dir / "silhouette_opt_fin_cpu.obj")
+        tri2vtx, vtx2xyz, str(path_dir / "silhouette_opt_one_view_fin_cpu.obj")
     )
 
     if torch.cuda.is_available():
@@ -265,7 +281,6 @@ def test_silhouette_optimization():
                 d_transform_world2pix,
                 d_pix2tri,
                 d_pix2occ,
-                num_screen_smooth,
             )
             d_loss = torch.nn.functional.mse_loss(d_pix2occ, d_pix2occ_trg)
             print("iter = :", iter, "  loss=", d_loss.item())
@@ -282,7 +297,7 @@ def test_silhouette_optimization():
         TriMesh3.save_wavefront_obj(
             d_tri2vtx.cpu(),
             d_vtx2xyz.cpu(),
-            str(path_dir / "silhouette_opt_fin_gpu.obj"),
+            str(path_dir / "silhouette_opt_one_view_fin_gpu.obj"),
         )
 
 
@@ -388,7 +403,6 @@ def render_directional_silhouette(
             transform_world2pix,
             pix2tri,
             pix2occ.contiguous(),
-            num_screen_smoothing,
         )
 
         images.append(color)
@@ -399,7 +413,7 @@ def render_directional_silhouette(
 def test_silhouette_opt_multiview():
     if not torch.cuda.is_available():
         return
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     tri2vtx0, vtx2xyz0 = TriMesh3.sphere(1.0, 64, 32)
@@ -441,7 +455,7 @@ def test_silhouette_opt_multiview():
     )
 
     for i in range(view2pix2occ0.shape[0]):
-        filename = path_dir / f"reference_{i:05d}.png"
+        filename = path_dir / f"silhouette_opt_multi_view_trg_{i:05d}.png"
         img = (
             (view2pix2occ0[i].cpu().squeeze().numpy() * 255)
             .clip(0, 255)
@@ -490,7 +504,9 @@ def test_silhouette_opt_multiview():
 
         if i_iter % 50 == 0:
             for i in range(view2pix2occ.shape[0]):
-                filename = path_dir / f"reference_{i_iter}_{i:05d}.png"
+                filename = (
+                    path_dir / f"silhouette_opt_multi_view_out_{i_iter}_{i:05d}.png"
+                )
                 img = (
                     (view2pix2occ[i].detach().cpu().squeeze().numpy() * 255)
                     .clip(0, 255)
@@ -499,7 +515,9 @@ def test_silhouette_opt_multiview():
                 Image.fromarray(img).save(filename)
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir / "final.obj")
+        tri2vtx.cpu(),
+        vtx2xyz.cpu(),
+        str(path_dir / "silhouette_opt_multi_view_final.obj"),
     )
 
 
@@ -596,7 +614,6 @@ def render_directional(
             transform_world2pix,
             pix2tri,
             color.contiguous(),
-            num_screen_smoothing,
         )
 
         images.append(color)
@@ -647,8 +664,8 @@ def save_image(
     Image.fromarray(img, mode="RGB").save(filename)
 
 
-def test_shading_optimization():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+def test_shading_opt_one_view():
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     light2dir, light2color = generate_lighting(low=0.1, mid=0.5, high=0.9)
@@ -662,7 +679,7 @@ def test_shading_optimization():
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
 
     img = (pix2rgb_trg.detach().numpy() * 255).clip(0, 255).astype("uint8")
-    Image.fromarray(img).save(path_dir / "shading_opt_trg_cpu.png")
+    Image.fromarray(img).save(path_dir / "shading_opt_one_view_trg_cpu.png")
 
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
@@ -693,7 +710,12 @@ def test_shading_optimization():
             pix2tri,
         )
         pix2rgb = EdgeGradSmooth.Autograd.apply(
-            tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2rgb, 100
+            tri2vtx,
+            vtx2xyz,
+            transform_world2pix,
+            pix2tri,
+            pix2rgb,
+            None,
         )
         loss = torch.nn.functional.mse_loss(pix2rgb, pix2rgb_trg)
         print("iter = :", _iter, "  loss=", loss.item())
@@ -716,10 +738,12 @@ def test_shading_optimization():
 
         if _iter % 10 == 0:
             img = (pix2rgb.detach().numpy() * 255).clip(0, 255).astype("uint8")
-            Image.fromarray(img).save(path_dir / f"shading_opt_cpu_{_iter}.png")
+            Image.fromarray(img).save(
+                path_dir / f"shading_opt_one_view_cpu_{_iter}.png"
+            )
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path_dir / f"shading_opt_fin.obj")
+        tri2vtx, vtx2xyz, str(path_dir / f"shading_opt_one_view_fin.obj")
     )
 
     if torch.cuda.is_available():
@@ -766,7 +790,7 @@ def test_shading_optimization():
                 d_pix2tri,
             )
             d_pix2rgb = EdgeGradSmooth.Autograd.apply(
-                d_tri2vtx, d_vtx2xyz, d_transform_world2pix, d_pix2tri, d_pix2rgb, 100
+                d_tri2vtx, d_vtx2xyz, d_transform_world2pix, d_pix2tri, d_pix2rgb
             )
             d_loss = torch.nn.functional.mse_loss(d_pix2rgb, d_pix2rgb_trg)
             print("iter = :", _iter, "  loss=", d_loss.item())
@@ -781,13 +805,15 @@ def test_shading_optimization():
                     .clip(0, 255)
                     .astype("uint8")
                 )
-                Image.fromarray(img).save(path_dir / f"shading_opt_gpu_{_iter}.png")
+                Image.fromarray(img).save(
+                    path_dir / f"shading_opt_one_view_gpu_{_iter}.png"
+                )
 
 
 def test_shading_opt_multiview():
     if not torch.cuda.is_available():
         return
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     tri2vtx0, vtx2xyz0 = TriMesh3.sphere(1.0, 64, 32)
@@ -835,7 +861,7 @@ def test_shading_opt_multiview():
     )
 
     for i in range(view2pix2rgb0.shape[0]):
-        filename = path_dir / f"reference_{i:05d}.png"
+        filename = path_dir / f"shading_opt_multi_view_trg_{i:05d}.png"
         save_image(view2pix2rgb0[i], filename)
 
     tri2vtx, vtx2xyz = TriMesh3.sphere(0.8, 64, 32)
@@ -896,9 +922,9 @@ def test_shading_opt_multiview():
 
         if i_iter % 50 == 0:
             for i in range(view2pix2rgb.shape[0]):
-                filename = path_dir / f"reference_{i_iter}_{i:05d}.png"
+                filename = path_dir / f"shading_opt_multi_view_out_{i_iter}_{i:05d}.png"
                 save_image(view2pix2rgb[i], filename)
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir / "final.obj")
+        tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir / "shading_opt_multi_view_fin.obj")
     )

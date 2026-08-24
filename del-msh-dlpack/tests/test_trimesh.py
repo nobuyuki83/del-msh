@@ -55,7 +55,7 @@ def test_02():
     """
     test raycast for numpy
     """
-    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "dlpack"
+    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     from del_msh_dlpack.Pix2Tri.numpy import update_pix2tri
@@ -163,7 +163,7 @@ def test_04():
 
 
 def test_05():
-    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "dlpack"
+    path_dir = Path(__file__).resolve().parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
     tri2vtx, vtx2xyz = del_msh_dlpack.TriMesh3.torch.torus(1.0, 0.3, 16, 16)

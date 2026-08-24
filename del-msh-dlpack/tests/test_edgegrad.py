@@ -12,7 +12,7 @@ import del_msh_dlpack.Vtx2Xyz.torch as Vtx2Xyz
 
 
 def test_gradient_visualization_silhouette():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     from test_differentiable_antialias import apply_colormap_bwr
@@ -56,7 +56,7 @@ def test_gradient_visualization_silhouette():
 
 
 def test_match_cpu_gpu_microedge_bwd():
-    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "dlpack"
+    path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     tri2vtx, vtx2xyz = TriMesh3.torus(1.3, 0.4, 64, 32)
