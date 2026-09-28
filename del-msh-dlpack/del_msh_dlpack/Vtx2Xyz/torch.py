@@ -38,3 +38,16 @@ def transform_homography_jacobian(vtx2xyz: torch.Tensor, transform: torch.Tensor
     )
 
     return vtx2duvw2dxyz.contiguous()  # (N, 3, 3)
+
+def save_wavefront_obj(xyz: torch.Tensor, path_dir: str):
+    xyz = xyz.detach().cpu().to(torch.float32).numpy()
+    with open(path_dir, "w", encoding="utf-8") as f:
+        f.write("# Obj point cloud")
+        for x, y, z in xyz:
+            f.write(f"v {x} {y} {z}\n")
+
+
+def from_sample_aabb(aabb, num_sample):
+    assert aabb.shape == (2, 3)
+    u = torch.rand((num_sample, 3), device=aabb.device, dtype=aabb.dtype)
+    return aabb[0] + (aabb[1]-aabb[0]) * u

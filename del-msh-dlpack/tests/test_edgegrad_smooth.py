@@ -3,6 +3,7 @@ import pathlib
 from PIL import Image
 import torch
 import numpy as np
+from pyrr import aabb
 
 import del_msh_dlpack.EdgeGradSmooth.torch as EdgeGradSmooth
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
@@ -19,7 +20,7 @@ from render_util import (
 
 
 def example2(resolution: int):
-    tri2vtx, vtx2xyz = TriMesh3.sphere(0.5, 64, 32)
+    tri2vtx, vtx2xyz = TriMesh3.sphere(0.8, 64, 32)
     transform1 = Mat44.from_translation(0.0, 0.0, 0.0)
     vtx2xyz = Vtx2Xyz.transform_homography(vtx2xyz, transform1)  # move up
     transform_world2ndc = Mat44.from_scale(0.5, 0.5, 0.5)
@@ -32,14 +33,20 @@ def example2(resolution: int):
     pix2occ_target = (
         torch.where(dist2 <= radius**2, 1.0, 0.0).to(torch.float32).unsqueeze(-1)
     )
-    return tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_target
+    aabb_wtx2xyz = torch.tensor(
+        [[-0.8, -0.8, -0.8], [0.8, 0.8, 0.8]],
+        dtype=torch.float32,
+        device=torch.device("cpu"),
+    )
+    wtx2xyz = Vtx2Xyz.from_sample_aabb(aabb_wtx2xyz, 1000)
+    return tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_target, wtx2xyz
 
 
 def test_smooth_gradient_staggered_grid():
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
 
-    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2(128)
+    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg, _ = example2(128)
     transform_ndc2world = transform_world2ndc.inverse()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
@@ -172,23 +179,23 @@ def test_silhouette_optimization():
     path_dir = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir.mkdir(parents=True, exist_ok=True)
     #
-    nres = 128
-    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2(nres)
+    nres = 256
+    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg, wtx2xyz = example2(nres)
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
+    wtx2xyz.requires_grad_(True)
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
     transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
     transform_world2pix = transform_ndc2pix @ transform_world2ndc
     #
     vtx2xyz.requires_grad_(True)
 
-    num_screen_smooth = 300
-    num_mesh_smooth = 3
+    num_mesh_smooth = 0
 
     from del_msh_dlpack.optimize_torch import UniformAdam
 
-    opt = UniformAdam([vtx2xyz], lr=0.01)
+    opt = UniformAdam([vtx2xyz, wtx2xyz], lr=0.01)
 
-    for iter in range(0, 100):
+    for iter in range(0, 500):
         # vtx2xyz.grad = None
         opt.zero_grad()
         bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
@@ -206,8 +213,9 @@ def test_silhouette_optimization():
             transform_world2pix,
             pix2tri,
             pix2occ,
+            wtx2xyz,
         )
-        loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg)
+        loss = torch.nn.functional.mse_loss(pix2occ, pix2occ_trg, reduction="sum")
         print("iter = :", iter, "  loss=", loss.item())
         if loss.item() < 1.0e-5:
             break
@@ -234,8 +242,12 @@ def test_silhouette_optimization():
             )
         opt.step()
 
+
     TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path_dir / "silhouette_opt_one_view_fin_cpu.obj")
+        tri2vtx, vtx2xyz, str(path_dir / f"silhouette_opt_one_view_mesh_cpu.obj")
+    )
+    Vtx2Xyz.save_wavefront_obj(
+        wtx2xyz, str(path_dir / f"silhouette_opt_one_view_wtx2xyz_cpu.obj")
     )
 
     if torch.cuda.is_available():

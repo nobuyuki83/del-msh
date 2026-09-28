@@ -187,6 +187,18 @@ def grad_vtx2xyz_on_backward(vtx2xyz, transform_world2pix, hedge2dldr, vedge2dld
     dldw_vtx2xyz = (dldw_vtx2pixxy.unsqueeze(1) @ vtx2dpix2dxyz[:, 0:2, :]).squeeze(1)
     return dldw_vtx2xyz
 
+def save_image(img_tensor, filename: str, v_min: float, v_max: float, flip_vertical = False):
+    import numpy as np
+    from PIL import Image
+    img = img_tensor.detach().cpu().numpy()
+    img = (img - v_min) / (v_max - v_min)
+    img = np.clip(img, 0.0, 1.0)
+    img = np.round(img * 255.0).astype(np.uint8)
+    if flip_vertical:
+        img = np.flip(img, axis=0)
+    img = np.ascontiguousarray(img)
+    Image.fromarray(img).save(filename)
+
 
 class Autograd(torch.autograd.Function):
     """rasterized edge gradient as a torch.autograd.Function."""
@@ -220,6 +232,23 @@ class Autograd(torch.autograd.Function):
         )
         """
         smooth_gradient_fast(hedge2type, vedge2type, hedge2dldr, vedge2dldr, 8)
+
+        free_hedge = torch.zeros_like(hedge2type, dtype=torch.uint8)
+        free_vedge = torch.zeros_like(vedge2type, dtype=torch.uint8)
+        smooth_gradient_naive(free_hedge, free_vedge, hedge2dldr, vedge2dldr, num_iter=3)
+
+        '''
+        print(hedge2dldr.shape, hedge2dldr.min(), hedge2dldr.max())
+        print(vedge2dldr.shape, vedge2dldr.min(), vedge2dldr.max())
+        from pathlib import Path
+        output_dir = Path("../../target/out_dlpack/")
+        i = 0
+        while (output_dir/ f"hedge2dldr_{i}.png").exists():
+            i += 1
+        save_image(hedge2dldr, output_dir / f"hedge2dldr_{i}.png", -1., 1.)
+        save_image(vedge2dldr, output_dir / f"vedge2dldr_{i}.png", -1., 1.)
+        '''
+
         dldw_vtx2xyz = grad_vtx2xyz_on_backward(
             vtx2xyz, transform_world2pix, hedge2dldr, vedge2dldr
         )
