@@ -16,12 +16,6 @@ def load_nastran(path_file: str):
     return io_nastran_load_tri_mesh(path_file)
 
 
-def save_wavefront_obj(tri2vtx, vtx2xyz, path_file):
-    from ..del_msh_dlpack import io_wavefront_obj_save_tri_mesh
-
-    io_wavefront_obj_save_tri_mesh(tri2vtx, vtx2xyz, path_file)
-
-
 def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor: int):
     from ..del_msh_dlpack import trimesh3_primitive_torus_zup
 

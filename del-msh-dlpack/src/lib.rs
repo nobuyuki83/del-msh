@@ -12,6 +12,7 @@ mod edgegrad;
 mod grid2_partially_fixed;
 mod io_cfd_mesh_txt;
 mod io_nastran;
+mod io_off;
 mod io_vtk;
 mod io_wavefront_obj;
 mod mix_mesh;
@@ -51,6 +52,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     nbody::add_functions(_py, m)?;
     io_nastran::add_functions(_py, m)?;
     io_wavefront_obj::add_functions(_py, m)?;
+    io_off::add_functions(_py, m)?;
     io_cfd_mesh_txt::add_functions(_py, m)?;
     io_vtk::add_functions(_py, m)?;
     edgegrad::add_functions(_py, m)?;

@@ -179,14 +179,9 @@ def save_wavefront_obj(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor, path_file: 
         vtx2xyz: (num_vtx, 3) float32 - vertex positions (CPU only)
         path_file: output file path
     """
-    assert tri2vtx.device.type == "cpu"
-    assert vtx2xyz.device.type == "cpu"
+    from del_msh_dlpack.IoWavefrontObj.torch import save_trimesh3
 
-    from .. import TriMesh3
-
-    TriMesh3.save_wavefront_obj(
-        tri2vtx.__dlpack__(), vtx2xyz.detach().__dlpack__(), path_file
-    )
+    save_trimesh3(tri2vtx, vtx2xyz, path_file)
 
 
 def torus(major_raidus: float, minor_radius: float, ndiv_major: int, ndiv_minor: int):

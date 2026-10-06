@@ -29,6 +29,7 @@ def bwd(
     """
     num_tri = tri2vtx.shape[0]
     num_vtx = vtx2xyz.shape[0]
+    assert pix2val.ndim == 3
     img_w = pix2val.shape[1]
     img_h = pix2val.shape[0]
     num_vdim = pix2val.shape[2]
@@ -65,11 +66,16 @@ def bwd(
     return dldw_vtx2xyz
 
 
-class RasterizedEdgeGradientFunction(torch.autograd.Function):
+class Autograd(torch.autograd.Function):
     """rasterized edge gradient as a torch.autograd.Function."""
 
     @staticmethod
     def forward(ctx, tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin):
+        device = tri2vtx.device
+        assert tri2vtx.ndim == 2
+        num_tri = tri2vtx.shape[0]
+        assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+        assert pix2vin.ndim == 3
         ctx.save_for_backward(tri2vtx, vtx2xyz, transform_world2pix, pix2tri, pix2vin)
         return pix2vin
 

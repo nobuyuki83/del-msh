@@ -180,7 +180,9 @@ def test_silhouette_optimization():
     path_dir.mkdir(parents=True, exist_ok=True)
     #
     nres = 256
-    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg, wtx2xyz = example2(nres)
+    tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg, wtx2xyz = example2(
+        nres
+    )
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
     wtx2xyz.requires_grad_(True)
     transform_ndc2world = transform_world2ndc.inverse().contiguous()
@@ -191,7 +193,7 @@ def test_silhouette_optimization():
 
     num_mesh_smooth = 0
 
-    from del_msh_dlpack.optimize_torch import UniformAdam
+    from del_msh_dlpack.util_adam_uniform import UniformAdam
 
     opt = UniformAdam([vtx2xyz, wtx2xyz], lr=0.01)
 
@@ -241,7 +243,6 @@ def test_silhouette_optimization():
                 dldw_vtx2xyz,
             )
         opt.step()
-
 
     TriMesh3.save_wavefront_obj(
         tri2vtx, vtx2xyz, str(path_dir / f"silhouette_opt_one_view_mesh_cpu.obj")
@@ -480,7 +481,7 @@ def test_silhouette_opt_multiview():
     vtx2xyz = vtx2xyz.cuda().requires_grad_(True)
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
 
-    from del_msh_dlpack.optimize_torch import UniformAdam
+    from del_msh_dlpack.util_adam_uniform import UniformAdam
 
     opt = UniformAdam([vtx2xyz], lr=0.01)
 
@@ -699,7 +700,7 @@ def test_shading_opt_one_view():
     #
     vtx2xyz.requires_grad_(True)
 
-    from del_msh_dlpack.optimize_torch import UniformAdam
+    from del_msh_dlpack.util_adam_uniform import UniformAdam
 
     opt = UniformAdam([vtx2xyz], lr=0.01)
 
@@ -881,7 +882,7 @@ def test_shading_opt_multiview():
     vtx2xyz = vtx2xyz.cuda().requires_grad_(True)
     vtx2vtx = Vtx2Vtx.from_uniform_mesh(tri2vtx, vtx2xyz.shape[0], False)
 
-    from del_msh_dlpack.optimize_torch import UniformAdam
+    from del_msh_dlpack.util_adam_uniform import UniformAdam
 
     opt = UniformAdam([vtx2xyz], lr=0.01)
 
