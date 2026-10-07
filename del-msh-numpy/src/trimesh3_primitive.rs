@@ -39,7 +39,8 @@ fn trimesh3_primitive_capsule_yup(
     nr: usize,
     nl: usize,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f64>>) {
-    let (tri_vtx, vtx_xyz) = del_msh_cpu::trimesh3_primitive::capsule_yup::<f64>(r, l, nc, nr, nl);
+    let (tri_vtx, vtx_xyz) =
+        del_msh_cpu::trimesh3_primitive::capsule_yup::<usize, f64>(r, l, nc, nr, nl);
     let v = numpy::ndarray::Array2::from_shape_vec(
         (vtx_xyz.len(), 3),
         Vec::from(vtx_xyz.as_flattened()),
@@ -64,7 +65,7 @@ fn trimesh3_primitive_cylinder_yup(
     is_center: bool,
 ) -> (Bound<PyArray2<usize>>, Bound<PyArray2<f64>>) {
     let (tri2vtx, vtx2xyz) = if is_closed_end {
-        del_msh_cpu::trimesh3_primitive::cylinder_closed_end_yup::<f64>(
+        del_msh_cpu::trimesh3_primitive::cylinder_closed_end_yup::<usize, f64>(
             radius,
             length,
             ndiv_circumference,

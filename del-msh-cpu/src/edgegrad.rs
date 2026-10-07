@@ -400,3 +400,77 @@ pub fn bwd(
         }
     }
 }
+
+#[test]
+fn test_hoge() {
+    let tri2vtx = [[0, 1, 2], [3, 4, 5]];
+    let vtx2xyz = [
+        [-0.4, 0.1, 0.5],
+        [0.6, -0.5, 0.1],
+        [0.5, 0.5, 0.0],
+        [0.6, 0.0, 0.5],
+        [-0.4, 0.5, -0.1],
+        [-0.3, -0.5, 0.0],
+    ];
+
+    let img_shape = (400, 300);
+    let transform_world2ndc = {
+        let prj = del_geo_core::mat4_col_major::camera_perspective_blender(
+            img_shape.0 as f32 / img_shape.1 as f32,
+            35.0,
+            1.0,
+            3.0,
+            true,
+        );
+        let ext = del_geo_core::mat4_col_major::from_translate(&[0.0, 0.0, -1.6]);
+        del_geo_core::mat4_col_major::mult_mat_col_major(&prj, &ext)
+    };
+    let transform_ndc2world =
+        del_geo_core::mat4_col_major::try_inverse(&transform_world2ndc).unwrap();
+
+    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
+    let bvhnode2aabb =
+        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, &vtx2xyz, None);
+
+    let mut pix2tri = vec![u32::MAX; img_shape.0 * img_shape.1];
+    crate::pix2tri::pix2tri_by_raycast(
+        &mut pix2tri,
+        &tri2vtx,
+        &vtx2xyz,
+        &bvhnodes,
+        &bvhnode2aabb,
+        img_shape,
+        &transform_ndc2world,
+    );
+
+    let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];
+    crate::pix2depth::pix2depth_from_pix2tri(
+        &mut pix2depth,
+        &pix2tri,
+        &tri2vtx,
+        &vtx2xyz,
+        img_shape,
+        &transform_ndc2world,
+    );
+    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+    del_canvas::write_png_from_float_image(
+        path_dir.join("edgegrad_depth.png"),
+        img_shape,
+        1,
+        &pix2depth,
+    )
+    .unwrap();
+
+    let pix2occ: Vec<f32> = pix2tri
+        .iter()
+        .map(|&i_tri| if i_tri == u32::MAX { 0.0 } else { 1.0 })
+        .collect();
+    del_canvas::write_png_from_float_image(path_dir.join("edgegrad.png"), img_shape, 1, &pix2occ)
+        .unwrap();
+    use rand::RngExt;
+    use rand::SeedableRng;
+    let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
+    let pix2trg: Vec<f32> = (0..img_shape.0 * img_shape.1)
+        .map(|_| reng.random())
+        .collect();
+}

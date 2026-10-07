@@ -1,3 +1,5 @@
+//! depth here means (NDC.Z + 1.0)*0.5
+
 pub struct Depth;
 
 impl<T> crate::trimesh3_raycast::ScalarRender<T> for Depth

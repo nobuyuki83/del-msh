@@ -190,7 +190,7 @@ where
     let vtxl2framey = vtx2framey(vtxl2xyz, &vtxl2framex);
     //
     let ndiv_length = num_vtxl - 1;
-    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<T>(
+    let (tri2vtx, vtx2xyz) = crate::trimesh3_primitive::cylinder_closed_end_yup::<usize, T>(
         T::one(),
         T::one(),
         ndiv_circum,
