@@ -103,36 +103,61 @@ pub fn fwd_continuous<T: ScalarRender<f32>>(
     pix2vin
 }
 
-pub fn multi_sample<T, F, R>(
+/// Generates sub-pixel sample positions for Monte Carlo integration over a pixel.
+///
+/// Each call to `sample` returns a 2-D offset in [0,1)^2 (relative to the pixel's
+/// top-left corner) and the PDF at that point.  The returned value accumulator in
+/// `multi_sample` divides each radiance contribution by its PDF, so returning
+/// `pdf = 1.0` (uniform) leaves the averaging unchanged.
+pub trait PixelSampler: Sized {
+    /// Create a sampler for pixel `i_pix`, seeded deterministically from its index.
+    fn initialize(i_pix: usize) -> Self;
+    fn sample(&mut self) -> ([f32; 2], f32);
+}
+
+/// Box-filter sampler: uniform random position over the pixel area; PDF is always 1.0.
+pub struct BoxPixelSampler<R: rand::Rng> {
+    rng: R,
+}
+
+impl<R: rand::Rng + rand::SeedableRng> PixelSampler for BoxPixelSampler<R> {
+    fn initialize(i_pix: usize) -> Self {
+        Self {
+            rng: R::seed_from_u64(i_pix as u64),
+        }
+    }
+    fn sample(&mut self) -> ([f32; 2], f32) {
+        use rand::RngExt;
+        let x = self.rng.random_range(0.0..1.0);
+        let y = self.rng.random_range(0.0..1.0);
+        ([x, y], 1.0)
+    }
+}
+
+pub fn multi_sample<T, S>(
     tri2vtx: &[[u32; 3]],
     vtx2xyz: &[[f32; 3]],
     transform_world2ndc: &[f32; 16],
     img_shape: (usize, usize),
     num_sample: usize,
-    mode: &T,
-    rng_factory: F,
+    model: &T,
 ) -> Vec<f32>
 where
     T: ScalarRender<f32> + Sync,
-    F: Fn(usize) -> R + Sync,
-    R: rand::Rng,
+    S: PixelSampler + Send,
 {
-    use rand::RngExt;
-    // let transform_ndc2world = del_geo_core::mat4_col_major::from_identity();
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse_with_pivot(transform_world2ndc).unwrap();
     let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(tri2vtx, vtx2xyz);
     let bvhnode2aabb =
         crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, tri2vtx, vtx2xyz, None);
     let fn_pix2val = |i_pix: usize| -> f32 {
-        let mut rng = rng_factory(i_pix);
+        let mut sampler = S::initialize(i_pix);
         let i_h = i_pix / img_shape.0;
         let i_w = i_pix - i_h * img_shape.0;
-        //
         let mut sum = 0.0f32;
         for _itr in 0..num_sample {
-            let x_offset = rng.random_range(0.0..1.);
-            let y_offset = rng.random_range(0.0..1.0);
+            let ([x_offset, y_offset], pdf) = sampler.sample();
             let (ray_org, ray_dir) =
                 del_geo_core::mat4_col_major::ray_from_transform_ndc2world_and_pixel_coordinates(
                     (i_w as f32 + x_offset, i_h as f32 + y_offset),
@@ -151,7 +176,7 @@ where
                 0,
                 f32::INFINITY,
             ) {
-                sum += mode.fwd(&bc, i_tri as u32, tri2vtx, vtx2xyz, transform_world2ndc);
+                sum += model.fwd(&bc, i_tri as u32, tri2vtx, vtx2xyz, transform_world2ndc) / pdf;
             }
         }
         sum / num_sample as f32
@@ -161,6 +186,6 @@ where
     pix2val
         .par_iter_mut()
         .enumerate()
-        .for_each(|(i_pix, i_tri)| *i_tri = fn_pix2val(i_pix));
+        .for_each(|(i_pix, val)| *val = fn_pix2val(i_pix));
     pix2val
 }

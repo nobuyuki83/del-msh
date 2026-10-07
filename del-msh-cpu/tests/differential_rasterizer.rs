@@ -49,28 +49,27 @@ mod tests {
         let num_sample = 2056;
         let img_shape = (IMG_RES, IMG_RES);
         let eps = 1.0e-1 / IMG_RES as f32;
+        type Sampler = del_msh_cpu::trimesh3_raycast::BoxPixelSampler<rand_chacha::ChaChaRng>;
         let pix2val0 = {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(-eps);
-            del_msh_cpu::trimesh3_raycast::multi_sample(
+            del_msh_cpu::trimesh3_raycast::multi_sample::<_, Sampler>(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
                 img_shape,
                 num_sample,
                 &mode,
-                |i_pix| rand_chacha::ChaChaRng::seed_from_u64(i_pix as u64),
             )
         };
         {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(0.);
-            let pix2val1 = del_msh_cpu::trimesh3_raycast::multi_sample(
+            let pix2val1 = del_msh_cpu::trimesh3_raycast::multi_sample::<_, Sampler>(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
                 img_shape,
                 num_sample,
                 &mode,
-                |i_pix| rand_chacha::ChaChaRng::seed_from_u64(i_pix as u64),
             );
             del_canvas::write_png_from_float_image(
                 format!(
@@ -85,14 +84,13 @@ mod tests {
         }
         let pix2val2 = {
             let (tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(eps);
-            del_msh_cpu::trimesh3_raycast::multi_sample(
+            del_msh_cpu::trimesh3_raycast::multi_sample::<_, Sampler>(
                 &tri2vtx,
                 &vtx2xyz,
                 &transform_world2ndc,
                 img_shape,
                 num_sample,
                 &mode,
-                |i_pix| rand_chacha::ChaChaRng::seed_from_u64(i_pix as u64),
             )
         };
         let grad: Vec<f32> = pix2val0

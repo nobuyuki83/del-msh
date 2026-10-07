@@ -412,8 +412,16 @@ fn test_hoge() {
         [-0.4, 0.5, -0.1],
         [-0.3, -0.5, 0.0],
     ];
+    let vtx2uvw = [
+        [-1., -1., -1.],
+        [-1., -1., -1.],
+        [-1., -1., -1.],
+        [1., 1., 1.],
+        [1., 1., 1.],
+        [1., 1., 1.],
+    ];
 
-    let img_shape = (400, 300);
+    let img_shape = (200, 150);
     let transform_world2ndc = {
         let prj = del_geo_core::mat4_col_major::camera_perspective_blender(
             img_shape.0 as f32 / img_shape.1 as f32,
@@ -428,21 +436,76 @@ fn test_hoge() {
     let transform_ndc2world =
         del_geo_core::mat4_col_major::try_inverse(&transform_world2ndc).unwrap();
 
-    let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
-    let bvhnode2aabb =
-        crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, &vtx2xyz, None);
+    let mode = crate::pix2occlusion::Occlusion;
+    {
+        let num_sample = 100;
+        let eps = 1.0e-3;
+        type Sampler = crate::trimesh3_raycast::BoxPixelSampler<rand_chacha::ChaChaRng>;
+        let pix2val0 = {
+            let vtx2xyz = vtx2xyz
+                .iter()
+                .zip(vtx2uvw.iter())
+                .map(|(x, u)| [x[0] - eps * u[0], x[1] - eps * u[1], x[2] - eps * u[2]])
+                .collect::<Vec<_>>();
+            crate::trimesh3_raycast::multi_sample::<_, Sampler>(
+                &tri2vtx,
+                &vtx2xyz,
+                &transform_world2ndc,
+                img_shape,
+                num_sample,
+                &mode,
+            )
+        };
+        let pix2val1 = {
+            let vtx2xyz = vtx2xyz
+                .iter()
+                .zip(vtx2uvw.iter())
+                .map(|(x, u)| [x[0] + eps * u[0], x[1] + eps * u[1], x[2] + eps * u[2]])
+                .collect::<Vec<_>>();
+            crate::trimesh3_raycast::multi_sample::<_, Sampler>(
+                &tri2vtx,
+                &vtx2xyz,
+                &transform_world2ndc,
+                img_shape,
+                num_sample,
+                &mode,
+            )
+        };
+        let pix2diff = pix2val1
+            .iter()
+            .zip(pix2val0.iter())
+            .map(|(u, v)| (u - v) / eps)
+            .collect::<Vec<_>>();
+        //dbg!(pix2diff);
+    }
 
-    let mut pix2tri = vec![u32::MAX; img_shape.0 * img_shape.1];
-    crate::pix2tri::pix2tri_by_raycast(
-        &mut pix2tri,
-        &tri2vtx,
-        &vtx2xyz,
-        &bvhnodes,
-        &bvhnode2aabb,
-        img_shape,
-        &transform_ndc2world,
-    );
+    /*
+    for i_pix in 0..img_shape.0 * img_shape.1 {
+        let bvhnodes = crate::bvhnodes_morton::from_triangle_mesh(&tri2vtx, &vtx2xyz);
+        let bvhnode2aabb =
+            crate::bvhnode2aabb3::from_uniform_mesh_with_bvh(0, &bvhnodes, &tri2vtx, &vtx2xyz, None);
+        let mut pix2tri = vec![u32::MAX; img_shape.0 * img_shape.1];
+        crate::pix2tri::pix2tri_by_raycast(
+            &mut pix2tri,
+            &tri2vtx,
+            &vtx2xyz,
+            &bvhnodes,
+            &bvhnode2aabb,
+            img_shape,
+            &transform_ndc2world,
+        );
+        let pix2occ: Vec<f32> = pix2tri
+            .iter()
+            .map(|&i_tri| if i_tri == u32::MAX { 0.0 } else { 1.0 })
+            .collect();
+        let pix2trg = {
+            let mut pix2trg = vec![0f32; img_shape.0 * img_shape.1];
 
+        };
+    }
+     */
+
+    /*
     let mut pix2depth = vec![0f32; img_shape.0 * img_shape.1];
     crate::pix2depth::pix2depth_from_pix2tri(
         &mut pix2depth,
@@ -461,10 +524,6 @@ fn test_hoge() {
     )
     .unwrap();
 
-    let pix2occ: Vec<f32> = pix2tri
-        .iter()
-        .map(|&i_tri| if i_tri == u32::MAX { 0.0 } else { 1.0 })
-        .collect();
     del_canvas::write_png_from_float_image(path_dir.join("edgegrad.png"), img_shape, 1, &pix2occ)
         .unwrap();
     use rand::RngExt;
@@ -473,4 +532,33 @@ fn test_hoge() {
     let pix2trg: Vec<f32> = (0..img_shape.0 * img_shape.1)
         .map(|_| reng.random())
         .collect();
+
+    let loss: f32 = pix2trg
+        .iter()
+        .zip(pix2occ.iter())
+        .map(|(t, o)| t * o)
+        .sum();
+    dbg!(loss);
+
+    // d(loss)/d(pix2occ[i]) = pix2trg[i]
+    let transform_ndc2pix =
+        del_geo_core::mat4_col_major::from_transform_ndc2pix(img_shape);
+    let transform_world2pix = del_geo_core::mat4_col_major::mult_mat_col_major(
+        &transform_ndc2pix,
+        &transform_world2ndc,
+    );
+    let mut dldw_vtx2xyz = vec![[0f32; 3]; vtx2xyz.len()];
+    bwd(
+        &tri2vtx,
+        &vtx2xyz,
+        &mut dldw_vtx2xyz,
+        &transform_world2pix,
+        img_shape,
+        &pix2tri,
+        1,
+        &pix2occ,
+        &pix2trg,
+    );
+    dbg!(&dldw_vtx2xyz);
+    */
 }
