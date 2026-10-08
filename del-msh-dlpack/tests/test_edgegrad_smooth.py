@@ -252,7 +252,7 @@ def test_silhouette_optimization():
     )
 
     if torch.cuda.is_available():
-        tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg = example2(nres)
+        tri2vtx, vtx2xyz, transform_world2ndc, img_shape, pix2occ_trg, _ = example2(nres)
         transform_ndc2world = transform_world2ndc.inverse().contiguous()
         transform_ndc2pix = Mat44.from_transform_ndc2pix(img_shape)
         transform_world2pix = transform_ndc2pix @ transform_world2ndc

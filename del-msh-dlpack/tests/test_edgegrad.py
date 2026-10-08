@@ -108,11 +108,12 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
     import del_msh_dlpack.EdgeGrad.torch as EdgeGrad
 
     # 各ビューの深度画像をまとめるため、アトラス全体のバッファを用意する。
-    pix2depth = torch.zeros((image_shape[1], image_shape[0]))
-    pix2occ = torch.zeros((image_shape[1], image_shape[0]))
+    pix2depth = torch.zeros((image_shape[1], image_shape[0]), device=device)
+    pix2occ = torch.zeros((image_shape[1], image_shape[0]), device=device)
 
     for i_view, view in enumerate(views):
         transform_world2ndc, viewport = view
+        transform_world2ndc = transform_world2ndc.to(device)
 
         # ラスタライズ側はこのビューの逆変換行列を受け取る。
         transform_ndc2world = torch.inverse(transform_world2ndc).contiguous()
@@ -201,13 +202,8 @@ def sample_aabb(aabb_min, aabb_max, num_sample):
     samples = aabb_min + (aabb_max - aabb_min) * u
     return samples
 
-
-def test_match_shape_multiview(transform_world2ndc=None):
-    import del_msh_dlpack.NBody.torch as NBody
-    import del_msh_dlpack.IoWavefrontObj.torch as IoWavefrontObj
+def fit(device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_trg, views):
     from del_msh_dlpack.NBody import Elastic
-    import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
-    import del_msh_dlpack.IoOff.torch as IoOff
     #
     lr = 0.1
     num_substep = 2  # Number of sub-steps for the Green's function filter per iteration
@@ -224,17 +220,18 @@ def test_match_shape_multiview(transform_world2ndc=None):
     loss_weight_laplacereg = 0.01  # Weight for Laplacian smoothness regularization
     loss_weight_normalreg = 0.001  # Weight for normal consistency regularization
     #
-    path_dir_asset = pathlib.Path(__file__).parent.parent.parent / "asset"
+    tri2vtx = tri2vtx.to(device)
+    vtx2xyz = vtx2xyz.to(device)
+    wtx2xyz = wtx2xyz.to(device)
+    pix2depth_trg = pix2depth_trg.to(device)
+    pix2occ_trg = pix2occ_trg.to(device)
+    #
+    import del_msh_dlpack.NBody.torch as NBody
+    import del_msh_dlpack.IoWavefrontObj.torch as IoWavefrontObj
+    import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
+    #
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir_trg.mkdir(parents=True, exist_ok=True)
-    #
-    pix2depth_trg, pix2occ_trg, views = make_problem()
-    Image.fromarray((pix2depth_trg.numpy() * 255).clip(0, 255).astype("uint8")).save(
-        path_dir_trg / f"test_edgegrad_depth_trg.png"
-    )
-    #
-    tri2vtx, vtx2xyz = IoOff.load_tri_mesh(str(path_dir_asset / "propeller0.off"))
-    wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
     start = time.perf_counter()
 
     # Pre-compute reference Laplacian coordinates for regularization
@@ -250,11 +247,7 @@ def test_match_shape_multiview(transform_world2ndc=None):
             .detach()
             .requires_grad_(False)
         )
-
-    TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path_dir_trg / "test_edgegrad_ini.obj")
-    )
-    vtx2xyz.requires_grad_(True)
+    vtx2xyz = vtx2xyz.detach().requires_grad_(True)
 
     from del_msh_dlpack.util_adam_uniform import UniformAdam
 
@@ -288,24 +281,24 @@ def test_match_shape_multiview(transform_world2ndc=None):
 
         #
         if itr % num_interval_save_file == 0:
-            img = (pix2depth_src.detach().numpy() * 255).clip(0, 255).astype("uint8")
+            img = (pix2depth_src.detach().cpu().numpy() * 255).clip(0, 255).astype("uint8")
             path0 = (
-                path_dir_trg
-                / f"test_edgegrad_depth_src_{itr // num_interval_save_file}.png"
+                    path_dir_trg
+                    / f"test_edgegrad_depth_src_{itr // num_interval_save_file}.png"
             )
             Image.fromarray(img).save(path0)
             #
             path0 = (
-                path_dir_trg
-                / f"test_edgegrad_depth_pnt_{itr // num_interval_save_file}.obj"
+                    path_dir_trg
+                    / f"test_edgegrad_depth_pnt_{itr // num_interval_save_file}.obj"
             )
-            IoWavefrontObj.save_points(wtx2xyz, path0)
+            IoWavefrontObj.save_points(wtx2xyz.cpu(), path0)
             #
             path0 = (
-                path_dir_trg
-                / f"test_edgegrad_depth_bdy_{itr // num_interval_save_file}.obj"
+                    path_dir_trg
+                    / f"test_edgegrad_depth_bdy_{itr // num_interval_save_file}.obj"
             )
-            IoWavefrontObj.save_trimesh3(tri2vtx, vtx2xyz, str(path0))
+            IoWavefrontObj.save_trimesh3(tri2vtx.cpu(), vtx2xyz.cpu(), str(path0))
 
         # --- Backpropagate to compute gradient w.r.t. vertex positions ---
         loss.backward()
@@ -345,12 +338,34 @@ def test_match_shape_multiview(transform_world2ndc=None):
             optimizer.step()
 
     TriMesh3.save_wavefront_obj(
-        tri2vtx, vtx2xyz, str(path_dir_trg / "test_edgegrad_fin.obj")
+        tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir_trg / "test_edgegrad_fin.obj")
     )
-    vtx2xyz.requires_grad_(True)
 
     end = time.perf_counter()
     print("elapsed time:", end - start)
     with open(path_dir_trg / "test_edgegrad_conv_hist.csv", mode="w") as file:
         writer = csv.writer(file)
         writer.writerow(conv_history)
+
+
+
+def test_match_shape_multiview(transform_world2ndc=None):
+    import del_msh_dlpack.IoOff.torch as IoOff
+    path_dir_asset = pathlib.Path(__file__).parent.parent.parent / "asset"
+    path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
+    path_dir_trg.mkdir(parents=True, exist_ok=True)
+    #
+    pix2depth_trg, pix2occ_trg, views = make_problem()
+    Image.fromarray((pix2depth_trg.numpy() * 255).clip(0, 255).astype("uint8")).save(
+        path_dir_trg / f"test_edgegrad_depth_trg.png"
+    )
+    #
+    tri2vtx, vtx2xyz = IoOff.load_tri_mesh(str(path_dir_asset / "propeller0.off"))
+    TriMesh3.save_wavefront_obj(
+        tri2vtx, vtx2xyz, str(path_dir_trg / "test_edgegrad_ini.obj")
+    )
+    wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
+
+    fit(torch.device("cpu"), tri2vtx, vtx2xyz.clone(), wtx2xyz.clone(), pix2depth_trg, pix2occ_trg, views)
+    if torch.cuda.is_available():
+        fit(torch.device("cuda"), tri2vtx, vtx2xyz.clone(), wtx2xyz.clone(), pix2depth_trg, pix2occ_trg, views)
