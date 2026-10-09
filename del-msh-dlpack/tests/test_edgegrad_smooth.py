@@ -3,7 +3,6 @@ import pathlib
 from PIL import Image
 import torch
 import numpy as np
-from pyrr import aabb
 
 import del_msh_dlpack.EdgeGradSmooth.torch as EdgeGradSmooth
 import del_msh_dlpack.TriMesh3.torch as TriMesh3
