@@ -45,7 +45,6 @@ mod tests {
         mode: T,
         str_mode: &str,
     ) {
-        use rand::SeedableRng;
         let num_sample = 2056;
         let img_shape = (IMG_RES, IMG_RES);
         let eps = 1.0e-1 / IMG_RES as f32;

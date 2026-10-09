@@ -189,3 +189,51 @@ where
         .for_each(|(i_pix, val)| *val = fn_pix2val(i_pix));
     pix2val
 }
+
+#[allow(clippy::too_many_arguments)]
+pub fn finite_difference<T, S>(
+    tri2vtx: &[[u32; 3]],
+    vtx2xyz: &[[f32; 3]],
+    vtx2uvw: &[[f32; 3]],
+    transform_world2ndc: &[f32; 16],
+    img_shape: (usize, usize),
+    mode: &T,
+    num_sample: usize,
+    eps: f32,
+) -> (Vec<f32>, Vec<f32>)
+where
+    T: ScalarRender<f32> + Sync,
+    S: PixelSampler + Send,
+{
+    let pix2val0 = {
+        multi_sample::<T, S>(
+            tri2vtx,
+            vtx2xyz,
+            transform_world2ndc,
+            img_shape,
+            num_sample,
+            mode,
+        )
+    };
+    let pix2val1 = {
+        let vtx2xyz = vtx2xyz
+            .iter()
+            .zip(vtx2uvw.iter())
+            .map(|(x, u)| [x[0] + eps * u[0], x[1] + eps * u[1], x[2] + eps * u[2]])
+            .collect::<Vec<_>>();
+        multi_sample::<T, S>(
+            tri2vtx,
+            &vtx2xyz,
+            transform_world2ndc,
+            img_shape,
+            num_sample,
+            mode,
+        )
+    };
+    let pix2diff = pix2val1
+        .iter()
+        .zip(pix2val0.iter())
+        .map(|(u, v)| (u - v) / eps)
+        .collect::<Vec<_>>();
+    (pix2diff, pix2val0)
+}
