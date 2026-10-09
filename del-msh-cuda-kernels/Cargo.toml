@@ -21,6 +21,6 @@ walkdir = "2.5.0"
 del-geo-cpp-headers = {git = "https://github.com/nobuyuki83/del-geo.git"}
 
 # for deploy
-# del-geo-cpp-headers = "=0.1.33"
+# del-geo-cpp-headers = "=0.1.39"
 
 

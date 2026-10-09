@@ -587,7 +587,7 @@ mod tests {
         vtx2uvw: &[[f32; 3]],
         transform_world2ndc: &[f32; 16],
         img_shape: (usize, usize),
-        mode: &T,
+        _mode: &T,
         num_sample: usize,
         eps: f32,
     ) where
@@ -602,8 +602,8 @@ mod tests {
             &transform_world2ndc,
             img_shape,
             &TriVal,
-            300,
-            1.0e-3,
+            num_sample,
+            eps,
         );
         let pix2rgb = pix2diff
             .iter()
@@ -702,7 +702,7 @@ mod tests {
             &transform_world2ndc,
         );
 
-        let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
+        let _path_dir = std::path::Path::new("../target/out_del_msh_cpu");
 
         finite_difference(
             &tri2vtx,

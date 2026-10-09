@@ -4,6 +4,172 @@
 #include "del_geo/mat3_col_major.h"
 #include "del_geo/tri2.h"
 #include "del_geo/tri3.h"
+#include "del_geo/vec3.h"
+
+
+
+
+// Mirror of Rust `edgegrad::Tri`.  Stores both pixel-space (projected) and
+// world-space vertex data so methods can be called without redundant re-projection.
+struct Tri {
+    float node2xyz[3][3];   // world-space positions
+    float node2pixxy[3][2]; // pixel x,y after perspective divide
+    float node2w[3];        // raw homogeneous w (before divide)
+    float node2pixz[3];     // pixel z after perspective divide
+
+    // Initialise from triangle index.  Returns false for UINT32_MAX (background).
+    __device__ static bool make(
+        uint32_t i_tri,
+        const uint32_t* tri2vtx,
+        const float*    vtx2xyz,
+        const float*    transform_world2pix,
+        Tri& out)
+    {
+        if (i_tri == UINT32_MAX) return false;
+        const float* t = transform_world2pix;
+        for (int i_node = 0; i_node < 3; ++i_node) {
+            const uint32_t ivtx = tri2vtx[i_tri * 3 + i_node];
+            const float* xyz = vtx2xyz + ivtx * 3;
+            out.node2xyz[i_node][0] = xyz[0];
+            out.node2xyz[i_node][1] = xyz[1];
+            out.node2xyz[i_node][2] = xyz[2];
+            const float x = xyz[0], y = xyz[1], z = xyz[2];
+            const float hx = t[0]*x + t[4]*y + t[8]*z  + t[12];
+            const float hy = t[1]*x + t[5]*y + t[9]*z  + t[13];
+            const float hz = t[2]*x + t[6]*y + t[10]*z + t[14];
+            const float hw = t[3]*x + t[7]*y + t[11]*z + t[15];
+            out.node2pixxy[i_node][0] = hx / hw;
+            out.node2pixxy[i_node][1] = hy / hw;
+            out.node2pixz[i_node]     = hz / hw;
+            out.node2w[i_node]        = hw;
+        }
+        return true;
+    }
+
+    // Pixel-space (non-perspective-correct) barycentric coords.
+    // Returns false if the projected triangle is degenerate.
+    __device__ bool barycentric_pix(float px, float py, float bary[3]) const {
+        const float p0[2] = {node2pixxy[0][0], node2pixxy[0][1]};
+        const float p1[2] = {node2pixxy[1][0], node2pixxy[1][1]};
+        const float p2[2] = {node2pixxy[2][0], node2pixxy[2][1]};
+        const float area = tri2::area(p0, p1, p2);
+        if (area == 0.f) return false;
+        const float inv_area = 1.f / area;
+        const float q[2] = {px, py};
+        bary[0] = tri2::area(q, p1, p2) * inv_area;
+        bary[1] = tri2::area(p0, q, p2) * inv_area;
+        bary[2] = 1.f - bary[0] - bary[1];
+        return true;
+    }
+
+    // True when (px, py) projects inside the triangle (all bary coords >= 0).
+    __device__ bool is_inside(float px, float py) const {
+        float bary[3];
+        if (!barycentric_pix(px, py, bary)) return false;
+        return bary[0] >= 0.f && bary[1] >= 0.f && bary[2] >= 0.f;
+    }
+
+    // Perspective-correct world-space barycentric coords.
+    // Returns false if degenerate or non-finite.
+    __device__ bool barycentric_world(float px, float py, float bary[3]) const {
+        float b[3];
+        if (!barycentric_pix(px, py, b)) return false;
+        float q[3], sum = 0.f;
+        for (int i = 0; i < 3; ++i) {
+            q[i] = b[i] / node2w[i];
+            sum += q[i];
+        }
+        if (!isfinite(sum) || sum == 0.f) return false;
+        for (int i = 0; i < 3; ++i) {
+            bary[i] = q[i] / sum;
+            if (!isfinite(bary[i])) return false;
+        }
+        return true;
+    }
+
+    // World-space position from barycentric coordinates.
+    __device__ auto world_pos_from_barycentric(const float bc[3]) const
+        -> cuda::std::array<float, 3>
+    {
+        return tri3::position_from_barycentric_coord(
+            node2xyz[0], node2xyz[1], node2xyz[2], bc);
+    }
+
+    // Unit normal of the triangle in pixel space (x,y = pixel coords, z = depth).
+    __device__ auto unormal_pix() const -> cuda::std::array<float, 3> {
+        const float p0[3] = {node2pixxy[0][0], node2pixxy[0][1], node2pixz[0]};
+        const float p1[3] = {node2pixxy[1][0], node2pixxy[1][1], node2pixz[1]};
+        const float p2[3] = {node2pixxy[2][0], node2pixxy[2][1], node2pixz[2]};
+        auto n = tri3::normal(p0, p1, p2);
+        const float len = sqrtf(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+        if (len > 0.f) { n[0] /= len; n[1] /= len; n[2] /= len; }
+        return n;
+    }
+};
+
+// Scatter the intersection gradient between two overlapping triangles.
+// `axis` selects the edge direction (0 = horizontal, 1 = vertical).
+// `dldpa` is d(loss)/d(pixel-edge-position) along that axis.
+__device__ void scatter_intersection_gradient(
+    const uint32_t node2vtx0[3],
+    const uint32_t node2vtx1[3],
+    float*          dldw_vtx2xyz,
+    const float*    transform_world2pix,
+    const Tri&      tri0,
+    const Tri&      tri1,
+    float px0, float py0,
+    float px1, float py1,
+    int   axis,
+    float dldpa)
+{
+    const auto n0 = tri0.unormal_pix();
+    const auto n1 = tri1.unormal_pix();
+
+    const float denom = n0[axis] * n1[2] - n0[2] * n1[axis];
+    const float norm0 = hypotf(n0[axis], n0[2]);
+    const float norm1 = hypotf(n1[axis], n1[2]);
+    const float scale = norm0 * norm1;
+    if (!isfinite(denom) || scale == 0.f || fabsf(denom) <= 1.e-6f * scale) return;
+
+    float b0[3], b1[3];
+    if (!tri0.barycentric_world(px0, py0, b0)) return;
+    if (!tri1.barycentric_world(px1, py1, b1)) return;
+
+    const auto xyz0 = tri0.world_pos_from_barycentric(b0);
+    const auto xyz1 = tri0.world_pos_from_barycentric(b1);  // faithful to Rust source
+
+    // Pack contributions: (node2vtx, xyz, barycentric, normal, coefficient)
+    const uint32_t* node2vtx_c[2] = { node2vtx0, node2vtx1 };
+    const float xyz_c[2][3] = {
+        {xyz0[0], xyz0[1], xyz0[2]},
+        {xyz1[0], xyz1[1], xyz1[2]},
+    };
+    const float* b_c[2]     = { b0, b1 };
+    const float  n_c[2][3]  = {
+        {n0[0], n0[1], n0[2]},
+        {n1[0], n1[1], n1[2]},
+    };
+    const float coeff[2] = { n1[2] / denom, -n0[2] / denom };
+
+    for (int c = 0; c < 2; ++c) {
+        const float g_pix[3] = {
+            dldpa * coeff[c] * n_c[c][0],
+            dldpa * coeff[c] * n_c[c][1],
+            dldpa * coeff[c] * n_c[c][2],
+        };
+        // j[row + 3*col] = d(pix[row]) / d(world[col])
+        // g_world[k] = sum_i  j[3*k+i] * g_pix[i]  (== J^T g_pix)
+        const auto j = mat4_col_major::jacobian_transform(transform_world2pix, xyz_c[c]);
+        const auto g_world = vec3::mult_mat3_col_major(g_pix, j.data());
+        for (int inode = 0; inode < 3; ++inode) {
+            const uint32_t ivtx = node2vtx_c[c][inode];
+            for (int k = 0; k < 3; ++k) {
+                atomicAdd(&dldw_vtx2xyz[ivtx * 3 + k], b_c[c][inode] * g_world[k]);
+            }
+        }
+    }
+}
+
 
 extern "C" {
 
@@ -337,10 +503,13 @@ void bwd_hedge(
 
     const float px0 = iw + 0.5f, py0 = (float)ih0 + 0.5f;
     const float px1 = iw + 0.5f, py1 = (float)ih1 + 0.5f;
-    const bool in0_tri1 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px0, py0, itri1);
-    const bool in1_tri0 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px1, py1, itri0);
+
+    Tri tri0_s, tri1_s;
+    const bool tri0_ok = Tri::make(itri0, tri2vtx, vtx2xyz, transform_world2pix, tri0_s);
+    const bool tri1_ok = Tri::make(itri1, tri2vtx, vtx2xyz, transform_world2pix, tri1_s);
+    const bool in0_tri1 = tri1_ok ? tri1_s.is_inside(px0, py0) : true;
+    const bool in1_tri0 = tri0_ok ? tri0_s.is_inside(px1, py1) : true;
     if (!in0_tri1 && !in1_tri0) { return; }
-    if ( in0_tri1 &&  in1_tri0) { return; }  // intersection — todo
 
     float dldpa = 0.f;
     for (uint32_t i = 0; i < num_vdim; ++i) {
@@ -351,33 +520,33 @@ void bwd_hedge(
         dldpa += (dval0 + dval1) * 0.5f * (val0 - val1);
     }
 
-    uint32_t target_tri;
-    float pxq, pyq;
-    if (in1_tri0) {
-        // south pixel center is inside north tri → south tri receives gradient
-        target_tri = itri1;
-        pxq = px1; pyq = py1;
-    } else {
-        // north pixel center is inside south tri → north tri receives gradient
-        target_tri = itri0;
-        pxq = px0; pyq = py0;
-    }
-
-    float bary[3];
-    if (!barycentric_of_pixel_in_tri(tri2vtx, vtx2xyz, transform_world2pix, pxq, pyq, target_tri, bary)) {
+    if (in0_tri1 && in1_tri0) {
+        if (itri0 == UINT32_MAX || itri1 == UINT32_MAX) { return; }
+        scatter_intersection_gradient(
+            tri2vtx + itri0 * 3, tri2vtx + itri1 * 3,
+            dldw_vtx2xyz, transform_world2pix,
+            tri0_s, tri1_s,
+            px0, py0, px1, py1,
+            1, dldpa);
         return;
     }
-    const auto xyz = tri3::position_from_barycentric_coord(
-        vtx2xyz + tri2vtx[target_tri*3+0] * 3,
-        vtx2xyz + tri2vtx[target_tri*3+1] * 3,
-        vtx2xyz + tri2vtx[target_tri*3+2] * 3,
-        bary);
+
+    // Single-triangle case: gradient goes to the triangle whose projection boundary
+    // caused the pixel-value discontinuity.
+    const bool    use_tri1 = in1_tri0;  // south center in north tri → south tri moves
+    const Tri&    tgt      = use_tri1 ? tri1_s : tri0_s;
+    const float   pxq      = use_tri1 ? px1 : px0;
+    const float   pyq      = use_tri1 ? py1 : py0;
+    const uint32_t itgt    = use_tri1 ? itri1 : itri0;
+
+    float bary[3];
+    if (!tgt.barycentric_world(pxq, pyq, bary)) { return; }
+    const auto xyz      = tgt.world_pos_from_barycentric(bary);
     const auto dpixdxyz = mat4_col_major::jacobian_transform(transform_world2pix, xyz.data());
-    const float dldw_pix[3] =  {0.f, dldpa, 0.f}; // loss change due to pixel movement
+    const float dldw_pix[3] = {0.f, dldpa, 0.f};
     const auto dldw_xyz = vec3::mult_mat3_col_major(dldw_pix, dpixdxyz.data());
-    //
     for (int inode = 0; inode < 3; ++inode) {
-        const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
+        const uint32_t ivtx = tri2vtx[itgt * 3 + inode];
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dldw_xyz[0]);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dldw_xyz[1]);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dldw_xyz[2]);
@@ -413,10 +582,13 @@ void bwd_vedge(
 
     const float px0 = (float)iw0 + 0.5f, py0 = ih + 0.5f;
     const float px1 = (float)iw1 + 0.5f, py1 = ih + 0.5f;
-    const bool in0_tri1 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px0, py0, itri1);
-    const bool in1_tri0 = is_pix_inside_tri(tri2vtx, vtx2xyz, transform_world2pix, px1, py1, itri0);
+
+    Tri tri0_s, tri1_s;
+    const bool tri0_ok = Tri::make(itri0, tri2vtx, vtx2xyz, transform_world2pix, tri0_s);
+    const bool tri1_ok = Tri::make(itri1, tri2vtx, vtx2xyz, transform_world2pix, tri1_s);
+    const bool in0_tri1 = tri1_ok ? tri1_s.is_inside(px0, py0) : true;
+    const bool in1_tri0 = tri0_ok ? tri0_s.is_inside(px1, py1) : true;
     if (!in0_tri1 && !in1_tri0) { return; }
-    if ( in0_tri1 &&  in1_tri0) { return; }  // intersection — todo
 
     float dldpa = 0.f;
     for (uint32_t i = 0; i < num_vdim; ++i) {
@@ -427,32 +599,33 @@ void bwd_vedge(
         dldpa += (dval0 + dval1) * 0.5f * (val0 - val1);
     }
 
-    uint32_t target_tri;
-    float pxq, pyq;
-    if (in1_tri0) {
-        // east pixel center is inside west tri → east tri receives gradient
-        target_tri = itri1;
-        pxq = px1; pyq = py1;
-    } else {
-        // west pixel center is inside east tri → west tri receives gradient
-        target_tri = itri0;
-        pxq = px0; pyq = py0;
-    }
-
-    float bary[3];
-    if (!barycentric_of_pixel_in_tri(tri2vtx, vtx2xyz, transform_world2pix, pxq, pyq, target_tri, bary)) {
+    if (in0_tri1 && in1_tri0) {
+        if (itri0 == UINT32_MAX || itri1 == UINT32_MAX) { return; }
+        scatter_intersection_gradient(
+            tri2vtx + itri0 * 3, tri2vtx + itri1 * 3,
+            dldw_vtx2xyz, transform_world2pix,
+            tri0_s, tri1_s,
+            px0, py0, px1, py1,
+            0, dldpa);
         return;
     }
-    const auto xyz = tri3::position_from_barycentric_coord(
-        vtx2xyz + tri2vtx[target_tri*3+0] * 3,
-        vtx2xyz + tri2vtx[target_tri*3+1] * 3,
-        vtx2xyz + tri2vtx[target_tri*3+2] * 3,
-        bary);
+
+    // Single-triangle case: gradient goes to the triangle whose projection boundary
+    // caused the pixel-value discontinuity.
+    const bool    use_tri1 = in1_tri0;  // east center in west tri → east tri moves
+    const Tri&    tgt      = use_tri1 ? tri1_s : tri0_s;
+    const float   pxq      = use_tri1 ? px1 : px0;
+    const float   pyq      = use_tri1 ? py1 : py0;
+    const uint32_t itgt    = use_tri1 ? itri1 : itri0;
+
+    float bary[3];
+    if (!tgt.barycentric_world(pxq, pyq, bary)) { return; }
+    const auto xyz      = tgt.world_pos_from_barycentric(bary);
     const auto dpixdxyz = mat4_col_major::jacobian_transform(transform_world2pix, xyz.data());
-    const float dldw_pix[3] =  {dldpa, 0.f, 0.f}; // loss change due to pixel movement
+    const float dldw_pix[3] = {dldpa, 0.f, 0.f};
     const auto dldw_xyz = vec3::mult_mat3_col_major(dldw_pix, dpixdxyz.data());
     for (int inode = 0; inode < 3; ++inode) {
-        const uint32_t ivtx = tri2vtx[target_tri * 3 + inode];
+        const uint32_t ivtx = tri2vtx[itgt * 3 + inode];
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 0], bary[inode] * dldw_xyz[0]);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 1], bary[inode] * dldw_xyz[1]);
         atomicAdd(&dldw_vtx2xyz[ivtx * 3 + 2], bary[inode] * dldw_xyz[2]);
