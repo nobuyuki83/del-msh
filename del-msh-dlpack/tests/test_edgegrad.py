@@ -202,8 +202,12 @@ def sample_aabb(aabb_min, aabb_max, num_sample):
     samples = aabb_min + (aabb_max - aabb_min) * u
     return samples
 
-def fit(device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_trg, views):
+
+def fit(
+    device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_trg, views
+):
     from del_msh_dlpack.NBody import Elastic
+
     #
     lr = 0.1
     num_substep = 2  # Number of sub-steps for the Green's function filter per iteration
@@ -229,6 +233,7 @@ def fit(device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_
     import del_msh_dlpack.NBody.torch as NBody
     import del_msh_dlpack.IoWavefrontObj.torch as IoWavefrontObj
     import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
+
     #
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir_trg.mkdir(parents=True, exist_ok=True)
@@ -281,22 +286,26 @@ def fit(device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_
 
         #
         if itr % num_interval_save_file == 0:
-            img = (pix2depth_src.detach().cpu().numpy() * 255).clip(0, 255).astype("uint8")
+            img = (
+                (pix2depth_src.detach().cpu().numpy() * 255)
+                .clip(0, 255)
+                .astype("uint8")
+            )
             path0 = (
-                    path_dir_trg
-                    / f"test_edgegrad_depth_src_{itr // num_interval_save_file}.png"
+                path_dir_trg
+                / f"test_edgegrad_depth_src_{itr // num_interval_save_file}.png"
             )
             Image.fromarray(img).save(path0)
             #
             path0 = (
-                    path_dir_trg
-                    / f"test_edgegrad_depth_pnt_{itr // num_interval_save_file}.obj"
+                path_dir_trg
+                / f"test_edgegrad_depth_pnt_{itr // num_interval_save_file}.obj"
             )
             IoWavefrontObj.save_points(wtx2xyz.cpu(), path0)
             #
             path0 = (
-                    path_dir_trg
-                    / f"test_edgegrad_depth_bdy_{itr // num_interval_save_file}.obj"
+                path_dir_trg
+                / f"test_edgegrad_depth_bdy_{itr // num_interval_save_file}.obj"
             )
             IoWavefrontObj.save_trimesh3(tri2vtx.cpu(), vtx2xyz.cpu(), str(path0))
 
@@ -348,9 +357,9 @@ def fit(device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_
         writer.writerow(conv_history)
 
 
-
 def test_match_shape_multiview(transform_world2ndc=None):
     import del_msh_dlpack.IoOff.torch as IoOff
+
     path_dir_asset = pathlib.Path(__file__).parent.parent.parent / "asset"
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
     path_dir_trg.mkdir(parents=True, exist_ok=True)
@@ -366,6 +375,22 @@ def test_match_shape_multiview(transform_world2ndc=None):
     )
     wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
 
-    fit(torch.device("cpu"), tri2vtx, vtx2xyz.clone(), wtx2xyz.clone(), pix2depth_trg, pix2occ_trg, views)
+    fit(
+        torch.device("cpu"),
+        tri2vtx,
+        vtx2xyz.clone(),
+        wtx2xyz.clone(),
+        pix2depth_trg,
+        pix2occ_trg,
+        views,
+    )
     if torch.cuda.is_available():
-        fit(torch.device("cuda"), tri2vtx, vtx2xyz.clone(), wtx2xyz.clone(), pix2depth_trg, pix2occ_trg, views)
+        fit(
+            torch.device("cuda"),
+            tri2vtx,
+            vtx2xyz.clone(),
+            wtx2xyz.clone(),
+            pix2depth_trg,
+            pix2occ_trg,
+            views,
+        )

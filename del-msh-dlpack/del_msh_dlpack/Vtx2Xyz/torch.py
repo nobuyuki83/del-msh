@@ -41,14 +41,19 @@ def transform_homography_jacobian(vtx2xyz: torch.Tensor, transform: torch.Tensor
 
 
 def save_wavefront_obj(xyz: torch.Tensor, path_dir: str):
-    xyz = xyz.detach().cpu().to(torch.float32).numpy()
-    with open(path_dir, "w", encoding="utf-8") as f:
-        f.write("# Obj point cloud")
-        for x, y, z in xyz:
-            f.write(f"v {x} {y} {z}\n")
+    from del_msh_dlpack.IoWavefrontObj.torch import save_points
+    save_points(xyz, path_dir)
 
 
 def from_sample_aabb(aabb, num_sample):
     assert aabb.shape == (2, 3)
     u = torch.rand((num_sample, 3), device=aabb.device, dtype=aabb.dtype)
     return aabb[0] + (aabb[1] - aabb[0]) * u
+
+def normalize(vtx2xyz: torch.Tensor, size: float = 1.0) -> torch.Tensor:
+    """Center and uniformly scale vertices so the longest axis fits in [-size/2, size/2]."""
+    aabb_min = vtx2xyz.min(dim=0).values
+    aabb_max = vtx2xyz.max(dim=0).values
+    center = (aabb_min + aabb_max) * 0.5
+    scale = size / (aabb_max - aabb_min).max()
+    return (vtx2xyz - center) * scale
