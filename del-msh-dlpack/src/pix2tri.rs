@@ -7,6 +7,7 @@ use pyo3::{types::PyModule, Bound, PyAny, PyResult, Python};
 pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     use pyo3::prelude::PyModuleMethods;
     m.add_function(pyo3::wrap_pyfunction!(pix2tri_by_raycast, m)?)?;
+    m.add_function(pyo3::wrap_pyfunction!(pix2tri_by_rasterization, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(pix2tri_interpolate, m)?)?;
     m.add_function(pyo3::wrap_pyfunction!(pix2tri_interpolate_bwd, m)?)?;
     Ok(())
@@ -65,7 +66,7 @@ pub fn pix2tri_by_raycast(
             let func = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh::pix2tri",
                 del_msh_cuda_kernels::get("pix2tri").unwrap(),
-                "pix_to_tri",
+                "pix2tri_from_raycast",
             )
             .unwrap();
             let num_pix = (img_shape[0] * img_shape[1]) as usize;
@@ -85,6 +86,115 @@ pub fn pix2tri_by_raycast(
                     del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
                 )
                 .unwrap();
+        }
+        _ => {
+            todo!()
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+#[pyo3::pyfunction]
+pub fn pix2tri_by_rasterization(
+    _py: Python<'_>,
+    pix2tri: &Bound<'_, PyAny>,
+    pix2depth: &Bound<'_, PyAny>,
+    tri2vtx: &Bound<'_, PyAny>,
+    vtx2xyz: &Bound<'_, PyAny>,
+    transform_world2ndc: &Bound<'_, PyAny>,
+    #[allow(unused_variables)] stream_ptr: u64,
+) -> PyResult<()> {
+    let pix2tri = get_tensor(pix2tri)?;
+    let pix2depth = get_tensor(pix2depth)?;
+    let tri2vtx = get_tensor(tri2vtx)?;
+    let vtx2xyz = get_tensor(vtx2xyz)?;
+    let transform_world2ndc = get_tensor(transform_world2ndc)?;
+    //
+    let device = pix2tri.ctx.device_type;
+    let img_h = shape(pix2tri, 0).unwrap();
+    let img_w = shape(pix2tri, 1).unwrap();
+    let num_tri = shape(tri2vtx, 0).unwrap();
+    let num_vtx = shape(vtx2xyz, 0).unwrap();
+    //
+    chk2::<u32>(pix2tri, img_h, img_w, device).unwrap();
+    chk2::<f32>(pix2depth, img_h, img_w, device).unwrap();
+    chk2::<u32>(tri2vtx, num_tri, 3, device).unwrap();
+    chk2::<f32>(vtx2xyz, num_vtx, 3, device).unwrap();
+    chk2::<f32>(transform_world2ndc, 4, 4, device).unwrap();
+    //
+    match device {
+        dlpack::device_type_codes::CPU => {
+            del_msh_cpu::pix2tri::pix2tri_by_rasterization(
+                slice_mut!(pix2tri, u32).unwrap(),
+                slice_mut!(pix2depth, f32).unwrap(),
+                slice!(tri2vtx, u32).unwrap().as_chunks::<3>().0,
+                slice!(vtx2xyz, f32).unwrap().as_chunks::<3>().0,
+                (img_w as usize, img_h as usize),
+                arrayref::array_ref![slice!(transform_world2ndc, f32).unwrap(), 0, 16],
+            );
+        }
+        #[cfg(feature = "cuda")]
+        dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check, CuVec, LaunchConfig};
+            cuda_check!(cu::cuInit(0)).unwrap();
+            let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
+            let num_pix = img_w * img_h;
+            // Temporary device buffer: packed (orderable_depth << 32) | tri_id.
+            let pix2packed = CuVec::<u64>::with_capacity(num_pix as usize).unwrap();
+            // Kernel 1: fill with background sentinel (orderable(-inf) | UINT32_MAX).
+            {
+                let func = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::pix2tri",
+                    del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                    "pix2packed_init",
+                )
+                .unwrap();
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_dptr(pix2packed.dptr);
+                builder.arg_u32(num_pix as u32);
+                builder
+                    .launch_kernel(func, LaunchConfig::for_num_elems(num_pix as u32))
+                    .unwrap();
+            }
+            // Kernel 2: rasterize triangles into pix2packed using atomicMax.
+            {
+                let func = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::pix2tri",
+                    del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                    "pix2tri_from_rasterization",
+                )
+                .unwrap();
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_dptr(pix2packed.dptr);
+                builder.arg_u32(num_tri as u32);
+                builder.arg_data(&tri2vtx.data);
+                builder.arg_data(&vtx2xyz.data);
+                builder.arg_u32(img_w as u32);
+                builder.arg_u32(img_h as u32);
+                builder.arg_data(&transform_world2ndc.data);
+                builder
+                    .launch_kernel(func, LaunchConfig::for_num_elems(num_tri as u32))
+                    .unwrap();
+            }
+            // Kernel 3: unpack pix2packed → pix2tri, pix2depth.
+            {
+                let func = del_cudarc_sys::cache_func::get_function_cached(
+                    "del_msh::pix2tri",
+                    del_msh_cuda_kernels::get("pix2tri").unwrap(),
+                    "pix2tri_unpack",
+                )
+                .unwrap();
+                let mut builder = del_cudarc_sys::Builder::new(stream);
+                builder.arg_data(&pix2tri.data);
+                builder.arg_data(&pix2depth.data);
+                builder.arg_dptr(pix2packed.dptr);
+                builder.arg_u32(num_pix as u32);
+                builder
+                    .launch_kernel(func, LaunchConfig::for_num_elems(num_pix as u32))
+                    .unwrap();
+            }
+            // pix2packed drops here and frees device memory.
         }
         _ => {
             todo!()

@@ -147,9 +147,13 @@ pub fn sym_detector(
                 &mat4_col_major::from_translate(&pm.scale(-1f32)),
             );
             {
-                let p1_j = mat4_col_major::transform_homogeneous(&t_mat, &p_i).unwrap();
+                let p1_j = mat4_col_major::transform_homogeneous(&t_mat, &p_i)
+                    .unwrap()
+                    .0;
                 assert!(p1_j.sub(&p_j).norm() < 1.0e-5);
-                let p1_i = mat4_col_major::transform_homogeneous(&t_mat, &p_j).unwrap();
+                let p1_i = mat4_col_major::transform_homogeneous(&t_mat, &p_j)
+                    .unwrap()
+                    .0;
                 assert!(p1_i.sub(&p_i).norm() < 1.0e-5);
             }
             let affine = del_geo_core::mat3x4_col_major::from_mat4_col_major(&t_mat);

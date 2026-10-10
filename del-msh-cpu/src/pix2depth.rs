@@ -19,7 +19,7 @@ where
         };
         let q = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize)
             .position_from_barycentric_coordinates(bc[0], bc[1]);
-        let ndc =
+        let (ndc, _) =
             del_geo_core::mat4_col_major::transform_homogeneous(transform_world2ndc, &q).unwrap();
         let one = T::one();
         let half = one / (one + one);
@@ -135,7 +135,7 @@ pub fn pix2depth_from_pix2tri(
         )
         .unwrap();
         let pos_world = del_geo_core::vec3::axpy(coeff, &ray_dir, &ray_org);
-        let pos_ndc =
+        let (pos_ndc, _) =
             del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &pos_world)
                 .unwrap();
         (pos_ndc[2] + 1f32) * 0.5f32
@@ -185,7 +185,7 @@ pub fn render_depth_bvh(
                 continue;
             };
             let pos = del_geo_core::vec3::axpy(depth, &ray_dir, &ray_org);
-            let ndc =
+            let (ndc, _) =
                 del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &pos)
                     .unwrap();
             let depth_ndc = (ndc[2] + 1f32) * 0.5f32;

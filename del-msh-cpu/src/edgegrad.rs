@@ -20,14 +20,17 @@ fn fn_barycentric_pix(
         let p0 = transform_world2pix
             .transform_homogeneous(xyz0)
             .unwrap()
+            .0
             .xy();
         let p1 = transform_world2pix
             .transform_homogeneous(xyz1)
             .unwrap()
+            .0
             .xy();
         let p2 = transform_world2pix
             .transform_homogeneous(xyz2)
             .unwrap()
+            .0
             .xy();
         let b = del_geo_core::tri2::barycentric_coords(&p0, &p1, &p2, pixcntr0)?;
         Some([b.0, b.1, b.2])
@@ -306,15 +309,15 @@ impl Tri {
         let mut node2pixz = [0f32; 3];
         let mut node2w = [0f32; 3];
         for i_node in 0..3 {
-            let xyz = &node2xyz[i_node];
-            let pixh = del_geo_core::mat4_col_major::mult_vec(
+            let (pixxyz, hw) = del_geo_core::mat4_col_major::transform_homogeneous(
                 transform_world2pix,
-                &[xyz[0], xyz[1], xyz[2], 1.],
-            );
-            node2pixxy[i_node][0] = pixh[0] / pixh[3];
-            node2pixxy[i_node][1] = pixh[1] / pixh[3];
-            node2pixz[i_node] = pixh[2] / pixh[3];
-            node2w[i_node] = pixh[3];
+                &node2xyz[i_node],
+            )
+            .unwrap();
+            node2pixxy[i_node][0] = pixxyz[0];
+            node2pixxy[i_node][1] = pixxyz[1];
+            node2pixz[i_node] = pixxyz[2];
+            node2w[i_node] = hw;
         }
         Some(Self {
             node2xyz,

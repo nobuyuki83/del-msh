@@ -1,3 +1,5 @@
+import pathlib
+
 import torch
 
 
@@ -33,3 +35,25 @@ def save_points(xyz: torch.Tensor, path: str):
         for x, y, z in xyz:
             f.write(f"v {x} {y} {z}\n")  # 頂点定義のみ
     print(f"Saved {len(xyz)} points to {path}")
+
+
+def load_tri_mesh3(path: pathlib.Path):
+    """Minimal OBJ loader that returns (tri2vtx, vtx2xyz) as torch tensors."""
+    verts = []
+    faces = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("v "):
+                parts = line.split()
+                verts.append([float(parts[1]), float(parts[2]), float(parts[3])])
+            elif line.startswith("f "):
+                parts = line.split()[1:]
+                # Support "f v", "f v/vt", "f v/vt/vn", "f v//vn"
+                indices = [int(p.split("/")[0]) - 1 for p in parts]
+                # Triangulate fan (handles quads etc., though bunny should be all tris)
+                for i in range(1, len(indices) - 1):
+                    faces.append([indices[0], indices[i], indices[i + 1]])
+    vtx2xyz = torch.tensor(verts, dtype=torch.float32)
+    tri2vtx = torch.tensor(faces, dtype=torch.uint32)
+    return tri2vtx, vtx2xyz

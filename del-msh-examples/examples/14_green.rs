@@ -148,7 +148,8 @@ fn main() {
                 &transform_world2unit,
                 &gc_world,
             )
-            .unwrap();
+            .unwrap()
+            .0;
             use del_geo_core::vec3::Vec3;
             assert!(gc_unit.sub(&onode2gcunit[0]).norm() < 1.0e-6);
         }

@@ -368,6 +368,7 @@ pub fn check_octree_vtx2xyz<const NDIM: usize, const NAFFINE: usize>(
                         pos_vtx_world,
                     )
                     .unwrap()
+                    .0
                     .to_vec()
                 }
                 _ => {
@@ -514,7 +515,7 @@ pub fn onode2gcuint_for_octree(
         onode2gcunit[i_onode][0] *= s;
         onode2gcunit[i_onode][1] *= s;
         onode2gcunit[i_onode][2] *= s;
-        let pos_vtx_unit = del_geo_core::mat4_col_major::transform_homogeneous(
+        let (pos_vtx_unit, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(
             transform_world2unit,
             &onode2gcunit[i_onode],
         )

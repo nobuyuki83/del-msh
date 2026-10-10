@@ -177,7 +177,10 @@ where
 {
     vtx2xyz
         .iter()
-        .map(|v| del_geo_core::mat4_col_major::transform_homogeneous(m, v).unwrap())
+        .map(|v| {
+            let (p, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(m, v).unwrap();
+            p
+        })
         .collect()
 }
 

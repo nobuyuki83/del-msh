@@ -32,10 +32,12 @@ fn write_silhouette_on_magnified_image(
             let q0 = p0
                 .transform_homogeneous(&transform_world2pix_hires)
                 .unwrap()
+                .0
                 .xy();
             let q1 = p1
                 .transform_homogeneous(&transform_world2pix_hires)
                 .unwrap()
+                .0
                 .xy();
             use slice_of_array::SliceNestExt;
             del_canvas::rasterize::line2::draw_dda_pixel_coordinate(

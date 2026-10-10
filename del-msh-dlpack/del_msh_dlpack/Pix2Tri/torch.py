@@ -61,6 +61,58 @@ def by_raycasting(
     return pix2tri
 
 
+def by_rasterization(
+    tri2vtx: torch.Tensor,
+    vtx2xyz: torch.Tensor,
+    transform_world2ndc: torch.Tensor,
+    img_shape: Tuple[int, int],
+) -> torch.Tensor:
+    vtx2xyz = vtx2xyz.detach()
+    transform_world2ndc = transform_world2ndc.contiguous()
+    #
+    num_tri = tri2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
+    device = tri2vtx.device
+    #
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
+    util_torch.assert_shape_dtype_device(
+        transform_world2ndc, (4, 4), torch.float32, device
+    )
+    #
+    img_h, img_w = img_shape[1], img_shape[0]
+    pix2tri = torch.full(
+        (img_h, img_w),
+        torch.iinfo(torch.uint32).max,
+        dtype=torch.uint32,
+        device=device,
+    )
+    pix2depth = torch.full(
+        (img_h, img_w),
+        float("-inf"),
+        dtype=torch.float32,
+        device=device,
+    )
+    #
+    stream_ptr = 0
+    if device.type == "cuda":
+        torch.cuda.set_device(device)
+        stream_ptr = torch.cuda.current_stream(device).cuda_stream
+
+    from ..Pix2Tri import rasterize
+
+    rasterize(
+        util_torch.to_dlpack_safe(pix2tri, stream_ptr),
+        util_torch.to_dlpack_safe(pix2depth, stream_ptr),
+        util_torch.to_dlpack_safe(tri2vtx, stream_ptr),
+        util_torch.to_dlpack_safe(vtx2xyz, stream_ptr),
+        util_torch.to_dlpack_safe(transform_world2ndc.T.contiguous(), stream_ptr),
+        stream_ptr=stream_ptr,
+    )
+
+    return pix2tri
+
+
 def interpolate_fwd(
     pix2tri: torch.Tensor,
     tri2vtx: torch.Tensor,

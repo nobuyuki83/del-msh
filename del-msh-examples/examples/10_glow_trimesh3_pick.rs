@@ -115,12 +115,12 @@ impl MyApp {
         let pos = pos - rect.left_top();
         let ndc_x = 2. * pos.x / rect.width() - 1.;
         let ndc_y = 1. - 2. * pos.y / rect.height();
-        let world_stt = del_geo_core::mat4_col_major::transform_homogeneous(
+        let (world_stt, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(
             &transform_ndc2world,
             &[ndc_x, ndc_y, 1.],
         )
         .unwrap();
-        let world_end = del_geo_core::mat4_col_major::transform_homogeneous(
+        let (world_end, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(
             &transform_ndc2world,
             &[ndc_x, ndc_y, -1.],
         )

@@ -190,12 +190,14 @@ mod tests {
                 &transform_world2ndc,
                 xyz0_world,
             )
-            .unwrap();
+            .unwrap()
+            .0;
             let xyz1_ndc = del_geo_core::mat4_col_major::transform_homogeneous(
                 &transform_world2ndc,
                 xyz1_world,
             )
-            .unwrap();
+            .unwrap()
+            .0;
             let xy0_img = del_geo_core::ndc::to_image_coordinate(&xyz0_ndc, img_shape);
             let xy1_img = del_geo_core::ndc::to_image_coordinate(&xyz1_ndc, img_shape);
             del_canvas::rasterize::line2::draw_dda_pixel_coordinate(

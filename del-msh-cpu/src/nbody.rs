@@ -225,7 +225,7 @@ pub fn barnes_hut(
         let delta_unit = del_geo_core::edge3::length(center_unit, &cog_unit);
         if dist_unit - delta_unit > 0. && celllen_unit < (dist_unit - delta_unit) * theta {
             // cell is enough far
-            let pos_cog_world = del_geo_core::mat4_col_major::transform_homogeneous(
+            let (pos_cog_world, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(
                 &transform_unit2world,
                 &cog_unit,
             )
@@ -280,7 +280,7 @@ pub fn barnes_hut(
     }
     for i_wtx in 0..num_wtx {
         let pos_world = &wtx2xyz[i_wtx];
-        let pos_unit =
+        let (pos_unit, _hw) =
             del_geo_core::mat4_col_major::transform_homogeneous(transform_world2unit, pos_world)
                 .unwrap();
         get_force(

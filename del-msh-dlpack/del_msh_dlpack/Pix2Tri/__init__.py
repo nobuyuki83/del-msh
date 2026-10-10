@@ -1,3 +1,16 @@
+def rasterize(pix2tri, pix2depth, tri2vtx, vtx2xyz, transform_world2ndc, stream_ptr=0):
+    from ..del_msh_dlpack import pix2tri_by_rasterization
+
+    pix2tri_by_rasterization(
+        pix2tri,
+        pix2depth,
+        tri2vtx,
+        vtx2xyz,
+        transform_world2ndc,
+        stream_ptr,
+    )
+
+
 def update_pix2tri(
     tri2vtx, vtx2xyz, bvhnodes, bvhnode2aabb, transform_ndc2world, pix2tri, stream_ptr=0
 ):

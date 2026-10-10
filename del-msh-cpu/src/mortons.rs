@@ -126,7 +126,7 @@ pub fn sorted_morten_code3<Index>(
         .iter()
         .zip(vtx2morton.iter_mut())
         .for_each(|(xyz, m)| {
-            let xyz =
+            let (xyz, _hw) =
                 del_geo_core::mat4_col_major::transform_homogeneous(transform_xy2uni, xyz).unwrap();
             *m = morton_code3(xyz[0], xyz[1], xyz[2])
         });
@@ -190,7 +190,7 @@ pub fn vtx2morton_from_vtx2co<const NDIM: usize>(
                 .iter()
                 .zip(vtx2morton.iter_mut())
                 .for_each(|(xyz, m)| {
-                    let xyz = del_geo_core::mat4_col_major::transform_homogeneous(
+                    let (xyz, _hw) = del_geo_core::mat4_col_major::transform_homogeneous(
                         transform_co2unit,
                         &[xyz[0], xyz[1], xyz[2]],
                     )

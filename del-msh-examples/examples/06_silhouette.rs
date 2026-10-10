@@ -77,12 +77,14 @@ fn main() -> anyhow::Result<()> {
             &transform_world2ndc,
             &vtx2xyz[i0_vtx],
         )
-        .unwrap();
+        .unwrap()
+        .0;
         let r1 = del_geo_core::mat4_col_major::transform_homogeneous(
             &transform_world2ndc,
             &vtx2xyz[i1_vtx],
         )
-        .unwrap();
+        .unwrap()
+        .0;
         del_canvas::rasterize::line2::draw_dda(
             &mut img_data,
             img_shape.0,

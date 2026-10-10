@@ -66,10 +66,12 @@ pub fn antialias(
         let q0 = vtx2xyz[i0_vtx as usize]
             .transform_homogeneous(transform_world2pix)
             .unwrap()
+            .0
             .xy();
         let q1 = vtx2xyz[i1_vtx as usize]
             .transform_homogeneous(transform_world2pix)
             .unwrap()
+            .0
             .xy();
         let v01 = del_geo_core::vec2::sub(&q1, &q0);
         let is_horizontal = v01[0].abs() < v01[1].abs();
@@ -117,8 +119,16 @@ pub fn bwd_antialias(
         let (i0_vtx, i1_vtx) = (node2vtx[0], node2vtx[1]);
         let p0 = &vtx2xyz[i0_vtx as usize];
         let p1 = &vtx2xyz[i1_vtx as usize];
-        let q0 = p0.transform_homogeneous(transform_world2pix).unwrap().xy();
-        let q1 = p1.transform_homogeneous(transform_world2pix).unwrap().xy();
+        let q0 = p0
+            .transform_homogeneous(transform_world2pix)
+            .unwrap()
+            .0
+            .xy();
+        let q1 = p1
+            .transform_homogeneous(transform_world2pix)
+            .unwrap()
+            .0
+            .xy();
         let v01 = del_geo_core::vec2::sub(&q1, &q0);
         let is_horizontal = v01[0].abs() < v01[1].abs();
         let list_pix = del_geo_core::edge2::overlapping_pixels_dda(img_shape, &q0, &q1);
