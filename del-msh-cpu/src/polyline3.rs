@@ -301,7 +301,10 @@ where
             &vtx2xyz[i_vtx],
             &vtx2xyz[i_vtx + 1],
         );
-        tri2vtx.extend(tris.iter().map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]));
+        tri2vtx.extend(
+            tris.iter()
+                .map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]),
+        );
         all_vtx2xyz.extend_from_slice(&verts);
     }
 
@@ -309,8 +312,18 @@ where
     for p in vtx2xyz.iter() {
         let vtx_offset = all_vtx2xyz.len();
         let sphere = crate::trimesh3_primitive::sphere_yup::<usize, T>(rad, ndiv, ndiv);
-        tri2vtx.extend(sphere.tri2vtx.iter().map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]));
-        all_vtx2xyz.extend(sphere.vtx2xyz.iter().map(|v| [v[0] + p[0], v[1] + p[1], v[2] + p[2]]));
+        tri2vtx.extend(
+            sphere
+                .tri2vtx
+                .iter()
+                .map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]),
+        );
+        all_vtx2xyz.extend(
+            sphere
+                .vtx2xyz
+                .iter()
+                .map(|v| [v[0] + p[0], v[1] + p[1], v[2] + p[2]]),
+        );
     }
 
     (tri2vtx, all_vtx2xyz)
@@ -704,15 +717,25 @@ mod test_shorten {
         vtx2xyz
     }
 
-    fn system_energy(vtx2xyz: &[[f32; 3]], dhat: f32, offset: f32, barrier_stiffness: f32, edge_length_ini: f32) -> f32 {
+    fn system_energy(
+        vtx2xyz: &[[f32; 3]],
+        dhat: f32,
+        offset: f32,
+        barrier_stiffness: f32,
+        edge_length_ini: f32,
+    ) -> f32 {
         let num_vtx = vtx2xyz.len();
         let mut sum_w = 0.0;
         for i_seg in 0..vtx2xyz.len() - 1 {
             let i0_vtx = i_seg;
             let i1_vtx = i_seg + 1;
             let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
-            let (w, _dw, _ddw) =
-                del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, edge_length_ini, true);
+            let (w, _dw, _ddw) = del_geo_core::edge3::wdwddw_squared_length_difference(
+                &node2xyz,
+                1.0,
+                edge_length_ini,
+                true,
+            );
             sum_w += w;
         }
         for i_seg in 0..num_vtx - 1 {
@@ -754,8 +777,12 @@ mod test_shorten {
                     continue;
                 }
                 // closest points on each segment
-                let p = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
-                let q = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                let p = vtx2xyz[cp.i_seg]
+                    .scale(1. - s)
+                    .add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                let q = vtx2xyz[cp.j_seg]
+                    .scale(1. - t)
+                    .add(&vtx2xyz[cp.j_seg + 1].scale(t));
                 // unit normal from q toward p; push each closest point out by half the gap
                 let n = p.sub(&q).scale(1. / dist);
                 let half_gap = (dist_trg - dist) * 0.5;
@@ -812,8 +839,12 @@ mod test_shorten {
                     .collect();
                 let vtx2vtx_cp = crate::vtx2vtx::from_uniform_mesh(&cp2vtx, num_vtx, false);
                 let vtx2vtx = crate::vtx2vtx::merge(
-                    &vtx2vtx_polyline.0, &vtx2vtx_polyline.1,
-                    &vtx2vtx_cp.0, &vtx2vtx_cp.1, num_vtx);
+                    &vtx2vtx_polyline.0,
+                    &vtx2vtx_polyline.1,
+                    &vtx2vtx_cp.0,
+                    &vtx2vtx_cp.1,
+                    num_vtx,
+                );
                 crate::sparse_solver::sparse_square::MatrixOwned::<[f32; 9]>::from_vtx2vtx(
                     &vtx2vtx.0, &vtx2vtx.1,
                 )
@@ -826,8 +857,12 @@ mod test_shorten {
                 let i0_vtx = i_seg;
                 let i1_vtx = i_seg + 1;
                 let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
-                let (w, dw, ddw) =
-                    del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, edge_length_ini, true);
+                let (w, dw, ddw) = del_geo_core::edge3::wdwddw_squared_length_difference(
+                    &node2xyz,
+                    1.0,
+                    edge_length_ini,
+                    true,
+                );
                 hess.merge(&ddw, &[i_seg, i_seg + 1], &mut tmp);
                 use del_geo_core::vecn::VecN;
                 grad[i0_vtx].add_in_place(&dw[0].scale(-1.));
@@ -838,19 +873,28 @@ mod test_shorten {
                 let (s, t) = (cp.s, cp.t);
                 let dist = {
                     use del_geo_core::vec3::Vec3;
-                    let p = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
-                    let q = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                    let p = vtx2xyz[cp.i_seg]
+                        .scale(1. - s)
+                        .add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                    let q = vtx2xyz[cp.j_seg]
+                        .scale(1. - t)
+                        .add(&vtx2xyz[cp.j_seg + 1].scale(t));
                     p.sub(&q).norm()
                 };
                 let w = BARRIER_STIFFNESS * del_geo_core::barrier::w_energy(dist, DHAT, OFFSET);
                 let dwdd = BARRIER_STIFFNESS * del_geo_core::barrier::dw_energy(dist, DHAT, OFFSET);
-                let ddwddd = BARRIER_STIFFNESS * del_geo_core::barrier::ddw_energy(dist, DHAT, OFFSET);
+                let ddwddd =
+                    BARRIER_STIFFNESS * del_geo_core::barrier::ddw_energy(dist, DHAT, OFFSET);
                 {
                     use del_geo_core::vec3::Vec3;
                     //use del_geo_core::vecn::VecN;
                     // direction from j closest point to i closest point
-                    let p_i = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
-                    let p_j = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                    let p_i = vtx2xyz[cp.i_seg]
+                        .scale(1. - s)
+                        .add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                    let p_j = vtx2xyz[cp.j_seg]
+                        .scale(1. - t)
+                        .add(&vtx2xyz[cp.j_seg + 1].scale(t));
                     let unit_diff = p_i.sub(&p_j).scale(1. / dist);
                     // ∂dist/∂node = factor * unit_diff
                     let factors = [1. - s, s, -(1. - t), -t];
@@ -864,9 +908,7 @@ mod test_shorten {
                     let emat: [[[f32; 9]; 4]; 4] = core::array::from_fn(|i| {
                         core::array::from_fn(|j| {
                             // column-major outer product of g[i] and g[j], scaled by ddwddd
-                            core::array::from_fn(|k| {
-                                ddwddd * g[i][k % 3] * g[j][k / 3]
-                            })
+                            core::array::from_fn(|k| ddwddd * g[i][k % 3] * g[j][k / 3])
                         })
                     });
                     hess.merge(&emat, &nodes, &mut tmp);
@@ -901,16 +943,24 @@ mod test_shorten {
                 }
             }
             // compute time [0, 1] where the rod can move at least the distance with PARK_CLEARANCE.
-            let max_safe_time_total =
-                crate::polyline3::max_safe_step_polyline(&vtx2xyz, &vtx2uvw, OFFSET, PARK_CLEARANCE);
+            let max_safe_time_total = crate::polyline3::max_safe_step_polyline(
+                &vtx2xyz,
+                &vtx2uvw,
+                OFFSET,
+                PARK_CLEARANCE,
+            );
             //dbg!(max_safe_time_total);
             let mut step_time = max_safe_time_total * 0.9999; // slightly reduce the time to avoid the clearance be exactly PARK_CLEARANCE
             let mut line_search_converged = false;
             for _jter in 0..12 {
                 let mut vtx2xyz1 = vtx2xyz.clone();
                 crate::vtx2xn::add_scaled_vector(&mut vtx2xyz1, step_time, &vtx2uvw);
-                let system_energy1 = system_energy(&vtx2xyz1, DHAT, OFFSET, BARRIER_STIFFNESS, edge_length_ini);
-                println!("energy1: {} energy0:{} steptime:{}", system_energy1, system_energy0, step_time);
+                let system_energy1 =
+                    system_energy(&vtx2xyz1, DHAT, OFFSET, BARRIER_STIFFNESS, edge_length_ini);
+                println!(
+                    "energy1: {} energy0:{} steptime:{}",
+                    system_energy1, system_energy0, step_time
+                );
                 if system_energy1 > system_energy0 {
                     step_time *= 0.5;
                 } else {
@@ -930,18 +980,16 @@ mod test_shorten {
             )
             .unwrap();
              */
-            let (tri2vtx0, vtx02xyz0) = crate::polyline3::to_trimesh3_cylinder_and_sphere(
-                &vtx2xyz,
-                OFFSET * 0.5,
-                32,
-            );
+            let (tri2vtx0, vtx02xyz0) =
+                crate::polyline3::to_trimesh3_cylinder_and_sphere(&vtx2xyz, OFFSET * 0.5, 32);
             if iter % FRAME_INTERVAL_SAVE_FILE == 0 {
                 let idx = iter / FRAME_INTERVAL_SAVE_FILE;
                 crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
                     path_dir.join(format!("ccd3_{idx:04}.obj")),
                     &tri2vtx0,
                     &vtx02xyz0,
-                ).unwrap()
+                )
+                .unwrap()
             }
         }
     }

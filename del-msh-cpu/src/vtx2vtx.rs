@@ -363,7 +363,6 @@ fn test_laplacian_smoothing() {
     assert!(res1 < 1.0e-9);
 }
 
-
 /// Merge two CSR adjacency arrays into one, deduplicating shared neighbors.
 pub fn merge<IDX>(
     vtx2idx_offset: &[IDX],
@@ -436,6 +435,3 @@ where
     }
     (vtx2kdx_offset, kdx2vtx)
 }
-
-
-

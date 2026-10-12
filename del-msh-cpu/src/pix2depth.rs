@@ -40,8 +40,9 @@ where
         let one = T::one();
         let half = one / (one + one);
         let dldw_ndc = [zero, zero, half * dldw_depth];
-        let (q, _bc) =
-            del_geo_core::tri3::intersection_plane_of_tri3_against_line(p0, p1, p2, ray_org, ray_dir);
+        let (q, _bc) = del_geo_core::tri3::intersection_plane_of_tri3_against_line(
+            p0, p1, p2, ray_org, ray_dir,
+        );
         let dndcdq = del_geo_core::mat4_col_major::jacobian_transform(transform_world2ndc, &q);
         let dndcdq_t = del_geo_core::mat3_col_major::transpose(&dndcdq);
         let dldw_q = del_geo_core::mat3_col_major::mult_vec(&dndcdq_t, &dldw_ndc);
