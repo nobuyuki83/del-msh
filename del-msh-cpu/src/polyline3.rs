@@ -734,7 +734,6 @@ mod test_shorten {
                 &node2xyz,
                 1.0,
                 edge_length_ini,
-                true,
             );
             sum_w += w;
         }
@@ -861,7 +860,6 @@ mod test_shorten {
                     &node2xyz,
                     1.0,
                     edge_length_ini,
-                    true,
                 );
                 hess.merge(&ddw, &[i_seg, i_seg + 1], &mut tmp);
                 use del_geo_core::vecn::VecN;
