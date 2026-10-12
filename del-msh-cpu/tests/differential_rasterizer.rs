@@ -45,6 +45,9 @@ mod tests {
         mode: T,
         str_mode: &str,
     ) {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
+        //
         let num_sample = 2056;
         let img_shape = (IMG_RES, IMG_RES);
         let eps = 1.0e-1 / IMG_RES as f32;
@@ -71,10 +74,10 @@ mod tests {
                 &mode,
             );
             del_canvas::write_png_from_float_image(
-                format!(
-                    "../target/differentiable_rasterization_ren_finitesample_{}.png",
+                &path_dir_out.join(format!(
+                    "differentiable_rasterization_ren_finitesample_{}.png",
                     str_mode
-                ),
+                )),
                 img_shape,
                 1,
                 &pix2val1,
@@ -98,10 +101,13 @@ mod tests {
             .map(|(&v0, &v2)| (v2 - v0) / (2.0 * eps))
             .collect();
         save_diff_image(
-            &format!(
-                "../target/differentiable_rasterization_diff_finitesample_{}.png",
-                str_mode
-            ),
+            path_dir_out
+                .join(format!(
+                    "differentiable_rasterization_diff_finitesample_{}.png",
+                    str_mode
+                ))
+                .to_str()
+                .unwrap(),
             img_shape,
             &grad,
         );
@@ -177,6 +183,8 @@ mod tests {
 
     #[test]
     fn test_contour() {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
         let img_shape = (IMG_RES, IMG_RES);
         let (_tri2vtx, vtx2xyz, transform_world2ndc, _dxyz) = geometry(0.);
         let (_, _, _, cedge2vtx) = nvdiffrast(0., &del_msh_cpu::pix2occlusion::Occlusion);
@@ -209,7 +217,7 @@ mod tests {
             );
         }
         del_canvas::write_png_from_float_image(
-            "../target/differentiable_rasterizer_edge.png",
+            path_dir_out.join("differentiable_rasterizer_edge.png"),
             img_shape,
             1,
             &pix2isedge,
@@ -221,6 +229,8 @@ mod tests {
         mode: &T,
         suffix: &str,
     ) {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
         let transform_ndc2world =
@@ -233,10 +243,13 @@ mod tests {
         // -------------------
         let (pix2vout, pix2vin, pix2tri, cedge2vtx) = nvdiffrast(0., mode);
         del_canvas::write_png_from_float_image(
-            &format!(
-                "../target/differentiable_rasterizer_ren_nvdiffrast_{}.png",
-                suffix
-            ),
+            path_dir_out
+                .join(format!(
+                    "differentiable_rasterizer_ren_nvdiffrast_{}.png",
+                    suffix
+                ))
+                .to_str()
+                .unwrap(),
             img_shape,
             1,
             &pix2vout,
@@ -279,10 +292,13 @@ mod tests {
                 pix2grad[i_pix] = grad;
             }
             save_diff_image(
-                &format!(
-                    "../target/differentiable_rasterizer_diff_bwdnvdiffrast_{}.png",
-                    suffix
-                ),
+                path_dir_out
+                    .join(format!(
+                        "differentiable_rasterizer_diff_bwdnvdiffrast_{}.png",
+                        suffix
+                    ))
+                    .to_str()
+                    .unwrap(),
                 img_shape,
                 &pix2grad,
             );
@@ -297,10 +313,13 @@ mod tests {
                 .map(|(&v0, &v2)| (v2 - v0) / (2.0 * eps))
                 .collect();
             save_diff_image(
-                &format!(
-                    "../target/differentiable_rasterizer_diff_finitenvdiffrast_{}.png",
-                    suffix
-                ),
+                path_dir_out
+                    .join(format!(
+                        "differentiable_rasterizer_diff_finitenvdiffrast_{}.png",
+                        suffix
+                    ))
+                    .to_str()
+                    .unwrap(),
                 img_shape,
                 &grad,
             );
@@ -315,6 +334,8 @@ mod tests {
 
     #[test]
     fn test_microedge() {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
         let img_shape = (IMG_RES, IMG_RES);
         let (tri2vtx, vtx2xyz, transform_world2ndc, dxyz) = geometry(0.);
         let transform_ndc2world =
@@ -380,7 +401,7 @@ mod tests {
             pix2rgb_diff[i_pix * 3..(i_pix + 1) * 3].copy_from_slice(&c);
         }
         del_canvas::write_png_from_float_image(
-            "../target/silhouette_diff_microedge.png",
+            path_dir_out.join("silhouette_diff_microedge.png"),
             img_shape,
             3,
             &pix2rgb_diff,

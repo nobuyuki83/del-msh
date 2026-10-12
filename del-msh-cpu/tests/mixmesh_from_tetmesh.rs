@@ -3,6 +3,9 @@ mod tests {
 
     #[test]
     fn hoge() -> anyhow::Result<(), anyhow::Error> {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        std::fs::create_dir_all(path_dir_out)?;
+        //
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .expect("parent directory not found")
@@ -23,7 +26,9 @@ mod tests {
 
         let mut tet2vtx = tet2vtx.iter().map(|v| *v as usize).collect::<Vec<_>>();
         {
-            let mut file = std::fs::File::create("../target/tetmesh.vtk").expect("file not found.");
+            let mut file =
+                std::fs::File::create(path_dir_out.join("mixmesh_from_tetmesh_tetmesh.vtk"))
+                    .expect("file not found.");
             del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_chunks::<3>().0)
                 .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells(
@@ -48,7 +53,7 @@ mod tests {
             &del_geo_core::tet::IDX2NODE,
         );
         del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            "../target/tetmesh_boundary.obj",
+            path_dir_out.join("mixmesh_from_tetmesh_boundary.obj"),
             tri2vtx.as_chunks::<3>().0,
             vtx2xyz.as_chunks::<3>().0,
         )
@@ -139,7 +144,7 @@ mod tests {
             )
         };
         del_msh_cpu::io_wavefront_obj::save_elem2idx_idx2vtx_vtx2xyz(
-            "../target/tetmesh_to_polyhedron_surf.obj",
+            path_dir_out.join("mixmesh_from_tetmesh_polyhedron_surf.obj"),
             &oelem2ldx_offset,
             &ldx2vtx,
             vtx2xyz.as_chunks::<3>().0,
@@ -148,7 +153,8 @@ mod tests {
 
         {
             let mut file =
-                std::fs::File::create("../target/tetmesh1.vtk").expect("file not found.");
+                std::fs::File::create(path_dir_out.join("mixmesh_from_tetmesh_tetmesh1.vtk"))
+                    .expect("file not found.");
             del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", vtx2xyz.as_chunks::<3>().0)
                 .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells_mix(
@@ -233,7 +239,8 @@ mod tests {
         println!("num_prism {}", prism2nvtx.len() / 6);
         {
             let mut file =
-                std::fs::File::create("../target/tetmesh2.vtk").expect("file not found.");
+                std::fs::File::create(path_dir_out.join("mixmesh_from_tetmesh_tetmesh2.vtk"))
+                    .expect("file not found.");
             del_msh_cpu::io_vtk::write_vtk_points(&mut file, "hoge", nvtx2xyz.as_chunks::<3>().0)
                 .unwrap();
             del_msh_cpu::io_vtk::write_vtk_cells_mix(

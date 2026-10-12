@@ -259,9 +259,12 @@ where
 mod tests {
 
     fn check(data: &crate::io_cfd_mesh_txt::DataFromCfdMeshTxt<u32>, name: &str) {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        std::fs::create_dir_all(path_dir_out).unwrap();
         {
             let mut file =
-                std::fs::File::create(format!("../target/{}.vtk", name)).expect("file not found.");
+                std::fs::File::create(path_dir_out.join(format!("io_cfd_mesh_txt_{}.vtk", name)))
+                    .expect("file not found.");
             crate::io_vtk::write_vtk_points(&mut file, "hoge", &data.vtx2xyz).unwrap();
             crate::io_vtk::write_vtk_cells_mix(
                 &mut file,

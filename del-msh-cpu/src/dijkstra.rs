@@ -127,6 +127,9 @@ pub fn vtx2dist_for_vtx2vtx(
 
 #[test]
 fn test_vtx2dist_for_vtx2vtx() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let trimesh3 = crate::trimesh3_primitive::sphere_yup::<usize, f64>(1.0, 32, 32);
     let (vtx2idx, idx2vtx) =
         crate::vtx2vtx::from_uniform_mesh(&trimesh3.tri2vtx, trimesh3.vtx2xyz.len(), false);
@@ -141,7 +144,7 @@ fn test_vtx2dist_for_vtx2vtx() {
         })
         .collect();
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz_vtx2rgb(
-        "../target/test_vtx2dist_for_vtx2vtx.obj",
+        path_dir_out.join("dijkstra_vtx2dist_for_vtx2vtx.obj"),
         &trimesh3.tri2vtx,
         &trimesh3.vtx2xyz,
         &vtx2rgb,

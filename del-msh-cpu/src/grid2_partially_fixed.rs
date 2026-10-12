@@ -267,6 +267,8 @@ pub fn nearest_to_fixed_cell(
 
 #[test]
 fn test_nearest_to_fixed_cell() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    assert!(path_dir_out.exists());
     let img_shape = (512, 511);
     let num_pix = img_shape.0 * img_shape.1;
     let mut pix2rgb = vec![0f32; num_pix * 3];
@@ -286,7 +288,7 @@ fn test_nearest_to_fixed_cell() {
         let mut pix2rgb1 = pix2rgb.clone();
         for i_gs in 0..8 {
             del_canvas::write_png_from_float_image(
-                format!("../target/grid2_partially_fixed_gs{i_gs}.png"),
+                path_dir_out.join(format!("grid2_partially_fixed_gs{i_gs}.png")),
                 img_shape,
                 3,
                 &pix2rgb1,
@@ -317,7 +319,7 @@ fn test_nearest_to_fixed_cell() {
         let n_iter = 8;
         for iter in 0..n_iter {
             del_canvas::write_png_from_float_image(
-                format!("../target/grid2_partially_fixed_jump{iter}.png"),
+                path_dir_out.join(format!("grid2_partially_fixed_jump{iter}.png")),
                 img_shape,
                 3,
                 &pix2rgb1,

@@ -745,6 +745,9 @@ where
 
 #[test]
 fn test_square() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let vtx2xy0 = vec![[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]];
     // test non-convex shape
     let vtx2xy1 = vec![
@@ -811,7 +814,7 @@ fn test_square() {
                 meshing_from_polyloop2::<usize, _>(vtx2xy.as_chunks::<2>().0, -1., -1.);
             let vtx2xyz: Vec<[_; 3]> = vtx2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
             let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-                format!("../target/a{i_loop}.obj"),
+                path_dir_out.join(format!("trimesh2_dynamic_a{i_loop}.obj")),
                 &tri2vtx,
                 &vtx2xyz,
             );
@@ -822,7 +825,7 @@ fn test_square() {
                 meshing_from_polyloop2::<usize, _>(vtx2xy.as_chunks::<2>().0, 0.1, 0.1);
             let vtx2xyz: Vec<[_; 3]> = vtx2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
             let res = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-                format!("../target/b{i_loop}.obj"),
+                path_dir_out.join(format!("trimesh2_dynamic_b{i_loop}.obj")),
                 &tri2vtx,
                 &vtx2xyz,
             );
@@ -833,6 +836,8 @@ fn test_square() {
 
 #[test]
 fn test_shape_with_hole() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
     {
         // test shape with a hole
         let mut vtx2xy0 = vec![
@@ -849,7 +854,11 @@ fn test_shape_with_hole() {
         let (tri2vtx, _tri2tri, _vtx2tri) =
             triangulate_single_connected_shape(&mut vtx2xy0, &loop2idx, &idx2vtx);
         let vtx2xyz: Vec<[f32; 3]> = vtx2xy0.iter().map(|&[x, y]| [x, y, 0.]).collect();
-        crate::io_wavefront_obj::save_tri2vtx_vtx2xyz("../target/d.obj", &tri2vtx, &vtx2xyz)
-            .unwrap();
+        crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+            path_dir_out.join("trimesh2_dynamic_d.obj"),
+            &tri2vtx,
+            &vtx2xyz,
+        )
+        .unwrap();
     }
 }

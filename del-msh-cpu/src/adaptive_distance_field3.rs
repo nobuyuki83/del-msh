@@ -209,6 +209,9 @@ pub fn make_child_tree<Real, S: SignedDistanceField3<Real>>(
 
 #[test]
 fn hoge() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     struct Sphere {}
     impl SignedDistanceField3<f64> for Sphere {
         fn sdf(&self, x: f64, y: f64, z: f64) -> f64 {
@@ -248,7 +251,7 @@ fn hoge() {
         del_geo_core::hex::iso_surface(&mut tri2xyz, node.cent, node.hw, &node.corner_dist);
     }
     crate::io_wavefront_obj::save_tri2xyz(
-        "../target/sdf.obj",
+        path_dir_out.join("adaptive_distance_field3_sdf.obj"),
         tri2xyz.as_flattened().as_chunks::<9>().0,
     )
     .unwrap();

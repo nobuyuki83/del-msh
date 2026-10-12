@@ -271,7 +271,8 @@ fn test_is_intersect_to_obb3() {
                 crate::uniform_mesh::merge(&mut tri2vtx_i, &mut vtx2xyz_i, &tri2vtx_j, &vtx2xyz_j);
                 // output mesh to visualize the failure case
                 let _ = crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-                    "../../target/fail_obb3.obj",
+                    std::path::Path::new("../target/out_del_msh_cpu")
+                        .join("trimesh3_intersection_fail_obb3.obj"),
                     &tri2vtx_i,
                     &vtx2xyz_i,
                 );

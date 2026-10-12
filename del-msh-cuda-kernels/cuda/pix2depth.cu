@@ -74,9 +74,9 @@ void bwd_wrt_vtx2xyz(
     const float* p0 = vtx2xyz + iv0 * 3;
     const float* p1 = vtx2xyz + iv1 * 3;
     const float* p2 = vtx2xyz + iv2 * 3;
-    const auto opt_raycoeff_bc = tri3::intersection_against_ray(p0, p1, p2, ray.first.data(), ray.second.data());
-    const float t = opt_raycoeff_bc.value().ray_coeff;
-    const auto q = vec3::axpy(t, ray.second.data(), ray.first.data());
+    const auto raycoeff_bc = tri3::intersection_plane_of_tri3_against_line(
+        p0, p1, p2, ray.first.data(), ray.second.data());
+    const auto q = vec3::axpy(raycoeff_bc.ray_coeff, ray.second.data(), ray.first.data());
     const auto dndcdq = mat4_col_major::jacobian_transform(transform_world2ndc, q.data());
     const auto dndcdq_t = mat3_col_major::transpose(dndcdq.data());
     const auto dldw_q = mat3_col_major::mult_vec(dndcdq_t.data(), dldw_ndc);

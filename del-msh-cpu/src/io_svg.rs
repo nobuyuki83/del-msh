@@ -287,6 +287,9 @@ fn hoge() {
 
 #[test]
 fn hoge2() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let str0 = "M2792 12789 c-617 -83 -1115 -568 -1244 -1212 -32 -160 -32 -443 0 \
     -602 76 -382 282 -720 573 -938 l36 -27 -58 -172 c-90 -269 -174 -590 -216 \
     -833 -13 -76 -17 -159 -17 -345 -1 -212 2 -261 21 -360 43 -225 113 -418 217 \
@@ -318,11 +321,18 @@ fn hoge2() {
     let polyline = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 10.0);
     let polyline = crate::polyloop::resample::<_, 2>(&polyline, 100);
     let polyline3: Vec<[f32; 3]> = polyline.iter().map(|&[x, y]| [x, y, 0.0]).collect();
-    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/svg.obj", &polyline3).unwrap();
+    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
+        path_dir_out.join("io_svg_0.obj"),
+        &polyline3,
+    )
+    .unwrap();
 }
 
 #[test]
 fn hoge3() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let str_path = "M7920 11494 c-193 -21 -251 -29 -355 -50 -540 -105 -1036 -366 -1442 \
     -758 -515 -495 -834 -1162 -904 -1891 -15 -154 -6 -563 15 -705 66 -440 220 \
     -857 442 -1203 24 -37 44 -69 44 -71 0 -2 -147 -3 -327 -4 -414 -1 -765 -23 \
@@ -343,6 +353,9 @@ fn hoge3() {
     let vtxl2xy = polybezier2polyloop(&loops[0].0, &loops[0].1, loops[0].2, 600.);
     let vtxl2xy = crate::vtx2xy::normalize(&vtxl2xy, &[0.5, 0.5], 1.0);
     let vtxl2xyz: Vec<[f32; 3]> = vtxl2xy.iter().map(|&[x, y]| [x, y, 0.0]).collect();
-    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop("../target/duck_curve.obj", &vtxl2xyz)
-        .unwrap();
+    crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
+        path_dir_out.join("io_svg_duck_curve.obj"),
+        &vtxl2xyz,
+    )
+    .unwrap();
 }

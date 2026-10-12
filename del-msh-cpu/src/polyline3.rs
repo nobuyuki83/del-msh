@@ -522,11 +522,14 @@ pub fn reduce(vtx2xyz: &[[f32; 3]], threshold: f32) -> Vec<[f32; 3]> {
 
 #[test]
 fn test_reduce() -> anyhow::Result<()> {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out)?;
+    //
     let vtx2xy = crate::polyloop2::from_circle(1.0, 100);
     let vtx2xyz: Vec<[_; 3]> = vtx2xy.iter().map(|v| [v[0], v[1], 0.0]).collect();
     let vtx2xyz_reduced = reduce(&vtx2xyz, 0.01);
     crate::io_wavefront_obj::save_vtx2xyz_as_polyloop(
-        "../target/reduce_polyline.obj",
+        path_dir_out.join("polyline3_reduce.obj"),
         &vtx2xyz_reduced,
     )?;
     Ok(())
@@ -734,6 +737,7 @@ mod test_shorten {
                 &node2xyz,
                 1.0,
                 edge_length_ini,
+                true,
             );
             sum_w += w;
         }
@@ -860,6 +864,7 @@ mod test_shorten {
                     &node2xyz,
                     1.0,
                     edge_length_ini,
+                    true,
                 );
                 hess.merge(&ddw, &[i_seg, i_seg + 1], &mut tmp);
                 use del_geo_core::vecn::VecN;

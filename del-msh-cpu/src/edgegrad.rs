@@ -667,6 +667,9 @@ mod tests {
 
     #[test]
     fn test_hoge() {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
+        //
         let tri2vtx = [[0, 1, 2], [3, 4, 5]];
         let vtx2xyz = [
             [-0.4, 0.1, 0.5],
@@ -704,9 +707,6 @@ mod tests {
             &transform_ndc2pix,
             &transform_world2ndc,
         );
-
-        let _path_dir = std::path::Path::new("../target/out_del_msh_cpu");
-
         finite_difference(
             &tri2vtx,
             &vtx2xyz,
@@ -778,9 +778,8 @@ mod tests {
                     )
                 })
                 .collect::<Vec<_>>();
-            let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
             del_canvas::write_png_from_float_image(
-                path_dir.join(format!("edgegrad_pix2dval_edgegrad.png")),
+                path_dir_out.join(format!("edgegrad_pix2dval_edgegrad.png")),
                 img_shape,
                 3,
                 pix2rgb.as_flattened(),

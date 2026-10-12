@@ -194,6 +194,8 @@ pub fn render_depth_bvh(
 
 #[test]
 fn test_depthmap() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    assert!(path_dir_out.exists());
     for i_case in 0..3 {
         let (tri2vtx, vtx2xyz) = match i_case {
             0 => {
@@ -228,7 +230,7 @@ fn test_depthmap() {
             _ => unreachable!(),
         };
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            format!("../target/trimesh3_raycast_mesh{i_case}.obj"),
+            path_dir_out.join(format!("trimesh3_raycast_mesh{i_case}.obj")),
             &tri2vtx,
             &vtx2xyz,
         )
@@ -254,7 +256,7 @@ fn test_depthmap() {
         );
         pix2depth.iter_mut().for_each(|v| *v = (*v) + 0.0);
         del_canvas::write_png_from_float_image(
-            format!("../target/trimesh3_raycast_depth_{i_case}.png"),
+            path_dir_out.join(format!("trimesh3_raycast_depth_{i_case}.png")),
             img_shape,
             1,
             &pix2depth,
@@ -263,7 +265,7 @@ fn test_depthmap() {
         let (quad2vtx, vtx2xyz) =
             crate::grid2::to_quadmesh3_hightmap(img_shape, &pix2depth, 1.0 / img_shape.0 as f32);
         crate::io_wavefront_obj::save_quad2vtx_vtx2xyz(
-            format!("../target/trimesh3_raycast_hightmap_{i_case}.obj"),
+            path_dir_out.join(format!("trimesh3_raycast_hightmap_{i_case}.obj")),
             &quad2vtx,
             vtx2xyz.as_chunks::<3>().0,
         )

@@ -397,8 +397,8 @@ pub fn silhouette_for_triangle_mesh(
 
 #[test]
 pub fn test_contour() {
-    let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
-    std::fs::create_dir_all(path_dir).unwrap();
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
     //
     let (tri2vtx, vtx2xyz): (Vec<[usize; 3]>, Vec<[f32; 3]>)
         // = crate::trimesh3_primitive::sphere_yup::<usize, f32>(1., 32, 32);
@@ -434,7 +434,7 @@ pub fn test_contour() {
             &bvhnode2aabb,
         );
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/edge2vtx_countour.obj",
+            path_dir_out.join("edge2vtx_countour.obj"),
             &edge2vtx_contour,
             &vtx2xyz,
         )
@@ -451,14 +451,14 @@ pub fn test_contour() {
             &bvhnode2aabb,
         );
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/edge2vtx_silhouette.obj",
+            path_dir_out.join("edge2vtx_silhouette.obj"),
             &edge2vtx_contour,
             &vtx2xyz,
         )
         .unwrap();
     }
     crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-        "../target/edge2vtx_trimsh.obj",
+        path_dir_out.join("edge2vtx_trimsh.obj"),
         &tri2vtx,
         &vtx2xyz,
     )

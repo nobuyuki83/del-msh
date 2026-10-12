@@ -444,6 +444,9 @@ where
 
 #[test]
 fn test_poisson_disk_sampling() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let mut reng = rand::rng();
     let vtxl2xy: Vec<[f32; 2]> = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
     let vtx2xy = poisson_disk_sampling(&vtxl2xy, 0.1, 2000, &mut reng);
@@ -458,7 +461,7 @@ fn test_poisson_disk_sampling() {
             .map(|&[x, y]| [x, y, 0.])
             .collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/poisson_disk.obj",
+            path_dir_out.join("polyloop2_poisson_disk.obj"),
             &[[0usize, 1], [1, 2], [2, 3], [3, 0]],
             &flat3,
         )

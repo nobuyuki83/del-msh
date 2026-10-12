@@ -89,6 +89,8 @@ mod tests {
     }
 
     fn make_problem(lambda: f64, myu: f64) -> Problem {
+        let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+        assert!(path_dir_out.exists());
         let (tri2vtx, vtx2xy_ini) = crate::trimesh2_dynamic::meshing_from_polyloop2::<usize, f64>(
             &[[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]],
             0.07,
@@ -96,7 +98,7 @@ mod tests {
         );
         let num_vtx = vtx2xy_ini.len();
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            "../target/linear_solid_2d_ini.obj",
+            path_dir_out.join("linear_solid_2d_ini.obj"),
             &tri2vtx,
             &vtx2xy_ini
                 .iter()
@@ -133,7 +135,7 @@ mod tests {
             }
         }
         crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
-            "../target/linear_solid_2d_def0.obj",
+            path_dir_out.join("linear_solid_2d_def0.obj"),
             &tri2vtx,
             &vtx2xy_def
                 .iter()

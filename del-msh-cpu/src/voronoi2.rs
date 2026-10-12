@@ -310,6 +310,9 @@ pub fn position_of_voronoi_vertex(
 
 #[test]
 fn test_voronoi_concave() {
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let mut reng = rand::rng();
     let vtxl2xy: Vec<[f32; 2]> = vec![
         [0.0, 0.0],
@@ -336,7 +339,7 @@ fn test_voronoi_concave() {
             .map(|&[x, y]| [x, y, 0.])
             .collect();
         let _ = crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/voronoi_concave_input.obj",
+            path_dir_out.join("voronoi2_concave_input.obj"),
             &edge2vtx_l,
             &flat3,
         );
@@ -353,7 +356,7 @@ fn test_voronoi_concave() {
         }
         let vtxo2xyz: Vec<[f32; 3]> = vtxo2xy.iter().map(|&[x, y]| [x, y, 0.]).collect();
         crate::io_wavefront_obj::save_edge2vtx_vtx2xyz(
-            "../target/voronoi_concave_cells.obj",
+            path_dir_out.join("voronoi2_concave_cells.obj"),
             &edge2vtxo,
             &vtxo2xyz,
         )

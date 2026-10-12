@@ -48,7 +48,7 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for deploy
 # del-cudarc = "=0.1.2"
-del-geo-core = "=0.1.40"
+del-geo-core = "=0.1.41"
 del-canvas = "0.1.11"
 
 

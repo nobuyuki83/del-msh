@@ -396,8 +396,14 @@ pub fn subdivide(
 
 #[test]
 pub fn test_elem2volume() {
+    let path_dir_asset = std::path::Path::new("../asset");
+    assert!(path_dir_asset.exists());
+    let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
+    std::fs::create_dir_all(path_dir_out).unwrap();
+    //
     let (elem2idx_offset, idx2vtx, vtx2xyz) = {
-        let data = crate::io_cfd_mesh_txt::read::<_, u32>("../asset/cfd_mesh.txt").unwrap();
+        let data =
+            crate::io_cfd_mesh_txt::read::<_, u32>(path_dir_asset.join("cfd_mesh.txt")).unwrap();
         let num_elem =
             data.tet2vtx.len() + data.pyrmd2vtx.len() + data.prism2vtx.len() + data.hex2vtx.len();
         let num_idx = data.tet2vtx.len() * 4
@@ -455,7 +461,8 @@ pub fn test_elem2volume() {
         let volume_total1: f32 = elem2volume0.iter().sum();
         dbg!(volume_total1);
         {
-            let mut file = std::fs::File::create("../target/subdiv.vtk").expect("file not found.");
+            let mut file = std::fs::File::create(path_dir_out.join("polyhedron_mesh__subdiv.vtk"))
+                .expect("file not found.");
             crate::io_vtk::write_vtk_points(&mut file, "hoge", &vtx2xyz0).unwrap();
             crate::io_vtk::write_vtk_cells_polyhedron(&mut file, &elem2idx0_offset, &idx2vtx0)
                 .unwrap();
