@@ -278,6 +278,44 @@ where
     (tri2vtx, vtx2xyz)
 }
 
+pub fn to_trimesh3_cylinder_and_sphere<T>(
+    vtx2xyz: &[[T; 3]],
+    rad: T,
+    ndiv: usize,
+) -> (Vec<[usize; 3]>, Vec<[T; 3]>)
+where
+    T: num_traits::Float + num_traits::FloatConst + Copy + 'static,
+    usize: num_traits::AsPrimitive<T>,
+    f32: num_traits::AsPrimitive<T>,
+{
+    let mut tri2vtx: Vec<[usize; 3]> = Vec::new();
+    let mut all_vtx2xyz: Vec<[T; 3]> = Vec::new();
+    let num_vtx = vtx2xyz.len();
+
+    // open cylinder for each segment
+    for i_vtx in 0..num_vtx - 1 {
+        let vtx_offset = all_vtx2xyz.len();
+        let (tris, verts) = crate::trimesh3_primitive::cylinder_open_connecting_two_points(
+            ndiv,
+            rad,
+            &vtx2xyz[i_vtx],
+            &vtx2xyz[i_vtx + 1],
+        );
+        tri2vtx.extend(tris.iter().map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]));
+        all_vtx2xyz.extend_from_slice(&verts);
+    }
+
+    // sphere at each vertex
+    for p in vtx2xyz.iter() {
+        let vtx_offset = all_vtx2xyz.len();
+        let sphere = crate::trimesh3_primitive::sphere_yup::<usize, T>(rad, ndiv, ndiv);
+        tri2vtx.extend(sphere.tri2vtx.iter().map(|t| [t[0] + vtx_offset, t[1] + vtx_offset, t[2] + vtx_offset]));
+        all_vtx2xyz.extend(sphere.vtx2xyz.iter().map(|v| [v[0] + p[0], v[1] + p[1], v[2] + p[2]]));
+    }
+
+    (tri2vtx, all_vtx2xyz)
+}
+
 pub fn to_trimesh3_ribbon<T>(
     vtxl2xyz: &[[T; 3]],
     vtxl2framex: &[[T; 3]],
@@ -554,13 +592,101 @@ fn test_generate_trimesh() {
     .unwrap();
 }
 
+/// Returns the maximum step size `t` in `[0, 1]` such that moving all vertices of a polyline
+/// by `t * vtx2uvw` keeps every non-adjacent segment pair at distance ≥ `offset`.
+/// Pairs already closer than `offset + park_clearance` are skipped (handled externally).
+pub fn max_safe_step_polyline(
+    vtx2xyz: &[[f32; 3]],
+    vtx2uvw: &[[f32; 3]],
+    offset: f32,
+    park_clearance: f32,
+) -> f32 {
+    let num_vtx = vtx2xyz.len();
+    let mut t_max = 1f32;
+    let park = offset + park_clearance;
+    for i_seg in 0..num_vtx - 1 {
+        for j_seg in i_seg + 2..num_vtx - 1 {
+            let [sqdist, _s, _t] = del_geo_core::edge3::nearest_to_edge3_accurate(
+                &vtx2xyz[i_seg],
+                &vtx2xyz[i_seg + 1],
+                &vtx2xyz[j_seg],
+                &vtx2xyz[j_seg + 1],
+            );
+            if sqdist <= park * park {
+                continue;
+            }
+            let mut x0 = [
+                vtx2xyz[i_seg],
+                vtx2xyz[i_seg + 1],
+                vtx2xyz[j_seg],
+                vtx2xyz[j_seg + 1],
+            ];
+            let mut dx = [
+                vtx2uvw[i_seg],
+                vtx2uvw[i_seg + 1],
+                vtx2uvw[j_seg],
+                vtx2uvw[j_seg + 1],
+            ];
+            del_geo_core::mat3x4_array_of_cols::centerize(&mut x0);
+            del_geo_core::mat3x4_array_of_cols::centerize(&mut dx);
+            let Some(scale) =
+                del_geo_core::ccd3::normalize_centerized_configuration(&mut x0, &mut dx, t_max)
+            else {
+                continue;
+            };
+            let max_relative_velocity = del_geo_core::ccd3::max_relative_norm::<_, 2>(&dx);
+            let t_max_new = del_geo_core::ccd3::maximum_safe_time_accurate::<
+                del_geo_core::ccd3::EdgeEdgeSquaredDist,
+                2,
+            >(
+                &x0,
+                &dx,
+                max_relative_velocity,
+                &del_geo_core::ccd3::EdgeEdgeSquaredDist,
+                offset * scale,
+                park_clearance * scale,
+                t_max,
+            );
+            t_max = t_max.min(t_max_new);
+        }
+    }
+    t_max
+}
+
 #[cfg(test)]
 mod test_shorten {
 
-    fn make_polyline(num_vtx: usize) -> Vec<[f32; 3]> {
+    struct ContactPair {
+        i_seg: usize,
+        j_seg: usize,
+        s: f32,
+        t: f32,
+    }
+
+    fn find_contact_pairs(vtx2xyz: &[[f32; 3]], dhat: f32) -> Vec<ContactPair> {
+        let num_vtx = vtx2xyz.len();
+        let mut pairs = Vec::new();
+        for i_seg in 0..num_vtx - 1 {
+            for j_seg in i_seg + 2..num_vtx - 1 {
+                let [sqdist, s, t] = del_geo_core::edge3::nearest_to_edge3_accurate(
+                    &vtx2xyz[i_seg],
+                    &vtx2xyz[i_seg + 1],
+                    &vtx2xyz[j_seg],
+                    &vtx2xyz[j_seg + 1],
+                );
+                let dist = sqdist.sqrt();
+                if dist < dhat {
+                    pairs.push(ContactPair { i_seg, j_seg, s, t });
+                }
+            }
+        }
+        pairs
+    }
+
+    fn make_polyline(num_vtx: usize, seed: u64) -> Vec<[f32; 3]> {
         use rand::RngExt;
         use rand::SeedableRng;
-        let mut reng = rand_chacha::ChaChaRng::seed_from_u64(0);
+        let mut reng = rand_chacha::ChaChaRng::seed_from_u64(seed);
         let vtx2xyz: Vec<[f32; 3]> = {
             let mut vtx2xyz = (0..num_vtx)
                 .map(|_| {
@@ -578,7 +704,7 @@ mod test_shorten {
         vtx2xyz
     }
 
-    fn system_energy(vtx2xyz: &[[f32; 3]], dhat: f32, offset: f32, barrier_stiffness: f32) -> f32 {
+    fn system_energy(vtx2xyz: &[[f32; 3]], dhat: f32, offset: f32, barrier_stiffness: f32, edge_length_ini: f32) -> f32 {
         let num_vtx = vtx2xyz.len();
         let mut sum_w = 0.0;
         for i_seg in 0..vtx2xyz.len() - 1 {
@@ -586,7 +712,7 @@ mod test_shorten {
             let i1_vtx = i_seg + 1;
             let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
             let (w, _dw, _ddw) =
-                del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, 0.0);
+                del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, edge_length_ini, true);
             sum_w += w;
         }
         for i_seg in 0..num_vtx - 1 {
@@ -609,20 +735,59 @@ mod test_shorten {
         sum_w
     }
 
+    pub fn resolve_collision(vtx2xyz: &mut [[f32; 3]], dist_trg: f32) {
+        use del_geo_core::vec3::Vec3;
+        for _ in 0..100 {
+            let cps = find_contact_pairs(vtx2xyz, dist_trg);
+            if cps.is_empty() {
+                break;
+            }
+            for cp in &cps {
+                let [sqdist, s, t] = del_geo_core::edge3::nearest_to_edge3_accurate(
+                    &vtx2xyz[cp.i_seg],
+                    &vtx2xyz[cp.i_seg + 1],
+                    &vtx2xyz[cp.j_seg],
+                    &vtx2xyz[cp.j_seg + 1],
+                );
+                let dist = sqdist.sqrt();
+                if dist >= dist_trg {
+                    continue;
+                }
+                // closest points on each segment
+                let p = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                let q = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                // unit normal from q toward p; push each closest point out by half the gap
+                let n = p.sub(&q).scale(1. / dist);
+                let half_gap = (dist_trg - dist) * 0.5;
+                // distribute to 4 vertices weighted by segment parameter (preserves linear momentum)
+                let push = n.scale(half_gap);
+                vtx2xyz[cp.i_seg] = vtx2xyz[cp.i_seg].add(&push.scale(1. - s));
+                vtx2xyz[cp.i_seg + 1] = vtx2xyz[cp.i_seg + 1].add(&push.scale(s));
+                vtx2xyz[cp.j_seg] = vtx2xyz[cp.j_seg].sub(&push.scale(1. - t));
+                vtx2xyz[cp.j_seg + 1] = vtx2xyz[cp.j_seg + 1].sub(&push.scale(t));
+            }
+        }
+    }
+
     #[test]
     fn test0() {
         let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
         std::fs::create_dir_all(path_dir).unwrap();
         //
-        let num_vtx = 10;
-        let mut vtx2xyz = make_polyline(num_vtx);
+        const NUM_FRAME: usize = 4500;
+        const FRAME_INTERVAL_SAVE_FILE: usize = 50;
+        const OFFSET: f32 = 1.0e-2; // twice the the radius of rod
+        const DHAT: f32 = 1.0e-3; // the distance from the OFFSET where contact force become non-zero
+        const PARK_CLEARANCE: f32 = 1.0e-6; // the distance from the OFFSET just before collision
+        const BARRIER_STIFFNESS: f32 = 1.0e+6;
+        //
+        let num_vtx = 15;
+        let mut vtx2xyz = make_polyline(num_vtx, 4);
+        let edge_length_ini = 0.5 * 2.0 * 3f32.sqrt() / (num_vtx - 1) as f32; // half-length of diagonal
 
-        let vtx2vtx = crate::polyline::vtx2vtx_rods(&[0, num_vtx]);
-        let mut hess = crate::sparse_solver::sparse_square::MatrixOwned::<[f32; 9]>::from_vtx2vtx(
-            &vtx2vtx.0, &vtx2vtx.1,
-        );
+        let vtx2vtx_polyline = crate::polyline::vtx2vtx_rods(&[0, num_vtx]);
         let mut grad = vec![[0.; 3]; num_vtx];
-        let mut vtx2sol = grad.clone();
+        let mut vtx2uvw = grad.clone();
         let mut vtx2ap = grad.clone();
         let mut vtx2p = grad.clone();
         let mut tmp = vec![usize::MAX; num_vtx];
@@ -636,12 +801,24 @@ mod test_shorten {
             blk2isfix[num_vtx - 1][2] = 1;
             blk2isfix
         };
-        //
-        let offset = 1.0e-2;
-        let dhat = 1.0e-3;
-        let park_clearance = 1.0e-6;
-        let barrier_stiffness = 1.0e+6;
-        for iter in 0..1 {
+        resolve_collision(&mut vtx2xyz, OFFSET * 1.5);
+        for iter in 0..NUM_FRAME {
+            let contact_paris = find_contact_pairs(&vtx2xyz, DHAT + OFFSET);
+            println!("num_contact_paris: {}", contact_paris.len());
+            let mut hess = {
+                let cp2vtx: Vec<[usize; 4]> = contact_paris
+                    .iter()
+                    .map(|cp| [cp.i_seg, cp.i_seg + 1, cp.j_seg, cp.j_seg + 1])
+                    .collect();
+                let vtx2vtx_cp = crate::vtx2vtx::from_uniform_mesh(&cp2vtx, num_vtx, false);
+                let vtx2vtx = crate::vtx2vtx::merge(
+                    &vtx2vtx_polyline.0, &vtx2vtx_polyline.1,
+                    &vtx2vtx_cp.0, &vtx2vtx_cp.1, num_vtx);
+                crate::sparse_solver::sparse_square::MatrixOwned::<[f32; 9]>::from_vtx2vtx(
+                    &vtx2vtx.0, &vtx2vtx.1,
+                )
+            };
+            // -------
             hess.set_zero();
             crate::vtx2xn::set_zero(&mut grad);
             let mut system_energy0 = 0.0;
@@ -650,29 +827,51 @@ mod test_shorten {
                 let i1_vtx = i_seg + 1;
                 let node2xyz = [vtx2xyz[i0_vtx], vtx2xyz[i1_vtx]];
                 let (w, dw, ddw) =
-                    del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, 0.0);
+                    del_geo_core::edge3::wdwddw_squared_length_difference(&node2xyz, 1.0, edge_length_ini, true);
                 hess.merge(&ddw, &[i_seg, i_seg + 1], &mut tmp);
                 use del_geo_core::vecn::VecN;
                 grad[i0_vtx].add_in_place(&dw[0].scale(-1.));
                 grad[i1_vtx].add_in_place(&dw[1].scale(-1.));
                 system_energy0 += w;
             }
-            for i_seg in 0..num_vtx - 1 {
-                let i0_vtx = i_seg;
-                let i1_vtx = i_seg + 1;
-                for j_seg in i_seg + 2..num_vtx - 1 {
-                    let j0_vtx = j_seg;
-                    let j1_vtx = j_seg + 1;
-                    let [sqdist, _s, _t] = del_geo_core::edge3::nearest_to_edge3_accurate(
-                        &vtx2xyz[i0_vtx],
-                        &vtx2xyz[i1_vtx],
-                        &vtx2xyz[j0_vtx],
-                        &vtx2xyz[j1_vtx],
-                    );
-                    let dist = sqdist.sqrt();
-                    let w = del_geo_core::barrier::w_energy(dist, dhat, offset);
-                    system_energy0 += barrier_stiffness * w;
+            for cp in &contact_paris {
+                let (s, t) = (cp.s, cp.t);
+                let dist = {
+                    use del_geo_core::vec3::Vec3;
+                    let p = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                    let q = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                    p.sub(&q).norm()
+                };
+                let w = BARRIER_STIFFNESS * del_geo_core::barrier::w_energy(dist, DHAT, OFFSET);
+                let dwdd = BARRIER_STIFFNESS * del_geo_core::barrier::dw_energy(dist, DHAT, OFFSET);
+                let ddwddd = BARRIER_STIFFNESS * del_geo_core::barrier::ddw_energy(dist, DHAT, OFFSET);
+                {
+                    use del_geo_core::vec3::Vec3;
+                    //use del_geo_core::vecn::VecN;
+                    // direction from j closest point to i closest point
+                    let p_i = vtx2xyz[cp.i_seg].scale(1. - s).add(&vtx2xyz[cp.i_seg + 1].scale(s));
+                    let p_j = vtx2xyz[cp.j_seg].scale(1. - t).add(&vtx2xyz[cp.j_seg + 1].scale(t));
+                    let unit_diff = p_i.sub(&p_j).scale(1. / dist);
+                    // ∂dist/∂node = factor * unit_diff
+                    let factors = [1. - s, s, -(1. - t), -t];
+                    let g: [[f32; 3]; 4] = core::array::from_fn(|i| unit_diff.scale(factors[i]));
+                    // gradient: -dE/dx accumulated into grad
+                    let nodes = [cp.i_seg, cp.i_seg + 1, cp.j_seg, cp.j_seg + 1];
+                    for (i_node, &i_vtx) in nodes.iter().enumerate() {
+                        grad[i_vtx].add_in_place(&g[i_node].scale(-dwdd));
+                    }
+                    // Hessian (GG^T approximation, drops the ∂²dist/∂x² term)
+                    let emat: [[[f32; 9]; 4]; 4] = core::array::from_fn(|i| {
+                        core::array::from_fn(|j| {
+                            // column-major outer product of g[i] and g[j], scaled by ddwddd
+                            core::array::from_fn(|k| {
+                                ddwddd * g[i][k % 3] * g[j][k / 3]
+                            })
+                        })
+                    });
+                    hess.merge(&emat, &nodes, &mut tmp);
                 }
+                system_energy0 += w;
             }
             println!("{iter} --> {system_energy0}");
             {
@@ -687,77 +886,63 @@ mod test_shorten {
             hess.set_fixed(0., &blk2isfix);
             crate::sparse_solver::cg::conjugate_gradient(
                 &mut grad,
-                &mut vtx2sol,
+                &mut vtx2uvw,
                 &mut vtx2ap,
                 &mut vtx2p,
                 1.0e-5,
                 100,
                 hess.as_ref(),
             );
-            let max_safe_time_total = {
-                let mut t_max = 1f32;
-                for i_seg in 0..num_vtx - 1 {
-                    let i0_vtx = i_seg;
-                    let i1_vtx = i_seg + 1;
-                    for j_seg in i_seg + 2..num_vtx - 1 {
-                        let j0_vtx = j_seg;
-                        let j1_vtx = j_seg + 1;
-                        let mut x0 = [
-                            vtx2xyz[i0_vtx],
-                            vtx2xyz[i1_vtx],
-                            vtx2xyz[j0_vtx],
-                            vtx2xyz[j1_vtx],
-                        ];
-                        let mut dx = [
-                            vtx2sol[i0_vtx],
-                            vtx2sol[i1_vtx],
-                            vtx2sol[j0_vtx],
-                            vtx2sol[j1_vtx],
-                        ];
-                        del_geo_core::mat3x4_array_of_cols::centerize(&mut x0);
-                        del_geo_core::mat3x4_array_of_cols::centerize(&mut dx);
-                        let scale = del_geo_core::ccd3::normalize_centerized_configuration(
-                            &mut x0, &mut dx, t_max,
-                        )
-                        .unwrap();
-                        let max_relative_velocity =
-                            del_geo_core::ccd3::max_relative_norm::<_, 2>(&dx);
-                        let t_max_new = del_geo_core::ccd3::maximum_safe_time_accurate::<
-                            del_geo_core::ccd3::EdgeEdgeSquaredDist,
-                            2,
-                        >(
-                            &x0,
-                            &dx,
-                            max_relative_velocity,
-                            &del_geo_core::ccd3::EdgeEdgeSquaredDist,
-                            offset * scale,
-                            park_clearance * scale,
-                            t_max,
-                        );
-                        t_max = t_max.min(t_max_new);
-                    }
-                }
-                t_max
-            };
-            dbg!(max_safe_time_total);
-            let mut step_time = max_safe_time_total;
-            for _jter in 0..10 {
-                let mut vtx2xyz1 = vtx2xyz.clone();
-                crate::vtx2xn::add_scaled_vector(&mut vtx2xyz1, step_time, &vtx2sol);
-                let system_energy1 = system_energy(&vtx2xyz1, dhat, offset, barrier_stiffness);
-                dbg!(system_energy1, step_time);
-                if system_energy1 > system_energy0 {
-                    step_time *= 0.5;
-                } else {
+            {
+                let sq_upd = crate::vtx2xn::dot(&vtx2uvw, &vtx2uvw);
+                if sq_upd < 1.0e-10 {
+                    println!("converged");
                     break;
                 }
             }
-            crate::vtx2xn::add_scaled_vector(&mut vtx2xyz, step_time, &vtx2sol);
+            // compute time [0, 1] where the rod can move at least the distance with PARK_CLEARANCE.
+            let max_safe_time_total =
+                crate::polyline3::max_safe_step_polyline(&vtx2xyz, &vtx2uvw, OFFSET, PARK_CLEARANCE);
+            //dbg!(max_safe_time_total);
+            let mut step_time = max_safe_time_total * 0.9999; // slightly reduce the time to avoid the clearance be exactly PARK_CLEARANCE
+            let mut line_search_converged = false;
+            for _jter in 0..12 {
+                let mut vtx2xyz1 = vtx2xyz.clone();
+                crate::vtx2xn::add_scaled_vector(&mut vtx2xyz1, step_time, &vtx2uvw);
+                let system_energy1 = system_energy(&vtx2xyz1, DHAT, OFFSET, BARRIER_STIFFNESS, edge_length_ini);
+                println!("energy1: {} energy0:{} steptime:{}", system_energy1, system_energy0, step_time);
+                if system_energy1 > system_energy0 {
+                    step_time *= 0.5;
+                } else {
+                    line_search_converged = true;
+                    break;
+                }
+            }
+            if !line_search_converged {
+                println!("WARNING: line search reached maximum iterations without reducing energy");
+                break;
+            }
+            crate::vtx2xn::add_scaled_vector(&mut vtx2xyz, step_time, &vtx2uvw);
+            /*
             crate::io_wavefront_obj::save_vtx2xyz_as_polyline(
-                path_dir.join(format!("ccd3_{iter}.obj")),
+                path_dir.join(format!("ccd3_{iter:04}.obj")),
                 &vtx2xyz,
             )
             .unwrap();
+             */
+            let (tri2vtx0, vtx02xyz0) = crate::polyline3::to_trimesh3_cylinder_and_sphere(
+                &vtx2xyz,
+                OFFSET * 0.5,
+                32,
+            );
+            if iter % FRAME_INTERVAL_SAVE_FILE == 0 {
+                let idx = iter / FRAME_INTERVAL_SAVE_FILE;
+                crate::io_wavefront_obj::save_tri2vtx_vtx2xyz(
+                    path_dir.join(format!("ccd3_{idx:04}.obj")),
+                    &tri2vtx0,
+                    &vtx02xyz0,
+                ).unwrap()
+            }
         }
     }
 }

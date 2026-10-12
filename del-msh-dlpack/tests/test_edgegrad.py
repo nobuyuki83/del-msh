@@ -125,6 +125,7 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
         transform_world2pix = transform_ndc2pix @ transform_world2ndc
 
         # まず各ピクセルで見えている三角形を求め、その後に深度を計算する。
+        '''
         pix2tri = Pix2Tri.by_raycasting(
             tri2vtx,
             vtx2xyz,
@@ -132,6 +133,13 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
             bvhnode2aabb,
             transform_ndc2world,
             (viewport[2], viewport[3]),
+        )
+        '''
+        pix2tri = Pix2Tri.by_rasterization(
+            tri2vtx,
+            vtx2xyz,
+            transform_world2ndc,
+            (viewport[2], viewport[3])
         )
 
         pix2depth_view = Pix2Depth.AutogradFunction.apply(

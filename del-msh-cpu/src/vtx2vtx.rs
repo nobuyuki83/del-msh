@@ -362,3 +362,80 @@ fn test_laplacian_smoothing() {
     dbg!(res1);
     assert!(res1 < 1.0e-9);
 }
+
+
+/// Merge two CSR adjacency arrays into one, deduplicating shared neighbors.
+pub fn merge<IDX>(
+    vtx2idx_offset: &[IDX],
+    idx2vtx: &[IDX],
+    vtx2jdx_offset: &[IDX],
+    jdx2vtx: &[IDX],
+    num_vtx: usize,
+) -> (Vec<IDX>, Vec<IDX>)
+where
+    IDX: num_traits::PrimInt + AsPrimitive<usize>,
+    usize: AsPrimitive<IDX>,
+{
+    assert_eq!(vtx2idx_offset.len(), num_vtx + 1);
+    assert_eq!(vtx2jdx_offset.len(), num_vtx + 1);
+    let mut vtx2flg = vec![usize::MAX; num_vtx];
+    let mut vtx2kdx_offset = vec![IDX::zero(); num_vtx + 1];
+    // pass 1: count unique neighbors per vertex
+    for i_vtx in 0..num_vtx {
+        let i0: usize = vtx2idx_offset[i_vtx].as_();
+        let i1: usize = vtx2idx_offset[i_vtx + 1].as_();
+        for &j in &idx2vtx[i0..i1] {
+            let j: usize = j.as_();
+            if vtx2flg[j] != i_vtx {
+                vtx2flg[j] = i_vtx;
+                vtx2kdx_offset[i_vtx + 1] = vtx2kdx_offset[i_vtx + 1] + IDX::one();
+            }
+        }
+        let j0: usize = vtx2jdx_offset[i_vtx].as_();
+        let j1: usize = vtx2jdx_offset[i_vtx + 1].as_();
+        for &j in &jdx2vtx[j0..j1] {
+            let j: usize = j.as_();
+            if vtx2flg[j] != i_vtx {
+                vtx2flg[j] = i_vtx;
+                vtx2kdx_offset[i_vtx + 1] = vtx2kdx_offset[i_vtx + 1] + IDX::one();
+            }
+        }
+    }
+    // prefix sum
+    for i_vtx in 0..num_vtx {
+        vtx2kdx_offset[i_vtx + 1] = vtx2kdx_offset[i_vtx + 1] + vtx2kdx_offset[i_vtx];
+    }
+    let num_kdx: usize = vtx2kdx_offset[num_vtx].as_();
+    let mut kdx2vtx = vec![IDX::zero(); num_kdx];
+    // pass 2: fill neighbor list
+    vtx2flg.iter_mut().for_each(|v| *v = usize::MAX);
+    let mut vtx2cur = vtx2kdx_offset[..num_vtx].to_vec();
+    for i_vtx in 0..num_vtx {
+        let i0: usize = vtx2idx_offset[i_vtx].as_();
+        let i1: usize = vtx2idx_offset[i_vtx + 1].as_();
+        for &j in &idx2vtx[i0..i1] {
+            let j: usize = j.as_();
+            if vtx2flg[j] != i_vtx {
+                vtx2flg[j] = i_vtx;
+                let pos: usize = vtx2cur[i_vtx].as_();
+                kdx2vtx[pos] = j.as_();
+                vtx2cur[i_vtx] = vtx2cur[i_vtx] + IDX::one();
+            }
+        }
+        let j0: usize = vtx2jdx_offset[i_vtx].as_();
+        let j1: usize = vtx2jdx_offset[i_vtx + 1].as_();
+        for &j in &jdx2vtx[j0..j1] {
+            let j: usize = j.as_();
+            if vtx2flg[j] != i_vtx {
+                vtx2flg[j] = i_vtx;
+                let pos: usize = vtx2cur[i_vtx].as_();
+                kdx2vtx[pos] = j.as_();
+                vtx2cur[i_vtx] = vtx2cur[i_vtx] + IDX::one();
+            }
+        }
+    }
+    (vtx2kdx_offset, kdx2vtx)
+}
+
+
+

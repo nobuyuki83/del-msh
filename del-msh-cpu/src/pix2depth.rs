@@ -40,9 +40,8 @@ where
         let one = T::one();
         let half = one / (one + one);
         let dldw_ndc = [zero, zero, half * dldw_depth];
-        let (_t, bc) =
-            del_geo_core::tri3::intersection_against_line(p0, p1, p2, ray_org, ray_dir).unwrap();
-        let q = del_geo_core::tri3::position_from_barycentric_coords(p0, p1, p2, &bc);
+        let (q, _bc) =
+            del_geo_core::tri3::intersection_plane_of_tri3_against_line(p0, p1, p2, ray_org, ray_dir);
         let dndcdq = del_geo_core::mat4_col_major::jacobian_transform(transform_world2ndc, &q);
         let dndcdq_t = del_geo_core::mat3_col_major::transpose(&dndcdq);
         let dldw_q = del_geo_core::mat3_col_major::mult_vec(&dndcdq_t, &dldw_ndc);
@@ -130,11 +129,9 @@ pub fn pix2depth_from_pix2tri(
                 transform_ndc2world,
             );
         let tri = crate::trimesh3::to_tri3(tri2vtx, vtx2xyz, i_tri as usize);
-        let (coeff, _bc) = del_geo_core::tri3::intersection_against_line(
+        let (pos_world, _bc) = del_geo_core::tri3::intersection_plane_of_tri3_against_line(
             tri.p0, tri.p1, tri.p2, &ray_org, &ray_dir,
-        )
-        .unwrap();
-        let pos_world = del_geo_core::vec3::axpy(coeff, &ray_dir, &ray_org);
+        );
         let (pos_ndc, _) =
             del_geo_core::mat4_col_major::transform_homogeneous(&transform_world2ndc, &pos_world)
                 .unwrap();

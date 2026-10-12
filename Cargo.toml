@@ -37,7 +37,7 @@ del-msh-cpu = {path= "del-msh-cpu" }
 del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for development
-#del-geo-core = { path="../del-geo/del-geo-core"}
+del-geo-core = { path="../del-geo/del-geo-core"}
 # del-canvas = {path="../del-canvas"} # for color map
 
 # for GitHub push
@@ -48,7 +48,7 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for deploy
 # del-cudarc = "=0.1.2"
-del-geo-core = "=0.1.40"
+#del-geo-core = "=0.1.40"
 del-canvas = "0.1.11"
 
 
