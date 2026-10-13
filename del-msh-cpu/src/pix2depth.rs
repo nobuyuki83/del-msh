@@ -254,7 +254,7 @@ fn test_depthmap() {
             &bvhnodes,
             &bvhnode2aabb,
         );
-        pix2depth.iter_mut().for_each(|v| *v = (*v) + 0.0);
+        pix2depth.iter_mut().for_each(|v| *v += 0.0);
         del_canvas::write_png_from_float_image(
             path_dir_out.join(format!("trimesh3_raycast_depth_{i_case}.png")),
             img_shape,

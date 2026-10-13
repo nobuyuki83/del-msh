@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 use del_gl_core::gl;
 
 struct MyViewTrg {

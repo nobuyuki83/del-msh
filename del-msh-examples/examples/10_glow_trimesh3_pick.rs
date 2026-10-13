@@ -54,7 +54,7 @@ impl MyApp {
                 tri2vtx.as_chunks::<3>().0,
                 vtx2xyz.len() / 3,
             );
-            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
+            drawer_mesh.set_vtx2xyz(gl, vtx2xyz.as_flattened(), 3);
             drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
             drawer_mesh.add_elem2vtx(gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh
@@ -63,11 +63,11 @@ impl MyApp {
             let mut drawer_sphere = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
             drawer_sphere.compile_shader(gl);
             let trimesh3 = del_msh_cpu::trimesh3_primitive::sphere_yup::<u32, f32>(0.1, 32, 32);
-            drawer_sphere.set_vtx2xyz(gl, &trimesh3.vtx2xyz.as_flattened(), 3);
+            drawer_sphere.set_vtx2xyz(gl, trimesh3.vtx2xyz.as_flattened(), 3);
             drawer_sphere.add_elem2vtx(
                 gl,
                 glow::TRIANGLES,
-                &trimesh3.tri2vtx.as_flattened(),
+                trimesh3.tri2vtx.as_flattened(),
                 [1.0, 0.5, 0.5],
             );
             drawer_sphere

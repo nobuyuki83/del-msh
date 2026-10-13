@@ -325,7 +325,6 @@ fn test_voronoi_concave() {
         [0.0, 1.0],
     ];
     let site2xy = crate::polyloop2::poisson_disk_sampling(&vtxl2xy, 0.15, 30, &mut reng);
-    let num_site = site2xy.len();
     {
         // save boundary loop and input points
         let num_vtxl = vtxl2xy.len();
@@ -349,8 +348,8 @@ fn test_voronoi_concave() {
         // write each cell
         let mut edge2vtxo: Vec<[usize; 2]> = vec![];
         let mut vtxo2xy: Vec<[f32; 2]> = vec![];
-        for i_site in 0..num_site {
-            let vtxc2xy = &site2cell[i_site].vtx2xy;
+        for cell in site2cell.iter() {
+            let vtxc2xy = &cell.vtx2xy;
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len());
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy);
         }
@@ -396,8 +395,8 @@ fn test_voronoi_convex() {
         // write each cell
         let mut edge2vtxo: Vec<[usize; 2]> = vec![];
         let mut vtxo2xy: Vec<[f32; 2]> = vec![];
-        for i_site in 0..num_site {
-            let vtxc2xy = &site2cell[i_site].vtx2xy;
+        for cell in site2cell.iter() {
+            let vtxc2xy = &cell.vtx2xy;
             let edge2vtxc = crate::edge2vtx::from_polyloop(vtxc2xy.len());
             crate::uniform_mesh::merge(&mut edge2vtxo, &mut vtxo2xy, &edge2vtxc, vtxc2xy);
         }
@@ -409,9 +408,9 @@ fn test_voronoi_convex() {
         );
     }
     // check if the info and the coordinates of vtxc is OK
-    for i_site in 0..num_site {
-        let vtxc2xy = &site2cell[i_site].vtx2xy;
-        let vtxc2info = &site2cell[i_site].vtx2info;
+    for cell in site2cell.iter() {
+        let vtxc2xy = &cell.vtx2xy;
+        let vtxc2info = &cell.vtx2info;
         for (i_vtxc, info) in vtxc2info.iter().enumerate() {
             let cc0 = position_of_voronoi_vertex(info, &vtxl2xy, &site2xy);
             let cc1 = &vtxc2xy[i_vtxc];
@@ -477,8 +476,7 @@ fn test_voronoi_sites_on_edge() {
     let vedge2pnt = {
         let mut vedge2pnt = vec![0usize; 0];
         for (i_tri, node2triedge) in tri2triedge.iter().enumerate() {
-            for i_node in 0..3 {
-                let i_triedge = node2triedge[i_node];
+            for &i_triedge in node2triedge.iter() {
                 if i_triedge <= i_tri {
                     continue;
                 }
@@ -493,8 +491,7 @@ fn test_voronoi_sites_on_edge() {
         );
         let num_tri = tri2vtx.len();
         for (i_bedge, node2bedge) in bedge2bedge.iter().enumerate() {
-            for i_node in 0..2 {
-                let j_bedge = node2bedge[i_node];
+            for &j_bedge in node2bedge.iter() {
                 if i_bedge > j_bedge {
                     continue;
                 }

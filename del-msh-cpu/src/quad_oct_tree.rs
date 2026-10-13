@@ -566,7 +566,7 @@ fn test_octree_2d() {
             let mut idx2morton = vec![0u32; num_idx];
             for idx in 0..num_idx as usize {
                 let jdx = idx2jdx_offset[idx] as usize;
-                assert!(jdx < num_vtx as usize);
+                assert!(jdx < num_vtx);
                 idx2morton[idx] = jdx2morton[jdx];
             }
             (idx2morton, idx2jdx_offset)
@@ -671,7 +671,7 @@ fn test_octree_3d() {
             let mut idx2morton = vec![0u32; num_idx];
             for idx in 0..num_idx as usize {
                 let jdx = idx2jdx_offset[idx] as usize;
-                assert!(jdx < num_vtx as usize);
+                assert!(jdx < num_vtx);
                 idx2morton[idx] = jdx2morton[jdx];
             }
             (idx2morton, idx2jdx_offset)

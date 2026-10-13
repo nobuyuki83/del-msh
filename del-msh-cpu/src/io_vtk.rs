@@ -268,8 +268,8 @@ mod test {
             .unwrap();
         let vtx2data = {
             let mut vtx2data = Vec::<f64>::with_capacity(vtx2xyz.len());
-            for i_vtx in 0..vtx2xyz.len() {
-                let z = vtx2xyz[i_vtx][2];
+            for xyz in vtx2xyz.iter() {
+                let z = xyz[2];
                 vtx2data.push(z.powi(3));
             }
             vtx2data

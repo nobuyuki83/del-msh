@@ -80,7 +80,7 @@ mod tests {
         let (oelem2ldx_offset, ldx2vtx) = {
             // convert tet/prism mixed mesh to polyhedral mesh
             let (elem2idx_offset, idx2vtx) = {
-                let prism2vtx = vec![];
+                let prism2vtx: [usize; 0] = [];
                 let num_elem = tet2vtx.len() / 4 + pyrmd2vtx.len() + prism2vtx.len() / 6;
                 let mut elem2idx_offset = vec![0usize; num_elem + 1];
                 let mut idx2vtx =
@@ -90,7 +90,7 @@ mod tests {
                     tet2vtx.as_chunks::<4>().0,
                     &pyrmd2vtx,
                     prism2vtx.as_chunks::<6>().0,
-                    &vec![],
+                    &[],
                     &mut elem2idx_offset,
                     &mut idx2vtx,
                 );
@@ -161,19 +161,19 @@ mod tests {
                 &mut file,
                 tet2vtx.as_chunks::<4>().0,
                 &pyrmd2vtx,
-                &vec![],
-                &vec![],
+                &[],
+                &[],
             )
             .unwrap();
         }
 
         let (nvtx2xyz, vtx2nvtx) = {
-            let ovtx2vtxs: std::collections::HashSet<usize> = tri2vtx.iter().map(|&i| i).collect();
+            let ovtx2vtxs: std::collections::HashSet<usize> = tri2vtx.iter().copied().collect();
             assert_eq!(
                 ovtx2vtxs.len(),
                 ldx2vtx
                     .iter()
-                    .map(|&i| i)
+                    .copied()
                     .collect::<std::collections::HashSet<usize>>()
                     .len()
             );

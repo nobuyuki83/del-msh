@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
     del_msh_cpu::io_wavefront_obj::save_tri2vtx_vtx2xyz(
         "target/del_msh_0__out.obj",
         &tri2vtx,
-        &vtx2xyz_out.as_chunks::<3>().0,
+        vtx2xyz_out.as_chunks::<3>().0,
     )?;
     Ok(())
 }

@@ -224,12 +224,11 @@ fn hoge() {
     let cent = [0., 0., 0.];
     let corner_dist = {
         let mut corner_dist = [0f64; 8];
-        for i_node in 0..8 {
+        for (i_node, dist) in corner_dist.iter_mut().enumerate() {
             let d = del_geo_core::hex::HEX_SIGN[i_node];
             use del_geo_core::vec3::Vec3;
             let pos = d.scale(hw).add(&cent);
-            let dist = sphere.sdf(pos[0], pos[1], pos[2]);
-            corner_dist[i_node] = dist;
+            *dist = sphere.sdf(pos[0], pos[1], pos[2]);
         }
         corner_dist
     };

@@ -123,8 +123,8 @@ fn test_convex_hull2() {
             let boundary_point_idx =
                 std::collections::BTreeSet::<usize>::from_iter(polyloop2vtx.clone());
             let polygon: Vec<[_; 2]> = polyloop2vtx.iter().map(|&i_vtx| vtx2xy[i_vtx]).collect();
-            for i_vtx in 0..vtx2xy.len() {
-                if boundary_point_idx.get(&i_vtx).is_some() {
+            for (i_vtx, _) in vtx2xy.iter().enumerate() {
+                if boundary_point_idx.contains(&i_vtx) {
                     continue;
                 }
                 let wn = crate::polyloop2::winding_number(&polygon, &vtx2xy[i_vtx]);

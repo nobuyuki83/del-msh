@@ -3,7 +3,8 @@ mod tests {
 
     const IMG_RES: usize = 128;
 
-    fn geometry(eps: f32) -> (Vec<[u32; 3]>, Vec<[f32; 3]>, [f32; 16], Vec<[f32; 3]>) {
+    type Geometry = (Vec<[u32; 3]>, Vec<[f32; 3]>, [f32; 16], Vec<[f32; 3]>);
+    fn geometry(eps: f32) -> Geometry {
         let (tri2vtx, vtx2xyz) =
             del_msh_cpu::trimesh3_primitive::torus_zup::<u32, f32>(1.3, 0.4, 64, 32);
         let vtx2xyz = {
@@ -27,15 +28,14 @@ mod tests {
         let pix2rgb_diff: Vec<_> = pix2grad
             .iter()
             .flat_map(|&grad| {
-                let c = del_canvas::colormap::apply_colormap(
+                del_canvas::colormap::apply_colormap(
                     grad,
                     //-0.5,
                     -(IMG_RES as f32) * 0.5,
                     //0.5,
                     (IMG_RES as f32) * 0.5,
                     del_canvas::colormap::COLORMAP_BWR,
-                );
-                c
+                )
             })
             .collect();
         del_canvas::write_png_from_float_image(path, img_shape, 3, &pix2rgb_diff).unwrap()
@@ -74,7 +74,7 @@ mod tests {
                 &mode,
             );
             del_canvas::write_png_from_float_image(
-                &path_dir_out.join(format!(
+                path_dir_out.join(format!(
                     "differentiable_rasterization_ren_finitesample_{}.png",
                     str_mode
                 )),
@@ -390,7 +390,7 @@ mod tests {
             let dpix: f32 = dxyz
                 .iter()
                 .zip(dldw_vtx2xyz.iter())
-                .map(|(v0, v1)| del_geo_core::vec3::dot(&v0, v1))
+                .map(|(v0, v1)| del_geo_core::vec3::dot(v0, v1))
                 .sum();
             let c = del_canvas::colormap::apply_colormap(
                 dpix,

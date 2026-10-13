@@ -584,6 +584,7 @@ pub fn bwd(
 mod tests {
     use crate::trimesh3_raycast::ScalarRender;
 
+    #[allow(clippy::too_many_arguments)]
     fn finite_difference<T>(
         tri2vtx: &[[u32; 3]],
         vtx2xyz: &[[f32; 3]],
@@ -599,10 +600,10 @@ mod tests {
         // finite difference occlusion
         type Sampler = crate::trimesh3_raycast::BoxPixelSampler<rand_chacha::ChaChaRng>;
         let (pix2diff, pix2val0) = crate::trimesh3_raycast::finite_difference::<TriVal, Sampler>(
-            &tri2vtx,
-            &vtx2xyz,
-            &vtx2uvw,
-            &transform_world2ndc,
+            tri2vtx,
+            vtx2xyz,
+            vtx2uvw,
+            transform_world2ndc,
             img_shape,
             &TriVal,
             num_sample,
@@ -621,14 +622,14 @@ mod tests {
             .collect::<Vec<_>>();
         let path_dir = std::path::Path::new("../target/out_del_msh_cpu");
         del_canvas::write_png_from_float_image(
-            path_dir.join(format!("edgegrad_pix2val_fd.png")),
+            path_dir.join("edgegrad_pix2val_fd.png"),
             img_shape,
             3,
             pix2rgb.as_flattened(),
         )
         .unwrap();
         del_canvas::write_png_from_float_image(
-            path_dir.join(format!("edgegrad_pix2val.png")),
+            path_dir.join("edgegrad_pix2val.png"),
             img_shape,
             1,
             &pix2val0,
@@ -643,7 +644,7 @@ mod tests {
     {
         fn fwd(&self, _: &[T; 3], i_tri: u32, _: &[[u32; 3]], _: &[[T; 3]], _: &[T; 16]) -> T {
             let one = T::one();
-            if i_tri % 2 == 0 {
+            if i_tri.is_multiple_of(2) {
                 one
             } else {
                 one / (one + one)
@@ -779,7 +780,7 @@ mod tests {
                 })
                 .collect::<Vec<_>>();
             del_canvas::write_png_from_float_image(
-                path_dir_out.join(format!("edgegrad_pix2dval_edgegrad.png")),
+                path_dir_out.join("edgegrad_pix2dval_edgegrad.png"),
                 img_shape,
                 3,
                 pix2rgb.as_flattened(),

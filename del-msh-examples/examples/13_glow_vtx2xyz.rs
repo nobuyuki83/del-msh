@@ -46,7 +46,7 @@ impl MyApp {
         //let mut drawer = del_glow::drawer_elem2vtx_vtx2xyz::Drawer::new();
         let mut drawer = del_glow::drawer_vtx2xyz::Drawer::new();
         drawer.compile_shader(gl);
-        drawer.set_vtx2xyz(gl, &vtx2xyz.as_flattened());
+        drawer.set_vtx2xyz(gl, vtx2xyz.as_flattened());
         Self {
             drawer: Arc::new(Mutex::new(drawer)),
             // mat_modelview: del_geo_core::mat4_col_major::from_identity(),

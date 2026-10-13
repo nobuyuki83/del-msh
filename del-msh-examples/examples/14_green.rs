@@ -7,7 +7,7 @@ fn hoge(path: String, vtx2xyz: &[[f32; 3]], vt2lhs0: &[[f32; 3]]) {
         .collect::<Vec<usize>>();
     let mut vtxe2xyz = vec![0f32; vtx2xyz.len() * 6];
     for i_vtx in 0..num_vtx {
-        vtxe2xyz[i_vtx * 6 + 0] = vtx2xyz[i_vtx][0];
+        vtxe2xyz[i_vtx * 6] = vtx2xyz[i_vtx][0];
         vtxe2xyz[i_vtx * 6 + 1] = vtx2xyz[i_vtx][1];
         vtxe2xyz[i_vtx * 6 + 2] = vtx2xyz[i_vtx][2];
         vtxe2xyz[i_vtx * 6 + 3] = vtx2xyz[i_vtx][0] + vt2lhs0[i_vtx][0];
@@ -37,7 +37,7 @@ fn main() {
             .collect();
         for _iter in 0..500 {
             let i_vtx = rng.random_range(0..vtx2xyz.len() / 3);
-            vtx2xyz.push(vtx2xyz[i_vtx * 3 + 0]);
+            vtx2xyz.push(vtx2xyz[i_vtx * 3]);
             vtx2xyz.push(vtx2xyz[i_vtx * 3 + 1]);
             vtx2xyz.push(vtx2xyz[i_vtx * 3 + 2]);
         }
@@ -96,16 +96,13 @@ fn main() {
             let num_idx = *jdx2idx.last().unwrap() as usize + 1;
             let mut idx2jdx_offset = vec![0u32; num_idx + 1];
             del_msh_cpu::map_idx::inverse(&jdx2idx, &mut idx2jdx_offset);
-            let idx2morton = {
-                let mut idx2morton = vec![0u32; num_idx];
-                for idx in 0..num_idx as usize {
-                    let jdx = idx2jdx_offset[idx] as usize;
-                    assert!(jdx < num_vtx as usize);
-                    idx2morton[idx] = jdx2morton[jdx];
-                }
-                (idx2morton, idx2jdx_offset)
-            };
-            idx2morton
+            let mut idx2morton = vec![0u32; num_idx];
+            for idx in 0..num_idx as usize {
+                let jdx = idx2jdx_offset[idx] as usize;
+                assert!(jdx < num_vtx);
+                idx2morton[idx] = jdx2morton[jdx];
+            }
+            (idx2morton, idx2jdx_offset)
         };
         let (onode2idx_tree, idx2onode, onode2center, onode2depth) = {
             let (onode2idx_tree, onode2center, onode2depth, idx2onode, idx2center) =

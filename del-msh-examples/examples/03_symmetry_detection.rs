@@ -102,7 +102,7 @@ pub fn sym_detector(
         };
         num_sample
     ];
-    for i_sample in 0..num_sample {
+    for sample in samples.iter_mut() {
         let r0 = rng.random::<f32>();
         let r1 = rng.random::<f32>();
         let (i_tri, r0, r1) = del_msh_cpu::trimesh::sample_uniformly(&tri2cumsumarea, r0, r1);
@@ -115,19 +115,19 @@ pub fn sym_detector(
         );
         let n0 = del_msh_cpu::trimesh3::to_tri3(tri2vtx.as_chunks::<3>().0, vtx2xyz, i_tri)
             .unit_normal();
-        samples[i_sample].xyz.copy_from_slice(&p0);
-        samples[i_sample].nrm.copy_from_slice(&n0);
-        samples[i_sample].i_tri = i_tri;
+        sample.xyz.copy_from_slice(&p0);
+        sample.nrm.copy_from_slice(&n0);
+        sample.i_tri = i_tri;
     }
     let mut pair2trans =
         Vec::<([f32; 12], usize, usize)>::with_capacity(num_sample * (num_sample - 1));
-    for i_sample in 0..num_sample {
-        let p_i = samples[i_sample].xyz;
-        let n_i = samples[i_sample].nrm;
-        for j_sample in i_sample + 1..num_sample {
+    for (i_sample, s_i) in samples.iter().enumerate() {
+        let p_i = s_i.xyz;
+        let n_i = s_i.nrm;
+        for (j_sample, s_j) in samples.iter().enumerate().skip(i_sample + 1) {
             use del_geo_core::mat4_col_major;
-            let p_j = samples[j_sample].xyz;
-            let n_j = samples[j_sample].nrm;
+            let p_j = s_j.xyz;
+            let n_j = s_j.nrm;
             let pm = del_geo_core::edge3::position_from_ratio(&p_i, &p_j, 0.5);
             use del_geo_core::vec3::Vec3;
             let nrm = p_j.sub(&p_i).normalize();
@@ -201,7 +201,7 @@ pub fn sym_detector(
             tri2vtx,
             vtx2xyz,
             &cur_trans,
-            &tri2tri.as_flattened(),
+            tri2tri.as_flattened(),
         );
         extract_triangles_in_symmetry(
             &mut tri2flg,
@@ -209,7 +209,7 @@ pub fn sym_detector(
             tri2vtx,
             vtx2xyz,
             &cur_trans,
-            &tri2tri.as_flattened(),
+            tri2tri.as_flattened(),
         );
         // let num_tri = tri2flg.iter().filter(|&v| *v == 2 ).count();
         let tris: Vec<_> = tri2flg

@@ -278,7 +278,7 @@ fn test_nearest_to_fixed_cell() {
     use rand::SeedableRng;
     let rng = &mut rand::rngs::StdRng::seed_from_u64(0);
     for _i_fix in 0..n_fix {
-        let i_pix = rng.random_range(0..(img_shape.0 * img_shape.1) as usize);
+        let i_pix = rng.random_range(0..(img_shape.0 * img_shape.1));
         pix2rgb[i_pix * 3] = rng.random();
         pix2rgb[i_pix * 3 + 1] = rng.random();
         pix2rgb[i_pix * 3 + 2] = rng.random();

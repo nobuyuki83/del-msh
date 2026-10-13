@@ -180,7 +180,7 @@ fn main() -> anyhow::Result<()> {
         &img_data,
         &transform_world2ndc,
         cedge2vtx.as_flattened(),
-        &trimesh3.vtx2xyz.as_flattened(),
+        trimesh3.vtx2xyz.as_flattened(),
     )?;
     {
         // compute loss for random target image

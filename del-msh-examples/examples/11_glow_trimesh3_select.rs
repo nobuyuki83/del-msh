@@ -73,7 +73,7 @@ impl MyApp {
                 tri2vtx.as_chunks::<3>().0,
                 vtx2xyz.len(),
             );
-            drawer_mesh.set_vtx2xyz(gl, &vtx2xyz.as_flattened(), 3);
+            drawer_mesh.set_vtx2xyz(gl, vtx2xyz.as_flattened(), 3);
             drawer_mesh.add_elem2vtx(gl, glow::LINES, edge2vtx.as_flattened(), [0.0, 0.0, 0.0]);
             // drawer_mesh.add_element(&gl, glow::TRIANGLES, &tri2vtx, [0.8, 0.8, 0.9]);
             drawer_mesh

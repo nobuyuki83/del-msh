@@ -56,8 +56,7 @@ mod tests {
         myu: f64,
     ) -> f64 {
         let mut eng = 0.0;
-        for i_tri in 0..tri2vtx.len() {
-            let node2vtx = &tri2vtx[i_tri];
+        for node2vtx in tri2vtx.iter() {
             let p0 = &vtx2xy_ini[node2vtx[0]];
             let p1 = &vtx2xy_ini[node2vtx[1]];
             let p2 = &vtx2xy_ini[node2vtx[2]];
@@ -67,7 +66,7 @@ mod tests {
                 let q0 = &vtx2xy_def[node2vtx[0]];
                 let q1 = &vtx2xy_def[node2vtx[1]];
                 let q2 = &vtx2xy_def[node2vtx[2]];
-                let u = [q0.sub(&p0), q1.sub(&p1), q2.sub(&p2)];
+                let u = [q0.sub(p0), q1.sub(p1), q2.sub(p2)];
                 let er = mult_emat_evec(&emat, &u);
                 let e_eng = er[0].dot(&u[0]) + er[1].dot(&u[1]) + er[2].dot(&u[2]);
                 let e_eng = e_eng * 0.5;
@@ -109,14 +108,13 @@ mod tests {
         let mut bsm = {
             let vtx2vtx = crate::vtx2vtx::from_uniform_mesh(&tri2vtx, num_vtx, false);
             let num_idx = vtx2vtx.1.len();
-            let bsm = crate::sparse_solver::sparse_square::MatrixOwned {
+            crate::sparse_solver::sparse_square::MatrixOwned {
                 num_blk: num_vtx,
                 row2idx: vtx2vtx.0,
                 idx2col: vtx2vtx.1,
                 idx2val: vec![[0.; 4]; num_idx],
                 row2val: vec![[0.; 4]; num_vtx],
-            };
-            bsm
+            }
         };
         let mut vtx2xy_def = vtx2xy_ini.clone();
         //
@@ -148,8 +146,7 @@ mod tests {
         {
             // merge
             let mut row2idx = vec![usize::MAX; num_vtx];
-            for i_tri in 0..tri2vtx.len() {
-                let node2vtx = &tri2vtx[i_tri];
+            for node2vtx in tri2vtx.iter() {
                 let p0 = &vtx2xy_ini[node2vtx[0]];
                 let p1 = &vtx2xy_ini[node2vtx[1]];
                 let p2 = &vtx2xy_ini[node2vtx[2]];
@@ -159,7 +156,7 @@ mod tests {
                     let q0 = &vtx2xy_def[node2vtx[0]];
                     let q1 = &vtx2xy_def[node2vtx[1]];
                     let q2 = &vtx2xy_def[node2vtx[2]];
-                    let u = [q0.sub(&p0), q1.sub(&p1), q2.sub(&p2)];
+                    let u = [q0.sub(p0), q1.sub(p1), q2.sub(p2)];
                     let er = mult_emat_evec(&emat, &u);
                     r_vec[node2vtx[0]].sub_in_place(&er[0]);
                     r_vec[node2vtx[1]].sub_in_place(&er[1]);
@@ -174,7 +171,7 @@ mod tests {
                 for i_vtx in 0..num_vtx {
                     let p = &vtx2xy_ini[i_vtx];
                     let q = &vtx2xy_def[i_vtx];
-                    u[i_vtx] = del_geo_core::vec2::sub(&q, &p);
+                    u[i_vtx] = del_geo_core::vec2::sub(q, p);
                 }
                 let mut au = vec![[0f64; 2]; num_vtx];
                 bsm.mult_vec::<2>(&mut au, 0.0, 1.0, &u); // {Ap_vec} = [mat]*{p_vec}
@@ -200,7 +197,7 @@ mod tests {
         CG,
         PcgIlu0,
         PcgIluInf,
-        DENSE,
+        Dense,
     }
 
     fn solve_and_check(sol_type: SolverType, prob: &Problem) -> (f64, f64, usize) {
@@ -226,7 +223,7 @@ mod tests {
                 );
                 (u_vec, hist.len())
             }
-            SolverType::DENSE => {
+            SolverType::Dense => {
                 let mut prec = Preconditioner::<[f64; 4]>::new();
                 prec.initialize_full(num_vtx);
                 copy_value(&mut prec, &prob.bsm);
@@ -320,7 +317,7 @@ mod tests {
         assert!(res_diff < 1.0e-15);
         assert!(eng1 < 1.0e-29);
         assert_eq!(num_iter, 2);
-        let (res_diff, eng1, num_iter) = solve_and_check(SolverType::DENSE, &prob);
+        let (res_diff, eng1, num_iter) = solve_and_check(SolverType::Dense, &prob);
         assert!(res_diff < 1.0e-15);
         assert!(eng1 < 1.0e-29);
         assert_eq!(num_iter, 1);
