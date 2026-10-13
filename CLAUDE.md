@@ -13,3 +13,8 @@ When asked to commit, follow these steps in order:
    - First line: a concise summary of about 50 characters, in English, imperative mood
      (e.g. "Add BVH refit for deformed meshes").
    - If needed, add a blank line followed by bullet points explaining what changed and why.
+
+## Pushing changes
+
+1. First execute the procedure in "Committing changes".
+2. Run `git push`.
