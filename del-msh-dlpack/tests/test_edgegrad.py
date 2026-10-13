@@ -117,7 +117,7 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
 
         # ラスタライズ側はこのビューの逆変換行列を受け取る。
         transform_ndc2world = torch.inverse(transform_world2ndc).contiguous()
-        bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
+        # bvhnodes, bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(tri2vtx, vtx2xyz)
 
         transform_ndc2pix = Mat44.from_transform_ndc2pix(
             (viewport[2], viewport[3]), device=device
