@@ -16,5 +16,9 @@ When asked to commit, follow these steps in order:
 
 ## Pushing changes
 
+**Do not push unless the user explicitly says "push".**
+
+When asked to push:
+
 1. First execute the procedure in "Committing changes".
 2. Run `git push`.
