@@ -173,8 +173,16 @@ pub fn pix2tri_by_rasterization(
                 builder.arg_u32(img_w as u32);
                 builder.arg_u32(img_h as u32);
                 builder.arg_data(&transform_world2ndc.data);
+                /*
                 builder
                     .launch_kernel(func, LaunchConfig::for_num_elems(num_tri as u32))
+                    .unwrap();
+                 */
+                builder
+                    .launch_kernel(
+                        func,
+                        LaunchConfig::for_num_elems_with_num_threads(num_tri as u32, 256),
+                    )
                     .unwrap();
             }
             // Kernel 3: unpack pix2packed → pix2tri, pix2depth.
