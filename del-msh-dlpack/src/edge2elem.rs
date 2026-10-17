@@ -73,7 +73,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_edge as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_edge as u32),
                 )
                 .unwrap();
         }

@@ -80,7 +80,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 )
                 .unwrap();
                 let num_bnode = num_idx as u32 - 1;
-                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode);
+                let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_bnode);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_bnode);
                 builder.arg_data(&idx2morton.data);
@@ -100,7 +100,8 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                     "bnode2isonode_and_idx2bnode",
                 )
                 .unwrap();
-                let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_bnode as u32);
+                let cfg =
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_bnode as u32);
                 let mut builder = del_cudarc_sys::Builder::new(stream);
                 builder.arg_u32(num_bnode as u32);
                 builder.arg_data(&bnodes.data);
@@ -212,7 +213,7 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
                 "make_tree_from_binary_radix_tree",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);
             builder.arg_data(&bnodes.data);
@@ -285,7 +286,7 @@ pub fn quad_oct_tree_aggregate(
                 "aggregate",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_idx as u32);
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_idx as u32);
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);
             builder.arg_u32(num_vdim as u32);

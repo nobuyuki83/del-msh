@@ -57,7 +57,7 @@ pub fn trimesh3_tri2normal(
             builder
                 .launch_kernel(
                     function,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_tri as u32),
                 )
                 .unwrap();
         }
@@ -135,7 +135,7 @@ pub fn trimesh3_bwd_tri2normal(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::for_num_elems(num_tri as u32),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_tri as u32),
                     )
                     .unwrap();
             }

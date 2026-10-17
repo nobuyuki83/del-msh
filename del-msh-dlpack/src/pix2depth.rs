@@ -85,7 +85,7 @@ pub fn pix2depth_update(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
                 )
                 .unwrap();
         }
@@ -179,7 +179,7 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
                 )
                 .unwrap();
         }

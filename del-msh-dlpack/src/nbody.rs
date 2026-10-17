@@ -83,7 +83,9 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                                num_wtx as u32,
+                            ),
                         )
                         .unwrap();
                 }
@@ -108,7 +110,9 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                                num_wtx as u32,
+                            ),
                         )
                         .unwrap();
                 }
@@ -285,14 +289,16 @@ fn filter_with_acceleration(
                     builder
                         .launch_kernel(
                             func,
-                            del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32),
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                                num_wtx as u32,
+                            ),
                         )
                         .unwrap();
                 }
                 del_msh_cpu::nbody::NBodyModel::Elastic {
                     nu, eps: epsilon, ..
                 } => {
-                    //let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_wtx as u32);
+                    //let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_wtx as u32);
                     let cfg = {
                         const NUM_THREADS: u32 = 128;
                         let num_blocks = (num_wtx as u32).div_ceil(NUM_THREADS);

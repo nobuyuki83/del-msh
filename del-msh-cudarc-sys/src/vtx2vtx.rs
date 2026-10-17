@@ -43,7 +43,10 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(vtx2nvtx.dptr);
         builder.arg_dptr(jdx2buff.dptr);
         builder
-            .launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32))
+            .launch_kernel(
+                func,
+                LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+            )
             .unwrap();
     }
     let vtx2idx = CuVec::<u32>::with_capacity(vtx2nvtx.n).unwrap();
@@ -77,7 +80,10 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(jdx2buff.dptr);
         builder.arg_dptr(idx2vtx.dptr);
         builder
-            .launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32))
+            .launch_kernel(
+                func,
+                LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+            )
             .unwrap();
     }
     (vtx2idx, idx2vtx)
@@ -116,6 +122,9 @@ pub fn multiply_graph_laplacian(
     builder.arg_dptr(vtx2rhs.dptr);
     builder.arg_dptr(vtx2lhs.dptr);
     builder
-        .launch_kernel(func, LaunchConfig::for_num_elems(num_vtx as u32))
+        .launch_kernel(
+            func,
+            LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+        )
         .unwrap();
 }

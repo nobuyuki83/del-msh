@@ -54,7 +54,7 @@ pub fn grid2_nearest_to_fixed_cell(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_cell = (img_w * img_h) as u32;
-            let cfg = del_cudarc_sys::LaunchConfig::for_num_elems(num_cell);
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell);
             let fatbin = del_msh_cuda_kernels::get("grid2_partially_fixed").unwrap();
             let fn_init = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh__grid2_partially_fixed",
@@ -187,7 +187,7 @@ pub fn grid2_smooth_gauss_seidel(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::for_num_elems(num_cell),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell),
                     )
                     .unwrap();
             }
@@ -263,7 +263,7 @@ pub fn grid2_smooth_gauss_seidel_with_radius(
                 b.arg_dptr(tmp.dptr); // pos (write)
                 b.launch_kernel(
                     function,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_cell),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell),
                 )
                 .unwrap();
             }

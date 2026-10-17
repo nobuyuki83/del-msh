@@ -83,7 +83,7 @@ pub fn pix2tri_by_raycast(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
                 )
                 .unwrap();
         }
@@ -154,7 +154,10 @@ pub fn pix2tri_by_rasterization(
                 builder.arg_dptr(pix2packed.dptr);
                 builder.arg_u32(num_pix as u32);
                 builder
-                    .launch_kernel(func, LaunchConfig::for_num_elems(num_pix as u32))
+                    .launch_kernel(
+                        func,
+                        LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                    )
                     .unwrap();
             }
             // Kernel 2: rasterize triangles into pix2packed using atomicMax.
@@ -175,13 +178,16 @@ pub fn pix2tri_by_rasterization(
                 builder.arg_data(&transform_world2ndc.data);
                 /*
                 builder
-                    .launch_kernel(func, LaunchConfig::for_num_elems(num_tri as u32))
+                    .launch_kernel(func, LaunchConfig::suggest_config_for_num_elem(num_tri as u32))
                     .unwrap();
                  */
                 builder
                     .launch_kernel(
                         func,
-                        LaunchConfig::for_num_elems_with_num_threads(num_tri as u32, 256),
+                        LaunchConfig::suggest_config_for_num_elem_with_num_threads(
+                            num_tri as u32,
+                            256,
+                        ),
                     )
                     .unwrap();
             }
@@ -199,7 +205,10 @@ pub fn pix2tri_by_rasterization(
                 builder.arg_dptr(pix2packed.dptr);
                 builder.arg_u32(num_pix as u32);
                 builder
-                    .launch_kernel(func, LaunchConfig::for_num_elems(num_pix as u32))
+                    .launch_kernel(
+                        func,
+                        LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                    )
                     .unwrap();
             }
             // pix2packed drops here and frees device memory.
@@ -282,7 +291,7 @@ pub fn pix2tri_interpolate(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
                 )
                 .unwrap();
         }
@@ -377,7 +386,7 @@ pub fn pix2tri_interpolate_bwd(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::for_num_elems(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
                 )
                 .unwrap();
         }

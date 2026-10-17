@@ -28,7 +28,10 @@ pub fn from_uniform_mesh(
         builder.arg_u32(num_node as u32);
         builder.arg_dptr(vtx2valence.dptr);
         builder
-            .launch_kernel(func, LaunchConfig::for_num_elems(num_elem as u32))
+            .launch_kernel(
+                func,
+                LaunchConfig::suggest_config_for_num_elem(num_elem as u32),
+            )
             .unwrap();
     }
     let vtx2idx0 = CuVec::<u32>::with_capacity(vtx2valence.n).unwrap();
@@ -58,7 +61,10 @@ pub fn from_uniform_mesh(
         builder.arg_dptr(vtx2idx0.dptr);
         builder.arg_dptr(idx2elem.dptr);
         builder
-            .launch_kernel(func, LaunchConfig::for_num_elems(num_elem as u32))
+            .launch_kernel(
+                func,
+                LaunchConfig::suggest_config_for_num_elem(num_elem as u32),
+            )
             .unwrap();
     }
     // dbg!(vtx2idx0.copy_to_host());
