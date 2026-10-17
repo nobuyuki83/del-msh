@@ -95,7 +95,13 @@ pub fn edge2vtx_contour_for_triangle_mesh(
                 builder
                     .launch_kernel(
                         func,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_edge as u32),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            num_edge as u32,
+                            func,
+                            0,
+                            0,
+                        )
+                        .unwrap(),
                     )
                     .unwrap();
             }
@@ -166,7 +172,13 @@ pub fn edge2vtx_from_vtx2vtx(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_vtx as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }

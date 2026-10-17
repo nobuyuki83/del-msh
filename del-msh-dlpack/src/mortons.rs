@@ -68,7 +68,13 @@ fn mortons_vtx2morton_from_vtx2co(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_vtx as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }
@@ -128,7 +134,10 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
                 builder
                     .launch_kernel(
                         func,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(n as u32),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            n as u32, func, 0, 0,
+                        )
+                        .unwrap(),
                     )
                     .unwrap();
             }

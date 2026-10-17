@@ -1,4 +1,4 @@
-use del_cudarc_sys::{cu, CuVec, LaunchConfig};
+﻿use del_cudarc_sys::{cu, CuVec, LaunchConfig};
 pub fn from_uniform_mesh(
     stream: cu::CUstream,
     elem2vtx: &CuVec<u32>,
@@ -30,7 +30,7 @@ pub fn from_uniform_mesh(
         builder
             .launch_kernel(
                 func,
-                LaunchConfig::suggest_config_for_num_elem(num_elem as u32),
+                LaunchConfig::suggest_config_for_num_elems(num_elem as u32, func, 0, 0).unwrap(),
             )
             .unwrap();
     }
@@ -63,7 +63,7 @@ pub fn from_uniform_mesh(
         builder
             .launch_kernel(
                 func,
-                LaunchConfig::suggest_config_for_num_elem(num_elem as u32),
+                LaunchConfig::suggest_config_for_num_elems(num_elem as u32, func, 0, 0).unwrap(),
             )
             .unwrap();
     }

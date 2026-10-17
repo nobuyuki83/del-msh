@@ -83,9 +83,13 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                                 num_wtx as u32,
-                            ),
+                                fnc,
+                                0,
+                                0,
+                            )
+                            .unwrap(),
                         )
                         .unwrap();
                 }
@@ -110,9 +114,13 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                                 num_wtx as u32,
-                            ),
+                                fnc,
+                                0,
+                                0,
+                            )
+                            .unwrap(),
                         )
                         .unwrap();
                 }
@@ -289,16 +297,20 @@ fn filter_with_acceleration(
                     builder
                         .launch_kernel(
                             func,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                                 num_wtx as u32,
-                            ),
+                                func,
+                                0,
+                                0,
+                            )
+                            .unwrap(),
                         )
                         .unwrap();
                 }
                 del_msh_cpu::nbody::NBodyModel::Elastic {
                     nu, eps: epsilon, ..
                 } => {
-                    //let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_wtx as u32);
+                    //let cfg = del_cudarc_sys::LaunchConfig::for_num_elems_with_num_threads(num_wtx as u32, 256);
                     let cfg = {
                         const NUM_THREADS: u32 = 128;
                         let num_blocks = (num_wtx as u32).div_ceil(NUM_THREADS);

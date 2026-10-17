@@ -54,7 +54,6 @@ pub fn grid2_nearest_to_fixed_cell(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_cell = (img_w * img_h) as u32;
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell);
             let fatbin = del_msh_cuda_kernels::get("grid2_partially_fixed").unwrap();
             let fn_init = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh__grid2_partially_fixed",
@@ -74,6 +73,15 @@ pub fn grid2_nearest_to_fixed_cell(
                 "nearest_to_fixed_cell_compute_distance",
             )
             .unwrap();
+            let cfg_init =
+                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_init, 0, 0)
+                    .unwrap();
+            let cfg_jfa =
+                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_jfa, 0, 0)
+                    .unwrap();
+            let cfg_dist =
+                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_dist, 0, 0)
+                    .unwrap();
             // Initialize cell2nearest from cell2isfixed
             {
                 let mut b = del_cudarc_sys::Builder::new(stream);
@@ -81,7 +89,7 @@ pub fn grid2_nearest_to_fixed_cell(
                 b.arg_u32(img_h as u32);
                 b.arg_data(&cell2isfixed.data);
                 b.arg_data(&cell2nearest.data);
-                b.launch_kernel(fn_init, cfg).unwrap();
+                b.launch_kernel(fn_init, cfg_init).unwrap();
             }
             // JFA ping-pong: allocate a temp buffer for the second slot
             let tmp = CuVec::<u32>::with_capacity(num_cell as usize).unwrap();
@@ -102,7 +110,7 @@ pub fn grid2_nearest_to_fixed_cell(
                     b.arg_dptr(src_dptr);
                     b.arg_dptr(dst_dptr);
                     b.arg_u32(step);
-                    b.launch_kernel(fn_jfa, cfg).unwrap();
+                    b.launch_kernel(fn_jfa, cfg_jfa).unwrap();
                 }
                 std::mem::swap(&mut src_dptr, &mut dst_dptr);
                 step >>= 1;
@@ -119,7 +127,7 @@ pub fn grid2_nearest_to_fixed_cell(
                 b.arg_u32(img_h as u32);
                 b.arg_data(&cell2nearest.data);
                 b.arg_data(&cell2distance.data);
-                b.launch_kernel(fn_dist, cfg).unwrap();
+                b.launch_kernel(fn_dist, cfg_dist).unwrap();
             }
         }
         _ => {
@@ -187,7 +195,10 @@ pub fn grid2_smooth_gauss_seidel(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            num_cell, function, 0, 0,
+                        )
+                        .unwrap(),
                     )
                     .unwrap();
             }
@@ -263,7 +274,10 @@ pub fn grid2_smooth_gauss_seidel_with_radius(
                 b.arg_dptr(tmp.dptr); // pos (write)
                 b.launch_kernel(
                     function,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_cell),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_cell, function, 0, 0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
             }

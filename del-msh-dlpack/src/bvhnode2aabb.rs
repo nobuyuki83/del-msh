@@ -98,7 +98,13 @@ pub fn bvhnode2aabb_update_aabb(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_elem as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_elem as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }

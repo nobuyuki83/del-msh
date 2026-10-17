@@ -72,7 +72,7 @@ pub fn edgegrad_bwd(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             const BLOCK: u32 = 16;
-            // hedge: grid covers img_w × (img_h - 1)
+            // hedge: grid covers img_w Ã— (img_h - 1)
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::edgegrad",
@@ -102,7 +102,7 @@ pub fn edgegrad_bwd(
                 builder.arg_data(&dldw_pix2val.data);
                 builder.launch_kernel(func, cfg).unwrap();
             }
-            // vedge: grid covers (img_w - 1) × img_h
+            // vedge: grid covers (img_w - 1) Ã— img_h
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::edgegrad",
@@ -339,9 +339,13 @@ pub fn edgegrad_smooth_gradient(
                 "smooth_red_black_gauss_seidel",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                 ((img_h - 1) * img_w) as u32,
-            );
+                func,
+                0,
+                0,
+            )
+            .unwrap();
             for _ in 0..num_iter {
                 for color in [0u32, 1u32] {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -354,9 +358,13 @@ pub fn edgegrad_smooth_gradient(
                     builder.launch_kernel(func, cfg).unwrap();
                 }
             }
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                 (img_h * (img_w - 1)) as u32,
-            );
+                func,
+                0,
+                0,
+            )
+            .unwrap();
             for _ in 0..num_iter {
                 for color in [0u32, 1u32] {
                     let mut builder = del_cudarc_sys::Builder::new(stream);
@@ -425,7 +433,13 @@ pub fn edgegrad_interpolate(
                 "interpolate_staggered_grid",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_vtx as u32);
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                num_vtx as u32,
+                func,
+                0,
+                0,
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(img_w as u32);
             builder.arg_u32(img_h as u32);

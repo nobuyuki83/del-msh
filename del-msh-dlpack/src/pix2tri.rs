@@ -83,7 +83,13 @@ pub fn pix2tri_by_raycast(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_pix as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }
@@ -156,7 +162,8 @@ pub fn pix2tri_by_rasterization(
                 builder
                     .launch_kernel(
                         func,
-                        LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                        LaunchConfig::suggest_config_for_num_elems(num_pix as u32, func, 0, 0)
+                            .unwrap(),
                     )
                     .unwrap();
             }
@@ -178,7 +185,7 @@ pub fn pix2tri_by_rasterization(
                 builder.arg_data(&transform_world2ndc.data);
                 /*
                 builder
-                    .launch_kernel(func, LaunchConfig::suggest_config_for_num_elem(num_tri as u32))
+                    .launch_kernel(func, LaunchConfig::for_num_elems_with_num_threads(num_tri as u32, 256))
                     .unwrap();
                  */
                 builder
@@ -191,7 +198,7 @@ pub fn pix2tri_by_rasterization(
                     )
                     .unwrap();
             }
-            // Kernel 3: unpack pix2packed → pix2tri, pix2depth.
+            // Kernel 3: unpack pix2packed â†’ pix2tri, pix2depth.
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::pix2tri",
@@ -207,7 +214,8 @@ pub fn pix2tri_by_rasterization(
                 builder
                     .launch_kernel(
                         func,
-                        LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                        LaunchConfig::suggest_config_for_num_elems(num_pix as u32, func, 0, 0)
+                            .unwrap(),
                     )
                     .unwrap();
             }
@@ -291,7 +299,13 @@ pub fn pix2tri_interpolate(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_pix as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }
@@ -386,7 +400,13 @@ pub fn pix2tri_interpolate_bwd(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_pix as u32),
+                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        num_pix as u32,
+                        func,
+                        0,
+                        0,
+                    )
+                    .unwrap(),
                 )
                 .unwrap();
         }

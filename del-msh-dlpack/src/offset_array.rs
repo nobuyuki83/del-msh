@@ -60,7 +60,13 @@ fn offset_array_aggregate(
                 "aggregate",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_idx as u32);
+            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                num_idx as u32,
+                fnc,
+                0,
+                0,
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_idx as u32);
             builder.arg_data(&idx2jdx_offset.data);

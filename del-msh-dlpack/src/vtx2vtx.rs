@@ -86,9 +86,13 @@ fn vtx2vtx_graph_screened_poisson(
                     builder
                         .launch_kernel(
                             function,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                                 num_vtx as u32,
-                            ),
+                                function,
+                                0,
+                                0,
+                            )
+                            .unwrap(),
                         )
                         .unwrap();
                 }
@@ -104,9 +108,13 @@ fn vtx2vtx_graph_screened_poisson(
                     builder
                         .launch_kernel(
                             function,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(
+                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
                                 num_vtx as u32,
-                            ),
+                                function,
+                                0,
+                                0,
+                            )
+                            .unwrap(),
                         )
                         .unwrap();
                 }
@@ -180,7 +188,13 @@ fn vtx2vtx_laplacian_smoothing(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem(num_vtx as u32),
+                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            num_vtx as u32,
+                            function,
+                            0,
+                            0,
+                        )
+                        .unwrap(),
                     )
                     .unwrap();
                 {
