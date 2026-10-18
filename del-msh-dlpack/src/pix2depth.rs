@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
     get_shape_tensor as shape, slice, slice_mut,
 };
@@ -85,7 +85,7 @@ pub fn pix2depth_update(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_pix as u32,
                         func,
                         0,
@@ -185,7 +185,7 @@ pub fn pix2depth_bwd_wrt_vtx2xyz(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_pix as u32,
                         func,
                         0,

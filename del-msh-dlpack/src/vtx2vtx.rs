@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
     make_capsule_from_vec as capsule, pyo3, slice, slice_mut,
@@ -86,7 +86,7 @@ fn vtx2vtx_graph_screened_poisson(
                     builder
                         .launch_kernel(
                             function,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                                 num_vtx as u32,
                                 function,
                                 0,
@@ -108,7 +108,7 @@ fn vtx2vtx_graph_screened_poisson(
                     builder
                         .launch_kernel(
                             function,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                                 num_vtx as u32,
                                 function,
                                 0,
@@ -188,7 +188,7 @@ fn vtx2vtx_laplacian_smoothing(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                             num_vtx as u32,
                             function,
                             0,

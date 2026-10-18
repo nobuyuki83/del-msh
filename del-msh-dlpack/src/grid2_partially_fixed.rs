@@ -73,15 +73,18 @@ pub fn grid2_nearest_to_fixed_cell(
                 "nearest_to_fixed_cell_compute_distance",
             )
             .unwrap();
-            let cfg_init =
-                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_init, 0, 0)
-                    .unwrap();
-            let cfg_jfa =
-                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_jfa, 0, 0)
-                    .unwrap();
-            let cfg_dist =
-                del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(num_cell, fn_dist, 0, 0)
-                    .unwrap();
+            let cfg_init = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
+                num_cell, fn_init, 0, 0,
+            )
+            .unwrap();
+            let cfg_jfa = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
+                num_cell, fn_jfa, 0, 0,
+            )
+            .unwrap();
+            let cfg_dist = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
+                num_cell, fn_dist, 0, 0,
+            )
+            .unwrap();
             // Initialize cell2nearest from cell2isfixed
             {
                 let mut b = del_cudarc_sys::Builder::new(stream);
@@ -195,7 +198,7 @@ pub fn grid2_smooth_gauss_seidel(
                 builder
                     .launch_kernel(
                         function,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                             num_cell, function, 0, 0,
                         )
                         .unwrap(),
@@ -274,7 +277,7 @@ pub fn grid2_smooth_gauss_seidel_with_radius(
                 b.arg_dptr(tmp.dptr); // pos (write)
                 b.launch_kernel(
                     function,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_cell, function, 0, 0,
                     )
                     .unwrap(),

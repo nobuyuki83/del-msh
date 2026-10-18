@@ -1,4 +1,4 @@
-#[cfg(feature = "cuda")]
+﻿#[cfg(feature = "cuda")]
 use del_cudarc_sys::{cu::CUdeviceptr, CuVec};
 use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
@@ -83,7 +83,7 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                                 num_wtx as u32,
                                 fnc,
                                 0,
@@ -114,7 +114,7 @@ fn filter_brute_force(
                     builder
                         .launch_kernel(
                             fnc,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                                 num_wtx as u32,
                                 fnc,
                                 0,
@@ -297,7 +297,7 @@ fn filter_with_acceleration(
                     builder
                         .launch_kernel(
                             func,
-                            del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                            del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                                 num_wtx as u32,
                                 func,
                                 0,

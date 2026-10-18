@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -80,7 +80,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                 )
                 .unwrap();
                 let num_bnode = num_idx as u32 - 1;
-                let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                     num_bnode, function, 0, 0,
                 )
                 .unwrap();
@@ -103,7 +103,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
                     "bnode2isonode_and_idx2bnode",
                 )
                 .unwrap();
-                let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                     num_bnode as u32,
                     function,
                     0,
@@ -221,9 +221,9 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
                 "make_tree_from_binary_radix_tree",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 num_idx as u32,
-                function,
+                fnc,
                 0,
                 0,
             )
@@ -300,7 +300,7 @@ pub fn quad_oct_tree_aggregate(
                 "aggregate",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 num_idx as u32,
                 fnc,
                 0,

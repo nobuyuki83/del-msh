@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -73,7 +73,7 @@ pub fn edge2elem_from_edge2vtx_of_tri2vtx_with_vtx2vtx(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_edge as u32,
                         func,
                         0,

@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -68,7 +68,7 @@ fn mortons_vtx2morton_from_vtx2co(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_vtx as u32,
                         func,
                         0,
@@ -134,7 +134,7 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
                 builder
                     .launch_kernel(
                         func,
-                        del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                        del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                             n as u32, func, 0, 0,
                         )
                         .unwrap(),

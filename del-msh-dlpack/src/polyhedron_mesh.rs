@@ -135,7 +135,7 @@ fn polyhedron_mesh_elem2center(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_elem as u32,
                         func,
                         0,
@@ -224,7 +224,7 @@ fn polyhedron_mesh_bvhnode2aabb_from_bvhnodes(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_elem as u32,
                         func,
                         0,
@@ -310,10 +310,13 @@ fn polyhedron_mesh_search_elem_contain_points(
                 "search_elem_contain_points",
             )
             .unwrap();
-            let confg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elem_with_num_threads(
+            let confg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 num_wtx as u32,
-                128,
-            );
+                func,
+                0,
+                0,
+            )
+            .unwrap();
             let mut builder = del_cudarc_sys::Builder::new(stream);
             builder.arg_u32(num_elem as u32);
             builder.arg_data(&elem2idx_offset.data);
@@ -453,7 +456,7 @@ fn polyhedron_mesh_interpolate_values_at_points(
             builder
                 .launch_kernel(
                     func,
-                    del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+                    del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                         num_wtx as u32,
                         func,
                         0,

@@ -1,4 +1,4 @@
-use del_dlpack::dlpack;
+﻿use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -60,7 +60,7 @@ fn offset_array_aggregate(
                 "aggregate",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 num_idx as u32,
                 fnc,
                 0,

@@ -1,4 +1,4 @@
-use del_dlpack::{
+﻿use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, check_3d_tensor as chk3, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -72,7 +72,7 @@ pub fn edgegrad_bwd(
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             const BLOCK: u32 = 16;
-            // hedge: grid covers img_w Ã— (img_h - 1)
+            // hedge: grid covers img_w Ãƒâ€” (img_h - 1)
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::edgegrad",
@@ -102,7 +102,7 @@ pub fn edgegrad_bwd(
                 builder.arg_data(&dldw_pix2val.data);
                 builder.launch_kernel(func, cfg).unwrap();
             }
-            // vedge: grid covers (img_w - 1) Ã— img_h
+            // vedge: grid covers (img_w - 1) Ãƒâ€” img_h
             {
                 let func = del_cudarc_sys::cache_func::get_function_cached(
                     "del_msh::edgegrad",
@@ -339,7 +339,7 @@ pub fn edgegrad_smooth_gradient(
                 "smooth_red_black_gauss_seidel",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 ((img_h - 1) * img_w) as u32,
                 func,
                 0,
@@ -358,7 +358,7 @@ pub fn edgegrad_smooth_gradient(
                     builder.launch_kernel(func, cfg).unwrap();
                 }
             }
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 (img_h * (img_w - 1)) as u32,
                 func,
                 0,
@@ -433,7 +433,7 @@ pub fn edgegrad_interpolate(
                 "interpolate_staggered_grid",
             )
             .unwrap();
-            let cfg = del_cudarc_sys::LaunchConfig::suggest_config_for_num_elems(
+            let cfg = del_cudarc_sys::LaunchConfig::from_num_thread_for_max_occupancy(
                 num_vtx as u32,
                 func,
                 0,
