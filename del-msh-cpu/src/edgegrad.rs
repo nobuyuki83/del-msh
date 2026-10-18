@@ -669,7 +669,7 @@ mod tests {
     #[test]
     fn test_hoge() {
         let path_dir_out = std::path::Path::new("../target/out_del_msh_cpu");
-        assert!(path_dir_out.exists());
+        std::fs::create_dir_all(path_dir_out.parent().unwrap()).unwrap();
         //
         let tri2vtx = [[0, 1, 2], [3, 4, 5]];
         let vtx2xyz = [

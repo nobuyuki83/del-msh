@@ -43,8 +43,8 @@ pub fn array1d_permute(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let old2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
@@ -125,8 +125,8 @@ pub fn array1d_argsort(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
@@ -172,8 +172,8 @@ pub fn array1d_has_duplicate_sorted_array(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let idx2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
@@ -216,8 +216,8 @@ pub fn array1d_unique_for_sorted_array(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let idx2val = del_cudarc_sys::CuVec::<u32>::from_dptr(
@@ -277,8 +277,8 @@ pub fn array1d_unique_jdx2val_jdx2idx(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
-            use del_cudarc_sys::cu;
-            use del_cudarc_sys::cuda_check;
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let idx2jdx = del_cudarc_sys::CuVec::<u32>::from_dptr(

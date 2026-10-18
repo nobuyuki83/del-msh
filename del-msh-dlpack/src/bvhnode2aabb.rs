@@ -1,4 +1,4 @@
-﻿use del_dlpack::{
+use del_dlpack::{
     check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
     get_shape_tensor as shape, slice, slice_mut,
 };
@@ -73,6 +73,7 @@ pub fn bvhnode2aabb_update_aabb(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //

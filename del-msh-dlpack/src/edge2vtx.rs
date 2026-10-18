@@ -1,4 +1,4 @@
-﻿use del_dlpack::{
+use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape,
     make_capsule_from_vec as capsule, slice, slice_mut,
@@ -64,6 +64,7 @@ pub fn edge2vtx_contour_for_triangle_mesh(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check, CuVec};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let edge2flag = CuVec::<u32>::alloc_zeros(num_edge as usize + 1, stream).unwrap();
@@ -156,6 +157,7 @@ pub fn edge2vtx_from_vtx2vtx(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(

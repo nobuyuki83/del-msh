@@ -1,4 +1,4 @@
-﻿use del_dlpack::{
+use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, check_3d_tensor as chk3, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -69,6 +69,7 @@ pub fn edgegrad_bwd(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             const BLOCK: u32 = 16;
@@ -208,6 +209,7 @@ pub fn edgegrad_edge_gradient_and_type(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             const BLOCK: u32 = 16;
@@ -331,6 +333,7 @@ pub fn edgegrad_smooth_gradient(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
@@ -425,6 +428,7 @@ pub fn edgegrad_interpolate(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(

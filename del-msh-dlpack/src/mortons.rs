@@ -1,4 +1,4 @@
-﻿use del_dlpack::{
+use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -51,6 +51,7 @@ fn mortons_vtx2morton_from_vtx2co(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
@@ -117,6 +118,7 @@ fn mortons_make_bvhnodes_from_sorted_mortons(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(

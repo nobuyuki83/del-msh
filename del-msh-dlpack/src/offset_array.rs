@@ -1,4 +1,4 @@
-﻿use del_dlpack::dlpack;
+use del_dlpack::dlpack;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
 
 pub fn add_functions(_py: Python, m: &Bound<pyo3::types::PyModule>) -> PyResult<()> {
@@ -52,6 +52,7 @@ fn offset_array_aggregate(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let fnc = del_cudarc_sys::cache_func::get_function_cached(

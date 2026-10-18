@@ -1,3 +1,7 @@
+#[cfg(feature = "cuda")]
+use del_cudarc_sys::{cu, CuVec, LaunchConfig};
+#[cfg(feature = "cuda")]
+use del_dlpack::del_cudarc_sys;
 use del_dlpack::{
     check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
     get_shape_tensor as shape, make_capsule_from_vec as capsule, pyo3, slice,
@@ -49,12 +53,8 @@ fn vtx2elem_from_uniform_mesh(
                 (num_elem * num_node) as usize,
                 false,
             );
-            let (vtx2idx, idx2elem) = del_msh_cudarc_sys::vtx2elem::from_uniform_mesh(
-                stream,
-                &elem2vtx,
-                num_elem as usize,
-                num_vtx,
-            );
+            let (vtx2idx, idx2elem) =
+                from_uniform_mesh(stream, &elem2vtx, num_elem as usize, num_vtx);
             let vtx2idx_cap =
                 del_dlpack::make_capsule_from_cuvec(py, 0, vec![vtx2idx.n as i64], vtx2idx);
             let idx2elem_cap =
@@ -65,4 +65,83 @@ fn vtx2elem_from_uniform_mesh(
             "GPU not supported (compile with --features cuda)",
         )),
     }
+}
+
+// --------------------------------------------
+
+#[cfg(feature = "cuda")]
+pub fn from_uniform_mesh(
+    stream: cu::CUstream,
+    elem2vtx: &CuVec<u32>,
+    num_elem: usize,
+    num_vtx: usize,
+) -> (CuVec<u32>, CuVec<u32>) {
+    let num_node = elem2vtx.n / num_elem;
+    assert_eq!(elem2vtx.n, num_elem * num_node);
+    let vtx2valence: CuVec<u32> = CuVec::with_capacity(num_vtx + 1).unwrap();
+    vtx2valence.set_zeros(stream).unwrap();
+    {
+        /*
+        let (func, _mdl) =
+            del_cudarc_sys::load_function_in_module(del_msh_cuda_kernel::UNIFORM_MESH, "vtx2nelem")
+                .unwrap();
+         */
+        // let func = crate::load_get_function("uniform_mesh", "vtx2nelem").unwrap();
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::uniform_mesh",
+            del_msh_cuda_kernels::get("uniform_mesh").unwrap(),
+            "vtx2nelem",
+        )
+        .unwrap();
+        let mut builder = del_cudarc_sys::Builder::new(stream);
+        builder.arg_u32(num_elem as u32);
+        builder.arg_dptr(elem2vtx.dptr);
+        builder.arg_u32(num_node as u32);
+        builder.arg_dptr(vtx2valence.dptr);
+        builder
+            .launch_kernel(
+                func,
+                LaunchConfig::from_num_thread_for_max_occupancy(num_elem as u32, func, 0, 0)
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    let vtx2idx0 = CuVec::<u32>::with_capacity(vtx2valence.n).unwrap();
+    del_cudarc_sys::cumsum::exclusive_scan(stream, &vtx2valence, &vtx2idx0);
+    // dbg!(vtx2idx0.copy_to_host());
+    let num_idx = vtx2idx0.last().unwrap();
+    let idx2elem: CuVec<u32> = CuVec::with_capacity(num_idx as usize).unwrap();
+    {
+        /*
+        let (func, _mdl) = del_cudarc_sys::load_function_in_module(
+            del_msh_cuda_kernel::UNIFORM_MESH,
+            "fill_idx2elem",
+        )
+        .unwrap();
+         */
+        // let func = crate::load_get_function("uniform_mesh", "fill_idx2elem").unwrap();
+        let func = del_cudarc_sys::cache_func::get_function_cached(
+            "del_msh::uniform_mesh",
+            del_msh_cuda_kernels::get("uniform_mesh").unwrap(),
+            "fill_idx2elem",
+        )
+        .unwrap();
+        let mut builder = del_cudarc_sys::Builder::new(stream);
+        builder.arg_u32(num_elem as u32);
+        builder.arg_dptr(elem2vtx.dptr);
+        builder.arg_u32(num_node as u32);
+        builder.arg_dptr(vtx2idx0.dptr);
+        builder.arg_dptr(idx2elem.dptr);
+        builder
+            .launch_kernel(
+                func,
+                LaunchConfig::from_num_thread_for_max_occupancy(num_elem as u32, func, 0, 0)
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    // dbg!(vtx2idx0.copy_to_host());
+    let vtx2idx = del_cudarc_sys::array1d::shift_array_right(stream, &vtx2idx0);
+    del_cudarc_sys::offset_array::sort(stream, &vtx2idx, &idx2elem);
+    (vtx2idx, idx2elem)
 }

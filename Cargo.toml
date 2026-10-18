@@ -3,7 +3,6 @@ members = [
     "del-msh-numpy",
     "del-msh-dlpack",
     "del-msh-cpu",
-    "del-msh-cudarc-sys",
     "del-msh-examples"
 ]
 exclude = [

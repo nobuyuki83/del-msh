@@ -51,6 +51,7 @@ pub fn grid2_nearest_to_fixed_cell(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check, CuVec};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_cell = (img_w * img_h) as u32;
@@ -176,13 +177,14 @@ pub fn grid2_smooth_gauss_seidel(
         }
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
+            use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             let function = del_cudarc_sys::cache_func::get_function_cached(
                 "del_msh__grid2_partially_fixed",
                 del_msh_cuda_kernels::get("grid2_partially_fixed").unwrap(),
                 "smooth_red_black_gauss_seidel",
             )
             .unwrap();
-            use del_cudarc_sys::{cu, cuda_check};
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_cell = (img_w * img_h) as u32;
@@ -253,6 +255,7 @@ pub fn grid2_smooth_gauss_seidel_with_radius(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check, CuVec};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_cell = (img_w * img_h) as u32;

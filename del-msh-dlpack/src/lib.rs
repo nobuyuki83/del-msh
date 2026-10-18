@@ -66,7 +66,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
     #[cfg(feature = "cuda")]
     {
-        use del_cudarc_sys::{cu, cuda_check};
+        use del_dlpack::del_cudarc_sys::{cu, cuda_check};
         cuda_check!(cu::cuInit(0)).unwrap();
         let mut version: i32 = 0;
         cuda_check!(cu::cuDriverGetVersion(&mut version)).unwrap();
@@ -82,7 +82,7 @@ pub fn get_cuda_driver_version() -> PyResult<(u32, u32)> {
 pub fn get_ptx_compiler_version() -> PyResult<(i32, i32, i32)> {
     #[cfg(feature = "cuda")]
     {
-        let a = del_cudarc_sys::get_ptx_compiler_version();
+        let a = del_dlpack::del_cudarc_sys::get_ptx_compiler_version();
         return Ok(a);
     }
     #[allow(unreachable_code)]

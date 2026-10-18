@@ -1,4 +1,4 @@
-﻿use del_dlpack::{
+use del_dlpack::{
     check_1d_tensor as chk1, check_2d_tensor as chk2, dlpack,
     get_managed_tensor_from_pyany as get_tensor, get_shape_tensor as shape, slice, slice_mut,
 };
@@ -69,6 +69,7 @@ fn quad_oct_tree_bnodes_and_bnode2depth_and_bnode2onode_and_idx2bnode(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             //
@@ -213,6 +214,7 @@ pub fn quad_oct_tree_make_tree_from_binary_radix_tree(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let fnc = del_cudarc_sys::cache_func::get_function_cached(
@@ -292,6 +294,7 @@ pub fn quad_oct_tree_aggregate(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let fnc = del_cudarc_sys::cache_func::get_function_cached(

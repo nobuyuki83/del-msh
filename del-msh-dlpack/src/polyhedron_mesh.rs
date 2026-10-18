@@ -117,6 +117,7 @@ fn polyhedron_mesh_elem2center(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
@@ -200,6 +201,7 @@ fn polyhedron_mesh_bvhnode2aabb_from_bvhnodes(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let num_branch = num_elem - 1;
@@ -302,6 +304,7 @@ fn polyhedron_mesh_search_elem_contain_points(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
@@ -436,6 +439,7 @@ fn polyhedron_mesh_interpolate_values_at_points(
         #[cfg(feature = "cuda")]
         dlpack::device_type_codes::GPU => {
             use del_cudarc_sys::{cu, cuda_check};
+            use del_dlpack::del_cudarc_sys;
             cuda_check!(cu::cuInit(0)).unwrap();
             let stream = del_cudarc_sys::stream_from_u64(stream_ptr);
             let func = del_cudarc_sys::cache_func::get_function_cached(
