@@ -225,8 +225,8 @@ def fit(
         0.2, 0.1
     )  # Green's function filter for exterior CFD points
     filter_theta = 0.6  # Barnes-Hut opening angle for tree-accelerated N-body filter
-    filter_is_acc = False  # If True, use tree-accelerated filter; otherwise brute force
-    filter_is_bem = True
+    filter_is_acc = True  # If True, use tree-accelerated filter; otherwise brute force
+    filter_is_bem = False
     loss_weight_laplacereg = 0.01  # Weight for Laplacian smoothness regularization
     loss_weight_normalreg = 0.001  # Weight for normal consistency regularization
     #
