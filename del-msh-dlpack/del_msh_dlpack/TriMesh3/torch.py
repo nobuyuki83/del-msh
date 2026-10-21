@@ -318,3 +318,44 @@ def make_edge2tri(tri2vtx: torch.Tensor, num_vtx: int, edge2vtx: torch.Tensor):
         edge2vtx, tri2vtx, vtx2jdx_offset, jdx2tri, edge2tri
     )
     return edge2tri
+
+
+def make_tri2area(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Tensor:
+    """Compute the area of each triangle.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        tri2area: (num_tri,) float32 - area per triangle
+    """
+    vtx2xyz = vtx2xyz.detach()
+    num_tri = tri2vtx.shape[0]
+    num_vtx = vtx2xyz.shape[0]
+    device = tri2vtx.device
+    util_torch.assert_shape_dtype_device(tri2vtx, (num_tri, 3), torch.uint32, device)
+    util_torch.assert_shape_dtype_device(vtx2xyz, (num_vtx, 3), torch.float32, device)
+    idx = tri2vtx.long()
+    p0 = vtx2xyz[idx[:, 0]]
+    p1 = vtx2xyz[idx[:, 1]]
+    p2 = vtx2xyz[idx[:, 2]]
+    return 0.5 * torch.linalg.cross(p1 - p0, p2 - p0).norm(dim=-1)
+
+
+def make_vtx2area(tri2vtx: torch.Tensor, vtx2xyz: torch.Tensor) -> torch.Tensor:
+    """Compute the area associated with each vertex.
+
+    Args:
+        tri2vtx: (num_tri, 3) uint32 - triangle connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    Returns:
+        vtx2area: (num_vtx,) float32 - area associated with each vertex
+    """
+    num_vtx = vtx2xyz.shape[0]
+    tri2area = make_tri2area(tri2vtx, vtx2xyz)
+    idx = tri2vtx.long()
+    vtx2area = torch.zeros((num_vtx,), dtype=torch.float32, device=tri2vtx.device)
+    vtx2area.index_add_(0, idx[:, 0], tri2area / 3.0)
+    vtx2area.index_add_(0, idx[:, 1], tri2area / 3.0)
+    vtx2area.index_add_(0, idx[:, 2], tri2area / 3.0)
+    return vtx2area

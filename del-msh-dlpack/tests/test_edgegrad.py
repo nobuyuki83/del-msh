@@ -125,7 +125,7 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
         transform_world2pix = transform_ndc2pix @ transform_world2ndc
 
         # まず各ピクセルで見えている三角形を求め、その後に深度を計算する。
-        '''
+        """
         pix2tri = Pix2Tri.by_raycasting(
             tri2vtx,
             vtx2xyz,
@@ -134,12 +134,9 @@ def render(image_shape, views, tri2vtx, vtx2xyz):
             transform_ndc2world,
             (viewport[2], viewport[3]),
         )
-        '''
+        """
         pix2tri = Pix2Tri.by_rasterization(
-            tri2vtx,
-            vtx2xyz,
-            transform_world2ndc,
-            (viewport[2], viewport[3])
+            tri2vtx, vtx2xyz, transform_world2ndc, (viewport[2], viewport[3])
         )
 
         pix2depth_view = Pix2Depth.AutogradFunction.apply(
@@ -228,7 +225,8 @@ def fit(
         0.2, 0.1
     )  # Green's function filter for exterior CFD points
     filter_theta = 0.6  # Barnes-Hut opening angle for tree-accelerated N-body filter
-    filter_is_acc = True  # If True, use tree-accelerated filter; otherwise brute force
+    filter_is_acc = False  # If True, use tree-accelerated filter; otherwise brute force
+    filter_is_bem = True
     loss_weight_laplacereg = 0.01  # Weight for Laplacian smoothness regularization
     loss_weight_normalreg = 0.001  # Weight for normal consistency regularization
     #
@@ -327,26 +325,55 @@ def fit(
         # ensuring the volume mesh deforms consistently with the surface (as in free-form
         # deformation or elasticity-based mesh morphing).
         for i_substep in range(0, num_substep):
-            if filter_is_acc == False:
-                # Brute-force O(N^2) filter
-                vtx2lhs = NBody.filter_brute_force(
-                    vtx2xyz, vtx2rhs, model_filter_body, vtx2xyz
-                )
-                """
-                wtx2lhs = NBody.filter_brute_force(
-                    vtx2xyz, vtx2rhs, model_filter_air, wtx2xyz
-                )
-                """
+            if filter_is_bem == False:
+                if filter_is_acc == False:
+                    # Brute-force O(N^2) filter
+                    vtx2lhs = NBody.filter_brute_force(
+                        vtx2xyz, vtx2rhs, model_filter_body, vtx2xyz
+                    )
+                    wtx2lhs = NBody.filter_brute_force(
+                        vtx2xyz, vtx2rhs, model_filter_air, wtx2xyz
+                    )
+                else:
+                    # Tree-accelerated (Barnes-Hut) O(N log N) filter
+                    acc = NBody.TreeAccelerator()
+                    acc.initialize(vtx2xyz)
+                    vtx2lhs = NBody.filter_with_acceleration(
+                        vtx2rhs, model_filter_body, vtx2xyz, acc, filter_theta
+                    )
+                    wtx2lhs = NBody.filter_with_acceleration(
+                        vtx2rhs, model_filter_air, wtx2xyz, acc, filter_theta
+                    )
             else:
-                # Tree-accelerated (Barnes-Hut) O(N log N) filter
-                acc = NBody.TreeAccelerator()
-                acc.initialize(vtx2xyz)
-                vtx2lhs = NBody.filter_with_acceleration(
-                    vtx2rhs, model_filter_body, vtx2xyz, acc, filter_theta
-                )
-                wtx2lhs = NBody.filter_with_acceleration(
-                    vtx2rhs, model_filter_air, wtx2xyz, acc, filter_theta
-                )
+                if filter_is_acc:
+                    print("not implemented")
+                    assert False
+                else:
+                    print("bem!")
+                    from del_msh_dlpack.TriMesh3.torch import make_vtx2area
+
+                    vtx2area = make_vtx2area(tri2vtx, vtx2xyz)
+                    vtx2rhs0 = vtx2rhs / vtx2area.unsqueeze(1)
+                    from del_msh_dlpack.TriMesh3_Bem.torch import (
+                        eval_kelvinlet_bruteforce,
+                    )
+
+                    vtx2lhs = eval_kelvinlet_bruteforce(
+                        tri2vtx,
+                        vtx2xyz,
+                        vtx2rhs0,
+                        vtx2xyz,
+                        1.0,
+                        0.2,
+                    )
+                    wtx2lhs = eval_kelvinlet_bruteforce(
+                        tri2vtx,
+                        vtx2xyz,
+                        vtx2rhs0,
+                        wtx2xyz,
+                        1.0,
+                        0.2,
+                    )
 
             # --- Update vertex positions (gradient descent step) ---
             with torch.no_grad():

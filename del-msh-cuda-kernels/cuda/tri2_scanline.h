@@ -94,8 +94,9 @@ private:
                 float x_left  = xs[0];
                 float x_right = xs[count - 1];
 
-                int32_t x_start = (int32_t)ceilf(x_left  - 0.5f);
-                int32_t x_stop  = (int32_t)floorf(x_right - 0.5f);
+                const float eps = 5e-4f;
+                int32_t x_start = (int32_t)ceilf(x_left  - 0.5f - eps);
+                int32_t x_stop  = (int32_t)floorf(x_right - 0.5f + eps);
 
                 if (x_start <= x_stop) {
                     cur_x    = x_start;

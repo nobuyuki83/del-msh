@@ -100,3 +100,4 @@ pub mod adaptive_distance_field3;
 pub mod nbody;
 pub mod quad_oct_tree;
 pub mod sparse_solver;
+pub mod trimesh3_bem;

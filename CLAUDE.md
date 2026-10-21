@@ -4,9 +4,10 @@
 
 When asked to commit, follow these steps in order:
 
-1. Run `cargo fmt`.
-2. Run `cargo clippy --all-targets -- -D warnings`.
-   - If it reports warnings or errors, abort and ask the user to fix automatically.
+1. Check if there is no local external dependency specified by path outside this workspace. Abort if there is such external depnendency 
+2. Run `cargo fmt`.
+3. Run `cargo clippy --all-targets -- -D warnings`.
+   - If it reports warnings or errors, abort and ask the user to fix automatically. 
 3. Stage all changes, including new and deleted files, with `git add -A`.
 4. Commit with a message that summarizes the changes:
    - First line: a concise summary of about 50 characters, in English, imperative mood

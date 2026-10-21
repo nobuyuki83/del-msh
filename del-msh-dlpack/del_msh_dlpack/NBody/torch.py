@@ -27,6 +27,8 @@ def filter_brute_force(
     Returns:
         wtx2lhs: (num_wtx, 3) float32 - accumulated filter output per query point
     """
+    vtx2co = vtx2co.detach()
+    wtx2co = wtx2co.detach()
     num_vtx = vtx2co.shape[0]
     num_wtx = wtx2co.shape[0]
     device = vtx2co.device

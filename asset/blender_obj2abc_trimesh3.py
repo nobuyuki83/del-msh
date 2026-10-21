@@ -34,8 +34,9 @@ def read_obj(path):
                 indices = [int(token.split("/", 1)[0]) for token in fields[1:]]
                 if 0 in indices:
                     raise ValueError(f"{path}:{line_number}: OBJ index cannot be zero")
-                faces.append(tuple(i - 1 if i > 0 else len(vertices) + i
-                                   for i in indices))
+                faces.append(
+                    tuple(i - 1 if i > 0 else len(vertices) + i for i in indices)
+                )
     if not vertices or not faces:
         raise ValueError(f"{path}: no triangle mesh")
     if any(i < 0 or i >= len(vertices) for face in faces for i in face):
@@ -56,18 +57,22 @@ def get_sequence(input_path, start):
         number = 0 if start is None else start
 
         def make_path(i):
-            return path.parent / (name[:match.start()] + (token % i)
-                                  + name[match.end():])
+            return path.parent / (
+                name[: match.start()] + (token % i) + name[match.end() :]
+            )
     else:
         match = re.search(r"(\d+)(?=\.obj$)", name, re.IGNORECASE)
         if match is None:
-            raise ValueError("Pass mesh_%04d.obj or a numbered file such as mesh_0000.obj")
+            raise ValueError(
+                "Pass mesh_%04d.obj or a numbered file such as mesh_0000.obj"
+            )
         width = len(match.group())
         number = int(match.group()) if start is None else start
 
         def make_path(i):
-            return path.parent / (name[:match.start()] + f"{i:0{width}d}"
-                                  + name[match.end():])
+            return path.parent / (
+                name[: match.start()] + f"{i:0{width}d}" + name[match.end() :]
+            )
 
     paths = []
     while make_path(number).is_file():
@@ -84,10 +89,12 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("obj_path", help="First numbered OBJ, or pattern mesh_%04d.obj")
-    parser.add_argument("--start", type=int, default=None, help="First file index; pattern default: 0")
+    parser.add_argument(
+        "--start", type=int, default=None, help="First file index; pattern default: 0"
+    )
     parser.add_argument("-o", "--output", type=Path, default=None)
     parser.add_argument("--fps", type=int, default=30)
-    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     args = parser.parse_args(argv)
     if args.fps <= 0:
         parser.error("--fps must be positive")
@@ -138,10 +145,19 @@ def main():
     scene.frame_set(1)
     output.parent.mkdir(parents=True, exist_ok=True)
     result = bpy.ops.wm.alembic_export(
-        filepath=str(output), check_existing=False,
-        start=1, end=len(paths), selected=True,
-        xsamples=1, gsamples=1, sh_open=0.0, sh_close=0.0,
-        uvs=False, normals=True, export_hair=False, export_particles=False,
+        filepath=str(output),
+        check_existing=False,
+        start=1,
+        end=len(paths),
+        selected=True,
+        xsamples=1,
+        gsamples=1,
+        sh_open=0.0,
+        sh_close=0.0,
+        uvs=False,
+        normals=True,
+        export_hair=False,
+        export_particles=False,
         as_background_job=False,
     )
     if "FINISHED" not in result or not output.is_file():

@@ -24,6 +24,7 @@ mod pix2tri;
 mod polyhedron_mesh;
 mod quad_oct_tree;
 mod trimesh3;
+mod trimesh3_bem;
 mod trimesh3_primitive;
 mod vtx2elem;
 mod vtx2vtx;
@@ -57,6 +58,7 @@ fn del_msh_dlpack_(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     io_vtk::add_functions(_py, m)?;
     edgegrad::add_functions(_py, m)?;
     grid2_partially_fixed::add_functions(_py, m)?;
+    trimesh3_bem::add_functions(_py, m)?;
     Ok(())
 }
 

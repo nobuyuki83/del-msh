@@ -42,6 +42,7 @@ def transform_homography_jacobian(vtx2xyz: torch.Tensor, transform: torch.Tensor
 
 def save_wavefront_obj(xyz: torch.Tensor, path_dir: str):
     from del_msh_dlpack.IoWavefrontObj.torch import save_points
+
     save_points(xyz, path_dir)
 
 
@@ -49,6 +50,7 @@ def from_sample_aabb(aabb, num_sample):
     assert aabb.shape == (2, 3)
     u = torch.rand((num_sample, 3), device=aabb.device, dtype=aabb.dtype)
     return aabb[0] + (aabb[1] - aabb[0]) * u
+
 
 def normalize(vtx2xyz: torch.Tensor, size: float = 1.0) -> torch.Tensor:
     """Center and uniformly scale vertices so the longest axis fits in [-size/2, size/2]."""

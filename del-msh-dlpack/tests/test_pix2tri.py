@@ -149,19 +149,26 @@ def test_pix2tri():
         if torch.cuda.is_available():
             d_tri2vtx = tri2vtx.cuda()
             d_vtx2xyz = vtx2xyz.cuda()
-            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(d_tri2vtx, d_vtx2xyz)
+            d_bvhnodes, d_bvhnode2aabb = TriMesh3.make_bvhnodes_bvhnode2aabb(
+                d_tri2vtx, d_vtx2xyz
+            )
             d_transform_world2ndc = transform_world2ndc.cuda()
             d_transform_ndc2world = transform_ndc2world.cuda()
             d_pix2tri_raycast = Pix2Tri.by_raycasting(
-                d_tri2vtx, d_vtx2xyz, d_bvhnodes, d_bvhnode2aabb, d_transform_ndc2world, img_shape
+                d_tri2vtx,
+                d_vtx2xyz,
+                d_bvhnodes,
+                d_bvhnode2aabb,
+                d_transform_ndc2world,
+                img_shape,
             )
             d0 = (d_pix2tri_raycast.cpu() != pix2tri_raycast).sum().item()
-            #print("raycast cpu-gpu mismatch:", d0)
+            # print("raycast cpu-gpu mismatch:", d0)
             assert d0 == 0
             #
             d_pix2tri_rasterization = Pix2Tri.by_rasterization(
                 d_tri2vtx, d_vtx2xyz, d_transform_world2ndc, img_shape
             )
             d1 = (d_pix2tri_rasterization.cpu() != pix2tri_rasterization).sum().item()
-            #print("rasterization cpu-gpu mismatch:", d1)
+            # print("rasterization cpu-gpu mismatch:", d1)
             assert d1 == 0
