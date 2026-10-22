@@ -11,7 +11,7 @@ exclude = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.51"  # change the del-msh-dlpack and del-msh-numpy's version too
+version = "0.1.52"  # change the del-msh-dlpack and del-msh-numpy's version too
 edition = "2021"
 authors = ["Nobuyuki Umetani <n.umetani@gmail.com>"]
 license = "MIT"
@@ -41,13 +41,13 @@ del-msh-cuda-kernels = {path= "del-msh-cuda-kernels" }
 
 # for GitHub push
 #candle-core = "=0.9.0"
-del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git", version = "0.1.42"}
+#del-geo-core = { git = "https://github.com/nobuyuki83/del-geo.git", version = "0.1.42"}
 #del-canvas = {git="https://github.com/nobuyuki83/del-canvas.git"}
 
 
 # for deploy
 # del-cudarc = "=0.1.2"
-# del-geo-core = "=0.1.41"
+del-geo-core = "=0.1.42"
 del-canvas = "0.1.11"
 
 
