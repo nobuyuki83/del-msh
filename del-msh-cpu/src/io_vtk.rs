@@ -253,6 +253,59 @@ pub fn write_vtk_points_with_velocity(
     Ok(())
 }
 
+pub fn load_tet_mesh(path: &std::path::Path) -> (Vec<[usize; 4]>, Vec<[f32; 3]>) {
+    use std::io::BufRead;
+    let file = std::fs::File::open(path).expect("file not found.");
+    let reader = std::io::BufReader::new(file);
+    let mut lines = reader.lines().map(|l| l.unwrap());
+
+    // skip header lines until "POINTS"
+    let mut vtx2xyz = Vec::<[f32; 3]>::new();
+    let mut cells_raw: Vec<Vec<usize>> = Vec::new();
+    let mut cell_types: Vec<u32> = Vec::new();
+
+    while let Some(line) = lines.next() {
+        let line = line.trim().to_string();
+        if line.starts_with("POINTS") {
+            let num_pts: usize = line.split_whitespace().nth(1).unwrap().parse().unwrap();
+            for _ in 0..num_pts {
+                let l = lines.next().unwrap();
+                let mut it = l.split_whitespace();
+                let x: f32 = it.next().unwrap().parse().unwrap();
+                let y: f32 = it.next().unwrap().parse().unwrap();
+                let z: f32 = it.next().unwrap().parse().unwrap();
+                vtx2xyz.push([x, y, z]);
+            }
+        } else if line.starts_with("CELLS") {
+            let num_cells: usize = line.split_whitespace().nth(1).unwrap().parse().unwrap();
+            for _ in 0..num_cells {
+                let l = lines.next().unwrap();
+                let mut it = l.split_whitespace();
+                let n: usize = it.next().unwrap().parse().unwrap();
+                let nodes: Vec<usize> = it.take(n).map(|v| v.parse().unwrap()).collect();
+                cells_raw.push(nodes);
+            }
+        } else if line.starts_with("CELL_TYPES") {
+            let num_cells: usize = line.split_whitespace().nth(1).unwrap().parse().unwrap();
+            for _ in 0..num_cells {
+                let l = lines.next().unwrap();
+                let t: u32 = l.trim().parse().unwrap();
+                cell_types.push(t);
+            }
+        }
+    }
+
+    let tet_type = VtkElementType::TETRA as u32;
+    let tet2vtx: Vec<[usize; 4]> = cells_raw
+        .iter()
+        .zip(cell_types.iter())
+        .filter(|(_, &t)| t == tet_type)
+        .map(|(nodes, _)| [nodes[0], nodes[1], nodes[2], nodes[3]])
+        .collect();
+
+    (tet2vtx, vtx2xyz)
+}
+
 #[cfg(test)]
 mod test {
     use crate::io_vtk::VtkElementType;

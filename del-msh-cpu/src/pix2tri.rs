@@ -117,21 +117,24 @@ fn rasterize_projected_tri<Index>(
         };
         // Top-left fill rule: b_i == 0 means the pixel center lies on edge i.
         // b0 is zero on edge px[1]→px[2], b1 on px[2]→px[0], b2 on px[0]→px[1].
-        // Include the pixel only when each barycentric coord passes its edge's rule.
+        // A small negative epsilon tolerates floating-point error in the barycentric
+        // computation when a pixel center lies exactly on a shared edge; adjacent
+        // triangles may both claim such a pixel, but depth-sorting resolves the tie.
+        const EPS: f32 = 1e-5;
         let inside0 = if is_top_left_edge(px[1], px[2]) {
-            b0 >= 0.
+            b0 >= -EPS
         } else {
-            b0 > 0.
+            b0 > -EPS
         };
         let inside1 = if is_top_left_edge(px[2], px[0]) {
-            b1 >= 0.
+            b1 >= -EPS
         } else {
-            b1 > 0.
+            b1 > -EPS
         };
         let inside2 = if is_top_left_edge(px[0], px[1]) {
-            b2 >= 0.
+            b2 >= -EPS
         } else {
-            b2 > 0.
+            b2 > -EPS
         };
         if !inside0 || !inside1 || !inside2 {
             continue;

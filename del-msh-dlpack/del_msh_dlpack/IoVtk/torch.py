@@ -139,3 +139,21 @@ def write_mix_mesh(
         util_torch.to_dlpack_safe(prism2vtx, 0),
         util_torch.to_dlpack_safe(hex2vtx, 0),
     )
+
+
+def load_tet_mesh(path_file: str):
+    """Load a tet mesh from a VTK mixed-cell file, extracting only tetrahedra.
+
+    Args:
+        path_file: path to the .vtk file
+    Returns:
+        tet2vtx: (num_tet, 4) uint32 - tetrahedron connectivity
+        vtx2xyz: (num_vtx, 3) float32 - vertex positions
+    """
+    from .. import IoVtk
+    from .. import _CapsuleAsDLPack
+
+    cap_tet2vtx, cap_vtx2xyz = IoVtk.load_tet_mesh(path_file)
+    tet2vtx = torch.from_dlpack(_CapsuleAsDLPack(cap_tet2vtx))
+    vtx2xyz = torch.from_dlpack(_CapsuleAsDLPack(cap_vtx2xyz))
+    return tet2vtx, vtx2xyz

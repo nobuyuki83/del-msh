@@ -103,9 +103,10 @@ void rasterize_projected_tri(
         float b2 = 1.f - b0 - b1;
         // Top-left fill rule: b_i == 0 means the pixel centre lies on edge i.
         // b0 on px[1]→px[2], b1 on px[2]→px[0], b2 on px[0]→px[1].
-        bool inside0 = is_top_left_edge(px[1], px[2]) ? (b0 >= 0.f) : (b0 > 0.f);
-        bool inside1 = is_top_left_edge(px[2], px[0]) ? (b1 >= 0.f) : (b1 > 0.f);
-        bool inside2 = is_top_left_edge(px[0], px[1]) ? (b2 >= 0.f) : (b2 > 0.f);
+        const float eps = 1e-5f;
+        bool inside0 = is_top_left_edge(px[1], px[2]) ? (b0 >= -eps) : (b0 > -eps);
+        bool inside1 = is_top_left_edge(px[2], px[0]) ? (b1 >= -eps) : (b1 > -eps);
+        bool inside2 = is_top_left_edge(px[0], px[1]) ? (b2 >= -eps) : (b2 > -eps);
         if (!inside0 || !inside1 || !inside2) { continue; }
 
         // Perspective-correct depth

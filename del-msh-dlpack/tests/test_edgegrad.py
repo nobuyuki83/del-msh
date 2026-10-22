@@ -209,24 +209,26 @@ def sample_aabb(aabb_min, aabb_max, num_sample):
 
 
 def fit(
-    device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_trg, views
+    device: torch.device, tri2vtx, vtx2xyz, wtx2xyz, pix2depth_trg, pix2occ_trg, views,
+    elem2wtx
 ):
     from del_msh_dlpack.NBody import Elastic
 
     #
-    lr = 0.1
-    num_substep = 2  # Number of sub-steps for the Green's function filter per iteration
+    #lr = 0.1
+    lr = 1000.0
+    num_substep = 1  # Number of sub-steps for the Green's function filter per iteration
     num_itr = 251  # Total number of optimization iterations
     num_interval_save_file = 250  # Save intermediate results every this many iterations
     model_filter_body = Elastic(
-        0.2, 0.1
+        0.4, 0.1
     )  # Green's function filter for surface vertices
     model_filter_air = Elastic(
-        0.2, 0.1
+        0.4, 0.1
     )  # Green's function filter for exterior CFD points
     filter_theta = 0.6  # Barnes-Hut opening angle for tree-accelerated N-body filter
-    filter_is_acc = False  # If True, use tree-accelerated filter; otherwise brute force
-    filter_is_bem = True
+    filter_is_acc = True  # If True, use tree-accelerated filter; otherwise brute force
+    filter_is_bem = False
     loss_weight_laplacereg = 0.01  # Weight for Laplacian smoothness regularization
     loss_weight_normalreg = 0.001  # Weight for normal consistency regularization
     #
@@ -239,6 +241,9 @@ def fit(
     import del_msh_dlpack.NBody.torch as NBody
     import del_msh_dlpack.IoWavefrontObj.torch as IoWavefrontObj
     import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
+    import del_msh_dlpack.PolyhedronMesh.torch as PolyhedronMesh
+
+    elem2vol0 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
 
     #
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
@@ -260,9 +265,9 @@ def fit(
         )
     vtx2xyz = vtx2xyz.detach().requires_grad_(True)
 
-    from del_msh_dlpack.util_adam_uniform import UniformAdam
-
-    optimizer = UniformAdam(params=[vtx2xyz, wtx2xyz], lr=lr)
+    #from del_msh_dlpack.util_adam_uniform import UniformAdam
+    #optimizer = UniformAdam(params=[vtx2xyz, wtx2xyz], lr=lr)
+    optimizer = torch.optim.SGD(params=[vtx2xyz, wtx2xyz], lr=lr)
     conv_history = []  # Track loss values for convergence monitoring
 
     for itr in range(0, num_itr):
@@ -353,7 +358,8 @@ def fit(
                     from del_msh_dlpack.TriMesh3.torch import make_vtx2area
 
                     vtx2area = make_vtx2area(tri2vtx, vtx2xyz)
-                    vtx2rhs0 = vtx2rhs / vtx2area.unsqueeze(1)
+                    vtx2rhs0 = vtx2rhs #/ vtx2area.unsqueeze(1)
+                    #vtx2rhs0 = vtx2rhs / vtx2area.unsqueeze(1)
                     from del_msh_dlpack.TriMesh3_Bem.torch import (
                         eval_kelvinlet_bruteforce,
                     )
@@ -380,6 +386,10 @@ def fit(
                 vtx2xyz.grad = vtx2lhs
                 wtx2xyz.grad = wtx2lhs
             optimizer.step()
+            elem2vol1 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
+            min_ratio = (elem2vol1 / elem2vol0).min().item()
+            print("ratio: ", min_ratio)
+            print("number: ", (elem2vol1 < 0).sum().item())
 
     TriMesh3.save_wavefront_obj(
         tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir_trg / "test_edgegrad_fin.obj")
@@ -392,8 +402,9 @@ def fit(
         writer.writerow(conv_history)
 
 
-def test_match_shape_multiview(transform_world2ndc=None):
+def test_match_shape_multiview():
     import del_msh_dlpack.IoOff.torch as IoOff
+    import del_msh_dlpack.IoVtk.torch as IoVtk
 
     path_dir_asset = pathlib.Path(__file__).parent.parent.parent / "asset"
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
@@ -408,7 +419,17 @@ def test_match_shape_multiview(transform_world2ndc=None):
     TriMesh3.save_wavefront_obj(
         tri2vtx, vtx2xyz, str(path_dir_trg / "test_edgegrad_ini.obj")
     )
-    wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
+    #wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
+    tet2wtx, wtx2xyz = IoVtk.load_tet_mesh(str(path_dir_asset/"propeller0_exterior.vtk"))
+    import del_msh_dlpack.MixMesh3.torch as MixMesh3
+    elem2idx, idx2wtx = MixMesh3.to_polyhedral_mesh(
+        tet2wtx,
+        torch.zeros([0,5], dtype=torch.uint32),
+        torch.zeros([0,6], dtype=torch.uint32),
+        torch.zeros([0,8], dtype=torch.uint32))
+    import del_msh_dlpack.PolyhedronMesh.torch as PolyhedronMesh
+    #elem2idx, idx2wtx, wtx2xyz = PolyhedronMesh.subdivide(elem2wtx[0], elem2wtx[1], wtx2xyz)
+
 
     fit(
         torch.device("cpu"),
@@ -418,6 +439,7 @@ def test_match_shape_multiview(transform_world2ndc=None):
         pix2depth_trg,
         pix2occ_trg,
         views,
+        (elem2idx, idx2wtx)
     )
     if torch.cuda.is_available():
         fit(
@@ -428,4 +450,5 @@ def test_match_shape_multiview(transform_world2ndc=None):
             pix2depth_trg,
             pix2occ_trg,
             views,
+            (elem2idx, idx2wtx)
         )

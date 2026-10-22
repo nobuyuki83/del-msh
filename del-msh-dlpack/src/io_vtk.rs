@@ -1,6 +1,6 @@
 use del_dlpack::{
     check_2d_tensor as chk2, dlpack, get_managed_tensor_from_pyany as get_tensor,
-    get_shape_tensor as shape, slice,
+    get_shape_tensor as shape, make_capsule_from_vec as capsule, slice,
 };
 use pyo3::prelude::PyModule;
 use pyo3::{pyfunction, Bound, PyAny, PyResult, Python};
@@ -12,6 +12,7 @@ pub fn add_functions(_py: Python, m: &Bound<PyModule>) -> PyResult<()> {
         io_vtk_write_points_with_velocity,
         m
     )?)?;
+    m.add_function(pyo3::wrap_pyfunction!(io_vtk_load_tet_mesh, m)?)?;
     Ok(())
 }
 
@@ -87,4 +88,23 @@ fn io_vtk_write_points_with_velocity(
     )
     .unwrap();
     Ok(())
+}
+
+#[pyfunction]
+fn io_vtk_load_tet_mesh(
+    py: Python<'_>,
+    path: String,
+) -> PyResult<(pyo3::Py<PyAny>, pyo3::Py<PyAny>)> {
+    let path = std::path::Path::new(&path);
+    let (tet2vtx, vtx2xyz) = del_msh_cpu::io_vtk::load_tet_mesh(path);
+    let num_tet = tet2vtx.len() as i64;
+    let num_vtx = vtx2xyz.len() as i64;
+    let tet2vtx_u32: Vec<u32> = tet2vtx
+        .into_flattened()
+        .into_iter()
+        .map(|v| v as u32)
+        .collect();
+    let tet2vtx = capsule(py, vec![num_tet, 4], tet2vtx_u32);
+    let vtx2xyz = capsule(py, vec![num_vtx, 3], vtx2xyz.into_flattened());
+    Ok((tet2vtx, vtx2xyz))
 }
