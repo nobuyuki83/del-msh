@@ -35,12 +35,10 @@ void fwd(
     const float* p1 = vtx2xyz + tri2vtx[i_tri * 3 + 1] * 3;
     const float* p2 = vtx2xyz + tri2vtx[i_tri * 3 + 2] * 3;
 
-    const auto opt_raycoeff_bc = tri3::intersection_against_ray(
+    const auto raycoeff_bc = tri3::intersection_plane_of_tri3_against_line(
         p0, p1, p2, ray.first.data(), ray.second.data());
-    if (!opt_raycoeff_bc) { return; }
 
-    const float t = opt_raycoeff_bc.value().ray_coeff;
-    const auto pos_world = vec3::axpy(t, ray.second.data(), ray.first.data());
+    const auto pos_world = vec3::axpy(raycoeff_bc.ray_coeff, ray.second.data(), ray.first.data());
     const auto pos_ndc = mat4_col_major::transform_homogeneous(
         transform_world2ndc, pos_world.data());
     pix2depth[i_pix] = (pos_ndc[2] + 1.f) * 0.5f;

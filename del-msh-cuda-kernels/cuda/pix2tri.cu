@@ -61,7 +61,8 @@ void rasterize_projected_tri(
     const float ndc[3][3],   // ndc[vertex][x/y/z]
     const float hw[3])       // clip-space w for each vertex
 {
-    // NDC → pixel coordinates  (origin top-left, y down)
+    // NDC → pixel coordinates (origin top-left, y down).
+    // Mirror del-msh-cpu::pix2tri::rasterize_projected_tri exactly.
     float px[3][2];
     for (int i = 0; i < 3; ++i) {
         px[i][0] = (ndc[i][0] + 1.f) * 0.5f * (float)img_w;
@@ -69,19 +70,12 @@ void rasterize_projected_tri(
         if (!isfinite(px[i][0]) || !isfinite(px[i][1])) { return; }
     }
 
-    // Bounding-box cull
     float min_x = fminf(fminf(px[0][0], px[1][0]), px[2][0]);
     float max_x = fmaxf(fmaxf(px[0][0], px[1][0]), px[2][0]);
     float min_y = fminf(fminf(px[0][1], px[1][1]), px[2][1]);
     float max_y = fmaxf(fmaxf(px[0][1], px[1][1]), px[2][1]);
     if (max_x < 0.f || min_x >= (float)img_w ||
         max_y < 0.f || min_y >= (float)img_h) { return; }
-
-    // Precompute signed 2× area for barycentric coordinates.
-    float area2 = (px[1][0]-px[0][0])*(px[2][1]-px[0][1])
-                - (px[1][1]-px[0][1])*(px[2][0]-px[0][0]);
-    if (fabsf(area2) < 1e-10f) { return; }
-    float inv_area2 = 1.f / area2;
 
     tri2_scanline::TriangleScanlineIter it(px[0], px[1], px[2]);
     int32_t ix, iy;
@@ -91,22 +85,27 @@ void rasterize_projected_tri(
         float qx = (float)ix + 0.5f;
         float qy = (float)iy + 0.5f;
 
-        // Barycentric coords via signed sub-areas
-        float b0 = ((px[1][0]-qx)*(px[2][1]-qy) - (px[1][1]-qy)*(px[2][0]-qx)) * inv_area2;
-        float b1 = ((px[2][0]-qx)*(px[0][1]-qy) - (px[2][1]-qy)*(px[0][0]-qx)) * inv_area2;
-        float b2 = 1.f - b0 - b1;
-        const float eps = 1e-3f;
+        // Mirror del_geo_core::tri2::barycentric_coords:
+        //   a_i = area(q, p_{i+1}, p_{i+2})  (signed sub-triangle areas)
+        //   b_i = a_i / (a0 + a1 + a2)
+        // Normalising by the fresh sum — not a precomputed inv_area2 — keeps
+        // b0+b1+b2 = 1 by construction and handles both CW and CCW without a
+        // sign variable.  The 0.5 factor in each area cancels in the division.
+        float a0 = (px[1][0]-qx)*(px[2][1]-qy) - (px[1][1]-qy)*(px[2][0]-qx);
+        float a1 = (px[2][0]-qx)*(px[0][1]-qy) - (px[2][1]-qy)*(px[0][0]-qx);
+        float a2 = (px[0][0]-qx)*(px[1][1]-qy) - (px[0][1]-qy)*(px[1][0]-qx);
+        float sum_a = a0 + a1 + a2;
+        if (sum_a == 0.f) { continue; }
+        float sum_a_inv = 1.f / sum_a;
+        float b0 = a0 * sum_a_inv;
+        float b1 = a1 * sum_a_inv;
+        float b2 = a2 * sum_a_inv;
+        const float eps = 1e-5f;
         if (b0 < -eps || b1 < -eps || b2 < -eps) { continue; }
 
-        // Perspective-correct depth
-        float q0 = b0 / hw[0];
-        float q1 = b1 / hw[1];
-        float q2 = b2 / hw[2];
-        float inv_sum = 1.f / (q0 + q1 + q2);
-        float depth = (q0*ndc[0][2] + q1*ndc[1][2] + q2*ndc[2][2]) * inv_sum;
+        // NDC z is affine in screen space, so plain screen-space barycentrics are exact.
+        float depth = b0*ndc[0][2] + b1*ndc[1][2] + b2*ndc[2][2];
 
-        // Pack orderable depth (upper 32 bits) with tri_id (lower 32 bits) and
-        // atomically keep the maximum — the frontmost triangle wins.
         unsigned long long new_val =
             ((unsigned long long)float_to_orderable(depth) << 32) | i_tri_val;
         atomicMax(&pix2packed[(uint32_t)iy * img_w + (uint32_t)ix], new_val);

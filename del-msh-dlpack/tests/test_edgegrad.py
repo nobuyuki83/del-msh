@@ -237,13 +237,16 @@ def fit(
     wtx2xyz = wtx2xyz.to(device)
     pix2depth_trg = pix2depth_trg.to(device)
     pix2occ_trg = pix2occ_trg.to(device)
+    if elem2wtx is not None:
+        elem2wtx = (elem2wtx[0].to(device), elem2wtx[1].to(device))
     #
     import del_msh_dlpack.NBody.torch as NBody
     import del_msh_dlpack.IoWavefrontObj.torch as IoWavefrontObj
     import del_msh_dlpack.Vtx2Vtx.torch as Vtx2Vtx
     import del_msh_dlpack.PolyhedronMesh.torch as PolyhedronMesh
 
-    elem2vol0 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
+    if elem2wtx is not None:
+        elem2vol0 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
 
     #
     path_dir_trg = pathlib.Path(__file__).parent.parent.parent / "target" / "out_dlpack"
@@ -386,10 +389,12 @@ def fit(
                 vtx2xyz.grad = vtx2lhs
                 wtx2xyz.grad = wtx2lhs
             optimizer.step()
-            elem2vol1 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
-            min_ratio = (elem2vol1 / elem2vol0).min().item()
-            print("ratio: ", min_ratio)
-            print("number: ", (elem2vol1 < 0).sum().item())
+
+            if elem2wtx is not None:
+                elem2vol1 = PolyhedronMesh.make_elem2volume(elem2wtx[0], elem2wtx[1], wtx2xyz)
+                min_ratio = (elem2vol1 / elem2vol0).min().item()
+                print("ratio: ", min_ratio)
+                print("number: ", (elem2vol1 < 0).sum().item())
 
     TriMesh3.save_wavefront_obj(
         tri2vtx.cpu(), vtx2xyz.cpu(), str(path_dir_trg / "test_edgegrad_fin.obj")
@@ -419,7 +424,6 @@ def test_match_shape_multiview():
     TriMesh3.save_wavefront_obj(
         tri2vtx, vtx2xyz, str(path_dir_trg / "test_edgegrad_ini.obj")
     )
-    #wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
     tet2wtx, wtx2xyz = IoVtk.load_tet_mesh(str(path_dir_asset/"propeller0_exterior.vtk"))
     import del_msh_dlpack.MixMesh3.torch as MixMesh3
     elem2idx, idx2wtx = MixMesh3.to_polyhedral_mesh(
@@ -441,7 +445,9 @@ def test_match_shape_multiview():
         views,
         (elem2idx, idx2wtx)
     )
+
     if torch.cuda.is_available():
+        wtx2xyz = sample_aabb(vtx2xyz.min(dim=0)[0], vtx2xyz.max(dim=0)[0], 1000)
         fit(
             torch.device("cuda"),
             tri2vtx,
@@ -450,5 +456,5 @@ def test_match_shape_multiview():
             pix2depth_trg,
             pix2occ_trg,
             views,
-            (elem2idx, idx2wtx)
+            None
         )

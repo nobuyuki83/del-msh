@@ -60,14 +60,13 @@ fn interp_hom(ndc_a: [f32; 3], hw_a: f32, ndc_b: [f32; 3], hw_b: f32, t: f32) ->
     (ndc_c, hw_c)
 }
 
-/// Rasterize one projected triangle given its NDC coordinates and clip-w values.
+/// Rasterize one projected triangle given its NDC coordinates.
 fn rasterize_projected_tri<Index>(
     pix2tri: &mut [Index],
     pix2depth: &mut [f32],
     img_shape: (usize, usize),
     i_tri_val: Index,
     ndc: [[f32; 3]; 3],
-    hw: [f32; 3],
 ) where
     Index: Copy,
 {
@@ -111,11 +110,8 @@ fn rasterize_projected_tri<Index>(
         if b0 < -EPS || b1 < -EPS || b2 < -EPS {
             continue;
         }
-        let q0 = b0 / hw[0];
-        let q1 = b1 / hw[1];
-        let q2 = b2 / hw[2];
-        let inv_sum = 1.0 / (q0 + q1 + q2);
-        let depth = (q0 * ndc[0][2] + q1 * ndc[1][2] + q2 * ndc[2][2]) * inv_sum;
+        // NDC z is affine in screen space, so plain screen-space barycentrics are exact.
+        let depth = b0 * ndc[0][2] + b1 * ndc[1][2] + b2 * ndc[2][2];
         if depth > pix2depth[i_pix] {
             pix2depth[i_pix] = depth;
             pix2tri[i_pix] = i_tri_val;
@@ -170,14 +166,7 @@ pub fn pix2tri_by_rasterization<Index>(
 
         if t11 == 0. {
             // Orthographic: no near-clip homogeneous issue.
-            rasterize_projected_tri(
-                pix2tri,
-                pix2depth,
-                img_shape,
-                i_tri_val,
-                [ndc0, ndc1, ndc2],
-                [hw0, hw1, hw2],
-            );
+            rasterize_projected_tri(pix2tri, pix2depth, img_shape, i_tri_val, [ndc0, ndc1, ndc2]);
             continue;
         }
 
@@ -188,14 +177,7 @@ pub fn pix2tri_by_rasterization<Index>(
 
         if c0 >= 0. && c1 >= 0. && c2 >= 0. {
             // All vertices at or beyond near clip: rasterize whole triangle.
-            rasterize_projected_tri(
-                pix2tri,
-                pix2depth,
-                img_shape,
-                i_tri_val,
-                [ndc0, ndc1, ndc2],
-                [hw0, hw1, hw2],
-            );
+            rasterize_projected_tri(pix2tri, pix2depth, img_shape, i_tri_val, [ndc0, ndc1, ndc2]);
         } else if c0 < 0. && c1 < 0. && c2 < 0. {
             // All vertices between camera and near clip: skip.
         } else {
@@ -216,15 +198,14 @@ pub fn pix2tri_by_rasterization<Index>(
                 let (ndc_a, hw_a, ca) = v[ia];
                 let (ndc_b, hw_b, cb) = v[ib];
                 let (ndc_c, hw_c, cc) = v[ic];
-                let (ndc_ab, hw_ab) = interp_hom(ndc_a, hw_a, ndc_b, hw_b, clip_t(ca, cb));
-                let (ndc_ac, hw_ac) = interp_hom(ndc_a, hw_a, ndc_c, hw_c, clip_t(ca, cc));
+                let (ndc_ab, _) = interp_hom(ndc_a, hw_a, ndc_b, hw_b, clip_t(ca, cb));
+                let (ndc_ac, _) = interp_hom(ndc_a, hw_a, ndc_c, hw_c, clip_t(ca, cc));
                 rasterize_projected_tri(
                     pix2tri,
                     pix2depth,
                     img_shape,
                     i_tri_val,
                     [ndc_a, ndc_ab, ndc_ac],
-                    [hw_a, hw_ab, hw_ac],
                 );
             } else {
                 // 2 inside vertices → 2 output triangles.
@@ -238,15 +219,14 @@ pub fn pix2tri_by_rasterization<Index>(
                 let (ndc_c, hw_c, cc) = v[ic];
                 let (ndc_a, hw_a, ca) = v[ia];
                 let (ndc_b, hw_b, cb) = v[ib];
-                let (ndc_ac, hw_ac) = interp_hom(ndc_a, hw_a, ndc_c, hw_c, clip_t(ca, cc));
-                let (ndc_bc, hw_bc) = interp_hom(ndc_b, hw_b, ndc_c, hw_c, clip_t(cb, cc));
+                let (ndc_ac, _) = interp_hom(ndc_a, hw_a, ndc_c, hw_c, clip_t(ca, cc));
+                let (ndc_bc, _) = interp_hom(ndc_b, hw_b, ndc_c, hw_c, clip_t(cb, cc));
                 rasterize_projected_tri(
                     pix2tri,
                     pix2depth,
                     img_shape,
                     i_tri_val,
                     [ndc_a, ndc_b, ndc_ac],
-                    [hw_a, hw_b, hw_ac],
                 );
                 rasterize_projected_tri(
                     pix2tri,
@@ -254,7 +234,6 @@ pub fn pix2tri_by_rasterization<Index>(
                     img_shape,
                     i_tri_val,
                     [ndc_b, ndc_bc, ndc_ac],
-                    [hw_b, hw_bc, hw_ac],
                 );
             }
         }
