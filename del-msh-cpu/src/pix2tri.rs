@@ -60,14 +60,6 @@ fn interp_hom(ndc_a: [f32; 3], hw_a: f32, ndc_b: [f32; 3], hw_b: f32, t: f32) ->
     (ndc_c, hw_c)
 }
 
-/// True when an edge from `a` to `b` (in screen space, y-down) is a top or left edge.
-/// Top: horizontal edge going left→right (triangle below it).
-/// Left: non-horizontal edge going upward (dy < 0).
-fn is_top_left_edge(a: [f32; 2], b: [f32; 2]) -> bool {
-    let dy = b[1] - a[1];
-    (dy == 0. && b[0] > a[0]) || dy < 0.
-}
-
 /// Rasterize one projected triangle given its NDC coordinates and clip-w values.
 fn rasterize_projected_tri<Index>(
     pix2tri: &mut [Index],
@@ -115,28 +107,8 @@ fn rasterize_projected_tri<Index>(
         else {
             continue;
         };
-        // Top-left fill rule: b_i == 0 means the pixel center lies on edge i.
-        // b0 is zero on edge px[1]→px[2], b1 on px[2]→px[0], b2 on px[0]→px[1].
-        // A small negative epsilon tolerates floating-point error in the barycentric
-        // computation when a pixel center lies exactly on a shared edge; adjacent
-        // triangles may both claim such a pixel, but depth-sorting resolves the tie.
         const EPS: f32 = 1e-5;
-        let inside0 = if is_top_left_edge(px[1], px[2]) {
-            b0 >= -EPS
-        } else {
-            b0 > -EPS
-        };
-        let inside1 = if is_top_left_edge(px[2], px[0]) {
-            b1 >= -EPS
-        } else {
-            b1 > -EPS
-        };
-        let inside2 = if is_top_left_edge(px[0], px[1]) {
-            b2 >= -EPS
-        } else {
-            b2 > -EPS
-        };
-        if !inside0 || !inside1 || !inside2 {
+        if b0 < -EPS || b1 < -EPS || b2 < -EPS {
             continue;
         }
         let q0 = b0 / hw[0];

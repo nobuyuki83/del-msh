@@ -48,12 +48,6 @@ __device__ inline uint32_t float_to_orderable(float f) {
     return (bits >> 31) ? ~bits : (bits ^ 0x80000000u);
 }
 
-// True when edge a→b (screen space, y-down) is a top or left edge.
-__device__ inline
-bool is_top_left_edge(const float a[2], const float b[2]) {
-    float dy = b[1] - a[1];
-    return (dy == 0.f && b[0] > a[0]) || dy < 0.f;
-}
 
 // Rasterize one projected triangle into a packed depth+tri buffer.
 // Each pixel slot holds (orderable_depth << 32) | tri_id.
@@ -101,13 +95,8 @@ void rasterize_projected_tri(
         float b0 = ((px[1][0]-qx)*(px[2][1]-qy) - (px[1][1]-qy)*(px[2][0]-qx)) * inv_area2;
         float b1 = ((px[2][0]-qx)*(px[0][1]-qy) - (px[2][1]-qy)*(px[0][0]-qx)) * inv_area2;
         float b2 = 1.f - b0 - b1;
-        // Top-left fill rule: b_i == 0 means the pixel centre lies on edge i.
-        // b0 on px[1]→px[2], b1 on px[2]→px[0], b2 on px[0]→px[1].
-        const float eps = 1e-5f;
-        bool inside0 = is_top_left_edge(px[1], px[2]) ? (b0 >= -eps) : (b0 > -eps);
-        bool inside1 = is_top_left_edge(px[2], px[0]) ? (b1 >= -eps) : (b1 > -eps);
-        bool inside2 = is_top_left_edge(px[0], px[1]) ? (b2 >= -eps) : (b2 > -eps);
-        if (!inside0 || !inside1 || !inside2) { continue; }
+        const float eps = 1e-3f;
+        if (b0 < -eps || b1 < -eps || b2 < -eps) { continue; }
 
         // Perspective-correct depth
         float q0 = b0 / hw[0];
